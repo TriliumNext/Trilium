@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import BNotificationPrivateText from "../becca/entities/bnotification_private_text.js";
 import { getContext } from "./context.js";
 import contentHash from "./content_hash.js";
 import eraseService from "./erase.js";
@@ -163,6 +164,27 @@ describe("content_hash", () => {
                 { entityName: "spec_remote_only", sector: "P" },
                 { entityName: "spec_remote_only", sector: "Q" }
             ]);
+        });
+
+        it("flags the sector of a private text, a kind that only the other side holds", () => {
+            const notificationId = "Pspec0000000000000000";
+            const failed = getContext().init(() => {
+                // The other side has the first private text, and this side has none.
+                new BNotificationPrivateText({
+                    notificationId,
+                    content: JSON.stringify({ v: 1, title: "AAAA" }),
+                    utcDateCreated: "2026-11-27 12:00:00.000Z",
+                    utcDateModified: "2026-11-27 12:00:00.000Z"
+                }).save();
+                const remote = JSON.parse(JSON.stringify(contentHash.getEntityHashes()));
+                getSql().execute("DELETE FROM notification_private_texts");
+                getSql().execute(
+                    "DELETE FROM entity_changes WHERE entityName = 'notification_private_texts'");
+
+                return contentHash.checkContentHashes(remote);
+            });
+
+            expect(failed).toEqual([ { entityName: "notification_private_texts", sector: "P" } ]);
         });
     });
 

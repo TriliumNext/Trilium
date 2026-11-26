@@ -36,6 +36,20 @@ DELETE FROM user_data;
 DELETE FROM sessions;
 `;
 
+/**
+ * Deletes every notification with what belongs to it, and the entity changes of the four tables
+ * that sync: the change of an erased notification keeps its time and the hash of its ID.
+ */
+const NOTIFICATIONS_SCRIPT = /*sql*/`
+DELETE FROM notifications;
+DELETE FROM notification_marks;
+DELETE FROM notification_private_texts;
+DELETE FROM notification_channel_records;
+DELETE FROM notification_deliveries;
+DELETE FROM entity_changes WHERE entityName IN ('notifications', 'notification_marks',
+                    'notification_private_texts', 'notification_channel_records');
+`;
+
 function getFullAnonymizationScript() {
     // we want to delete all non-builtin attributes because they can contain sensitive names and values
     // on the other hand builtin/system attrs should not contain any sensitive info -- except for the
@@ -56,6 +70,7 @@ UPDATE attributes SET name = 'name', value = 'value' WHERE type = 'label' AND na
 UPDATE attributes SET name = 'name' WHERE type = 'relation' AND name NOT IN (${builtinAttrNames});
 UPDATE branches SET prefix = 'prefix' WHERE prefix IS NOT NULL AND prefix != 'recovered';
 ${CREDENTIALS_SCRIPT}
+${NOTIFICATIONS_SCRIPT}
 VACUUM;
 `;
 
@@ -71,6 +86,7 @@ function getLightAnonymizationScript() {
                 SELECT blobId FROM revisions WHERE mime IN ('application/javascript;env=backend', 'application/javascript;env=frontend')
             );
 ${CREDENTIALS_SCRIPT}
+${NOTIFICATIONS_SCRIPT}
 VACUUM;`;
 }
 

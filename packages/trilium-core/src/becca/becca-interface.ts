@@ -12,8 +12,13 @@ import type { AttachmentRow, BlobRow, RevisionRow } from "@triliumnext/commons";
 import BBlob from "./entities/bblob.js";
 import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
+import type BNotification from "./entities/bnotification.js";
+import type BNotificationChannelRecord from "./entities/bnotification_channel_record.js";
+import type BNotificationMark from "./entities/bnotification_mark.js";
+import type BNotificationPrivateText from "./entities/bnotification_private_text.js";
 import { getSql } from "../services/sql/index.js";
 import NoteSet from "../services/search/note_set.js";
+import { getMarkIds } from "../services/notifications/model.js";
 
 /**
  * Becca is a backend cache of all notes, branches, and attributes.
@@ -30,6 +35,10 @@ export default class Becca {
     attributeIndex!: Record<string, Set<BAttribute>>;
     options!: Record<string, BOption>;
     etapiTokens!: Record<string, BEtapiToken>;
+    notifications!: Record<string, BNotification>;
+    notificationMarks!: Record<string, BNotificationMark>;
+    notificationPrivateTexts!: Record<string, BNotificationPrivateText>;
+    notificationChannelRecords!: Record<string, BNotificationChannelRecord>;
 
     allNoteSetCache: NoteSet | null;
 
@@ -59,6 +68,10 @@ export default class Becca {
         this.attributeIndex = {};
         this.options = {};
         this.etapiTokens = {};
+        this.notifications = {};
+        this.notificationMarks = {};
+        this.notificationPrivateTexts = {};
+        this.notificationChannelRecords = {};
 
         this.dirtyNoteSetCache();
 
@@ -221,6 +234,33 @@ export default class Becca {
 
     getEtapiToken(etapiTokenId: string): BEtapiToken | null {
         return Object.hasOwn(this.etapiTokens, etapiTokenId) ? this.etapiTokens[etapiTokenId] : null;
+    }
+
+    getNotification(notificationId: string): BNotification | null {
+        return Object.hasOwn(this.notifications, notificationId)
+            ? this.notifications[notificationId]
+            : null;
+    }
+
+    getNotificationMark(markId: string): BNotificationMark | null {
+        return Object.hasOwn(this.notificationMarks, markId)
+            ? this.notificationMarks[markId]
+            : null;
+    }
+
+    getNotificationPrivateText(notificationId: string): BNotificationPrivateText | null {
+        return Object.hasOwn(this.notificationPrivateTexts, notificationId)
+            ? this.notificationPrivateTexts[notificationId]
+            : null;
+    }
+
+    /** Drops an erased notification from the cache, with its marks and its private text. */
+    removeNotification(notificationId: string) {
+        delete this.notifications[notificationId];
+        for (const markId of getMarkIds(notificationId)) {
+            delete this.notificationMarks[markId];
+        }
+        delete this.notificationPrivateTexts[notificationId];
     }
 
     getEntity<T extends AbstractBeccaEntity<T>>(entityName: string, entityId: string): AbstractBeccaEntity<T> | null {

@@ -472,7 +472,6 @@ export class SqlService {
 
     /**
      * Serialize the database to a byte array.
-     * Only available with browser-based providers.
      * @throws Error if the provider doesn't support serialization
      */
     serialize(): Uint8Array {

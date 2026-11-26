@@ -50,8 +50,21 @@ const MARKERS = {
     recoveryKey: "MARKER-RECOVERY-KEY",
     recoveryIv: "MARKER-RECOVERY-IV",
     openIdUser: "MARKER-OPENID-USER",
-    session: "MARKER-SESSION-DATA"
+    session: "MARKER-SESSION-DATA",
+    notification: "MARKER-NOTIFICATION",
+    mark: "MARKER-MARK-ID",
+    privateText: "MARKER-PRIVATE-TEXT",
+    channelRecord: "MARKER-CHANNEL-RECORD",
+    delivery: "MARKER-DELIVERY",
+    erasedNotification: "MARKERERASEDNOTIFICATION"
 };
+
+/** The tables of notifications, and the entity name of each that syncs. */
+const NOTIFICATION_TABLES = [
+    "notifications", "notification_marks", "notification_private_texts",
+    "notification_channel_records", "notification_deliveries"
+];
+const SYNCED_NOTIFICATION_TABLES = NOTIFICATION_TABLES.slice(0, 4);
 
 const SECOND_FACTOR_OPTIONS: Record<string, string> = {
     totpEncryptedSecret: MARKERS.totpSecret,
@@ -89,8 +102,39 @@ function openLiveDatabase() {
         .run(MARKERS.openIdUser, MARKERS.openIdUser, MARKERS.openIdUser);
     db.prepare("INSERT INTO sessions (id, data, expires) VALUES (?, ?, 0)")
         .run("session1", MARKERS.session);
+    insertNotificationRows(db);
 
     return db;
+}
+
+/** A row in each table of notifications, an entity change of each, and an erased notification. */
+function insertNotificationRows(db: Database.Database) {
+    const date = "2026-01-01 00:00:00.000Z";
+    db.prepare(/*sql*/`INSERT INTO notifications (notificationId, id, raisedAt, category, type,
+        attentionLevel, producer, content, utcDateCreated, utcDateModified)
+        VALUES ('n1', ?, ?, 'general', 'standard', 'low', 'client', ?, ?, ?)`)
+        .run(MARKERS.notification, date, JSON.stringify({ v: 1, title: MARKERS.notification }),
+            date, date);
+    db.prepare(/*sql*/`INSERT INTO notification_marks (markId, notificationId, kind, utcDateCreated)
+        VALUES (?, 'n1', 'read', ?)`).run(MARKERS.mark, date);
+    db.prepare(/*sql*/`INSERT INTO notification_private_texts
+        (notificationId, content, utcDateCreated, utcDateModified) VALUES ('n1', ?, ?, ?)`)
+        .run(MARKERS.privateText, date, date);
+    db.prepare(/*sql*/`INSERT INTO notification_channel_records
+        (recordId, channelId, kind, content, utcDateCreated, utcDateModified)
+        VALUES ('r1', 'c1', 'channel', ?, ?, ?)`).run(MARKERS.channelRecord, date, date);
+    db.prepare(/*sql*/`INSERT INTO notification_deliveries (deliveryKey, notificationId, channelId,
+        activationId, revision, graceTime, dueAt, status, utcDateCreated)
+        VALUES (?, 'n1', 'c1', 'a1', 'v1', 0, ?, 'pending', ?)`)
+        .run(MARKERS.delivery, date, date);
+
+    const insertChange = db.prepare(/*sql*/`INSERT INTO entity_changes (entityName, entityId, hash,
+        isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+        VALUES (?, ?, 'hash', ?, ?, 'NA', 'live', 1, ?)`);
+    for (const [ index, entityName ] of SYNCED_NOTIFICATION_TABLES.entries()) {
+        insertChange.run(entityName, `entity${index}`, 0, `change${index}`, date);
+    }
+    insertChange.run("notifications", MARKERS.erasedNotification, 1, "changeErased", date);
 }
 
 function namesIn(directory: string) {
@@ -220,6 +264,12 @@ describe("createAnonymizedCopy", () => {
             expect(value("encryptedRecoveryCodes")).toBe("false");
             expect(count("user_data")).toBe(0);
             expect(count("sessions")).toBe(0);
+            for (const table of NOTIFICATION_TABLES) {
+                expect(count(table), table).toBe(0);
+            }
+            expect(copy
+                .prepare("SELECT COUNT(*) FROM entity_changes WHERE entityName IN (?, ?, ?, ?)")
+                .pluck().get(...SYNCED_NOTIFICATION_TABLES)).toBe(0);
         } finally {
             copy.close();
         }

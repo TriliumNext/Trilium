@@ -24,6 +24,15 @@ function createDatabase(): DatabaseType {
         CREATE TABLE options (name TEXT PRIMARY KEY, value TEXT, utcDateModified TEXT, isSynced INT);
         CREATE TABLE attributes (attributeId TEXT PRIMARY KEY, noteId TEXT, type TEXT, name TEXT, value TEXT);
         CREATE TABLE etapi_tokens (etapiTokenId TEXT PRIMARY KEY, name TEXT, tokenHash TEXT, utcDateCreated TEXT, utcDateModified TEXT, isDeleted INT);
+        CREATE TABLE notifications (notificationId TEXT PRIMARY KEY, id TEXT, raisedAt TEXT,
+            tag TEXT, noteId TEXT, category TEXT, type TEXT, attentionLevel TEXT, isSensitive INT,
+            producer TEXT, content TEXT, utcDateModified TEXT);
+        CREATE TABLE notification_marks (markId TEXT PRIMARY KEY, notificationId TEXT, kind TEXT,
+            utcDateCreated TEXT);
+        CREATE TABLE notification_private_texts (notificationId TEXT PRIMARY KEY, content TEXT,
+            utcDateModified TEXT);
+        CREATE TABLE notification_channel_records (recordId TEXT PRIMARY KEY, channelId TEXT,
+            kind TEXT, content TEXT, utcDateModified TEXT);
         CREATE TABLE entity_changes (entityName TEXT, entityId TEXT, hash TEXT, isErased INT, isSynced INT, utcDateChanged TEXT);
     `);
 
@@ -143,6 +152,13 @@ describe("compareDatabases (better-sqlite3)", () => {
         const entityChanges = results.find(result => result.table === "entity_changes");
         // The `entityName || '-' || entityId` expression is used as the unique id.
         expect(entityChanges?.differingRows.map(row => row.id)).toEqual(["notes-n1"]);
+
+        // A mark written at another time on each side is the same mark.
+        left.prepare("INSERT INTO notification_marks VALUES ('m1', 'n1', 'read', 'early')").run();
+        right.prepare("INSERT INTO notification_marks VALUES ('m1', 'n1', 'read', 'late')").run();
+        const marks = compareDatabases(left, right)
+            .find(result => result.table === "notification_marks");
+        expect(marks).toMatchObject({ leftCount: 1, rightCount: 1, differingRows: [] });
 
         left.close();
         right.close();

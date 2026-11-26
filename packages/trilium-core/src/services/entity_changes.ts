@@ -241,6 +241,10 @@ function fillAllEntityChanges() {
         fillEntityChanges("blobs", "blobId");
         fillEntityChanges("attributes", "attributeId");
         fillEntityChanges("etapi_tokens", "etapiTokenId");
+        fillEntityChanges("notifications", "notificationId");
+        fillEntityChanges("notification_marks", "markId");
+        fillEntityChanges("notification_private_texts", "notificationId");
+        fillEntityChanges("notification_channel_records", "recordId");
         fillEntityChanges("options", "name", "WHERE isSynced = 1");
     });
 }

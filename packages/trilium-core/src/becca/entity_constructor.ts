@@ -6,6 +6,10 @@ import BBlob from "./entities/bblob.js";
 import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
+import BNotification from "./entities/bnotification.js";
+import BNotificationChannelRecord from "./entities/bnotification_channel_record.js";
+import BNotificationMark from "./entities/bnotification_mark.js";
+import BNotificationPrivateText from "./entities/bnotification_private_text.js";
 import BOption from "./entities/boption.js";
 import BRecentNote from "./entities/brecent_note.js";
 import BRevision from "./entities/brevision.js";
@@ -19,6 +23,10 @@ const ENTITY_NAME_TO_ENTITY: Record<string, ConstructorData<any> & EntityClass> 
     branches: BBranch,
     etapi_tokens: BEtapiToken,
     notes: BNote,
+    notifications: BNotification,
+    notification_channel_records: BNotificationChannelRecord,
+    notification_marks: BNotificationMark,
+    notification_private_texts: BNotificationPrivateText,
     options: BOption,
     recent_notes: BRecentNote,
     revisions: BRevision

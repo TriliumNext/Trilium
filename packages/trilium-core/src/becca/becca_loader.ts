@@ -1,4 +1,13 @@
-import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import type {
+    BranchRow,
+    EtapiTokenRow,
+    NoteRow,
+    NotificationChannelRecordRow,
+    NotificationMarkRow,
+    NotificationPrivateTextRow,
+    NotificationRow,
+    OptionRow
+} from "@triliumnext/commons";
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
@@ -11,6 +20,10 @@ import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
+import BNotification from "./entities/bnotification.js";
+import BNotificationChannelRecord from "./entities/bnotification_channel_record.js";
+import BNotificationMark from "./entities/bnotification_mark.js";
+import BNotificationPrivateText from "./entities/bnotification_private_text.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext } from "../services/context.js";
@@ -69,6 +82,11 @@ function load() {
             new BEtapiToken(row);
         }
 
+        // The JS migrations before version 245 load becca before these tables exist.
+        if (sql.getValue(/*sql*/`SELECT 1 FROM sqlite_master
+                WHERE type = 'table' AND name = 'notifications'`)) {
+            loadNotifications();
+        }
     });
 
     injectVirtualSubtrees();
@@ -80,6 +98,27 @@ function load() {
     becca.loaded = true;
 
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
+}
+
+function loadNotifications() {
+    const sql = getSql();
+    for (const row of sql.getRows<NotificationRow>(/*sql*/`SELECT * FROM notifications`)) {
+        new BNotification(row);
+    }
+
+    for (const row of sql.getRows<NotificationMarkRow>(/*sql*/`SELECT * FROM notification_marks`)) {
+        new BNotificationMark(row);
+    }
+
+    for (const row of sql.getRows<NotificationPrivateTextRow>(
+        /*sql*/`SELECT * FROM notification_private_texts`)) {
+        new BNotificationPrivateText(row);
+    }
+
+    for (const row of sql.getRows<NotificationChannelRecordRow>(
+        /*sql*/`SELECT * FROM notification_channel_records`)) {
+        new BNotificationChannelRecord(row);
+    }
 }
 
 // The order each entity's update() destructures its row in. None of these columns holds a
@@ -269,12 +308,18 @@ function reload(reason: string) {
     ws.reloadFroca(reason || "becca reloaded");
 }
 
+/** The entities that becca caches, which a synced row updates at once. */
+const BECCA_SYNCED_ENTITIES = new Set([
+    "notes", "branches", "attributes", "etapi_tokens", "options", "notifications",
+    "notification_marks", "notification_private_texts", "notification_channel_records"
+]);
+
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {
     if (!becca.loaded) {
         return;
     }
 
-    if (["notes", "branches", "attributes", "etapi_tokens", "options"].includes(entityName)) {
+    if (BECCA_SYNCED_ENTITIES.has(entityName)) {
         const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
         const primaryKeyName = EntityClass.primaryKeyName;
 
@@ -332,6 +377,8 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENT
         attributeDeleted(entityId);
     } else if (entityName === "etapi_tokens") {
         etapiTokenDeleted(entityId);
+    } else if (entityName === "notifications") {
+        becca.removeNotification(entityId);
     }
 });
 

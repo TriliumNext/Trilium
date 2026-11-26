@@ -9,6 +9,82 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // The tables of notifications: four that sync and the local one of deliveries. The statements
+    // are those of schema.sql.
+    {
+        version: 245,
+        sql: /*sql*/`
+            CREATE TABLE IF NOT EXISTS "notifications"
+            (
+                notificationId TEXT NOT NULL PRIMARY KEY,
+                id TEXT NOT NULL,
+                raisedAt TEXT NOT NULL,
+                tag TEXT,
+                noteId TEXT,
+                category TEXT NOT NULL,
+                type TEXT NOT NULL,
+                attentionLevel TEXT NOT NULL,
+                isSensitive INT NOT NULL DEFAULT 0,
+                producer TEXT NOT NULL,
+                content TEXT NOT NULL,
+                utcDateCreated TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS IDX_notifications_id ON notifications (id);
+            CREATE INDEX IF NOT EXISTS IDX_notifications_tag ON notifications (tag);
+            CREATE INDEX IF NOT EXISTS IDX_notifications_noteId ON notifications (noteId);
+
+            CREATE TABLE IF NOT EXISTS "notification_marks"
+            (
+                markId TEXT NOT NULL PRIMARY KEY,
+                notificationId TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                utcDateCreated TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS IDX_notification_marks_notificationId
+                ON notification_marks (notificationId);
+
+            CREATE TABLE IF NOT EXISTS "notification_private_texts"
+            (
+                notificationId TEXT NOT NULL PRIMARY KEY,
+                content TEXT NOT NULL,
+                utcDateCreated TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS "notification_channel_records"
+            (
+                recordId TEXT NOT NULL PRIMARY KEY,
+                channelId TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                content TEXT NOT NULL,
+                utcDateCreated TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS IDX_notification_channel_records_channelId
+                ON notification_channel_records (channelId);
+
+            CREATE TABLE IF NOT EXISTS "notification_deliveries"
+            (
+                deliveryKey TEXT NOT NULL PRIMARY KEY,
+                notificationId TEXT NOT NULL,
+                channelId TEXT NOT NULL,
+                activationId TEXT NOT NULL,
+                revision TEXT NOT NULL,
+                configurationId TEXT,
+                graceTime INT NOT NULL,
+                dueAt TEXT NOT NULL,
+                status TEXT NOT NULL,
+                reason TEXT,
+                attempts INT NOT NULL DEFAULT 0,
+                nextAttemptAt TEXT,
+                isPublicOnly INT NOT NULL DEFAULT 0,
+                profiles TEXT,
+                utcDateCreated TEXT NOT NULL,
+                utcDateFinished TEXT
+            );
+        `
+    },
     // Sessions carry the kind of login that made them, and one without a kind passes no route,
     // so every user logs in again instead of seeing refused requests.
     {

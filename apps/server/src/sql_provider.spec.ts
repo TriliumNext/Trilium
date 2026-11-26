@@ -89,11 +89,25 @@ describe("BetterSqlite3Provider", () => {
         }
     });
 
+    it("serializes the database into bytes that another provider loads", () => {
+        const provider = new BetterSqlite3Provider();
+        provider.loadFromMemory();
+        provider.exec("CREATE TABLE t (v TEXT); INSERT INTO t (v) VALUES ('copied');");
+
+        const copy = new BetterSqlite3Provider();
+        copy.loadFromBuffer(provider.serialize() as NonSharedBuffer);
+
+        expect((copy.prepare("SELECT v FROM t") as any).get()).toEqual({ v: "copied" });
+        provider.close();
+        copy.close();
+    });
+
     it("throws 'DB not open' for prepare/transaction/inTransaction before a DB is loaded", () => {
         const provider = new BetterSqlite3Provider();
         expect(() => provider.prepare("SELECT 1")).toThrow("DB not open");
         expect(() => provider.transaction(() => undefined)).toThrow("DB not open");
         expect(() => provider.inTransaction).toThrow("DB not open");
+        expect(() => provider.serialize()).toThrow("DB not open");
         // exec/close are no-ops when no connection is open.
         expect(() => provider.exec("SELECT 1")).not.toThrow();
         expect(() => provider.close()).not.toThrow();

@@ -5,7 +5,7 @@ import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import type { default as FNote, FNoteRow } from "../entities/fnote.js";
-import type { EntityChange } from "../server_types.js";
+import type { EntityChange, EntityType } from "../server_types.js";
 import froca from "./froca.js";
 import { invalidateNoteImages } from "./image_urls.js";
 import LoadResults from "./load_results.js";
@@ -40,6 +40,8 @@ async function processEntityChanges(changes: EntityChange[]) {
                 processAttachment(loadResults, ec);
             } else if (ec.entityName === "blobs") {
                 // NOOP - these entities are handled at the backend level and don't require frontend processing
+            } else if (NOTIFICATION_ENTITY_NAMES.has(ec.entityName)) {
+                // NOOP - notifications are not part of froca
             } else if (ec.entityName === "etapi_tokens") {
                 loadResults.hasEtapiTokenChanges = true;
             } else {
@@ -377,6 +379,11 @@ function getImageNoteIds(entityChanges: EntityChange[]) {
     }
     return noteIds;
 }
+
+const NOTIFICATION_ENTITY_NAMES = new Set<EntityType>([
+    "notifications", "notification_marks", "notification_private_texts",
+    "notification_channel_records"
+]);
 
 export default {
     processEntityChanges

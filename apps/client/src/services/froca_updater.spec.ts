@@ -57,6 +57,15 @@ describe("froca_updater - empty / no-op handling", () => {
         expect(invalidateSpy).not.toHaveBeenCalled();
     });
 
+    it("takes the changes of the four tables of notifications without an event", async () => {
+        const entityNames = [
+            "notifications", "notification_marks", "notification_private_texts",
+            "notification_channel_records"
+        ] as const;
+        await process(entityNames.map((entityName) => ec({ entityName, entityId: "n" })));
+        expect(triggerSpy).not.toHaveBeenCalled();
+    });
+
     it("throws a wrapped error for an unknown entityName", async () => {
         await expect(process([ec({ entityName: "weird" as any, entityId: "z" })]))
             .rejects.toThrow(/Unknown entityName 'weird'/);

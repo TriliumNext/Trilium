@@ -10,6 +10,15 @@ import blobService from "./blob.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
 import {
+    checkSyncedChange,
+    getOwnerNotificationId,
+    isNotificationEntityName
+} from "./notifications/model.js";
+import {
+    deleteParts as deleteNotificationParts,
+    isErased as isNotificationErased
+} from "./notifications/store.js";
+import {
     getDefaultOptionSyncedFlag,
     isDeviceOption as isDeviceOptionName
 } from "./options_init.js";
@@ -76,6 +85,17 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
         return;
     }
 
+    if (isNotificationEntityName(remoteEC.entityName)) {
+        const code = checkSyncedChange(
+            remoteEC.entityName, remoteEC.entityId, !!remoteEC.isErased, remoteEntityRow);
+        if (code) {
+            // The key comes from the peer, so it is escaped and cut.
+            getLog().error(`Skipped a synced change of ${remoteEC.entityName} `
+                + `${JSON.stringify(remoteEC.entityId.substring(0, 40))}: ${code}.`);
+            return;
+        }
+    }
+
     const updated = remoteEC.entityName === "note_reordering"
         ? updateNoteReordering(remoteEC, remoteEntityRow, instanceId)
         : updateNormalEntity(remoteEC, remoteEntityRow, instanceId, updateContext);
@@ -133,6 +153,26 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
             : incomingEC.utcDateChanged
     };
     const localEC = getSql().getRow<EntityChange | undefined>(/*sql*/`SELECT * FROM entity_changes WHERE entityName = ? AND entityId = ?`, [remoteEC.entityName, remoteEC.entityId]);
+
+    if (localEC && ERASURE_WINS.has(remoteEC.entityName)) {
+        if (localEC.isErased && !remoteEC.isErased) {
+            // The sender still has the row, so the erasure is queued again to reach it.
+            entityChangesService.putEntityChangeForOtherInstances(localEC);
+            return false;
+        }
+        if (remoteEC.isErased && !localEC.isErased) {
+            eraseEntity(remoteEC);
+            entityChangesService.putEntityChangeWithInstanceId(remoteEC, instanceId);
+            updateContext.erased++;
+            return true;
+        }
+    }
+    if (NOTIFICATION_PARTS.has(remoteEC.entityName)
+        && isNotificationErased(getOwnerNotificationId(remoteEC.entityId))) {
+        // What belongs to an erased notification is not stored.
+        return false;
+    }
+
     const localECIsFromTheFuture = !!localEC?.utcDateChanged && localEC.utcDateChanged > now;
     const localECIsOlderOrSameAsRemote = localEC && (localECIsFromTheFuture
         || (localEC.utcDateChanged && remoteEC.utcDateChanged && localEC.utcDateChanged <= remoteEC.utcDateChanged));
@@ -183,6 +223,11 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
 
     return false;
 }
+
+/** Entities whose erasure is final: it wins against every write, whatever the dates. */
+const ERASURE_WINS = new Set([ "notifications" ]);
+/** Rows that belong to a notification. Their ID starts with the ID of the notification. */
+const NOTIFICATION_PARTS = new Set([ "notification_marks", "notification_private_texts" ]);
 
 const columnsByTable = new Map<string, Set<string>>();
 
@@ -302,7 +347,9 @@ function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow
 function eraseEntity(entityChange: EntityChange) {
     const { entityName, entityId } = entityChange;
 
-    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs"];
+    const entityNames = [
+        "notes", "branches", "attributes", "revisions", "attachments", "blobs", "notifications"
+    ];
 
     if (!entityNames.includes(entityName)) {
         getLog().error(`Cannot erase ${entityName} '${entityId}'.`);
@@ -312,6 +359,10 @@ function eraseEntity(entityChange: EntityChange) {
     const primaryKeyName = entity_constructor.getEntityFromEntityName(entityName).primaryKeyName;
 
     getSql().execute(/*sql*/`DELETE FROM ${entityName} WHERE ${primaryKeyName} = ?`, [entityId]);
+
+    if (entityName === "notifications") {
+        deleteNotificationParts([ entityId ]);
+    }
 }
 
 function logUpdateContext(updateContext: UpdateContext) {

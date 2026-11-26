@@ -128,6 +128,10 @@ const ORDERING: Record<string, number> = {
     attachments: 3,
     notes: 1,
     options: 0,
+    notifications: 2,
+    notification_marks: 3,
+    notification_private_texts: 3,
+    notification_channel_records: 2
 };
 
 /**

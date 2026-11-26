@@ -2,6 +2,7 @@ import type {
     EntityChange,
     EntityChangeRecord,
     EntityRow,
+    NotificationRow,
     OptionNames,
     OptionRow
 } from "@triliumnext/commons";
@@ -12,8 +13,11 @@ import contentHashService from "./content_hash.js";
 import * as cls from "./context.js";
 import { getCrypto } from "./encryption/crypto.js";
 import events from "./events.js";
+import getInstanceId from "./instance_id.js";
 import { getLog } from "./log.js";
 import notes from "./notes.js";
+import { formatUtcDateTime, getMarkId, getNotificationId } from "./notifications/model.js";
+import * as notificationStore from "./notifications/store.js";
 import optionService from "./options.js";
 import { getDefaultOptionSyncedFlag, isDeviceOption } from "./options_init.js";
 import { getSql } from "./sql/index.js";
@@ -532,6 +536,234 @@ describe("sync_update service (real DB)", () => {
         });
     });
 });
+
+describe("sync_update of notifications", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    const SEALED = JSON.stringify({ v: 1, title: "AAAA" });
+
+    it("refuses a write of an erased notification, however late, sending the erasure back", () => {
+        const row = storedNotification();
+        cls.init(() => notificationStore.eraseNotifications([ row.notificationId ]));
+        const erasure = localChange("notifications", row.notificationId);
+
+        apply([ notificationRecord(row, { utcDateChanged: FUTURE }) ]);
+
+        expect(getSql().getValue("SELECT COUNT(*) FROM notifications WHERE notificationId = ?",
+            [ row.notificationId ])).toBe(0);
+        expect(becca.getNotification(row.notificationId)).toBeNull();
+        const requeued = localChange("notifications", row.notificationId);
+        expect(requeued).toMatchObject({
+            isErased: 1, hash: erasure?.hash, utcDateChanged: erasure?.utcDateChanged,
+            instanceId: getInstanceId()
+        });
+        expect(requeued?.id).toBeGreaterThan(erasure?.id ?? 0);
+        expect(requeued?.changeId).not.toBe(erasure?.changeId);
+    });
+
+    it("applies an erasure older than the local write, with the marks and the private text", () => {
+        const emitSpy = vi.spyOn(events, "emit");
+        const row = storedNotification();
+        cls.init(() => {
+            notificationStore.writeMark(row.notificationId, "read");
+            notificationStore.writePrivateText(row.notificationId, SEALED);
+        });
+
+        apply([ erasureRecord(row.notificationId, PAST) ], "remoteInstE");
+
+        expect(localChange("notifications", row.notificationId)).toMatchObject({
+            isErased: 1, utcDateChanged: PAST, instanceId: "remoteInstE"
+        });
+        expect(becca.getNotification(row.notificationId)).toBeNull();
+        expect(becca.getNotificationMark(getMarkId(row.notificationId, "read"))).toBeNull();
+        expect(becca.getNotificationPrivateText(row.notificationId)).toBeNull();
+        expect(localChange("notification_marks", getMarkId(row.notificationId, "read"))).toBeNull();
+        expect(localChange("notification_private_texts", row.notificationId)).toBeNull();
+        expect(getSql().getValue(
+            "SELECT COUNT(*) FROM notification_private_texts WHERE notificationId = ?",
+            [ row.notificationId ])).toBe(0);
+        expect(emitSpy).toHaveBeenCalledWith(events.ENTITY_DELETE_SYNCED,
+            { entityName: "notifications", entityId: row.notificationId });
+    });
+
+    it("resolves two erasures by their dates", () => {
+        const row = storedNotification();
+        cls.init(() => notificationStore.eraseNotifications([ row.notificationId ]));
+        const erasure = localChange("notifications", row.notificationId);
+
+        apply([ erasureRecord(row.notificationId, PAST, erasure?.hash) ], "remoteInstOld");
+        expect(localChange("notifications", row.notificationId)).toEqual(erasure);
+
+        apply([ erasureRecord(row.notificationId, FUTURE) ], "remoteInstNew");
+        expect(localChange("notifications", row.notificationId)).toMatchObject({
+            isErased: 1, hash: "remote-hash", instanceId: "remoteInstNew"
+        });
+    });
+
+    it("stores the erasure of a notification it never held, deleting what waited for it", () => {
+        const row = newRow();
+        apply([
+            markRecord(row.notificationId, "seen"),
+            privateTextRecord(row.notificationId, SEALED)
+        ]);
+        expect(becca.getNotificationMark(getMarkId(row.notificationId, "seen"))).not.toBeNull();
+        expect(becca.getNotificationPrivateText(row.notificationId)?.content).toBe(SEALED);
+
+        apply([ erasureRecord(row.notificationId, PAST) ]);
+
+        expect(localChange("notifications", row.notificationId)?.isErased).toBe(1);
+        expect(becca.getNotificationMark(getMarkId(row.notificationId, "seen"))).toBeNull();
+        expect(localChange("notification_marks", getMarkId(row.notificationId, "seen"))).toBeNull();
+        expect(localChange("notification_private_texts", row.notificationId)).toBeNull();
+    });
+
+    it("keeps a mark and a private text that arrive before their notification", () => {
+        const row = newRow();
+        const stateOf = () => cls.init(() => notificationStore.getView())
+            .filter((entry) => entry.row.notificationId === row.notificationId)
+            .map(({ state }) => state);
+        apply([ markRecord(row.notificationId, "read") ]);
+        apply([ privateTextRecord(row.notificationId, SEALED) ]);
+        expect(stateOf()).toEqual([]);
+
+        apply([ notificationRecord(row) ]);
+
+        expect(stateOf()).toEqual([ "read" ]);
+        expect(becca.getNotificationPrivateText(row.notificationId)?.content).toBe(SEALED);
+    });
+
+    it("stores no mark and no private text of an erased notification", () => {
+        const row = storedNotification();
+        cls.init(() => notificationStore.eraseNotifications([ row.notificationId ]));
+
+        apply([
+            markRecord(row.notificationId, "read"),
+            privateTextRecord(row.notificationId, SEALED)
+        ]);
+
+        expect(localChange("notification_marks", getMarkId(row.notificationId, "read"))).toBeNull();
+        expect(localChange("notification_private_texts", row.notificationId)).toBeNull();
+        expect(becca.getNotificationMark(getMarkId(row.notificationId, "read"))).toBeNull();
+    });
+
+    it("skips a change that fails its checks, logged by its key, and applies the rest", () => {
+        const errorSpy = vi.spyOn(getLog(), "error");
+        const valid = newRow();
+        const hostileKey = `${"k".repeat(60)}\n"injected`;
+
+        apply([
+            notificationRecord({ ...newRow(), id: "an id with spaces" }),
+            notificationRecord(newRow(), { entityId: valid.notificationId }),
+            { entityChange: buildEC({ entityName: "notifications", entityId: hostileKey }) },
+            { entityChange: buildEC({
+                entityName: "notification_marks", entityId: getMarkId(valid.notificationId, "read"),
+                isErased: true
+            }) },
+            notificationRecord(valid)
+        ]);
+
+        expect(becca.getNotification(valid.notificationId)).not.toBeNull();
+        expect(getSql().getValue(
+            "SELECT COUNT(*) FROM notifications WHERE id = 'an id with spaces'")).toBe(0);
+        const lines = errorSpy.mock.calls.map(([ line ]) => String(line));
+        expect(lines.filter((line) => line.startsWith("Skipped a synced change of "))
+            .map((line) => line.split(": ").at(-1))).toEqual([
+            "invalid-row.", "invalid-key.", "missing-row.", "erasure-refused."
+        ]);
+        expect(lines).toContain(`Skipped a synced change of notifications ${
+            JSON.stringify(hostileKey.substring(0, 40))}: missing-row.`);
+        expect(lines.some((line) => line.includes("injected"))).toBe(false);
+    });
+
+    let notificationCounter = 0;
+
+    /** A valid row of a new generation, an hour old. */
+    function newRow(): NotificationRow {
+        const id = `spec:sync:${++notificationCounter}`;
+        const timeMs = Date.now() - 60 * 60 * 1000;
+        const at = formatUtcDateTime(timeMs);
+        return {
+            notificationId: getNotificationId(id, timeMs),
+            id,
+            raisedAt: at,
+            tag: null,
+            noteId: null,
+            category: "general",
+            type: "standard",
+            attentionLevel: "low",
+            isSensitive: false,
+            producer: "client",
+            content: JSON.stringify({ v: 1, title: "Title" }),
+            utcDateCreated: at,
+            utcDateModified: at
+        };
+    }
+
+    /** A generation that this instance raised, rewritten now so that its last write is now. */
+    function storedNotification() {
+        const { id, raisedAt, tag, noteId, category, type, attentionLevel, isSensitive, producer,
+            content } = newRow();
+        const input = {
+            id, raisedAt, tag, noteId, category, type, attentionLevel, isSensitive, producer,
+            content
+        };
+        return cls.init(() => {
+            const notification = notificationStore.raise(input).notification;
+            if (!notification) {
+                throw new Error("not raised");
+            }
+            return notificationStore.rewrite(notification, {}).getPojo();
+        });
+    }
+
+    function notificationRecord(row: NotificationRow, ec: Partial<EntityChange> = {}) {
+        return {
+            entityChange: buildEC({
+                entityName: "notifications", entityId: row.notificationId, ...ec
+            }),
+            entity: { ...row, isSensitive: row.isSensitive ? 1 : 0 } as unknown as EntityRow
+        };
+    }
+
+    /** An erasure as a peer sends it: `isErased` is a number, as SQLite stores it. */
+    function erasureRecord(notificationId: string, utcDateChanged: string, hash = "remote-hash") {
+        return {
+            entityChange: buildEC({
+                entityName: "notifications", entityId: notificationId, isErased: 1, hash,
+                utcDateChanged
+            })
+        };
+    }
+
+    function markRecord(notificationId: string, kind: "seen" | "read") {
+        const markId = getMarkId(notificationId, kind);
+        return {
+            entityChange: buildEC({ entityName: "notification_marks", entityId: markId }),
+            entity: {
+                markId, notificationId, kind, utcDateCreated: dateUtils.utcNowDateTime()
+            } as unknown as EntityRow
+        };
+    }
+
+    function privateTextRecord(notificationId: string, content: string) {
+        const now = dateUtils.utcNowDateTime();
+        return {
+            entityChange: buildEC({
+                entityName: "notification_private_texts", entityId: notificationId
+            }),
+            entity: {
+                notificationId, content, utcDateCreated: now, utcDateModified: now
+            } as unknown as EntityRow
+        };
+    }
+});
+
+/** The stored entity change of an entity, or `null`. */
+function localChange(entityName: string, entityId: string) {
+    return getSql().getRowOrNull<EntityChange & { id: number }>(
+        "SELECT * FROM entity_changes WHERE entityName = ? AND entityId = ?",
+        [ entityName, entityId ]);
+}
 
 /** A sync peer's option row, dated now so that it overwrites the stored one. */
 function optionRecord(

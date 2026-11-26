@@ -3,6 +3,10 @@ import type { EntityChange } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import BNotification from "../becca/entities/bnotification.js";
+import BNotificationChannelRecord from "../becca/entities/bnotification_channel_record.js";
+import BNotificationMark from "../becca/entities/bnotification_mark.js";
+import BNotificationPrivateText from "../becca/entities/bnotification_private_text.js";
 import dateUtils from "./utils/date.js";
 import entityChangesService from "./entity_changes.js";
 import events from "./events.js";
@@ -262,6 +266,44 @@ describe("entity_changes service (real DB)", () => {
                 "SELECT COUNT(1) FROM entity_changes WHERE entityName = 'blobs' AND isSynced = 0"
             );
             expect(unsyncedBlobs).toBe(0);
+        });
+
+        it("rebuilds the entity changes of the four tables of notifications from becca", () => {
+            const at = "2026-11-27 12:00:00.000Z";
+            const later = "2026-11-27 13:00:00.000Z";
+            const entities = getContext().init(() => [
+                new BNotification({
+                    notificationId: "fillSpec0000000000001", id: "spec:fill", raisedAt: at,
+                    tag: null, noteId: null, category: "general", type: "standard",
+                    attentionLevel: "low", isSensitive: false, producer: "client",
+                    content: JSON.stringify({ v: 1 }), utcDateCreated: at, utcDateModified: later
+                }).save(),
+                new BNotificationMark({
+                    markId: "fillSpec0000000000001s", notificationId: "fillSpec0000000000001",
+                    kind: "seen", utcDateCreated: at
+                }).save(),
+                new BNotificationPrivateText({
+                    notificationId: "fillSpec0000000000001", content: JSON.stringify({ v: 1 }),
+                    utcDateCreated: at, utcDateModified: later
+                }).save(),
+                new BNotificationChannelRecord({
+                    recordId: "fillSpecRecord1", channelId: "fillSpecChannel1", kind: "status",
+                    content: "{}", utcDateCreated: at, utcDateModified: later
+                }).save()
+            ]);
+
+            getContext().init(() => entityChangesService.fillAllEntityChanges());
+
+            for (const [ entityName, entityId, entity, date ] of [
+                [ "notifications", "fillSpec0000000000001", entities[0], later ],
+                [ "notification_marks", "fillSpec0000000000001s", entities[1], at ],
+                [ "notification_private_texts", "fillSpec0000000000001", entities[2], later ],
+                [ "notification_channel_records", "fillSpecRecord1", entities[3], later ]
+            ] as const) {
+                expect(readRow(entityName, entityId), entityName).toMatchObject({
+                    hash: entity.generateHash(), isErased: 0, isSynced: 1, utcDateChanged: date
+                });
+            }
         });
     });
 
