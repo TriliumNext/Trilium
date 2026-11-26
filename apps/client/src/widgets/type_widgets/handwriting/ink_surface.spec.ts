@@ -10,9 +10,11 @@ describe("ink surface input", () => {
     const onStateChange = vi.fn();
     /** `[x, y, width, height, globalAlpha]` of each `fillRect()` call on any canvas. */
     const fillRects: number[][] = [];
+    /** The `fillStyle` of each `fill()` call on any canvas. */
+    const fills: unknown[] = [];
 
     beforeEach(() => {
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects));
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects, fills));
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
         Element.prototype.setPointerCapture ??= () => {};
@@ -324,6 +326,40 @@ describe("ink surface input", () => {
         expect(new Set(straight.slice(0, turn + 2).filter((_, index) => index % 2))).toEqual(new Set([ 100 ]));
     });
 
+    it("draws the ink and the paper again in the colors of a new theme", async () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        container.style.color = "rgb(0, 0, 0)";
+        container.style.backgroundColor = "rgb(255, 255, 255)";
+        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange });
+        const stroke = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
+            points: [ 10, 10, 0.5, 60, 10, 0.5 ], order: 0
+        });
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [ stroke ] });
+        expect(fills).toContain("rgb(0, 0, 0)");
+
+        container.style.color = "rgb(240, 240, 240)";
+        container.style.backgroundColor = "rgb(20, 20, 20)";
+        fills.length = 0;
+        fillRects.length = 0;
+        surface.refreshTheme();
+        expect(fills).toEqual([ "rgb(240, 240, 240)" ]);
+        expect(fillRects[0]).toEqual([ 0, 0, 400, 300, 1 ]);
+
+        // The stroke being drawn takes the new color as well.
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
+        pointer("pointerdown", "pen", 1, 100);
+        pointer("pointermove", "pen", 1, 140);
+        await nextFrame();
+        container.style.color = "rgb(200, 0, 0)";
+        fills.length = 0;
+        surface.refreshTheme();
+        await nextFrame();
+        expect(fills).toContain("rgb(200, 0, 0)");
+        expect(fills).not.toContain("rgb(240, 240, 240)");
+    });
+
     function swipe(type: string, pointerId: number, y: number, buttons = 1) {
         pointer("pointerdown", type, pointerId, y, 50, buttons);
         pointer("pointermove", type, pointerId, y + 20, 50, buttons);
@@ -341,13 +377,14 @@ describe("ink surface input", () => {
 
 /**
  * A 2D context whose methods do nothing, as happy-dom draws no canvas, except that `fillRect()`
- * calls are recorded in `fillRects`.
+ * calls are recorded in `fillRects` and the `fillStyle` of `fill()` calls in `fills`.
  */
-function stubContext(fillRects: number[][]) {
+function stubContext(fillRects: number[][], fills: unknown[]) {
     const target: Record<string | symbol, unknown> = { globalAlpha: 1 };
     target.fillRect = (x: number, y: number, width: number, height: number) => {
         fillRects.push([ x, y, width, height, target.globalAlpha as number ]);
     };
+    target.fill = () => fills.push(target.fillStyle);
     return new Proxy(target, {
         get: (object, key) => (key in object ? object[key] : (object[key] = () => {})),
         set: (object, key, value) => {

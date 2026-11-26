@@ -12,6 +12,7 @@ import { isIOS } from "../../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen } from "../../react/hooks/dom";
 import { type SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useTriliumEvent } from "../../react/hooks/events";
 import { useTriliumOptionBool } from "../../react/hooks/options";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
@@ -192,6 +193,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.readOnly = isReadOnly;
         surface.fingerDrawing = fingerDrawing;
     }, [ tool, color, size, isReadOnly, fingerDrawing ]);
+
+    useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
     function updateInk(changes: Partial<InkSettings>) {
         if (!inkTool) return;

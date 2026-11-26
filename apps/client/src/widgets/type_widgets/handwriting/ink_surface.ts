@@ -369,6 +369,13 @@ export default class InkSurface {
         return this.paper;
     }
 
+    /** Draws the paper, the strokes and the stroke being drawn again, in the current theme's colors. */
+    refreshTheme() {
+        this.cancelZoomPreview();
+        this.redrawAll();
+        this.redrawLiveStroke();
+    }
+
     setPaper(paper: PaperStyle) {
         if (paper === this.paper) return;
         this.paper = paper;
