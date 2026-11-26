@@ -6,9 +6,11 @@ describe("ink surface input", () => {
     let container: HTMLDivElement;
     let surface: InkSurface;
     const onChange = vi.fn();
+    /** `[x, y, width, height, globalAlpha]` of each `fillRect()` call on any canvas. */
+    const fillRects: number[][] = [];
 
     beforeEach(() => {
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext());
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects));
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
         Element.prototype.setPointerCapture ??= () => {};
@@ -29,7 +31,7 @@ describe("ink surface input", () => {
         swipe("touch", 1, 100);
         await nextFrame();
         expect(onChange).not.toHaveBeenCalled();
-        expect(container.style.getPropertyValue("--ink-y")).toBe("40px");
+        expect(surface.getView().y).toBe(40);
 
         surface.fingerDrawing = true;
         swipe("touch", 2, 100);
@@ -50,7 +52,7 @@ describe("ink surface input", () => {
         await nextFrame();
         // 10 px from the palm before the pen landed and 50 px from the new finger, none from the
         // palm's move while it was ignored.
-        expect(container.style.getPropertyValue("--ink-y")).toBe("60px");
+        expect(surface.getView().y).toBe(60);
     });
 
     it("keeps a pen stroke when fingers touch the screen while it is drawn", () => {
@@ -61,6 +63,28 @@ describe("ink surface input", () => {
         pointer("pointermove", "pen", 1, 140);
         pointer("pointerup", "pen", 1, 140);
         expect(onChange).toHaveBeenCalledOnce();
+    });
+
+    it("draws each line of the paper where the view puts it, rounded on its own", async () => {
+        const lines = (calls: number[][]) => calls
+            .filter(([ , , width, height, alpha ]) => width === 400 && height === 1 && alpha < 1)
+            .map(([ , y ]) => y);
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        fillRects.length = 0;
+        surface.load({ paper: "ruled", strokes: [] });
+        expect(lines(fillRects)).toEqual([ 0, 32, 64, 96, 128, 160, 192, 224, 256, 288 ]);
+
+        // Zooming to 70% around the middle puts the origin at (60, 45) and the lines 22.4 px apart.
+        surface.zoomBy(0.7);
+        fillRects.length = 0;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const zoomed = lines(fillRects);
+        expect(zoomed.slice(0, 4)).toEqual([ 0, 23, 45, 67 ]);
+        expect(zoomed).toContain(269);
+        // The preview frame and the settled redraw both draw them, at the same positions.
+        expect(new Set(zoomed).size).toBe(14);
     });
 
     function swipe(type: string, pointerId: number, y: number) {
@@ -78,9 +102,15 @@ describe("ink surface input", () => {
     }
 });
 
-/** A 2D context whose every method does nothing, as happy-dom draws no canvas. */
-function stubContext() {
-    const target: Record<string | symbol, unknown> = {};
+/**
+ * A 2D context whose methods do nothing, as happy-dom draws no canvas, except that `fillRect()`
+ * calls are recorded in `fillRects`.
+ */
+function stubContext(fillRects: number[][]) {
+    const target: Record<string | symbol, unknown> = { globalAlpha: 1 };
+    target.fillRect = (x: number, y: number, width: number, height: number) => {
+        fillRects.push([ x, y, width, height, target.globalAlpha as number ]);
+    };
     return new Proxy(target, {
         get: (object, key) => (key in object ? object[key] : (object[key] = () => {})),
         set: (object, key, value) => {

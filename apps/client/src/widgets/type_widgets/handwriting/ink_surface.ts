@@ -45,6 +45,11 @@ const SETTLE_OVERLAP = 8;
 const WARM_BATCH = 2000;
 /** How long after the last zoom step the strokes are drawn again at the new scale, in ms. */
 const ZOOM_SETTLE_DELAY = 150;
+/** The spacing of the paper's lines and of its grid, in world units. */
+const RULED_STEP = 32;
+const GRID_STEP = 24;
+/** The opacity of the paper's lines over the background, in the text color. */
+const PAPER_LINE_ALPHA = 0.16;
 
 /**
  * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
@@ -95,6 +100,7 @@ export default class InkSurface {
     private previewFrame: number | undefined;
     private settleTimer: ReturnType<typeof setTimeout> | undefined;
     private autoColor = "#000";
+    private backgroundColor = "#fff";
 
     private mode: Mode = "idle";
     private activePointerId: number | undefined;
@@ -128,7 +134,7 @@ export default class InkSurface {
         container.append(this.liveLayer);
         this.settledCanvas = this.createCanvas(this.liveLayer);
         this.liveCanvas = this.createCanvas(this.liveLayer);
-        this.base = getContext(this.baseCanvas);
+        this.base = getContext(this.baseCanvas, { alpha: false });
         this.settled = getContext(this.settledCanvas);
         this.live = getContext(this.liveCanvas);
 
@@ -146,7 +152,6 @@ export default class InkSurface {
         this.resizeObserver = new ResizeObserver(() => this.resize());
         this.resizeObserver.observe(container);
         this.resize();
-        this.syncPaper();
     }
 
     destroy() {
@@ -171,7 +176,6 @@ export default class InkSurface {
         this.paper = doc.paper;
         this.undoStack = [];
         this.redoStack = [];
-        this.syncPaper();
         this.cancelZoomPreview();
         this.redrawAll();
         this.reportState();
@@ -199,6 +203,11 @@ export default class InkSurface {
         return serializeInkDocument(this.paper, this.strokes);
     }
 
+    /** The zoom, and the position of the world origin in the container, in CSS pixels. */
+    getView() {
+        return { zoom: this.zoom, x: this.tx / this.dpr, y: this.ty / this.dpr };
+    }
+
     getPaper() {
         return this.paper;
     }
@@ -206,7 +215,8 @@ export default class InkSurface {
     setPaper(paper: PaperStyle) {
         if (paper === this.paper) return;
         this.paper = paper;
-        this.syncPaper();
+        this.cancelZoomPreview();
+        this.redrawAll();
         this.options.onChange();
     }
 
@@ -575,7 +585,6 @@ export default class InkSurface {
         this.tx = Math.round(deviceX - (deviceX - this.tx) * applied);
         this.ty = Math.round(deviceY - (deviceY - this.ty) * applied);
         this.zoom = zoom;
-        this.syncPaper();
         this.schedulePreviewFrame();
         this.redrawLiveStroke();
         this.reportState();
@@ -613,7 +622,6 @@ export default class InkSurface {
 
         this.tx += wholeX;
         this.ty += wholeY;
-        this.syncPaper();
         this.redrawLiveStroke();
 
         const { width, height } = this.baseCanvas;
@@ -655,19 +663,9 @@ export default class InkSurface {
             canvas.width = width;
             canvas.height = height;
         }
-        this.syncPaper();
         this.cancelZoomPreview();
         this.redrawAll();
         this.redrawLiveStroke();
-    }
-
-    /** Positions the paper pattern, which is a CSS background of the container. */
-    private syncPaper() {
-        const { style, dataset } = this.container;
-        dataset.paper = this.paper;
-        style.setProperty("--ink-zoom", String(this.zoom));
-        style.setProperty("--ink-x", `${this.tx / this.dpr}px`);
-        style.setProperty("--ink-y", `${this.ty / this.dpr}px`);
     }
 
     private reportState() {
@@ -727,7 +725,7 @@ export default class InkSurface {
         const { width, height } = this.baseCanvas;
         this.base.save();
         this.base.setTransform(1, 0, 0, 1, 0, 0);
-        this.base.clearRect(0, 0, width, height);
+        this.drawPaper(0, 0, width, height);
         this.base.drawImage(
             preview.snapshot,
             this.tx - preview.tx * scale,
@@ -752,7 +750,9 @@ export default class InkSurface {
     }
 
     private redrawAll() {
-        this.autoColor = getComputedStyle(this.container).color;
+        const style = getComputedStyle(this.container);
+        this.autoColor = style.color;
+        this.backgroundColor = style.backgroundColor;
         this.redrawRegion(0, 0, this.baseCanvas.width, this.baseCanvas.height);
     }
 
@@ -780,7 +780,7 @@ export default class InkSurface {
         ctx.beginPath();
         ctx.rect(x, y, width, height);
         ctx.clip();
-        ctx.clearRect(x, y, width, height);
+        this.drawPaper(x, y, width, height);
         this.applyWorldTransform(ctx);
 
         const strokes = this.index.query({
@@ -793,6 +793,55 @@ export default class InkSurface {
             this.fillStroke(ctx, stroke);
         }
         ctx.restore();
+    }
+
+    /**
+     * Fills a rectangle of the base canvas, in device pixels, with the background and the paper's
+     * lines. Each line is placed from the view's transform and rounded to a whole device pixel on
+     * its own, so the lines stay sharp and in line with the strokes at any zoom.
+     */
+    private drawPaper(x: number, y: number, width: number, height: number) {
+        const ctx = this.base;
+        ctx.fillStyle = this.backgroundColor;
+        ctx.fillRect(x, y, width, height);
+        if (this.paper === "blank") return;
+
+        const scale = this.zoom * this.dpr;
+        const thickness = Math.max(1, Math.round(this.dpr));
+        const lines = (offset: number, from: number, length: number, step: number) => {
+            const positions: number[] = [];
+            const first = Math.ceil((from - thickness - offset) / step);
+            for (let k = first; offset + k * step < from + length; k++) {
+                positions.push(Math.round(offset + k * step));
+            }
+            return positions;
+        };
+
+        ctx.fillStyle = this.autoColor;
+        ctx.globalAlpha = PAPER_LINE_ALPHA;
+        if (this.paper === "ruled") {
+            for (const py of lines(this.ty, y, height, RULED_STEP * scale)) {
+                ctx.fillRect(x, py, width, thickness);
+            }
+        } else if (this.paper === "grid") {
+            const step = GRID_STEP * scale;
+            for (const py of lines(this.ty, y, height, step)) {
+                ctx.fillRect(x, py, width, thickness);
+            }
+            for (const px of lines(this.tx, x, width, step)) {
+                ctx.fillRect(px, y, thickness, height);
+            }
+        } else {
+            const step = GRID_STEP * scale;
+            const dot = thickness * 2;
+            const rows = lines(this.ty, y, height, step);
+            for (const px of lines(this.tx, x, width, step)) {
+                for (const py of rows) {
+                    ctx.fillRect(px, py, dot, dot);
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
     }
 
     private applyWorldTransform(ctx: CanvasRenderingContext2D) {
@@ -830,8 +879,8 @@ export default class InkSurface {
     //#endregion
 }
 
-function getContext(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext("2d");
+function getContext(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext2DSettings) {
+    const ctx = canvas.getContext("2d", settings);
     if (!ctx) throw new Error("The 2D canvas context is not available.");
     return ctx;
 }

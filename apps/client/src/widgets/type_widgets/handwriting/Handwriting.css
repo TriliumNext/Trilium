@@ -4,20 +4,19 @@
     height: 100%;
     overflow: hidden;
 
-    .handwriting-surface {
-        --ink-zoom: 1;
-        --ink-x: 0px;
-        --ink-y: 0px;
-        --ink-line: color-mix(in srgb, currentColor 16%, transparent);
-        --ink-ruled-step: calc(32px * var(--ink-zoom));
-        --ink-grid-step: calc(24px * var(--ink-zoom));
+    &.handwriting-page-fullscreen {
+        position: fixed;
+        inset: 0;
+        /* Above the panes of the app and below Bootstrap's modal backdrop (1050). */
+        z-index: 1040;
+    }
 
+    .handwriting-surface {
         position: absolute;
         inset: 0;
         overflow: hidden;
         color: var(--main-text-color);
         background-color: var(--main-background-color);
-        background-position: var(--ink-x) var(--ink-y);
         cursor: crosshair;
         touch-action: none;
         user-select: none;
@@ -30,23 +29,6 @@
 
         &[data-tool="pan"] {
             cursor: grab;
-        }
-
-        &[data-paper="ruled"] {
-            background-image: linear-gradient(to bottom, var(--ink-line) 1px, transparent 1px);
-            background-size: 100% var(--ink-ruled-step);
-        }
-
-        &[data-paper="grid"] {
-            background-image:
-                linear-gradient(to bottom, var(--ink-line) 1px, transparent 1px),
-                linear-gradient(to right, var(--ink-line) 1px, transparent 1px);
-            background-size: var(--ink-grid-step) var(--ink-grid-step);
-        }
-
-        &[data-paper="dots"] {
-            background-image: radial-gradient(circle at 1px 1px, var(--ink-line) 1px, transparent 1.5px);
-            background-size: var(--ink-grid-step) var(--ink-grid-step);
         }
 
         .handwriting-live-layer,
@@ -64,7 +46,8 @@
         --overlay-group-inset: 12px;
     }
 
-    &:fullscreen {
+    &:fullscreen,
+    &.handwriting-page-fullscreen {
         .handwriting-tools {
             --overlay-group-inset-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
         }
