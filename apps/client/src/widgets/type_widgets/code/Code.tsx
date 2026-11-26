@@ -109,9 +109,13 @@ export function ReadOnlyCode({
     );
 }
 
-function formatViewSource(note: FNote, content: string) {
+export function formatViewSource(note: FNote, content: string) {
     if (note.type === "text") {
         return utils.formatHtml(content);
+    }
+
+    if (note.type === "handwriting") {
+        return formatHandwritingSource(content);
     }
 
     if (note.type !== "code" && note.mime === "application/json" && content.length < 512_000) {
@@ -123,6 +127,29 @@ function formatViewSource(note: FNote, content: string) {
     }
 
     return content;
+}
+
+/**
+ * Formats the JSON of a handwriting note with one stroke per line, as the general indentation
+ * gives each coordinate a line of its own. Content that is not such a document stays as it is.
+ */
+function formatHandwritingSource(content: string) {
+    let doc: unknown;
+    try {
+        doc = JSON.parse(content);
+    } catch {
+        return content;
+    }
+    if (!doc || typeof doc !== "object" || !Array.isArray((doc as { strokes?: unknown }).strokes)) {
+        return content;
+    }
+
+    const { strokes, ...fields } = doc as { strokes: unknown[] };
+    const lines = Object.entries(fields).map(([ key, value ]) => `    ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
+    const strokeLines = strokes.map((stroke) => `        ${JSON.stringify(stroke)}`);
+    return [ "{", ...lines, `    "strokes": [`, strokeLines.join(",\n"), "    ]", "}" ]
+        .filter((line) => line !== "")
+        .join("\n");
 }
 
 export function EditableCode({

@@ -13,7 +13,7 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { ParentComponent } from "../../react/react_utils";
-import { EditableCode, ReadOnlyCode } from "./Code";
+import { EditableCode, formatViewSource, ReadOnlyCode } from "./Code";
 import type { CodeMirrorProps } from "./CodeMirror";
 
 // While `deferEditor.on` is set, the editor is created one render after `CodeEditor` mounts, after
@@ -179,6 +179,28 @@ describe("EditableCode", () => {
         expect(onDataTaken).toHaveBeenCalledOnce();
         expect(onDataTaken.mock.invocationCallOrder[0])
             .toBeLessThan(put.mock.invocationCallOrder[0]);
+    });
+});
+
+describe("note source", () => {
+    it("shows a handwriting note with one stroke per line", () => {
+        const note = buildNote({ type: "handwriting", mime: "application/json", title: "H", content: "" });
+        const content = JSON.stringify({
+            version: 1, paper: "grid", strokes: [ { c: "auto", w: 3, p: [ 1, 2, 128, 3, 4, 0 ] }, { c: "#e64d4d", w: 3, p: [ 5, 6, 7 ] } ]
+        });
+        const source = formatViewSource(note, content);
+        expect(source).toBe([
+            "{",
+            "    \"version\": 1,",
+            "    \"paper\": \"grid\",",
+            "    \"strokes\": [",
+            "        {\"c\":\"auto\",\"w\":3,\"p\":[1,2,128,3,4,0]},",
+            "        {\"c\":\"#e64d4d\",\"w\":3,\"p\":[5,6,7]}",
+            "    ]",
+            "}"
+        ].join("\n"));
+        expect(JSON.parse(source)).toEqual(JSON.parse(content));
+        expect(formatViewSource(note, "{ not json")).toBe("{ not json");
     });
 });
 
