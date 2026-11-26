@@ -1,7 +1,8 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createStroke, getShortStrokeOutline, getStrokeOutline, type InkDocument,
-    type InkTool, type InkView, outlineStrokePoints, type PaperStyle, serializeInkDocument, serializeStroke,
+    AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getShortStrokeOutline,
+    getStrokeOutline, type InkDocument, type InkLayout, type InkTool, type InkView, outlineStrokePoints,
+    PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 
@@ -10,6 +11,7 @@ export type SurfaceTool = InkTool | "eraser";
 export interface InkSurfaceState {
     zoom: number;
     paper: PaperStyle;
+    layout: InkLayout;
     canUndo: boolean;
     canRedo: boolean;
 }
@@ -56,8 +58,13 @@ const RULED_STEP = 32;
 const GRID_STEP = 24;
 /** The room left around the content when the view fits it, in CSS pixels. */
 const FIT_MARGIN = 32;
+/** The largest zoom at which the view fits the width of a page. */
+const MAX_FIT_WIDTH_ZOOM = 2;
 /** The opacity of the paper's lines over the background, in the text color. */
 const PAPER_LINE_ALPHA = 0.16;
+/** The opacity of the text color over the background around the pages, and along their edges. */
+const DESK_ALPHA = 0.06;
+const PAGE_EDGE_ALPHA = 0.18;
 
 /**
  * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
@@ -89,6 +96,8 @@ export default class InkSurface {
     private index = new StrokeIndex();
     private nextOrder = 0;
     private paper: PaperStyle = "ruled";
+    private layout: InkLayout = "pages";
+    private pageCount = 1;
     private undoStack: HistoryEntry[] = [];
     private redoStack: HistoryEntry[] = [];
 
@@ -101,6 +110,8 @@ export default class InkSurface {
     private ty = 0;
     /** The view that `showView()` was asked for while the container had no size. */
     private pendingView: InkView | "content" | undefined;
+    /** Whether `showView()` has placed the view since the note was loaded. */
+    private viewShown = false;
     /**
      * The base canvas as it was when a zoom started, and the view it was drawn at. Until the zoom
      * settles, each frame scales this picture instead of drawing every visible stroke again.
@@ -186,6 +197,9 @@ export default class InkSurface {
         }
         this.nextOrder = doc.strokes.length;
         this.paper = doc.paper;
+        this.layout = doc.layout;
+        this.pageCount = countPages(doc.strokes);
+        this.viewShown = false;
         this.undoStack = [];
         this.redoStack = [];
         this.cancelZoomPreview();
@@ -212,7 +226,7 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView());
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout);
     }
 
     /** The world point at the middle of the container, and the zoom. */
@@ -237,6 +251,7 @@ export default class InkSurface {
         }
         this.pendingView = undefined;
         const target = view === "content" ? this.getContentView() : view;
+        this.viewShown = true;
         const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, target.zoom));
         const scale = zoom * this.dpr;
         if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
@@ -254,9 +269,20 @@ export default class InkSurface {
         this.reportState();
     }
 
+    /**
+     * The view that fits the content: on pages, the width of a page, at the top of the first page
+     * for a note just opened and at the part of the column on screen otherwise; on a canvas without
+     * bounds, all the strokes at 100% or less.
+     */
     private getContentView(): InkView {
         const width = this.baseCanvas.width / this.dpr;
         const height = this.baseCanvas.height / this.dpr;
+        if (this.layout === "pages") {
+            const zoom = Math.max(MIN_ZOOM, Math.min(MAX_FIT_WIDTH_ZOOM, (width - 2 * FIT_MARGIN) / PAGE_WIDTH));
+            const firstTop = -FIT_MARGIN / zoom;
+            const top = this.viewShown ? Math.max(firstTop, -this.ty / (this.zoom * this.dpr)) : firstTop;
+            return { x: PAGE_WIDTH / 2, y: top + height / 2 / zoom, zoom };
+        }
         const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
         for (const stroke of this.strokes) {
             bounds.minX = Math.min(bounds.minX, stroke.bounds.minX);
@@ -277,6 +303,20 @@ export default class InkSurface {
     /** The zoom, and the position of the world origin in the container, in CSS pixels. */
     getView() {
         return { zoom: this.zoom, x: this.tx / this.dpr, y: this.ty / this.dpr };
+    }
+
+    /** How many pages the note shows, which is one more than the last page holding ink. */
+    getPageCount() {
+        return this.pageCount;
+    }
+
+    setLayout(layout: InkLayout) {
+        if (layout === this.layout) return;
+        this.layout = layout;
+        this.cancelZoomPreview();
+        this.redrawAll();
+        this.reportState();
+        this.options.onChange();
     }
 
     getPaper() {
@@ -483,6 +523,7 @@ export default class InkSurface {
         } else if (this.mode === "erase" && this.erased.length) {
             this.pushHistory({ added: [], removed: this.erased });
             this.erased = [];
+            this.updatePageCount();
             this.options.onChange();
         }
         this.mode = "idle";
@@ -616,6 +657,7 @@ export default class InkSurface {
             this.applyWorldTransform(this.base);
             this.fillStroke(this.base, stroke);
         }
+        this.updatePageCount();
         this.options.onChange();
     }
 
@@ -655,6 +697,22 @@ export default class InkSurface {
             this.strokes.add(stroke);
             this.index.add(stroke);
             this.redrawBounds(stroke.bounds);
+        }
+        this.updatePageCount();
+    }
+
+    /** Adds an empty page after the last one holding ink, or drops the pages after it. */
+    private updatePageCount() {
+        const count = countPages(this.strokes);
+        if (count === this.pageCount) return;
+        const from = Math.min(count, this.pageCount);
+        const to = Math.max(count, this.pageCount);
+        this.pageCount = count;
+        if (this.layout === "pages") {
+            this.redrawBounds({
+                minX: -PAGE_GAP, minY: getPageTop(from) - PAGE_GAP,
+                maxX: PAGE_WIDTH + PAGE_GAP, maxY: getPageTop(to)
+            });
         }
     }
 
@@ -763,6 +821,7 @@ export default class InkSurface {
         this.options.onStateChange({
             zoom: this.zoom,
             paper: this.paper,
+            layout: this.layout,
             canUndo: this.undoStack.length > 0,
             canRedo: this.redoStack.length > 0
         });
@@ -888,16 +947,70 @@ export default class InkSurface {
     }
 
     /**
-     * Fills a rectangle of the base canvas, in device pixels, with the background and the paper's
-     * lines. Each line is placed from the view's transform and rounded to a whole device pixel on
-     * its own, so the lines stay sharp and in line with the strokes at any zoom.
+     * Fills a rectangle of the base canvas, in device pixels, with the background and the paper:
+     * on pages, the sheets on a tinted desk, with the paper's lines inside them.
      */
     private drawPaper(x: number, y: number, width: number, height: number) {
         const ctx = this.base;
         ctx.fillStyle = this.backgroundColor;
         ctx.fillRect(x, y, width, height);
-        if (this.paper === "blank") return;
+        if (this.layout === "infinite") {
+            this.drawPattern(x, y, width, height, this.tx, this.ty);
+            return;
+        }
 
+        ctx.fillStyle = this.autoColor;
+        ctx.globalAlpha = DESK_ALPHA;
+        ctx.fillRect(x, y, width, height);
+        ctx.globalAlpha = 1;
+
+        const scale = this.zoom * this.dpr;
+        const edge = Math.max(1, Math.round(this.dpr));
+        const left = Math.round(this.tx);
+        const right = Math.round(this.tx + PAGE_WIDTH * scale);
+        if (right + edge <= x || left - edge >= x + width) return;
+
+        const first = Math.max(0, Math.floor((y - this.ty) / scale / (PAGE_HEIGHT + PAGE_GAP)));
+        for (let page = first; page < this.pageCount; page++) {
+            const top = Math.round(this.ty + getPageTop(page) * scale);
+            const bottom = Math.round(this.ty + (getPageTop(page) + PAGE_HEIGHT) * scale);
+            if (top - edge >= y + height) break;
+            if (bottom + edge <= y) continue;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, width, height);
+            ctx.clip();
+            ctx.fillStyle = this.autoColor;
+            ctx.globalAlpha = PAGE_EDGE_ALPHA;
+            ctx.fillRect(left - edge, top - edge, right - left + 2 * edge, bottom - top + 2 * edge);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = this.backgroundColor;
+            ctx.fillRect(left, top, right - left, bottom - top);
+
+            const clipLeft = Math.max(x, left);
+            const clipTop = Math.max(y, top + edge);
+            const clipRight = Math.min(x + width, right);
+            const clipBottom = Math.min(y + height, bottom);
+            if (clipRight > clipLeft && clipBottom > clipTop) {
+                ctx.beginPath();
+                ctx.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
+                ctx.clip();
+                this.drawPattern(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop, left, top);
+            }
+            ctx.restore();
+        }
+    }
+
+    /**
+     * Draws the paper's lines over a rectangle of the base canvas, in device pixels, from the
+     * device position of the world point they start at. Each line is placed from the view's
+     * transform and rounded to a whole device pixel on its own, so the lines stay sharp and in
+     * line with the strokes at any zoom.
+     */
+    private drawPattern(x: number, y: number, width: number, height: number, originX: number, originY: number) {
+        if (this.paper === "blank") return;
+        const ctx = this.base;
         const scale = this.zoom * this.dpr;
         const thickness = Math.max(1, Math.round(this.dpr));
         const lines = (offset: number, from: number, length: number, step: number) => {
@@ -912,22 +1025,22 @@ export default class InkSurface {
         ctx.fillStyle = this.autoColor;
         ctx.globalAlpha = PAPER_LINE_ALPHA;
         if (this.paper === "ruled") {
-            for (const py of lines(this.ty, y, height, RULED_STEP * scale)) {
+            for (const py of lines(originY, y, height, RULED_STEP * scale)) {
                 ctx.fillRect(x, py, width, thickness);
             }
         } else if (this.paper === "grid") {
             const step = GRID_STEP * scale;
-            for (const py of lines(this.ty, y, height, step)) {
+            for (const py of lines(originY, y, height, step)) {
                 ctx.fillRect(x, py, width, thickness);
             }
-            for (const px of lines(this.tx, x, width, step)) {
+            for (const px of lines(originX, x, width, step)) {
                 ctx.fillRect(px, y, thickness, height);
             }
         } else {
             const step = GRID_STEP * scale;
             const dot = thickness * 2;
-            const rows = lines(this.ty, y, height, step);
-            for (const px of lines(this.tx, x, width, step)) {
+            const rows = lines(originY, y, height, step);
+            for (const px of lines(originX, x, width, step)) {
                 for (const py of rows) {
                     ctx.fillRect(px, py, dot, dot);
                 }

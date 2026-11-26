@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, outlineStrokePoints,
-    parseInkDocument, serializeInkDocument, StrokeBuilder, strokeHitsSegment, StrokeIndex
+    parseInkDocument, serializeInkDocument, serializeStroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 
 function distanceToPolygon(x: number, y: number, polygon: number[][]) {
@@ -77,9 +77,20 @@ describe("ink document", () => {
         }
     });
 
+    it("keeps the layout, and opens a note saved before pages on a canvas without bounds", () => {
+        const stroke = makeStroke([ 1, 2, 0.5 ]);
+        expect(parseInkDocument(serializeInkDocument("ruled", [ stroke ], undefined, "infinite")).layout).toBe("infinite");
+        expect(parseInkDocument(serializeInkDocument("ruled", [ stroke ])).layout).toBe("pages");
+
+        const older = { version: 1, paper: "ruled", strokes: [ JSON.parse(serializeStroke(stroke)) ] };
+        expect(parseInkDocument(JSON.stringify(older)).layout).toBe("infinite");
+        expect(parseInkDocument(JSON.stringify({ ...older, strokes: [] })).layout).toBe("pages");
+        expect(parseInkDocument(JSON.stringify({ ...older, layout: "scroll" })).layout).toBe("infinite");
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
-            expect(parseInkDocument(content)).toEqual({ paper: "ruled", strokes: [] });
+            expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [] });
         }
         expect(parseInkDocument(JSON.stringify({ paper: "plaid", strokes: [] })).paper).toBe("ruled");
     });

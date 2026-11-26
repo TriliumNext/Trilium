@@ -3,6 +3,15 @@ import { getStroke, getStrokeOutlinePoints, type StrokePoint } from "perfect-fre
 export const PAPER_STYLES = [ "ruled", "grid", "dots", "blank" ] as const;
 export type PaperStyle = (typeof PAPER_STYLES)[number];
 
+/** Whether the note is a column of pages, or a canvas without bounds. */
+export const INK_LAYOUTS = [ "pages", "infinite" ] as const;
+export type InkLayout = (typeof INK_LAYOUTS)[number];
+
+/** The size of a page (A4 at 96 dpi) and the gap between two pages, in world units. */
+export const PAGE_WIDTH = 794;
+export const PAGE_HEIGHT = 1123;
+export const PAGE_GAP = 24;
+
 export type InkTool = "pen" | "highlighter";
 
 /** The color of a stroke that follows the theme's text color. */
@@ -34,6 +43,7 @@ export interface Stroke {
 
 export interface InkDocument {
     paper: PaperStyle;
+    layout: InkLayout;
     strokes: Stroke[];
     /** The view the note was last saved at. */
     view?: InkView;
@@ -63,6 +73,7 @@ interface SerializedStroke {
 interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
+    layout?: InkLayout;
     strokes: SerializedStroke[];
     view?: InkView;
 }
@@ -80,7 +91,9 @@ export function createStroke(
  * Returns the saved document. It joins the JSON of each stroke, which `serializeStroke()` computes
  * once per stroke, so saving a large document does not encode every point again.
  */
-export function serializeInkDocument(paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView): string {
+export function serializeInkDocument(
+    paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages"
+): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
     for (const stroke of sorted) {
@@ -89,7 +102,7 @@ export function serializeInkDocument(paper: PaperStyle, strokes: Iterable<Stroke
     const savedView = view
         ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)}${savedView},"strokes":[${parts.join(",")}]}`;
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -108,7 +121,7 @@ export function serializeStroke(stroke: Stroke): string {
 }
 
 export function parseInkDocument(content: string | null | undefined): InkDocument {
-    const empty: InkDocument = { paper: "ruled", strokes: [] };
+    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [] };
     if (!content) return empty;
 
     let raw: Partial<SerializedDocument>;
@@ -133,7 +146,11 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     }
 
     const paper = PAPER_STYLES.includes(raw.paper as PaperStyle) ? raw.paper as PaperStyle : "ruled";
-    return { paper, strokes, view: parseView(raw.view) };
+    // A note saved before pages existed keeps its drawing on a canvas without bounds.
+    const layout = INK_LAYOUTS.includes(raw.layout as InkLayout)
+        ? raw.layout as InkLayout
+        : strokes.length ? "infinite" : "pages";
+    return { paper, layout, strokes, view: parseView(raw.view) };
 }
 
 function parseView(view: unknown): InkView | undefined {
@@ -141,6 +158,20 @@ function parseView(view: unknown): InkView | undefined {
     const { x, y, zoom } = view as Partial<Record<keyof InkView, unknown>>;
     if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(zoom) || zoom <= 0) return undefined;
     return { x, y, zoom };
+}
+
+/** The top of page `index`, counted from zero, in world units. */
+export function getPageTop(index: number) {
+    return index * (PAGE_HEIGHT + PAGE_GAP);
+}
+
+/** How many pages a note shows: those up to the last one holding ink, and an empty one after it. */
+export function getPageCount(strokes: Iterable<Stroke>) {
+    let lastInked = -1;
+    for (const stroke of strokes) {
+        lastInked = Math.max(lastInked, Math.floor(stroke.bounds.maxY / (PAGE_HEIGHT + PAGE_GAP)));
+    }
+    return lastInked + 2;
 }
 
 function isFiniteNumber(value: unknown): value is number {

@@ -74,7 +74,7 @@ describe("ink surface input", () => {
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
         fillRects.length = 0;
-        surface.load({ paper: "ruled", strokes: [] });
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
         expect(lines(fillRects)).toEqual([ 0, 32, 64, 96, 128, 160, 192, 224, 256, 288 ]);
 
         // Zooming to 70% around the middle puts the origin at (60, 45) and the lines 22.4 px apart.
@@ -92,6 +92,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
 
         surface.showView({ x: 10, y: 20, zoom: 2 });
         expect(surface.getView()).toEqual({ zoom: 2, x: 180, y: 110 });
@@ -107,7 +108,7 @@ describe("ink surface input", () => {
             tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: false,
             points: [ 1000, 1000, 0.5, 2000, 1500, 0.5 ], order: 0
         });
-        surface.load({ paper: "ruled", strokes: [ stroke ] });
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [ stroke ] });
         surface.showView("content");
         // The origin lies on a whole pixel, which is 3 world units at this zoom.
         const view = surface.getCenterView();
@@ -116,9 +117,45 @@ describe("ink surface input", () => {
         expect(view.zoom).toBeCloseTo(336 / 1008);
 
         // A small drawing is not enlarged.
-        surface.load({ paper: "ruled", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
+        surface.load({ paper: "ruled", layout: "infinite", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
         surface.showView("content");
         expect(surface.getView().zoom).toBe(1);
+    });
+
+    it("shows pages up to an empty one after the last ink, and fits their width", () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        expect(surface.getPageCount()).toBe(1);
+
+        // A new note shows the top of its first page across the width, with room on each side.
+        surface.showView("content");
+        expect(surface.getCenterView().zoom).toBeCloseTo(336 / 794);
+        expect(surface.getView().y).toBe(32);
+
+        // Ink on the second page, which spans 1147 to 2270, shows a third one after it.
+        const onPageTwo = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
+            points: [ 100, 1500, 0.5, 200, 1520, 0.5 ], order: 0
+        });
+        surface.load({ paper: "blank", layout: "pages", strokes: [ onPageTwo ] });
+        expect(surface.getPageCount()).toBe(3);
+
+        // Writing on the first page of an empty note adds a second, and undoing it takes it away.
+        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        swipe("pen", 2, 100);
+        expect(surface.getPageCount()).toBe(2);
+        surface.undo();
+        expect(surface.getPageCount()).toBe(1);
+        surface.redo();
+        expect(surface.getPageCount()).toBe(2);
+
+        // The paper's sheet is filled where the view puts the page, and nothing below the last one.
+        fillRects.length = 0;
+        surface.showView({ x: 397, y: 0, zoom: 0.25 });
+        const sheets = fillRects.filter(([ , , width, height, alpha ]) => alpha === 1 && width === 199 && height < 300);
+        expect(sheets.map(([ x, y, , height ]) => [ x, y, height ])).toEqual([ [ 101, 150, 281 ] ]);
     });
 
     it("undoes on a short tap with two fingers, but not after a pinch", () => {

@@ -15,7 +15,9 @@ import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
 import { TypeWidgetProps } from "../type_widget";
-import { AUTO_COLOR, type InkDocument, type InkTool, type InkView, PAPER_STYLES, parseInkDocument } from "./ink_document";
+import {
+    AUTO_COLOR, INK_LAYOUTS, type InkDocument, type InkTool, type InkView, PAPER_STYLES, parseInkDocument
+} from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
 const TOOLS: { tool: SurfaceTool, icon: string, title: () => string, key: string }[] = [
@@ -82,7 +84,9 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
     const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
     const { color, size } = inkSettings[inkTool ?? "pen"];
-    const [ state, setState ] = useState<InkSurfaceState>({ zoom: 1, paper: "ruled", canUndo: false, canRedo: false });
+    const [ state, setState ] = useState<InkSurfaceState>({
+        zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false
+    });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
 
@@ -233,6 +237,18 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
 
                     <OverlayControlGroup titlePosition="bottom">
                         <OverlayControlDropdown title={t("common.more_actions")} icon="bx-dots-horizontal-rounded">
+                            <FormDropdownSubmenu icon="bx bx-file-blank" title={t("handwriting.layout")}>
+                                {INK_LAYOUTS.map((layout) => (
+                                    <FormListItem
+                                        key={layout}
+                                        checkable
+                                        checked={state.layout === layout}
+                                        onClick={() => surfaceRef.current?.setLayout(layout)}
+                                    >
+                                        {t(`handwriting.layout_${layout}`)}
+                                    </FormListItem>
+                                ))}
+                            </FormDropdownSubmenu>
                             <FormDropdownSubmenu icon="bx bx-grid" title={t("handwriting.paper")}>
                                 {PAPER_STYLES.map((paper) => (
                                     <FormListItem
