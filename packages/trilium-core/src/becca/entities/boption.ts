@@ -43,10 +43,11 @@ class BOption extends AbstractBeccaEntity<BOption> {
         this.utcDateModified = row.utcDateModified;
     }
 
-    override beforeSaving() {
+    /** @param opts.utcDateModified the date to save the option with, instead of now. */
+    override beforeSaving(opts?: { utcDateModified?: string }) {
         super.beforeSaving();
 
-        this.utcDateModified = dateUtils.utcNowDateTime();
+        this.utcDateModified = opts?.utcDateModified ?? dateUtils.utcNowDateTime();
     }
 
     getPojo() {

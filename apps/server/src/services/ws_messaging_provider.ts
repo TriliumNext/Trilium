@@ -4,10 +4,17 @@ import type { IncomingMessage, Server as HttpServer } from "http";
 import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
+import { isValidCsrfToken } from "../routes/csrf_protection.js";
 import config from "./config.js";
+import { isInteractiveSession } from "./login_session.js";
 import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
+
+/** The close code of a connection that sent no CSRF token in time, or a wrong one. */
+export const CSRF_REFUSED_CLOSE_CODE = 4403;
+/** How long a new connection has to send the page's CSRF token. */
+const CSRF_TOKEN_DEADLINE_MS = 10 * 1000;
 
 /**
  * A messaging provider that serves clients over the TCP HTTP listener and so
@@ -47,7 +54,8 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         this.webSocketServer = new WebSocketServer({
             verifyClient: (info, done) => {
                 sessionParser(info.req as express.Request, {} as express.Response, () => {
-                    const allowed = (info.req as any).session.loggedIn || (config.General && config.General.noAuthentication);
+                    const allowed = isInteractiveSession((info.req as express.Request).session)
+                        || (config.General && config.General.noAuthentication);
 
                     if (!allowed) {
                         getLog().error("WebSocket connection not allowed: session is not logged in.");
@@ -62,7 +70,17 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         this.webSocketServer.on("connection", (ws, req) => {
             const id = randomString(10);
             (ws as any).id = id;
-            this.clientMap.set(id, ws);
+            let admission: "pending" | "admitted" | "refused" = "pending";
+
+            // The cookie comes with every page of the site, another port or a sibling subdomain
+            // included, so a connection is admitted only once it sends the page's CSRF token.
+            const refuse = (reason: string) => {
+                admission = "refused";
+                getLog().info(`WebSocket connection refused: ${reason}.`);
+                ws.close(CSRF_REFUSED_CLOSE_CODE, "CSRF token refused");
+            };
+            const deadline = setTimeout(
+                () => refuse("no CSRF token in time"), CSRF_TOKEN_DEADLINE_MS);
 
             console.log(`websocket client connected`);
 
@@ -77,6 +95,20 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
             });
 
             ws.on("message", (messageJson) => {
+                if (admission === "refused") {
+                    return;
+                }
+                if (admission === "pending") {
+                    clearTimeout(deadline);
+                    if (isValidCsrfToken(req, readCsrfToken(messageJson))) {
+                        admission = "admitted";
+                        this.clientMap.set(id, ws);
+                    } else {
+                        refuse("wrong CSRF token");
+                    }
+                    return;
+                }
+
                 void (async () => {
                     try {
                         const message = JSON.parse(messageJson as any);
@@ -93,6 +125,7 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
             });
 
             ws.on("close", () => {
+                clearTimeout(deadline);
                 this.clientMap.delete(id);
             });
         });
@@ -118,11 +151,11 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
                 getLog().info(`Sending message to all clients: ${jsonStr}`);
             }
 
-            this.webSocketServer.clients.forEach((client) => {
+            for (const client of this.clientMap.values()) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(jsonStr);
                 }
-            });
+            }
         }
     }
 
@@ -152,11 +185,21 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
     }
 
     getClientCount(): number {
-        return this.webSocketServer?.clients?.size ?? 0;
+        return this.clientMap.size;
     }
 
     dispose(): void {
         this.webSocketServer?.close();
         this.clientMap.clear();
+    }
+}
+
+/** The token of a connection's first message, `{ type: "csrf-token", token }`. */
+function readCsrfToken(messageJson: unknown): unknown {
+    try {
+        const message = JSON.parse(String(messageJson));
+        return message?.type === "csrf-token" ? message.token : undefined;
+    } catch {
+        return undefined;
     }
 }

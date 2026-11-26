@@ -3,6 +3,7 @@ import crypto from 'crypto';
 
 import sql from '../sql.js';
 import { constantTimeCompare } from '../utils.js';
+import { isSealed, open, seal } from './second_factor_key.js';
 
 /**
  * What a recovery code looks like: 22 characters and the base64 padding.
@@ -11,26 +12,55 @@ import { constantTimeCompare } from '../utils.js';
  * variable remembers where it last matched, so `test` on a shared one answers correctly only every
  * other call.
  */
-const RECOVERY_CODE_SHAPE = /^.{22}==$/;
+export const RECOVERY_CODE_SHAPE = /^.{22}==$/;
 
 function isRecoveryCodeSet() {
     return optionService.getOptionBool('encryptedRecoveryCodes');
 }
 
+/** Stores the codes sealed with the key of `second_factor_key.txt`. */
 function setRecoveryCodes(recoveryCodes: string) {
-    const iv = crypto.randomBytes(16);
-    const securityKey = crypto.randomBytes(32);
-    const cipher = crypto.createCipheriv('aes-256-cbc', securityKey, iv);
-    const encryptedRecoveryCodes = cipher.update(recoveryCodes, 'utf-8', 'hex');
-
     sql.transactional(() => {
-        optionService.setOption('recoveryCodeInitialVector', iv.toString('hex'));
-        optionService.setOption('recoveryCodeSecurityKey', securityKey.toString('hex'));
-        optionService.setOption('recoveryCodesEncrypted', encryptedRecoveryCodes + cipher.final('hex'));
+        optionService.setOption('recoveryCodeInitialVector', '');
+        optionService.setOption('recoveryCodeSecurityKey', '');
+        optionService.setOption('recoveryCodesEncrypted',
+            seal('recoveryCodesEncrypted', recoveryCodes));
         optionService.setOption('encryptedRecoveryCodes', 'true');
-        return true;
     });
-    return false;
+}
+
+/**
+ * Seals legacy codes with the key file and clears their key and IV.
+ *
+ * @returns whether legacy codes were converted.
+ */
+function convertLegacyRecoveryCodes(): boolean {
+    const stored = optionService.getOptionOrNull('recoveryCodesEncrypted');
+    if (!isRecoveryCodeSet() || !stored || isSealed(stored)) {
+        return false;
+    }
+
+    const codes = readLegacyRecoveryCodes(stored);
+    if (codes === null) {
+        return false;
+    }
+
+    setRecoveryCodes(codes);
+    return true;
+}
+
+/**
+ * Reads codes in the legacy form, sealed with a key and an IV stored in options, or returns `null`.
+ */
+function readLegacyRecoveryCodes(stored: string): string | null {
+    try {
+        const iv = Buffer.from(optionService.getOption('recoveryCodeInitialVector'), 'hex');
+        const securityKey = Buffer.from(optionService.getOption('recoveryCodeSecurityKey'), 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-cbc', securityKey, iv);
+        return decipher.update(stored, 'hex', 'utf-8') + decipher.final('utf-8');
+    } catch {
+        return null;
+    }
 }
 
 /** Generates a fresh set of recovery codes WITHOUT persisting them (the caller decides when to commit). */
@@ -48,22 +78,17 @@ function clearRecoveryCodes() {
     });
 }
 
-function getRecoveryCodes() {
+/** Returns the codes, sealed or legacy, or an empty list when they do not open. */
+function getRecoveryCodes(): string[] {
     if (!isRecoveryCodeSet()) {
         return []
     }
 
-    return sql.transactional<string[]>(() => {
-        const iv = Buffer.from(optionService.getOption('recoveryCodeInitialVector'), 'hex');
-        const securityKey = Buffer.from(optionService.getOption('recoveryCodeSecurityKey'), 'hex');
-        const encryptedRecoveryCodes = optionService.getOption('recoveryCodesEncrypted');
-
-        const decipher = crypto.createDecipheriv('aes-256-cbc', securityKey, iv);
-        const decryptedData = decipher.update(encryptedRecoveryCodes, 'hex', 'utf-8');
-
-        const decryptedString = decryptedData + decipher.final('utf-8');
-        return decryptedString.split(',');
-    });
+    const stored = optionService.getOption('recoveryCodesEncrypted');
+    const codes = isSealed(stored)
+        ? open('recoveryCodesEncrypted', stored)
+        : readLegacyRecoveryCodes(stored);
+    return codes === null ? [] : codes.split(',');
 }
 
 function removeRecoveryCode(usedCode: string) {
@@ -122,6 +147,7 @@ function verifyRecoveryCode(recoveryCodeGuess: string) {
 
 export default {
     setRecoveryCodes,
+    convertLegacyRecoveryCodes,
     createRecoveryCodes,
     clearRecoveryCodes,
     getRecoveryCodes,

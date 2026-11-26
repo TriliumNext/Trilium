@@ -23,6 +23,8 @@ The limit applies to every way of signing in with the password:
 
 All of these count toward the same limit, and a wrong password, a wrong one-time password and a wrong recovery code each count as one failed attempt. Successful sign-ins are not counted.
 
+When <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-Factor Authentication</a> is enabled, the server also counts wrong one-time passwords across all addresses, and after five in a row it refuses codes for a while. See _Waiting after wrong codes_ on that page.
+
 The limit is per IP address, not per account, so an attacker cannot lock you out by failing to sign in from their own address. The count is kept in memory: restarting the server clears it.
 
 > [!IMPORTANT]

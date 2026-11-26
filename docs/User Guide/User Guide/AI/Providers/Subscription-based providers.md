@@ -3,6 +3,8 @@ Some cloud providers offer a subscription, which has a fixed monthly fee instead
 
 In a nutshell, subscription-based providers work by either reusing your existing CLI tools (e.g. Claude Code, GitHub Copilot and OpenAI Codex via ACP) whereas some require installing the ACP server manually (e.g. Google Antigravity). Because they require something to be installed on your device, these providers are not available on Mobile (Android or iOS) or standalone mode.
 
+Trilium starts these programs without its own `TRILIUM_` environment variables, which can hold secrets such as the OpenID Connect client secret.
+
 See also the dedicated <a class="reference-link" href="../Privacy.md">Privacy</a> section to better understand what data is being sent to a cloud provider.
 
 ## Using the Flatpak

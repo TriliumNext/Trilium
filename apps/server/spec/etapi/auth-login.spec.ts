@@ -110,6 +110,7 @@ describe("etapi/auth/login", () => {
             cls.init(() => {
                 totp.resetTotp();
                 options.setOption("totpLastUsedStep", "");
+                options.setOption("totpWrongCodeCount", "");
             });
         });
 

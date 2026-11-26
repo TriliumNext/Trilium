@@ -39,11 +39,14 @@ const DENY_REASON = "Trilium does not allow access to this location. Use Trilium
 const HOOK_TIMEOUT_S = 10;
 
 /**
- * The answer to one `PreToolUse` call. `deny` when any path in the call's
- * arguments reaches `<home>/antigravity-acp` other than its `brain/` folder,
- * or a folder that contains it. Otherwise `allow` for the read tools and
- * `ask` for the rest: `ask` leaves a tool to the server's permission flow, so
- * the shell and file edits still reach {@link decideAntigravityPermission}.
+ * Answers one `PreToolUse` call. A read tool is decided by location: `allow`
+ * when every path in its arguments lies inside the agent cwd or the `brain/`
+ * folder of `<home>/antigravity-acp`, and `deny` otherwise, also for a value
+ * that the server could resolve to another location than this hook does. Any
+ * other tool is `deny` when a path reaches
+ * `<home>/antigravity-acp` other than `brain/`, or a folder that contains it,
+ * and `ask` otherwise: `ask` leaves it to the server's permission flow, so the
+ * shell and file edits still reach {@link decideAntigravityPermission}.
  * `allow` cannot widen the server's own confinement.
  *
  * `brain/` stays readable because the agent reads the note tools'
@@ -59,14 +62,35 @@ export function decideAntigravityToolCall(
 
     const privateDir = realpath(path.join(dirs.home, "antigravity-acp"));
     const brainDir = path.join(privateDir, "brain");
-    const reached = stringsIn(toolCall?.args)
+    const workspace = realpath(dirs.workspace);
+    const values = stringsIn(toolCall?.args);
+    const reached = values
         .filter(looksLikePath)
         .map(candidate => realpath(path.resolve(dirs.workspace, candidate)));
     const isInside = (child: string, parent: string) => isInsideOn(platform, child, parent);
+
+    if (name && READ_TOOLS.has(name)) {
+        const isPlaced = !values.some(isUnplaceable)
+            && reached.every(candidate =>
+                isInside(candidate, workspace) || isInside(candidate, brainDir));
+        return isPlaced ? { decision: "allow" } : { decision: "deny", reason: DENY_REASON };
+    }
+
     if (reached.some(candidate => (isInside(candidate, privateDir) && !isInside(candidate, brainDir)) || isInside(privateDir, candidate))) {
         return { decision: "deny", reason: DENY_REASON };
     }
-    return { decision: name && READ_TOOLS.has(name) ? "allow" : "ask" };
+    return { decision: "ask" };
+}
+
+/**
+ * Whether the server could resolve a value to another location than the hook does: a home (`~/`), a
+ * variable (`$HOME`, `${HOME}`, `%USERPROFILE%`) or a scheme (`file:`).
+ */
+function isUnplaceable(value: string): boolean {
+    return value.startsWith("~")
+        || /\$\{?[A-Za-z_]/.test(value)
+        || /%[^%\s]+%/.test(value)
+        || /^(file:|[A-Za-z][A-Za-z\d+.-]+:\/)/i.test(value);
 }
 
 /** Write the hook to `<home>/config/hooks.json`, replacing what an earlier run wrote. */

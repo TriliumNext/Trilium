@@ -39,6 +39,7 @@ import path from "path";
 
 import dataDirs from "../../data_dir.js";
 import { createMcpServer } from "../../mcp/mcp_server.js";
+import { getAgentEnvironment } from "./binary_lookup.js";
 import { resolveClaudeBinaryPath } from "./claude_binary.js";
 import {
     type ClaudeSession,
@@ -694,6 +695,8 @@ export class ClaudeAgentProvider implements LlmProvider {
             // at install time; drive the user's own installed Claude Code CLI.
             pathToClaudeCodeExecutable: binaryPath,
             cwd: getAgentCwd(),
+            // Without it the SDK passes the server's whole environment to the agent.
+            env: getAgentEnvironment(),
             tools: builtinTools,
             settingSources: [],
             strictMcpConfig: true,

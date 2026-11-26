@@ -8,9 +8,19 @@ import type {
 import type { Response } from "../http_interface";
 
 import { getContext } from "./context.js";
+import { addDeviceRecordEntries, isTimeAheadForADay } from "./device_records.js";
 import dateUtils from "./utils/date.js";
 
 type BackupType = "daily" | "weekly" | "monthly";
+
+const BACKUP_DATE_OPTIONS = [
+    "lastDailyBackupDate",
+    "lastWeeklyBackupDate",
+    "lastMonthlyBackupDate"
+] as const;
+
+/** The length of a TOTP time step, as the server's `totp.ts` takes it from `time2fa`. */
+export const TOTP_STEP_MS = 30 * 1000;
 
 export interface BackupOptionsService {
     getOption(name: OptionNames): string;
@@ -127,9 +137,36 @@ export default abstract class BackupService {
      * Run the scheduled backup checks for daily, weekly, and monthly backups.
      */
     protected async runScheduledBackups(): Promise<void> {
+        this.putRightTimesAhead();
         await this.periodBackup("lastDailyBackupDate", "daily", 24 * 3600);
         await this.periodBackup("lastWeeklyBackupDate", "weekly", 7 * 24 * 3600);
         await this.periodBackup("lastMonthlyBackupDate", "monthly", 30 * 24 * 3600);
+    }
+
+    /**
+     * Resets a backup date or a TOTP step that has stayed later than now for a day, which a clock
+     * running ahead wrote: it would stop that backup, or every code, until its time came. A date
+     * reset to now makes its backup due one period later.
+     */
+    private putRightTimesAhead() {
+        const now = Date.now();
+        const putRight: string[] = [];
+
+        for (const optionName of BACKUP_DATE_OPTIONS) {
+            const date = Date.parse(this.options.getOption(optionName));
+            if (isTimeAheadForADay(optionName, date, now)) {
+                this.options.setOption(optionName, dateUtils.utcNowDateTime());
+                putRight.push(optionName);
+            }
+        }
+
+        const step = Number(this.options.getOptionOrNull("totpLastUsedStep"));
+        if (step > 0 && isTimeAheadForADay("totpLastUsedStep", step * TOTP_STEP_MS, now)) {
+            this.options.setOption("totpLastUsedStep", "");
+            putRight.push("totpLastUsedStep");
+        }
+
+        addDeviceRecordEntries("startupRepairRecord", putRight);
     }
 
     /**

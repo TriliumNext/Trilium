@@ -9,6 +9,10 @@
     "incorrect-totp": "One-time password is incorrect. Please try again.",
     "incorrect-recovery-code": "Recovery code is incorrect, or has already been used.",
     "too-many-attempts": "Too many login attempts. Please wait a few minutes and try again.",
+    "totp-wait": "Too many wrong codes. Try again after {{time}}.",
+    "totp-step-ahead": "A code was used while the server clock was ahead. Codes work again after {{time}}.",
+    "factor-unreadable": "The second factor can't be checked on this server. To remove it, restart the server with the TRILIUM_RESET_SECOND_FACTOR variable.",
+    "factor-removed": "The second factor was removed. Restart the server with the TRILIUM_RESET_SECOND_FACTOR variable and enter its words as the code, until a new second factor is set up.",
     "connection-error": "Couldn't reach the server. Check your connection and try again.",
     "sign_in_with_sso": "Sign in with {{ssoIssuerName}}",
     "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
@@ -23,6 +27,9 @@
     "button": "Set password",
     "password-too-short": "Password must be at least {{length}} characters long.",
     "passwords-dont-match": "The entered passwords don't match.",
+    "restore-description": "The password of this knowledge base was removed, but its protected notes are still locked with it. Enter the password it had, which then becomes the password again.",
+    "restore-refused": "That is not the password this knowledge base had.",
+    "refused": "The password was not accepted.",
     "desktop-description": "This Trilium desktop app has no password yet, so it can't be opened from a browser. In the desktop app, go to Options → Password & Auth and set a password, then reload this page to log in."
   },
   "setup": {
@@ -126,6 +133,7 @@
     "backup-finish": "Finish",
     "existing-data-erase-confirm": "Your existing knowledge base will now be permanently deleted, so that this device can receive one from your desktop app. Make sure you have a backup somewhere safe. Continue?",
     "unlock-refused": "Those details were not accepted. Please try again.",
+    "unlock-no-password": "This knowledge base has no password, so nothing unlocks the setup over the network. Restart Trilium to return to the app.",
     "keep-existing": "Return to the app",
     "keep-existing-description": "Keep using your existing knowledge base and go back to the app.",
     "existing-data-keep-failed": "The existing knowledge base could not be reopened.",

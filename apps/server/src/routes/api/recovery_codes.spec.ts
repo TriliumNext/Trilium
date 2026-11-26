@@ -1,5 +1,4 @@
 import { cls } from "@triliumnext/core";
-import type { Request } from "express";
 import { describe, expect, it } from "vitest";
 
 import recoveryCodesService from "../../services/encryption/recovery_codes.js";
@@ -26,12 +25,11 @@ describe("Recovery codes API", () => {
 
         expect(recoveryCodesRoute.checkForRecoveryKeys()).toEqual({ success: true, keysExist: true });
 
-        const verifyReq = { body: { recovery_code_guess: codes[0] } } as unknown as Request;
-        expect(cls.init(() => recoveryCodesRoute.verifyRecoveryCode(verifyReq))).toEqual({ success: true });
+        expect(cls.init(() => recoveryCodesService.verifyRecoveryCode(codes[0]))).toBe(true);
 
         // A wrong guess fails.
-        const wrongReq = { body: { recovery_code_guess: "not-a-valid-code" } } as unknown as Request;
-        expect(cls.init(() => recoveryCodesRoute.verifyRecoveryCode(wrongReq))).toEqual({ success: false });
+        expect(cls.init(() => recoveryCodesService.verifyRecoveryCode("not-a-valid-code")))
+            .toBe(false);
 
         const used = recoveryCodesRoute.getUsedRecoveryCodes() as { success: boolean; usedRecoveryCodes: string[] };
         expect(used.success).toBe(true);
@@ -77,12 +75,12 @@ describe("Recovery codes API", () => {
         expect(newCode).toBeDefined();
 
         // A code from the OLD batch must no longer verify after regeneration.
-        const oldReq = { body: { recovery_code_guess: oldCode } } as unknown as Request;
-        expect(cls.init(() => recoveryCodesRoute.verifyRecoveryCode(oldReq))).toEqual({ success: false });
+        expect(cls.init(() => recoveryCodesService.verifyRecoveryCode(oldCode as string)))
+            .toBe(false);
 
         // A code from the NEW batch verifies.
-        const newReq = { body: { recovery_code_guess: newCode } } as unknown as Request;
-        expect(cls.init(() => recoveryCodesRoute.verifyRecoveryCode(newReq))).toEqual({ success: true });
+        expect(cls.init(() => recoveryCodesService.verifyRecoveryCode(newCode as string)))
+            .toBe(true);
     });
 
     it("getUsedRecoveryCodes marks every consumed code as used, including adjacent ones", () => {

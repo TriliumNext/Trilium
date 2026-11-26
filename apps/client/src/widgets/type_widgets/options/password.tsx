@@ -1,13 +1,20 @@
 import "./password.css";
 
-import { ChangePasswordResponse, OAuthStatus, TOTPStatus } from "@triliumnext/commons";
-import { createPortal } from "preact";
+import type {
+    ChangePasswordResponse,
+    DeviceRecordEntry,
+    OAuthStatus,
+    SignInRecords,
+    TOTPStatus
+} from "@triliumnext/commons";
+import { type ComponentChildren, createPortal } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { oauthAccountLabel, oauthProviderDisplayName } from "../../../services/oauth_status";
-import server from "../../../services/server";
+import protectedSessionService from "../../../services/protected_session";
+import server, { type Credentials } from "../../../services/server";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
 import { ExtendedAdmonition } from "../../react/Admonition";
@@ -20,6 +27,7 @@ import FormTextBox from "../../react/FormTextBox";
 import { useTriliumOption } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import RawHtml from "../../react/RawHtml";
+import { type CredentialsRequest, useCredentialsPrompt } from "./components/CredentialsModal";
 import MfaStatusBadge, { MfaStatusTone } from "./components/MfaStatusBadge";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import TimeSelector from "./components/TimeSelector";
@@ -35,6 +43,7 @@ export default function PasswordSettings() {
             {!isElectron() && <SignInMethod />}
             <ChangePassword />
             <ProtectedSessionTimeout />
+            <SecurityRecordsCard />
         </>
     );
 }
@@ -65,7 +74,10 @@ function ChangePassword() {
                     text={t("password.reset_password_button")}
                     size="micro"
                     onClick={async () => {
-                        if (!await dialog.confirm(t("password.reset_confirmation"))) {
+                        const confirmation = protectedSessionService.wasDataKeyUnreadable()
+                            ? t("password.reset_confirmation_data_key_unreadable")
+                            : t("password.reset_confirmation");
+                        if (!await dialog.confirm(confirmation)) {
                             return;
                         }
 
@@ -110,6 +122,8 @@ function ChangePasswordModal({ show, onHidden }: ChangePasswordModalProps) {
             setNewPassword1("");
             setNewPassword2("");
             toast.showMessage(t("password.password_changed_success"));
+        } else if (result.code === "data-key-unreadable") {
+            toast.showError(t("password.data_key_unreadable"));
         } else if (result.message) {
             toast.showError(result.message);
         }
@@ -189,13 +203,118 @@ function ProtectedSessionTimeout() {
  * `totpStatus.set` to know whether to offer switching methods) and delegates the heavier TOTP UI to
  * its own module; OAuth is small and read-only, so it lives here.
  */
+/**
+ * Shows what this device recorded about sign-ins: the state of its second factor, wrong codes,
+ * right passwords sent without a right code, and the device options a start repaired after a sync
+ * peer wrote them. No route clears these records, so neither a peer nor a page script
+ * can hide them.
+ */
+function SecurityRecordsCard() {
+    const [ records, setRecords ] = useState<SignInRecords>();
+    useEffect(() => {
+        server.get<SignInRecords>("sign-in/records").then(setRecords);
+    }, []);
+
+    if (!records) {
+        return null;
+    }
+
+    const stateNotice = describeSecondFactorState(records.secondFactorState);
+    return (
+        <Card className="security-records" heading={t("sign_in_records.title")}>
+            {stateNotice && (
+                <CardSection>
+                    <FormText>{stateNotice}</FormText>
+                </CardSection>
+            )}
+
+            {records.waitUntil !== null && (
+                <CardSection>
+                    <FormText>
+                        {t("sign_in_records.waiting", {
+                            count: records.wrongCodeCount,
+                            time: formatRecordTime(records.waitUntil)
+                        })}
+                    </FormText>
+                </CardSection>
+            )}
+
+            <OptionCardSection
+                label={t("sign_in_records.attempts")}
+                description={t("sign_in_records.attempts_description")}
+            >
+                <RecordList entries={records.attempts} describe={describeAttempt} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                label={t("sign_in_records.repairs")}
+                description={t("sign_in_records.repairs_description")}
+            >
+                <RecordList
+                    entries={records.repairs}
+                    describe={({ name, lastAt }) => (
+                        <><code>{name}</code> {formatRecordTime(lastAt)}</>
+                    )}
+                />
+            </OptionCardSection>
+        </Card>
+    );
+}
+
+function RecordList({ entries, describe }: {
+    entries: DeviceRecordEntry[];
+    describe: (entry: DeviceRecordEntry) => ComponentChildren;
+}) {
+    if (!entries.length) {
+        return <span>{t("sign_in_records.none")}</span>;
+    }
+
+    return (
+        <ul className="security-records-list">
+            {entries.map((entry) => <li key={entry.name}>{describe(entry)}</li>)}
+        </ul>
+    );
+}
+
+function describeSecondFactorState(state: string) {
+    switch (state) {
+        case "legacy":
+            return t("sign_in_records.state_legacy");
+        case "blocked":
+            return t("sign_in_records.state_blocked");
+        case "removed":
+            return t("sign_in_records.state_removed");
+        default:
+            return null;
+    }
+}
+
+function describeAttempt({ name, count, lastAt }: DeviceRecordEntry) {
+    const time = formatRecordTime(lastAt);
+    switch (name) {
+        case "no-code":
+            return t("sign_in_records.attempt_no_code", { count, time });
+        case "wrong-code":
+            return t("sign_in_records.attempt_wrong_code", { count, time });
+        default:
+            return t("sign_in_records.attempt_wrong_recovery_code", { count, time });
+    }
+}
+
+function formatRecordTime(time: string | number) {
+    return new Date(time).toLocaleString();
+}
+
 function SignInMethod() {
     // `mfaMethod` is the persisted choice: "oauth" means sign in via an OAuth provider, anything else
     // ("totp") means the local password (with TOTP as optional second factor). The dropdown speaks in
     // the user-facing "local"/"oauth" terms and maps back to the option here.
-    const [ mfaMethod, setMfaMethod ] = useTriliumOption("mfaMethod");
+    const [ mfaMethod ] = useTriliumOption("mfaMethod");
     const [ totpStatus, setTotpStatus ] = useState<TOTPStatus>();
     const [ oauthStatus, setOauthStatus ] = useState<OAuthStatus>();
+    const [ askCredentials, credentialsModal ] = useCredentialsPrompt();
+    // Incremented when a change is canceled or fails, so the select shows the stored method again.
+    const [ selectKey, setSelectKey ] = useState(0);
 
     const refreshTotpStatus = useCallback(() => {
         server.get<TOTPStatus>("totp/status").then(setTotpStatus);
@@ -212,18 +331,41 @@ function SignInMethod() {
 
     const usingOAuth = mfaMethod === "oauth";
 
+    // The method decides which factor the login asks for, so its route asks for credentials.
+    const changeMethod = async (value: string) => {
+        const credentials = await askCredentials({
+            title: t("multi_factor_authentication.signin_method"),
+            isCodeAsked: totpStatus?.isCodeAsked ?? false
+        });
+        try {
+            if (credentials) {
+                await server.withCredentials(
+                    "PUT",
+                    "totp/method",
+                    { method: value === "oauth" ? "oauth" : "totp" },
+                    credentials
+                );
+                return;
+            }
+        } catch {
+            // `server.withCredentials()` already showed the failure in a toast.
+        }
+        setSelectKey((key) => key + 1);
+    };
+
     return (
         <>
             <Card className="signin-method" heading={t("multi_factor_authentication.authentication_title")}>
                 <OptionCardSection name="signin-method" label={t("multi_factor_authentication.signin_method")}>
                     <FormSelect
+                        key={selectKey}
                         values={[
                             { value: "local", label: t("multi_factor_authentication.signin_local") },
                             { value: "oauth", label: t("multi_factor_authentication.signin_oauth") }
                         ]}
                         keyProperty="value" titleProperty="label"
                         currentValue={usingOAuth ? "oauth" : "local"}
-                        onChange={(value) => setMfaMethod(value === "oauth" ? "oauth" : "totp")}
+                        onChange={(value) => void changeMethod(value)}
                     />
                 </OptionCardSection>
 
@@ -239,8 +381,13 @@ function SignInMethod() {
             </Card>
 
             { usingOAuth
-                ? <OAuthStatusCard status={oauthStatus} refreshStatus={refreshOauthStatus} />
+                ? <OAuthStatusCard
+                    status={oauthStatus}
+                    refreshStatus={refreshOauthStatus}
+                    askCredentials={askCredentials}
+                />
                 : <TotpSettings totpStatus={totpStatus} refreshTotpStatus={refreshTotpStatus} /> }
+            {credentialsModal}
         </>
     );
 }
@@ -254,7 +401,11 @@ function SignInMethod() {
  *    binds the returned identity. SSO only becomes the live login method once this completes;
  *  - **enrolled** → show the connected account and a "Disconnect" action.
  */
-function OAuthStatusCard({ status, refreshStatus }: { status?: OAuthStatus, refreshStatus: () => void }) {
+function OAuthStatusCard({ status, refreshStatus, askCredentials }: {
+    status?: OAuthStatus,
+    refreshStatus: () => void,
+    askCredentials: (request: CredentialsRequest) => Promise<Credentials | null>
+}) {
     // "Configured" is purely about the server-side variables being present (the server's `enabled` flag
     // additionally requires mfaMethod === 'oauth', which is implied here since this card only renders then).
     const configured = (status?.missingVars?.length ?? 1) === 0;
@@ -282,14 +433,23 @@ function OAuthStatusCard({ status, refreshStatus }: { status?: OAuthStatus, refr
             return;
         }
 
+        // With OpenID as the sign-in method, the server asks for the password only.
+        const credentials = await askCredentials({
+            title: t("multi_factor_authentication.oauth_disconnect_label"),
+            isCodeAsked: false
+        });
+        if (!credentials) {
+            return;
+        }
+
         // Resolve the labels before disconnecting, while the account is still bound.
         const account = oauthAccountLabel(status);
         const provider = oauthProviderDisplayName(status);
 
-        await server.post("oauth/disconnect");
+        await server.withCredentials("POST", "oauth/disconnect", {}, credentials);
         toast.showMessage(t("multi_factor_authentication.oauth_disconnected", { account, provider }));
         refreshStatus();
-    }, [ status, refreshStatus ]);
+    }, [ status, refreshStatus, askCredentials ]);
 
     return (
         <Card

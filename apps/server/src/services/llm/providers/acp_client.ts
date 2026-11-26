@@ -16,6 +16,8 @@ import { createInterface } from "readline";
 import type { Readable, Writable } from "stream";
 import { Worker } from "worker_threads";
 
+import { getAgentEnvironment } from "./binary_lookup.js";
+
 /** How long a disposed agent has to exit on its own before it is killed. */
 const DISPOSE_GRACE_MS = 5_000;
 
@@ -137,7 +139,7 @@ export class AcpClient {
                 shell: options.shell ?? false,
                 detached: process.platform !== "win32",
                 stdio: ["pipe", "pipe", "pipe"],
-                env: options.env ? { ...process.env, ...options.env } : process.env
+                env: getAgentEnvironment(options.env)
             }
         );
         trackLiveAgent(proc);
@@ -161,7 +163,7 @@ export class AcpClient {
     static startWorker(script: string, options: AcpClientOptions): AcpClient {
         const worker = new Worker(script, {
             argv: options.args ?? [],
-            env: { ...process.env, ...options.env },
+            env: getAgentEnvironment(options.env),
             stdin: true,
             stdout: true,
             stderr: true

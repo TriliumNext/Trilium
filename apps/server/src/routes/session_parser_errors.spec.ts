@@ -91,35 +91,51 @@ describe("session cleanup and revocation", () => {
         expect(mockState.executed).toEqual([ "DELETE FROM sessions WHERE expires < ?" ]);
     });
 
-    it("revokes every session only when the password verification hash changes", () => {
+    it("revokes every session only when another password verification hash comes", () => {
         startSessionRevocationOnPasswordChange();
-        const changeLocally = (entityName: string, name: string) =>
-            events.emit(events.ENTITY_CHANGED, { entityName, entity: { name } });
-        const changeBySync = (entityName: string, name: string) =>
-            events.emit(events.ENTITY_CHANGE_SYNCED, { entityName, entityRow: { name } });
+        const changeLocally = (entityName: string, name: string, value: string) =>
+            events.emit(events.ENTITY_CHANGED, { entityName, entity: { name, value } });
+        const changeBySync = (entityName: string, name: string, value: string) =>
+            events.emit(events.ENTITY_CHANGE_SYNCED, { entityName, entityRow: { name, value } });
 
         // Unrelated changes leave the sessions alone.
-        changeLocally("options", "theme");
-        changeLocally("notes", "passwordVerificationHash");
-        changeBySync("options", "theme");
-        changeBySync("notes", "passwordVerificationHash");
+        changeLocally("options", "theme", "dark");
+        changeLocally("notes", "passwordVerificationHash", "x");
+        changeBySync("options", "theme", "dark");
+        changeBySync("notes", "passwordVerificationHash", "x");
         expect(mockState.executed).toEqual([]);
 
         // Without a messaging provider there are no clients to disconnect, but the sessions still go.
-        changeLocally("options", "passwordVerificationHash");
+        changeLocally("options", "passwordVerificationHash", "hash-1");
         expect(mockState.executed).toEqual([ "DELETE FROM sessions" ]);
+
+        // The hash last seen, sent again by a repair of the options sector, logs nobody out.
+        changeBySync("options", "passwordVerificationHash", "hash-1");
+        changeLocally("options", "passwordVerificationHash", "hash-1");
+        expect(mockState.executed).toHaveLength(1);
 
         // A provider that cannot hold HTTP clients has nothing to disconnect either.
         const disconnectAllClients = vi.fn();
         initMessaging({ disconnectAllClients } as unknown as Parameters<typeof initMessaging>[0]);
-        changeBySync("options", "passwordVerificationHash");
+        changeBySync("options", "passwordVerificationHash", "hash-2");
         expect(mockState.executed).toHaveLength(2);
         expect(disconnectAllClients).not.toHaveBeenCalled();
 
         // The WebSocket provider drops every open connection.
         initMessaging({ attachToHttpServer() {}, disconnectAllClients } as unknown as Parameters<typeof initMessaging>[0]);
-        changeLocally("options", "passwordVerificationHash");
+        changeLocally("options", "passwordVerificationHash", "hash-3");
         expect(mockState.executed).toHaveLength(3);
         expect(disconnectAllClients).toHaveBeenCalledWith("password changed");
+    });
+
+    it("knows no hash yet on a database that is not initialized", () => {
+        mockState.initialized = false;
+        startSessionRevocationOnPasswordChange();
+        events.emit(events.ENTITY_CHANGE_SYNCED, {
+            entityName: "options",
+            entityRow: { name: "passwordVerificationHash", value: "" }
+        });
+
+        expect(mockState.executed).toContain("DELETE FROM sessions");
     });
 });

@@ -1,3 +1,5 @@
+import type { PasswordFailureCode } from "@triliumnext/commons";
+
 import server from "./server.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import toastService from "./toast.js";
@@ -13,7 +15,13 @@ let protectedSessionDeferred: JQuery.Deferred<any, any, any> | null = null;
 // TODO: Deduplicate with server when possible.
 interface Response {
     success: boolean;
+    code?: PasswordFailureCode;
 }
+
+/**
+ * Whether a right password failed to open the data key of protected notes since the page loaded.
+ */
+let isDataKeyUnreadable = false;
 
 interface Message {
     taskId: string;
@@ -54,7 +62,12 @@ async function setupProtectedSession(password: string) {
     const response = await server.post<Response>("login/protected", { password: password });
 
     if (!response.success) {
-        toastService.showError(t("protected_session.wrong_password"), 3000);
+        if (response.code === "data-key-unreadable") {
+            isDataKeyUnreadable = true;
+            toastService.showError(t("protected_session.data_key_unreadable"), 15000);
+        } else {
+            toastService.showError(t("protected_session.wrong_password"), 3000);
+        }
         return false;
     }
 
@@ -122,5 +135,6 @@ export default {
     protectNote,
     enterProtectedSession,
     leaveProtectedSession,
-    setupProtectedSession
+    setupProtectedSession,
+    wasDataKeyUnreadable: () => isDataKeyUnreadable
 };

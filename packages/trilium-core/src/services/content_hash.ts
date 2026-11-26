@@ -98,9 +98,12 @@ function checkContentHashes(otherHashes: Record<string, SectorHash>) {
     const entityHashes = getEntityHashes();
     const failedChecks: FailedCheck[] = [];
 
-    for (const entityName in entityHashes) {
-        const thisSectorHashes: SectorHash = entityHashes[entityName];
-        const otherSectorHashes: SectorHash = otherHashes[entityName] || {};
+    // The entity kinds of both sides, so that a kind only one side holds fails in every sector.
+    for (const entityName of new Set([
+        ...Object.keys(entityHashes), ...Object.keys(otherHashes)
+    ])) {
+        const thisSectorHashes: SectorHash = entityHashes[entityName] ?? {};
+        const otherSectorHashes: SectorHash = otherHashes[entityName] ?? {};
 
         const sectors = new Set(Object.keys(thisSectorHashes).concat(Object.keys(otherSectorHashes)));
 

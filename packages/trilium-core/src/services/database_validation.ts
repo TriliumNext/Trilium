@@ -20,6 +20,24 @@ import appInfo from "./app_info.js";
 /** The oldest database the migrations still reach back to; below this one, there is no upgrade path. */
 export const OLDEST_SUPPORTED_DB_VERSION = 214;
 
+/**
+ * Device options that only opening a database creates, never a setup path, and that sync never
+ * deletes.
+ */
+export const OPENED_DATABASE_SIGNS: readonly string[] = [ "zoomFactor" ];
+
+/**
+ * Whether a database has been opened: `initialized` is `true`, or the database holds an option
+ * that only opening creates, whatever a sync peer pushed into `initialized`.
+ *
+ * @param option reads a value of the `options` table, or `undefined` or `null` when it has no row.
+ */
+export function isOpenedDatabase(option: (name: string) => string | null | undefined): boolean {
+    return option("initialized") === "true"
+        || OPENED_DATABASE_SIGNS.some((name) =>
+            option(name) !== undefined && option(name) !== null);
+}
+
 /** What every SQLite database begins with, in the encoding the bytes are read as. */
 const SQLITE_MAGIC = "SQLite format 3\0";
 
@@ -119,7 +137,7 @@ export function validateDatabase(db: CandidateDatabase, options: ValidationOptio
         );
     }
 
-    if (db.option("initialized") !== "true") {
+    if (!isOpenedDatabase((name) => db.option(name))) {
         return reject(
             "database-not-initialized",
             "The database is from a setup that never finished, so it holds nothing to restore."

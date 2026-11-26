@@ -14,6 +14,7 @@ import TaskContext from "./task_context";
 import BOption from "../becca/entities/boption";
 import migrationService from "./migration";
 import passwordService from "./encryption/password";
+import { isOpenedDatabase } from "./database_validation";
 import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 
 export const dbReady = deferred<void>();
@@ -46,8 +47,10 @@ function isDbInitialized() {
             return false;
         }
 
-        const initialized = getSql().getValue("SELECT value FROM options WHERE name = 'initialized'");
-        return initialized === "true";
+        const sql = getSql();
+        return isOpenedDatabase((name) =>
+            sql.getValue<string>("SELECT value FROM options WHERE name = ?", [ name ])
+        );
     } catch (e) {
         return false;
     }
@@ -119,6 +122,7 @@ function initializeDb() {
 
     dbReady.then(() => {
         getBackup().scheduleBackups();
+        passwordService.startProtectedSessionEndOnPasswordChange();
 
         // Optimize is usually inexpensive no-op, so running it semi-frequently is not a big deal
         setTimeout(() => optimize(), 60 * 60 * 1000);

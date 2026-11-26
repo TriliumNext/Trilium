@@ -174,7 +174,10 @@ function mockServer() {
             // these; without them the write rejects and surfaces as an unhandled rejection rather
             // than as whatever the test was actually asserting.
             async put(_url: string, _data?: object) {},
-            async remove(_url: string) {}
+            async remove(_url: string) {},
+
+            // `ws.ts` calls this to renew the page's token after a refusal.
+            async refreshCsrfToken() {}
         }
     };
 }

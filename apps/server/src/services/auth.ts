@@ -1,12 +1,31 @@
-import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import {
+    attributes,
+    cls,
+    hasExistingData,
+    isSetupAuthorized,
+    options,
+    password as passwordService,
+    password_encryption as passwordEncryptionService
+} from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
-import recoveryCodeService from "./encryption/recovery_codes.js";
+import recoveryCodeService, { RECOVERY_CODE_SHAPE } from "./encryption/recovery_codes.js";
 import etapiTokenService from "./etapi_tokens.js";
 import { getLog } from "@triliumnext/core";
+import { isInteractiveSession, isSyncSession, markLoggedOut } from "./login_session.js";
 import openID from "./open_id.js";
+import {
+    countWrongCode,
+    getSecondFactorCheck,
+    getWaitUntil,
+    hasResetWords,
+    matchesResetWords,
+    readWrongCodes,
+    recordSignInAttempt,
+    RESET_VARIABLE
+} from "./second_factor.js";
 import sqlInit from "./sql_init.js";
 import totp from "./totp.js";
 import { isElectron } from "./utils.js";
@@ -37,7 +56,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     if (isInternalElectronRequest(req) || noAuthentication) {
         next();
         return;
-    } else if (!req.session.loggedIn && !noAuthentication) {
+    } else if (!isInteractiveSession(req.session)) {
         // check redirectBareDomain option first
 
         // cannot use options.getOptionBool currently => it will throw an error on new installations
@@ -71,7 +90,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         });
         return;
     } else if (currentSsoStatus) {
-        if (req.oidc?.isAuthenticated() && req.session.loggedIn) {
+        if (req.oidc?.isAuthenticated()) {
             next();
             return;
         }
@@ -87,7 +106,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         // only runs on res.end(), so with an async store the SPA's immediately-following
         // /bootstrap sub-request could otherwise read the still-loggedIn session and bounce
         // back through this branch instead of seeing loggedIn:false.
-        req.session.loggedIn = false;
+        markLoggedOut(req.session);
         req.session.save((err) => {
             if (err) console.error("Error saving session after OIDC session lapse:", err);
             next();
@@ -124,7 +143,7 @@ function mayPassAsUninitialized(req: Request): boolean {
     if (sqlInit.isDbInitialized()) {
         return false;
     }
-    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+    if (!hasExistingData() || isInternalElectronRequest(req) || noAuthentication) {
         return true;
     }
 
@@ -144,7 +163,8 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         return next();
     }
 
-    if (!req.session.loggedIn && !isInternalElectronRequest(req) && !noAuthentication) {
+    if (!isInteractiveSession(req.session) && !isInternalElectronRequest(req)
+        && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -167,9 +187,26 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         return next();
     }
 
-    if (!req.session.loggedIn) {
+    if (!isInteractiveSession(req.session)) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
+    } else {
+        next();
+    }
+}
+
+/**
+ * Guards the six routes that a sync client calls after its login, which accept only a sync session.
+ * A first sync reaches them without a login, as it reaches every route while the database is not
+ * initialized.
+ */
+function checkSyncAuth(req: Request, res: Response, next: NextFunction) {
+    if (mayPassAsUninitialized(req) || isInternalElectronRequest(req) || noAuthentication) {
+        return next();
+    }
+
+    if (!isSyncSession(req.session)) {
+        reject(req, res, "Sync session not found");
     } else {
         next();
     }
@@ -217,9 +254,12 @@ function checkAppNotInitialized(req: Request, res: Response, next: NextFunction)
  * knowledge base behind the wizard, which is the ordinary first run; the desktop's own renderer,
  * which reaches the server over the custom protocol and is the application itself; and an instance
  * configured for no authentication, which has already said it trusts whoever can reach it.
+ *
+ * Over the network the lock does not depend on the password row, which syncs: when it is empty,
+ * nothing unlocks the wizard.
  */
 function checkSetupAuth(req: Request, res: Response, next: NextFunction) {
-    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+    if (!hasExistingData() || isInternalElectronRequest(req) || noAuthentication) {
         return next();
     }
 
@@ -269,7 +309,7 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
 
     // Checked before the password so that the answer says nothing about the password.
     const totpToken = req.headers["trilium-totp"];
-    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
+    if (getSecondFactorCheck() !== "none" && (typeof totpToken !== "string" || !totpToken)) {
         res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
         getLog().warn(`Missing TOTP token from ${req.ip}, rejecting.`);
         return;
@@ -277,23 +317,59 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
 
     // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
     // `verifyRecoveryCode()` write options when they accept a code.
-    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
-    if (failedFactor === "password") {
+    const refusal = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    if (refusal?.factor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
-    } else if (failedFactor === "totp") {
-        res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
+    } else if (refusal) {
+        res.setHeader("Content-Type", "text/plain").status(401).send(describeRefusal(refusal));
         getLog().warn(`Wrong TOTP token from ${req.ip}, rejecting.`);
     } else {
         next();
     }
 }
 
+/** Returns the message that `checkCredentials()` sends for a refused second factor. */
+export function describeRefusal({ reason, waitUntil }: LoginRefusal): string {
+    const until = waitUntil ? new Date(waitUntil).toISOString() : "";
+    switch (reason) {
+        case "wait":
+            return `Too many wrong codes. Try again after ${until}.`;
+        case "step-ahead":
+            return "A code was used while the server clock was ahead. "
+                + `Codes work again after ${until}.`;
+        case "unreadable":
+            return "The second factor cannot be checked. "
+                + `Restart the server with ${RESET_VARIABLE} to remove it.`;
+        case "removed":
+            return "The second factor was removed. "
+                + `Restart the server with ${RESET_VARIABLE} and send its words as the code.`;
+        default:
+            return "Incorrect TOTP token";
+    }
+}
+
 export type LoginFactor = "password" | "totp";
 
 /**
- * Verifies submitted login credentials, returning the factor that failed or `null` when they are all
- * valid.
+ * Why a second factor was refused other than a wrong code: a wait after wrong codes, a stored time
+ * step ahead of the clock, a factor that cannot be checked, or a factor that
+ * `TRILIUM_RESET_SECOND_FACTOR` removed at an earlier start.
+ */
+export type SecondFactorRefusal = "wait" | "step-ahead" | "unreadable" | "removed";
+
+export interface LoginRefusal {
+    factor: LoginFactor;
+    reason?: SecondFactorRefusal;
+    /**
+     * When codes are accepted again, for `wait` and `step-ahead`, in milliseconds since the epoch.
+     */
+    waitUntil?: number;
+}
+
+/**
+ * Verifies submitted login credentials, returning what was refused or `null` when they are all
+ * valid. A right password sent without a right code is recorded for the security records card.
  *
  * The password is checked BEFORE the TOTP / recovery-code second factor on purpose: verifying a
  * recovery code consumes it (codes are single-use, see {@link recoveryCodeService.verifyRecoveryCode}).
@@ -301,24 +377,63 @@ export type LoginFactor = "password" | "totp";
  * wrong password — silently wasting one of the user's limited codes. Password-first guarantees a
  * recovery code is only ever consumed once the rest of the login is known to succeed.
  */
-export async function verifyLoginCredentials(password: unknown, totpToken: unknown): Promise<LoginFactor | null> {
+export async function verifyLoginCredentials(
+    password: unknown,
+    totpToken: unknown
+): Promise<LoginRefusal | null> {
     if (typeof password !== "string" || !(await passwordEncryptionService.verifyPassword(password))) {
-        return "password";
+        return { factor: "password" };
     }
 
-    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !verifyTOTP(totpToken))) {
-        return "totp";
+    const answer = typeof totpToken === "string" ? totpToken : "";
+    const refusal = verifySecondFactor(answer);
+    if (refusal) {
+        recordSignInAttempt(!answer ? "no-code"
+            : RECOVERY_CODE_SHAPE.test(answer) ? "wrong-recovery-code" : "wrong-code");
     }
-
-    return null;
+    return refusal;
 }
 
-function verifyTOTP(submittedTotpToken: string) {
-    if (totp.verifyTOTP(submittedTotpToken)) {
-        return true;
+/**
+ * Checks what the login asks for after a right password. Wrong TOTP codes are counted for the whole
+ * server, and five in a row start a wait. A value shaped like a recovery code is neither counted
+ * nor held back by a wait, since it carries 128 bits.
+ */
+function verifySecondFactor(answer: string): LoginRefusal | null {
+    const check = getSecondFactorCheck();
+    if (check === "none") {
+        return null;
+    }
+    if (check === "unreadable") {
+        return { factor: "totp", reason: "unreadable" };
+    }
+    if (check === "words" && !hasResetWords()) {
+        return { factor: "totp", reason: "removed" };
+    }
+    if (!answer) {
+        return { factor: "totp" };
+    }
+    if (check === "code" && RECOVERY_CODE_SHAPE.test(answer)) {
+        return recoveryCodeService.verifyRecoveryCode(answer) ? null : { factor: "totp" };
     }
 
-    return recoveryCodeService.verifyRecoveryCode(submittedTotpToken);
+    const waitUntil = getWaitUntil(readWrongCodes());
+    if (waitUntil !== null) {
+        return { factor: "totp", reason: "wait", waitUntil };
+    }
+
+    if (check === "words" ? matchesResetWords(answer) : totp.verifyTOTP(answer)) {
+        return null;
+    }
+
+    // No time step was tried, so the code is not counted as a guess.
+    const stepWaitUntil = check === "code" ? totp.getStepWaitUntil() : null;
+    if (stepWaitUntil !== null) {
+        return { factor: "totp", reason: "step-ahead", waitUntil: stepWaitUntil };
+    }
+
+    countWrongCode();
+    return { factor: "totp" };
 }
 
 export default {
@@ -330,6 +445,7 @@ export default {
     checkAppNotInitialized,
     checkSetupAuth,
     checkApiAuthOrElectron,
+    checkSyncAuth,
     checkEtapiToken,
     checkCredentials
 };

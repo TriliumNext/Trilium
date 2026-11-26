@@ -140,6 +140,18 @@ describe("setupProtectedSession", () => {
         expect(showError).toHaveBeenCalled();
         expect(protectedSessionHolder.enableProtectedSession).not.toHaveBeenCalled();
     });
+
+    it("shows an error on data-key-unreadable, and remembers it for a reset", async () => {
+        const showError = vi.spyOn(toastService, "showError").mockReturnValue(undefined as any);
+        expect(protectedSession.wasDataKeyUnreadable()).toBe(false);
+
+        server.post = vi.fn(async () =>
+            ({ success: false, code: "data-key-unreadable" })) as typeof server.post;
+        expect(await protectedSession.setupProtectedSession("right")).toBe(false);
+
+        expect(showError).toHaveBeenCalledWith("protected_session.data_key_unreadable", 15000);
+        expect(protectedSession.wasDataKeyUnreadable()).toBe(true);
+    });
 });
 
 describe("protectNote", () => {

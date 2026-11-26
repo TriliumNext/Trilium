@@ -1,12 +1,5 @@
 import recovery_codes from '../../services/encryption/recovery_codes.js';
 import totp from '../../services/totp.js';
-import type { Request } from 'express';
-
-function verifyRecoveryCode(req: Request) {
-    const success = recovery_codes.verifyRecoveryCode(req.body.recovery_code_guess);
-
-    return { success: success };
-}
 
 /**
  * Issues a fresh batch of recovery codes for the already-enrolled TOTP secret, replacing any existing
@@ -51,7 +44,6 @@ function getUsedRecoveryCodes() {
 }
 
 export default {
-    verifyRecoveryCode,
     regenerateRecoveryCodes,
     checkForRecoveryKeys,
     getUsedRecoveryCodes

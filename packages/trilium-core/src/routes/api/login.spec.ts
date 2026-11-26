@@ -1,7 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import passwordEncryptionService from "../../services/encryption/password_encryption";
+import { getContext } from "../../services/context";
+import options from "../../services/options";
 import protectedSession from "../../services/protected_session";
+import { encodeBase64 } from "../../services/utils/binary";
 import ws from "../../services/ws";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -41,14 +43,20 @@ describe("Login (protected session) API (core)", () => {
         expect(protectedSession.isProtectedSessionAvailable()).toBe(false);
     });
 
-    it("returns the 'unable to obtain data key' failure when the data key cannot be decrypted", async () => {
-        vi.spyOn(passwordEncryptionService, "getDataKey").mockResolvedValue(null);
-        const res = await api.post<{ success: boolean }>("/api/login/protected", {
-            body: { password: "demo1234" }
-        });
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(false);
-        expect(protectedSession.isProtectedSessionAvailable()).toBe(false);
+    it("answers data-key-unreadable to the correct password, and opens no session", async () => {
+        const stored = options.getOption("encryptedDataKey");
+        // A value that the recovery path of issue 510 would return as the key.
+        getContext().init(() => options.setOption(
+            "encryptedDataKey", encodeBase64(Uint8Array.from({ length: 12 }, (_, i) => i))));
+        try {
+            const res = await api.post<{ success: boolean; code?: string }>(
+                "/api/login/protected", { body: { password: "demo1234" } });
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({ success: false, code: "data-key-unreadable" });
+            expect(protectedSession.isProtectedSessionAvailable()).toBe(false);
+        } finally {
+            getContext().init(() => options.setOption("encryptedDataKey", stored));
+        }
     });
 
     it("logs in to the protected session with the correct password", async () => {

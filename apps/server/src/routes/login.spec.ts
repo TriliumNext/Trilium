@@ -4,7 +4,14 @@ import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, events, initMessaging, options, password as passwordService } from "@triliumnext/core";
+import {
+    cls,
+    date_utils,
+    events,
+    initMessaging,
+    options,
+    password as passwordService
+} from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
 import { markAsInternalElectronRequest } from "../services/electron_request.js";
@@ -121,6 +128,18 @@ describe("set-password handlers", () => {
         expect(setPassword).toHaveBeenCalledWith("secret");
         expect(res.redirect).toHaveBeenCalledWith("login");
     });
+
+    it("answers 400 to a password the data key refuses, which the limiter counts", async () => {
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+        vi.spyOn(passwordService, "setPassword").mockResolvedValue({
+            success: false, message: "Enter the password it had.", code: "password-not-restored"
+        });
+
+        const { result, res } = setPasswordWith({ password1: "a-visitor", password2: "a-visitor" });
+
+        await expect(result).rejects.toMatchObject({ statusCode: 400 });
+        expect(res.redirect).not.toHaveBeenCalled();
+    });
 });
 
 describe("login with OpenID enabled", () => {
@@ -189,6 +208,7 @@ describe("Login Route test", () => {
 
     it("rejects a TOTP token that is not a string without verifying it", async () => {
         vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+        vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
         const verifyTOTP = vi.spyOn(totp, "verifyTOTP");
 
         try {
@@ -201,6 +221,36 @@ describe("Login Route test", () => {
             expect(verifyTOTP).not.toHaveBeenCalled();
         } finally {
             vi.restoreAllMocks();
+        }
+    });
+
+    it("says why a second factor was refused besides a wrong code", async () => {
+        vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+        const secret = vi.spyOn(totp, "getTotpSecret").mockReturnValue(null);
+
+        try {
+            const unreadable = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234", totpToken: "123456" })
+                .expect(401);
+            expect(unreadable.body).toEqual({
+                success: false,
+                factor: "totp",
+                reason: "unreadable"
+            });
+
+            secret.mockReturnValue("JBSWY3DPEHPK3PXP");
+            const wrongCodes = { count: 5, lastAt: date_utils.utcNowDateTime() };
+            cls.init(() => options.setOption("totpWrongCodeCount", JSON.stringify(wrongCodes)));
+            const waiting = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234", totpToken: "123456" })
+                .expect(401);
+            expect(waiting.body).toMatchObject({ success: false, factor: "totp", reason: "wait" });
+            expect(waiting.body.waitUntil).toBeGreaterThan(Date.now());
+        } finally {
+            vi.restoreAllMocks();
+            cls.init(() => options.setOption("totpWrongCodeCount", ""));
         }
     });
 

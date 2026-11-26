@@ -5,6 +5,7 @@ import type { Session } from "express-openid-connect";
 import { describeError } from "../routes/error_handlers.js";
 import config from "./config.js";
 import openIDEncryption from "./encryption/open_id_encryption.js";
+import { isInteractiveSession, markLoggedIn, markLoggedOut } from "./login_session.js";
 import sql from "./sql.js";
 import sqlInit from "./sql_init.js";
 
@@ -219,7 +220,7 @@ function generateOAuthConfig(
                 // may proceed — otherwise any user the IdP authenticates could sign in to this instance.
                 if (!openIDEncryption.verifySubjectIdentifier(incomingSubject)) {
                     getLog().info("OAuth login rejected: the authenticated account is not the enrolled one.");
-                    req.session.loggedIn = false;
+                    markLoggedOut(req.session);
                     req.session.ssoError = "wrong_account";
                     return session;
                 }
@@ -227,8 +228,9 @@ function generateOAuthConfig(
                 // No account is enrolled yet. Binding the identity is only allowed when the request comes
                 // from an already-authenticated session — i.e. the owner enrolling from Settings. A
                 // sign-in from an anonymous session is refused so a stranger can't claim the instance by
-                // simply being the first to authenticate.
-                if (!req.session.loggedIn) {
+                // simply being the first to authenticate. A sync session is refused too, since
+                // anyone holding a copy of the database can open one.
+                if (!isInteractiveSession(req.session)) {
                     getLog().info("OAuth enrollment rejected: sign-in attempted before an account was enrolled.");
                     req.session.ssoError = "not_enrolled";
                     return session;
@@ -261,11 +263,11 @@ function generateOAuthConfig(
                 });
             } catch (error) {
                 getLog().error(`OAuth session regeneration failed, refusing login: ${error instanceof Error ? error.message : error}`);
-                req.session.loggedIn = false;
+                markLoggedOut(req.session);
                 return session;
             }
 
-            req.session.loggedIn = true;
+            markLoggedIn(req.session, "interactive");
             req.session.lastAuthState = {
                 totpEnabled: false,
                 ssoEnabled: true

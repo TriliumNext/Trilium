@@ -95,6 +95,8 @@ export function SyncConfiguration() {
                 </OptionCardSection>
             </Card>
 
+            <UnfinishedSync syncServerHost={syncServerHost} />
+
             <Card>
                 <EffectiveSyncServer />
 
@@ -111,6 +113,41 @@ export function SyncConfiguration() {
                 </OptionCardSection>
             </Card>
         </>
+    );
+}
+
+/**
+ * Shown while the last sync of a device without a sync server did not finish, which stops the
+ * consistency checks from fixing anything. Entering the sync server address again hides it, and
+ * so does confirming that the device no longer syncs.
+ */
+function UnfinishedSync({ syncServerHost }: { syncServerHost: string }) {
+    const [isLastSyncUnfinished] = useTriliumOptionBool("isLastSyncUnfinished");
+    const [isConfirmed, setIsConfirmed] = useState(false);
+
+    if (!isLastSyncUnfinished || isConfirmed || syncServerHost) {
+        return null;
+    }
+
+    async function confirmAlone() {
+        await server.post("sync/confirm-alone");
+        setIsConfirmed(true);
+    }
+
+    return (
+        <Card>
+            <OptionCardSection
+                label={t("sync_2.unfinished_title")}
+                description={t("sync_2.unfinished_description")}
+            >
+                <Button
+                    name="confirm-alone-button"
+                    text={t("sync_2.unfinished_confirm")}
+                    size="micro"
+                    onClick={() => void confirmAlone()}
+                />
+            </OptionCardSection>
+        </Card>
     );
 }
 

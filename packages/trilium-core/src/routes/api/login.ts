@@ -16,9 +16,12 @@ async function loginToProtectedSession(req: Request) {
 
     const decryptedDataKey = await passwordEncryptionService.getDataKey(password);
     if (!decryptedDataKey) {
+        // A reset would empty the data key on every device, so the message says the password
+        // is right.
         return {
             success: false,
-            message: "Unable to obtain data key."
+            message: "The password is right, but the key of protected notes cannot be read.",
+            code: "data-key-unreadable"
         };
     }
 

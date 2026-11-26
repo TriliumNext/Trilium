@@ -45,24 +45,48 @@ export function App() {
 }
 
 function SetPasswordForm() {
+    // The protected notes are still encrypted with the previous password, so only that one
+    // is accepted.
+    const isRestoring = window.glob?.passwordRemoved === true;
     const password1Ref = useRef<HTMLInputElement>(null);
     const [ password1, setPassword1 ] = useState("");
     const [ password2, setPassword2 ] = useState("");
+    const [ failure, setFailure ] = useState<{ message: string; id: number } | null>(null);
 
     // Mirror the server-side validation so the form can't be submitted into an error.
     const tooShort = password1 !== "" && password1.length < MIN_PASSWORD_LENGTH;
-    const mismatch = password2 !== "" && password1 !== password2;
-    const isValid = password1.length >= MIN_PASSWORD_LENGTH && password1 === password2;
+    const mismatch = !isRestoring && password2 !== "" && password1 !== password2;
+    const isValid = password1.length >= MIN_PASSWORD_LENGTH
+        && (isRestoring || password1 === password2);
+
+    async function submit(e: Event) {
+        e.preventDefault();
+        if (!isValid) {
+            return;
+        }
+
+        const message = await postPassword(
+            password1,
+            isRestoring ? password1 : password2,
+            isRestoring
+        );
+        if (message) {
+            setFailure((previous) => ({ message, id: (previous?.id ?? 0) + 1 }));
+        }
+    }
 
     return (
         <div class="setup-container set-password-container">
-            {/* On success the server sets the password and redirects to the login page. */}
-            <form method="POST" action="set-password" onSubmit={(e) => { if (!isValid) e.preventDefault(); }}>
+            <form onSubmit={(e) => void submit(e)}>
                 <SetupPage
                     className="set-password"
                     title={t("set_password.heading")}
-                    description={t("set_password.description")}
+                    description={t(isRestoring
+                        ? "set_password.restore-description"
+                        : "set_password.description")}
                     illustration={<Icon icon="bx bx-lock-alt" className="illustration-icon" />}
+                    error={failure?.message ?? null}
+                    errorId={failure?.id ?? 0}
                     footer={<Button text={t("set_password.button")} kind="primary" disabled={!isValid} />}
                 >
                     <Card>
@@ -81,24 +105,60 @@ function SetPasswordForm() {
                                 />
                             </OptionsRow>
 
-                            <OptionsRow
-                                name="password2" label={t("set_password.password-confirmation")}
-                                description={mismatch ? <span className="text-danger">{t("set_password.passwords-dont-match")}</span> : undefined}
-                                stacked
-                            >
-                                <FormTextBox
-                                    className={mismatch ? "is-invalid" : undefined}
-                                    type="password" name="password2"
-                                    currentValue={password2} onChange={setPassword2}
-                                    autocomplete="new-password" required
-                                />
-                            </OptionsRow>
+                            {!isRestoring && (
+                                <OptionsRow
+                                    name="password2" label={t("set_password.password-confirmation")}
+                                    description={mismatch ? (
+                                        <span className="text-danger">
+                                            {t("set_password.passwords-dont-match")}
+                                        </span>
+                                    ) : undefined}
+                                    stacked
+                                >
+                                    <FormTextBox
+                                        className={mismatch ? "is-invalid" : undefined}
+                                        type="password" name="password2"
+                                        currentValue={password2} onChange={setPassword2}
+                                        autocomplete="new-password" required
+                                    />
+                                </OptionsRow>
+                            )}
                         </CardSection>
                     </Card>
                 </SetupPage>
             </form>
         </div>
     );
+}
+
+/**
+ * Sends the password. On success the server redirects to the login page, which `fetch` follows.
+ *
+ * @returns the failure message, or `null` once the page navigates to the login.
+ */
+async function postPassword(
+    password1: string,
+    password2: string,
+    isRestoring: boolean
+): Promise<string | null> {
+    try {
+        const resp = await fetch("set-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ password1, password2 })
+        });
+
+        if (resp.ok) {
+            window.location.assign(".");
+            return null;
+        }
+        if (resp.status === 429) {
+            return t("login.too-many-attempts");
+        }
+        return t(isRestoring ? "set_password.restore-refused" : "set_password.refused");
+    } catch {
+        return t("login.connection-error");
+    }
 }
 
 // index.ts holds the splash up until the page has rendered. The render under test imports

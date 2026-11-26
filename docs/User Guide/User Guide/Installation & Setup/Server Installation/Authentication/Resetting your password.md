@@ -30,6 +30,9 @@ There are two options, both involving access to the device that is running your 
 3.  After executing the changes, commit/write the changes. **This sets the password to** `**password**`**, allowing you to log in again.**
 4.  Go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password_ → _Change password_ and replace the unsafe password.
 
+> [!NOTE]
+> Emptying only `passwordVerificationHash` does not reset the password while the protected notes still have their key. Trilium then shows the set password screen, which accepts only the previous password, the one that opens the protected notes. To set a different password, use one of the ways above.
+
 ## Handling protected notes
 
 When the password is reset, the protected notes are permanently lost due to the fact that they are encrypted with your password so there is no way for Trilium to recover them.

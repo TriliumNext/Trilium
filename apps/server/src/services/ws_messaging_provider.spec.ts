@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const OPEN = 1;
 const CLOSED = 3;
+const PAGE_TOKEN = "the-page's-csrf-token";
 
 type Handler = (...args: any[]) => void;
 
@@ -46,6 +47,9 @@ vi.mock("ws", () => ({
 }));
 vi.mock("./config.js", () => ({ default: configMock }));
 vi.mock("./utils.js", () => ({ randomString: randomStringMock }));
+vi.mock("../routes/csrf_protection.js", () => ({
+    isValidCsrfToken: (_req: unknown, token: unknown) => token === PAGE_TOKEN
+}));
 vi.mock("@triliumnext/core", async () => {
     // use the real shouldLogMessage so the suppression tests cover the actual filter
     const { shouldLogMessage } = await vi.importActual<typeof import("@triliumnext/core/src/services/messaging/index.js")>(
@@ -54,7 +58,10 @@ vi.mock("@triliumnext/core", async () => {
     return { getLog: () => getLogMock, shouldLogMessage };
 });
 
-import WebSocketMessagingProvider, { isHttpAttachableMessagingProvider } from "./ws_messaging_provider.js";
+import WebSocketMessagingProvider, {
+    CSRF_REFUSED_CLOSE_CODE,
+    isHttpAttachableMessagingProvider
+} from "./ws_messaging_provider.js";
 
 function makeSocket(readyState = OPEN) {
     const handlers: Record<string, Handler> = {};
@@ -70,8 +77,10 @@ function makeSocket(readyState = OPEN) {
             this.sent.push(data);
         },
         closed: false,
-        close() {
+        closeCode: undefined as number | undefined,
+        close(code?: number) {
             this.closed = true;
+            this.closeCode = code;
         },
         emit(event: string, ...args: any[]) {
             return handlers[event]?.(...args);
@@ -94,6 +103,7 @@ describe("WebSocketMessagingProvider", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
     });
 
     it("is recognised as HTTP-attachable (the capability www.ts gates the WS server on)", () => {
@@ -113,13 +123,32 @@ describe("WebSocketMessagingProvider", () => {
         return { server: state.instances[0], sessionParser };
     }
 
+    /** Opens a connection and sends the page's token, as the client does first. */
+    function admit(server: any, ws = makeSocket()) {
+        server.emit("connection", ws, {});
+        ws.emit("message", JSON.stringify({ type: "csrf-token", token: PAGE_TOKEN }));
+        return ws;
+    }
+
     describe("init / verifyClient", () => {
-        it("allows a logged-in session", () => {
+        it("allows an interactive session", () => {
             const { server } = init();
             const done = vi.fn();
-            server.options.verifyClient({ req: { session: { loggedIn: true } } }, done);
+            server.options.verifyClient(
+                { req: { session: { loggedIn: true, sessionKind: "interactive" } } },
+                done
+            );
             expect(done).toHaveBeenCalledWith(true);
             expect(getLogMock.error).not.toHaveBeenCalled();
+        });
+
+        it("refuses a sync session and a logged-in session without a kind", () => {
+            const { server } = init();
+            for (const session of [ { loggedIn: true, sessionKind: "sync" }, { loggedIn: true } ]) {
+                const done = vi.fn();
+                server.options.verifyClient({ req: { session } }, done);
+                expect(done).toHaveBeenCalledWith(false);
+            }
         });
 
         it("allows when authentication is disabled", () => {
@@ -149,15 +178,82 @@ describe("WebSocketMessagingProvider", () => {
         });
     });
 
-    describe("connection lifecycle", () => {
-        it("tracks a connected client, dispatches messages, and untracks on close", async () => {
+    describe("the CSRF token of a connection", () => {
+        it("serves a connection nothing until its first message is the page's token", async () => {
+            const { server } = init();
+            const handler = vi.fn();
+            provider.setClientMessageHandler(handler);
+            const ws = makeSocket();
+            server.emit("connection", ws, {});
+
+            provider.sendMessageToAllClients({ type: "sync-finished" } as WebSocketMessage);
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
+            expect(provider.getClientCount()).toBe(0);
+            expect(ws.sent).toEqual([]);
+
+            ws.emit("message", JSON.stringify({ type: "csrf-token", token: PAGE_TOKEN }));
+            expect(handler).not.toHaveBeenCalled();
+            expect(provider.getClientCount()).toBe(1);
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
+        });
+
+        it("closes a connection on a wrong first message, and reads no more from it", async () => {
             const { server } = init();
             const handler = vi.fn();
             provider.setClientMessageHandler(handler);
 
+            for (const first of [
+                JSON.stringify({ type: "csrf-token", token: "another" }),
+                JSON.stringify({ type: "ping" }),
+                "{not json"
+            ]) {
+                const ws = makeSocket();
+                server.emit("connection", ws, {});
+                ws.emit("message", first);
+                ws.emit("message", JSON.stringify({ type: "csrf-token", token: PAGE_TOKEN }));
+
+                expect(ws.closeCode).toBe(CSRF_REFUSED_CLOSE_CODE);
+                expect(provider.getClientCount()).toBe(0);
+            }
+            expect(handler).not.toHaveBeenCalled();
+            expect(getLogMock.info)
+                .toHaveBeenCalledWith(expect.stringContaining("wrong CSRF token"));
+        });
+
+        it("closes a connection that sends no token within 10 seconds", () => {
+            vi.useFakeTimers();
+            const { server } = init();
+            const silent = makeSocket();
+            server.emit("connection", silent, {});
+            const served = admit(server, makeSocket());
+
+            vi.advanceTimersByTime(10_000);
+
+            expect(silent.closeCode).toBe(CSRF_REFUSED_CLOSE_CODE);
+            expect(served.closed).toBe(false);
+            expect(getLogMock.info)
+                .toHaveBeenCalledWith(expect.stringContaining("no CSRF token in time"));
+        });
+
+        it("forgets the deadline of a connection that closes first", () => {
+            vi.useFakeTimers();
+            const { server } = init();
             const ws = makeSocket();
             server.emit("connection", ws, {});
-            expect(provider.getClientCount()).toBe(0); // server.clients still empty (we manage map)
+            ws.emit("close");
+
+            vi.advanceTimersByTime(10_000);
+            expect(ws.closed).toBe(false);
+        });
+    });
+
+    describe("connection lifecycle", () => {
+        it("tracks a served client, dispatches messages, and untracks on close", async () => {
+            const { server } = init();
+            const handler = vi.fn();
+            provider.setClientMessageHandler(handler);
+
+            const ws = admit(server);
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
 
             await Promise.resolve(ws.emit("message", JSON.stringify({ type: "hello" })));
@@ -169,8 +265,7 @@ describe("WebSocketMessagingProvider", () => {
 
         it("ignores incoming messages when no handler is registered", async () => {
             const { server } = init();
-            const ws = makeSocket();
-            server.emit("connection", ws, {});
+            const ws = admit(server);
             // With no handler registered the message listener parses the payload
             // and returns (undefined) without dispatching — emitting must not throw.
             expect(ws.emit("message", JSON.stringify({ type: "x" }))).toBeUndefined();
@@ -183,8 +278,7 @@ describe("WebSocketMessagingProvider", () => {
             provider.setClientMessageHandler(vi.fn(async () => {
                 throw new Error("handler failed");
             }));
-            const ws = makeSocket();
-            server.emit("connection", ws, {});
+            const ws = admit(server);
 
             ws.emit("message", "{not json");
             ws.emit("message", JSON.stringify({ type: "hello" }));
@@ -206,8 +300,7 @@ describe("WebSocketMessagingProvider", () => {
             // A protocol error on a single socket (e.g. WS_ERR_INVALID_CLOSE_CODE) must not
             // bubble up as an uncaught exception that crashes the process. See issue #9598.
             const { server } = init();
-            const ws = makeSocket();
-            server.emit("connection", ws, {});
+            const ws = admit(server);
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
 
             expect(() => ws.emit("error", new Error("WS_ERR_INVALID_CLOSE_CODE"))).not.toThrow();
@@ -218,10 +311,9 @@ describe("WebSocketMessagingProvider", () => {
     describe("sendMessageToAllClients", () => {
         it("sends to OPEN clients and logs non-suppressed message types", () => {
             const { server } = init();
-            const open = makeSocket(OPEN);
-            const closed = makeSocket(CLOSED);
-            server.clients.add(open);
-            server.clients.add(closed);
+            randomStringMock.mockReturnValueOnce("open").mockReturnValueOnce("closed");
+            const open = admit(server, makeSocket(OPEN));
+            const closed = admit(server, makeSocket(CLOSED));
 
             provider.sendMessageToAllClients({ type: "sync-finished" } as WebSocketMessage);
             expect(open.sent).toHaveLength(1);
@@ -231,8 +323,7 @@ describe("WebSocketMessagingProvider", () => {
 
         it("does not log for suppressed message types", () => {
             const { server } = init();
-            const open = makeSocket(OPEN);
-            server.clients.add(open);
+            const open = admit(server);
 
             provider.sendMessageToAllClients({ type: "frontend-update" } as WebSocketMessage);
             provider.sendMessageToAllClients({ type: "sync-failed" } as WebSocketMessage);
@@ -282,25 +373,28 @@ describe("WebSocketMessagingProvider", () => {
 
         it("returns false for a client that is not OPEN", () => {
             const { server } = init();
-            const ws = makeSocket(CLOSED);
-            server.emit("connection", ws, {});
+            admit(server, makeSocket(CLOSED));
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
         });
 
         it("sends and returns true for an OPEN client", () => {
             const { server } = init();
-            const ws = makeSocket(OPEN);
-            server.emit("connection", ws, {});
+            const ws = admit(server);
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
             expect(ws.sent).toHaveLength(1);
         });
     });
 
     describe("getClientCount", () => {
-        it("returns the server's client set size", () => {
+        it("counts the connections that are served", () => {
             const { server } = init();
-            server.clients.add(makeSocket());
-            server.clients.add(makeSocket());
+            randomStringMock
+                .mockReturnValueOnce("a")
+                .mockReturnValueOnce("b")
+                .mockReturnValueOnce("c");
+            admit(server);
+            admit(server);
+            server.emit("connection", makeSocket(), {});
             expect(provider.getClientCount()).toBe(2);
         });
 
@@ -312,8 +406,7 @@ describe("WebSocketMessagingProvider", () => {
     describe("dispose", () => {
         it("closes the server and clears the client map", () => {
             const { server } = init();
-            const ws = makeSocket(OPEN);
-            server.emit("connection", ws, {});
+            admit(server);
 
             provider.dispose();
             expect(server.closed).toBe(true);

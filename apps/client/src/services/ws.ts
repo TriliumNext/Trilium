@@ -26,6 +26,14 @@ let lastPingTs: number;
 let unansweredPingSince: number | null = null;
 let frontendUpdateDataQueue: EntityChange[] = [];
 
+/** The close code that the backend sends when it refuses the CSRF token of a connection. */
+const CSRF_REFUSED_CLOSE_CODE = 4403;
+/** Whether the token was renewed after a refusal since the last admitted connection. */
+let isCsrfTokenRenewed = false;
+let isRenewingCsrfToken = false;
+/** Whether the renewed token was refused too, after which the socket stays closed. */
+let areLiveUpdatesRefused = false;
+
 function sendOutgoing(message: object): boolean {
     if (ipcWs) {
         ipcWs.send(message);
@@ -215,6 +223,8 @@ async function runInUpdateQueue(task: () => Promise<void>) {
  * This is only used in WebSocket mode (not standalone).
  */
 async function handleWebSocketMessage(event: MessageEvent<string>) {
+    // Messages arrive only over a connection that the backend admitted.
+    isCsrfTokenRenewed = false;
     const message = JSON.parse(event.data) as WebSocketMessage;
     await dispatchMessage(message);
 }
@@ -304,11 +314,47 @@ function connectWebSocket() {
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
-    ws.onopen = () => console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    ws.onopen = () => {
+        // The backend admits a connection only when its first message is the page's CSRF token.
+        ws.send(JSON.stringify({ type: "csrf-token", token: glob.csrfToken }));
+        console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    };
     ws.onmessage = handleWebSocketMessage;
-    // we're not handling ws.onclose here because reconnection is done in sendPing()
+    // Reconnection is done in sendPing(), except after a refused token.
+    ws.onclose = (event) => {
+        if (event.code === CSRF_REFUSED_CLOSE_CODE) {
+            void renewRefusedToken();
+        }
+    };
 
     return ws;
+}
+
+/** Connects again once with a new CSRF token, and stops after a second refusal. */
+async function renewRefusedToken() {
+    if (isCsrfTokenRenewed) {
+        areLiveUpdatesRefused = true;
+        showLostConnectionToast();
+        return;
+    }
+
+    isCsrfTokenRenewed = true;
+    isRenewingCsrfToken = true;
+    try {
+        await server.refreshCsrfToken();
+    } finally {
+        isRenewingCsrfToken = false;
+    }
+    ws = connectWebSocket();
+}
+
+function showLostConnectionToast() {
+    toastService.showPersistent({
+        id: "lost-websocket-connection",
+        title: t("ws.lost-websocket-connection-title"),
+        message: t("ws.lost-websocket-connection-message"),
+        icon: "no-signal"
+    });
 }
 
 async function sendPing() {
@@ -330,12 +376,7 @@ async function sendPing() {
 
     if (isConnectionLost) {
         console.warn(utils.now(), "Lost websocket connection to the backend");
-        toastService.showPersistent({
-            id: "lost-websocket-connection",
-            title: t("ws.lost-websocket-connection-title"),
-            message: t("ws.lost-websocket-connection-message"),
-            icon: "no-signal"
-        });
+        showLostConnectionToast();
     }
 
     if (ws.readyState === ws.OPEN) {
@@ -355,7 +396,8 @@ async function sendPing() {
         if (unansweredPingSince === null) {
             unansweredPingSince = now;
         }
-        if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
+        const isReconnectHeld = isRenewingCsrfToken || areLiveUpdatesRefused;
+        if ((ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) && !isReconnectHeld) {
             console.log(utils.now(), "WS closed or closing, trying to reconnect");
 
             ws = connectWebSocket();

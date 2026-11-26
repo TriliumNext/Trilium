@@ -37,11 +37,14 @@ export async function setDataKey(
 
 /**
  * Decrypts and returns the data key using the password-derived key.
+ *
+ * Read strictly: the option syncs, and the recovery of issue 510 would hand back as the key a value
+ * that a peer planted. A value whose checksum does not fit gives `false`.
  */
-export async function getDataKey(password: string): Promise<Uint8Array | false | null> {
+export async function getDataKey(password: string): Promise<Uint8Array | false> {
     const passwordDerivedKey = await scryptService.getPasswordDerivedKey(password);
     const encryptedDataKey = options.getOption("encryptedDataKey");
-    return data_encryption.decrypt(passwordDerivedKey, encryptedDataKey);
+    return data_encryption.decryptStrictly(passwordDerivedKey, encryptedDataKey);
 }
 
 export default {

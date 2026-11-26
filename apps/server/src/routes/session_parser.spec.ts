@@ -31,7 +31,11 @@ function touch(sid: string, session: SessionData) {
         cls.init(() => store.touch(sid, session, err => (err ? reject(err) : resolve()))));
 }
 
-const baseSession = (expires?: Date) => ({ cookie: expires ? { expires } : {}, loggedIn: true }) as unknown as SessionData;
+const baseSession = (expires?: Date) => ({
+    cookie: expires ? { expires } : {},
+    loggedIn: true,
+    sessionKind: "interactive"
+}) as unknown as SessionData;
 
 describe("SQLiteSessionStore", () => {
     it("stores, reads and removes a session", async () => {
@@ -96,6 +100,16 @@ describe("sessionParser with several session cookies", () => {
         await request(`trilium.sid=${signed("stale-session")}; trilium.sid=${signed("live-session")}`);
         expect(warn).toHaveBeenCalledOnce();
         warn.mockRestore();
+    });
+
+    it("keeps the cookie of an interactive session over one of a sync session", async () => {
+        await set("sync-session", { ...baseSession(), sessionKind: "sync" } as SessionData);
+        await set("person-session", baseSession());
+
+        const res = await request(
+            `trilium.sid=${signed("sync-session")}; trilium.sid=${signed("person-session")}`
+        );
+        expect(res.body).toEqual({ sessionID: "person-session", loggedIn: true });
     });
 
     it("never picks a session whose cookie signature does not verify", async () => {

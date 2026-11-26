@@ -1,7 +1,15 @@
-import { options } from "@triliumnext/core";
+import type { SignInRecords } from "@triliumnext/commons";
+import { device_records, options, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import recoveryCodesService from "../../services/encryption/recovery_codes.js";
+import {
+    getSecondFactorCheck,
+    getSecondFactorState,
+    getWaitUntil,
+    markEnrolled,
+    readWrongCodes
+} from "../../services/second_factor.js";
 import totpService from "../../services/totp.js";
 
 function generateTOTPSecret(req: Request) {
@@ -55,6 +63,21 @@ function enableTOTP(req: Request) {
     options.setOption("mfaMethod", "totp");
     totpService.setSecret(secret);
     recoveryCodesService.setRecoveryCodes(recoveryCodes.join(","));
+    // A new secret makes the factor in every older copy of the database worthless.
+    markEnrolled();
+    return { success: true };
+}
+
+/**
+ * Writes `mfaMethod`, which decides the factor the login asks for; the options route refuses it.
+ */
+function setMethod(req: Request) {
+    const method = req.body?.method;
+    if (method !== "totp" && method !== "oauth") {
+        throw new ValidationError("Unknown sign-in method.");
+    }
+
+    options.setOption("mfaMethod", method);
     return { success: true };
 }
 
@@ -62,12 +85,10 @@ function getTOTPStatus() {
     return {
         success: true,
         message: totpService.isTotpEnabled(),
-        set: totpService.checkForTotpSecret()
+        set: totpService.checkForTotpSecret(),
+        // Whether `checkCredentials()` asks for a code besides the password.
+        isCodeAsked: getSecondFactorCheck() !== "none"
     };
-}
-
-function getSecret() {
-    return totpService.getTotpSecret();
 }
 
 function resetTOTP() {
@@ -75,11 +96,24 @@ function resetTOTP() {
     return { success: true };
 }
 
+/** Returns the security records of this device, which no route clears. */
+function getSignInRecords(): SignInRecords {
+    const wrongCodes = readWrongCodes();
+    return {
+        secondFactorState: getSecondFactorState(),
+        repairs: device_records.readDeviceRecord("startupRepairRecord"),
+        attempts: device_records.readDeviceRecord("signInAttemptRecord"),
+        wrongCodeCount: wrongCodes.count,
+        waitUntil: getWaitUntil(wrongCodes)
+    };
+}
+
 export default {
     generateSecret: generateTOTPSecret,
     verifySecret: verifyTOTPSecret,
     enableSecret: enableTOTP,
+    setMethod,
     getTOTPStatus,
-    getSecret,
-    resetTOTP
+    resetTOTP,
+    getSignInRecords
 };

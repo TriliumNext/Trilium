@@ -171,6 +171,21 @@ describe("CryptoProvider behaviour (wired-up provider)", () => {
             expect(crypto.hmac("secret", "different")).not.toBe(a);
         });
 
+        it("keys with the bytes of a key of bytes, and the UTF-8 of a key of text", () => {
+            // Values computed with node:crypto. A data key has 16 bytes, or 24 in most databases.
+            const key16 = decodeHex("00112233445566778899aabbccddeeff");
+            const key24 = decodeHex("fff8f1eae3dcd5cec7c0b9b2aba49d968f88817a736c655e");
+
+            expect(crypto.hmac("secret", "message"))
+                .toBe("i19IcCmVwVmMVz2x4hhmqbgl1KeU0WnXBgoDYFeWNgs=");
+            expect(crypto.hmac(key16, "trilium:notification-key:v1"))
+                .toBe("So6zngaTuMV2o2NQvTjRio7FHxkIkwdwLlKP3QGA/cI=");
+            expect(crypto.hmac(key24, "trilium:notification-key:v1"))
+                .toBe("K9F+bw2fCLx86cbZ1vhli3NvO6V6cr9BhWLiciEPdho=");
+            expect(crypto.hmac(key16, Uint8Array.from([ 0, 128, 255 ])))
+                .toBe("GlFlzsXIdLOYlh4WI5zCvVMCj8pITfxgwjEk5dUw5Ko=");
+        });
+
         it("accepts a Uint8Array secret/value and stays deterministic", () => {
             // Whether Uint8Array inputs collide with their string equivalents is a
             // provider-specific implementation detail (they differ under Node but
@@ -248,3 +263,7 @@ describe("getCrypto before initCrypto", () => {
         expect(() => fresh.getCrypto()).toThrow("Crypto not initialized.");
     });
 });
+
+function decodeHex(hex: string): Uint8Array {
+    return Uint8Array.from(hex.match(/../g) ?? [], (pair) => parseInt(pair, 16));
+}

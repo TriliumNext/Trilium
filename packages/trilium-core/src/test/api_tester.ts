@@ -249,6 +249,8 @@ export class CoreApiTester {
             apiResultHandler: noop,
             checkApiAuth: noop,
             checkApiAuthOrElectron: noop,
+            checkSyncAuth: noop,
+            checkBackupDownload: noop,
             checkAppNotInitialized: noop,
             checkSetupAuth: noop,
             checkCredentials: noop,

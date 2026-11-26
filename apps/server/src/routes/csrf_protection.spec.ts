@@ -1,11 +1,17 @@
 import cookieParser from "cookie-parser";
 import express, { type Application } from "express";
+import type { IncomingMessage } from "http";
 import supertest from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { markAsInternalElectronRequest } from "../services/electron_request.js";
 import sqlInit from "../services/sql_init.js";
-import { CSRF_COOKIE_NAME, doubleCsrfProtection, generateCsrfToken } from "./csrf_protection.js";
+import {
+    CSRF_COOKIE_NAME,
+    doubleCsrfProtection,
+    generateCsrfToken,
+    isValidCsrfToken
+} from "./csrf_protection.js";
 
 describe("doubleCsrfProtection", () => {
     afterEach(() => {
@@ -47,6 +53,25 @@ describe("doubleCsrfProtection", () => {
     it("skips the check while the database is not initialized", async () => {
         vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
         await supertest(buildApp()).post("/protected").expect(200, "ok");
+    });
+});
+
+describe("isValidCsrfToken", () => {
+    it("checks the page's token for a socket upgrade against its cookie and session", async () => {
+        const response = await supertest(buildApp("socket-session")).get("/token").expect(200);
+        const token = response.body.token as string;
+        const cookie = String(response.headers["set-cookie"]).split(";")[0];
+        const upgrade = (sessionId: string, cookieHeader?: string) =>
+            ({
+                headers: cookieHeader ? { cookie: cookieHeader } : {},
+                session: { id: sessionId }
+            }) as unknown as IncomingMessage;
+
+        expect(isValidCsrfToken(upgrade("socket-session", cookie), token)).toBe(true);
+        expect(isValidCsrfToken(upgrade("socket-session", cookie), "forged-token")).toBe(false);
+        expect(isValidCsrfToken(upgrade("socket-session", cookie), undefined)).toBe(false);
+        expect(isValidCsrfToken(upgrade("another-session", cookie), token)).toBe(false);
+        expect(isValidCsrfToken(upgrade("socket-session"), token)).toBe(false);
     });
 });
 

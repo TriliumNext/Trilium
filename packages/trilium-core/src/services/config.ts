@@ -24,6 +24,12 @@ export interface CoreConfig {
         sqlConsoleEnabled: boolean;
         allowLanAccess: boolean;
     };
+    /** The OpenID settings of the server; absent when none are configured. */
+    MultiFactorAuthentication?: {
+        oauthBaseUrl: string;
+        oauthClientId: string;
+        oauthClientSecret: string;
+    };
 }
 
 const EMPTY_CONFIG: CoreConfig = {

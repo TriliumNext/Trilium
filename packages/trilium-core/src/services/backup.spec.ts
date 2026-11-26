@@ -1,8 +1,11 @@
 import type { DatabaseBackup, FilterOptionsByType, OptionNames } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import BackupService, { getBackup, initBackup } from "./backup.js";
+import BackupService, { getBackup, initBackup, TOTP_STEP_MS } from "./backup.js";
 import type { BackupOptionsService } from "./backup.js";
+import * as cls from "./context.js";
+import { readDeviceRecord } from "./device_records.js";
+import realOptions from "./options.js";
 import dateUtils from "./utils/date.js";
 
 /**
@@ -222,6 +225,79 @@ describe("BackupService.runScheduledBackups", () => {
         expect(options.getOption("lastWeeklyBackupDate")).toBe(LONG_AGO);
         expect(options.getOption("lastDailyBackupDate")).not.toBe(LONG_AGO);
         expect(options.getOption("lastMonthlyBackupDate")).not.toBe(LONG_AGO);
+    });
+});
+
+describe("BackupService.runScheduledBackups with times a clock ahead wrote", () => {
+    // The start of the fixture can have recorded repaired options.
+    beforeEach(() => cls.init(() => realOptions.setOption("startupRepairRecord", "")));
+
+    afterEach(() => {
+        vi.useRealTimers();
+        cls.init(() => {
+            realOptions.setOption("clockAheadMarks", "");
+            realOptions.setOption("startupRepairRecord", "");
+        });
+    });
+
+    it("waits a day, then fixes the backup dates and TOTP step, keeping older files", async () => {
+        const start = Date.parse("2026-11-26T12:00:00.000Z");
+        vi.useFakeTimers();
+        vi.setSystemTime(start);
+        const aYearAhead = dateUtils.utcDateTimeStr(new Date(start + 365 * DAY * 1000));
+        const options = new FakeOptions({
+            dailyBackupEnabled: "true",
+            weeklyBackupEnabled: "true",
+            monthlyBackupEnabled: "true",
+            lastDailyBackupDate: aYearAhead,
+            lastWeeklyBackupDate: aYearAhead,
+            lastMonthlyBackupDate: aYearAhead,
+            totpLastUsedStep: String(Math.floor((start + 365 * DAY * 1000) / TOTP_STEP_MS))
+        });
+        const service = new TestBackupService(options);
+        const run = () => cls.init(() => service.runScheduledBackupsPublic());
+
+        await run();
+        expect(service.created).toEqual([]);
+        expect(options.getOption("lastDailyBackupDate")).toBe(aYearAhead);
+
+        vi.setSystemTime(start + DAY * 1000);
+        await run();
+        expect(service.created).toEqual([]);
+        expect(options.getOption("lastDailyBackupDate")).toBe(dateUtils.utcNowDateTime());
+        expect(options.getOption("totpLastUsedStep")).toBe("");
+        expect(readDeviceRecord("startupRepairRecord").map(({ name }) => name)).toEqual([
+            "lastDailyBackupDate",
+            "lastWeeklyBackupDate",
+            "lastMonthlyBackupDate",
+            "totpLastUsedStep"
+        ]);
+
+        vi.setSystemTime(start + 2 * DAY * 1000 + 1000);
+        await run();
+        expect(service.created).toEqual([ "daily" ]);
+    });
+
+    it("records nothing when a clock behind at start is set right within the day", async () => {
+        const start = Date.parse("2026-11-26T12:00:00.000Z");
+        vi.useFakeTimers();
+        vi.setSystemTime(start - 365 * DAY * 1000);
+        const recent = dateUtils.utcDateTimeStr(new Date(start - 3600 * 1000));
+        const options = new FakeOptions({
+            dailyBackupEnabled: "true",
+            lastDailyBackupDate: recent,
+            lastWeeklyBackupDate: recent,
+            lastMonthlyBackupDate: recent
+        });
+        const service = new TestBackupService(options);
+
+        await cls.init(() => service.runScheduledBackupsPublic());
+        vi.setSystemTime(start);
+        await cls.init(() => service.runScheduledBackupsPublic());
+
+        expect(service.created).toEqual([]);
+        expect(readDeviceRecord("startupRepairRecord")).toEqual([]);
+        expect(realOptions.getOption("clockAheadMarks")).toBe("{}");
     });
 });
 
