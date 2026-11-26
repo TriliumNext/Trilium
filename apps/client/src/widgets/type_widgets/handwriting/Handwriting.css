@@ -49,6 +49,7 @@
             background-size: var(--ink-grid-step) var(--ink-grid-step);
         }
 
+        .handwriting-live-layer,
         canvas {
             position: absolute;
             inset: 0;

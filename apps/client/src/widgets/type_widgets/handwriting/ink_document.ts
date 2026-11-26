@@ -1,4 +1,4 @@
-import { getStroke } from "perfect-freehand";
+import { getStroke, getStrokeOutlinePoints, type StrokePoint } from "perfect-freehand";
 
 export const PAPER_STYLES = [ "ruled", "grid", "dots", "blank" ] as const;
 export type PaperStyle = (typeof PAPER_STYLES)[number];
@@ -163,31 +163,149 @@ export function boundsIntersect(a: Bounds, b: Bounds) {
     return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 }
 
+const STREAMLINE = 0.35;
+/** How far each smoothed point moves toward the pointer, as in perfect-freehand's `getStrokePoints()`. */
+const STREAMLINE_STEP = 0.15 + (1 - STREAMLINE) * 0.85;
+/** How fast a simulated pressure follows the speed, as in perfect-freehand's `getStrokeOutlinePoints()`. */
+const PRESSURE_RATE = 0.275;
+
+type OutlinedStroke = Pick<Stroke, "tool" | "size" | "simulatePressure" | "points">;
+
 /**
- * Returns the outline of a stroke as a closed polygon of `[x, y]` points. `extraPoints` are flat
- * triples drawn after the stroke's own, for input that the browser predicts.
+ * Turns the raw points of a stroke into perfect-freehand's smoothed stroke points, one at a time.
+ * It reproduces `getStrokePoints()` for three or more points, so a stroke outlined while it is
+ * drawn matches the outline of the finished stroke. A simulated pressure is computed here as the
+ * points arrive, so that any run of the points outlines to the same width as the whole stroke.
  */
-export function getStrokeOutline(
-    stroke: Pick<Stroke, "tool" | "size" | "simulatePressure" | "points">,
-    extraPoints: number[] = [],
-    complete = true
-): number[][] {
-    const input: number[][] = [];
-    for (const points of [ stroke.points, extraPoints ]) {
-        for (let i = 0; i + 2 < points.length; i += 3) {
-            input.push([ points[i], points[i + 1], points[i + 2] ]);
+export class StrokeBuilder {
+
+    readonly points: StrokePoint[] = [];
+    private runningLength = 0;
+    private pastStart = false;
+    private pressure = 0.5;
+
+    constructor(private stroke: Pick<Stroke, "size" | "simulatePressure">) {}
+
+    /** Adds a raw point. The `last` point of a finished stroke is kept where it is, unsmoothed. */
+    add(x: number, y: number, pressure: number, last = false) {
+        const next = this.next(this.points[this.points.length - 1], this.runningLength, this.pastStart, this.pressure, x, y, pressure, last);
+        if (!next) return;
+        if (next.skipped) {
+            this.runningLength = next.runningLength;
+            return;
         }
+        this.points.push(next.point);
+        if (this.points.length === 2) this.points[0].vector = next.point.vector;
+        this.runningLength = next.runningLength;
+        this.pastStart = this.points.length > 1;
+        this.pressure = next.point.pressure;
     }
 
-    const isHighlighter = stroke.tool === "highlighter";
+    /** Returns the stroke points that raw `extra` triples would add, without adding them. */
+    preview(extra: number[]): StrokePoint[] {
+        const added: StrokePoint[] = [];
+        let previous = this.points[this.points.length - 1];
+        let { runningLength, pastStart, pressure } = this;
+        for (let i = 0; i + 2 < extra.length; i += 3) {
+            const next = this.next(previous, runningLength, pastStart, pressure, extra[i], extra[i + 1], extra[i + 2], false);
+            if (!next) continue;
+            runningLength = next.runningLength;
+            if (next.skipped) continue;
+            added.push(next.point);
+            previous = next.point;
+            pastStart = true;
+            pressure = next.point.pressure;
+        }
+        return added;
+    }
+
+    private next(
+        previous: StrokePoint | undefined, runningLength: number, pastStart: boolean, lastPressure: number,
+        x: number, y: number, rawPressure: number, last: boolean
+    ) {
+        if (!previous) {
+            const pressure = this.stroke.simulatePressure ? this.pressure : rawPressure;
+            return {
+                skipped: false,
+                runningLength: 0,
+                point: { point: [ x, y ], pressure, vector: [ 1, 1 ], distance: 0, runningLength: 0 }
+            };
+        }
+
+        const [ px, py ] = previous.point;
+        const point = last ? [ x, y ] : [ px + (x - px) * STREAMLINE_STEP, py + (y - py) * STREAMLINE_STEP ];
+        if (point[0] === px && point[1] === py) return undefined;
+
+        const distance = Math.hypot(point[0] - px, point[1] - py);
+        const length = runningLength + distance;
+        if (!last && !pastStart && length < this.stroke.size) {
+            return { skipped: true, runningLength: length, point: previous };
+        }
+
+        let pressure = rawPressure;
+        if (this.stroke.simulatePressure) {
+            const speed = Math.min(1, distance / this.stroke.size);
+            const target = Math.min(1, 1 - speed);
+            pressure = Math.min(1, lastPressure + (target - lastPressure) * (speed * PRESSURE_RATE));
+        }
+        return {
+            skipped: false,
+            runningLength: length,
+            point: {
+                point,
+                pressure,
+                vector: [ (px - point[0]) / distance, (py - point[1]) / distance ],
+                distance,
+                runningLength: length
+            }
+        };
+    }
+}
+
+/** Builds the stroke points of a finished stroke. */
+export function buildStrokePoints(stroke: Pick<Stroke, "size" | "simulatePressure" | "points">) {
+    const builder = new StrokeBuilder(stroke);
+    const { points } = stroke;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        builder.add(points[i], points[i + 1], points[i + 2], i + 5 >= points.length);
+    }
+    return builder.points;
+}
+
+/** Returns the outline of a finished stroke as a closed polygon of `[x, y]` points. */
+export function getStrokeOutline(stroke: OutlinedStroke): number[][] {
+    if (stroke.points.length <= 6) return getShortStrokeOutline(stroke);
+    return outlineStrokePoints(stroke, buildStrokePoints(stroke));
+}
+
+/** Returns the outline of a run of a stroke's points, which can be any part of the stroke. */
+export function outlineStrokePoints(stroke: Pick<Stroke, "tool" | "size">, points: StrokePoint[]): number[][] {
+    return getStrokeOutlinePoints(points, { ...outlineOptions(stroke), simulatePressure: false });
+}
+
+/**
+ * Returns the outline of a stroke of one or two raw points, which perfect-freehand widens into a
+ * short line of its own; `StrokeBuilder` covers every longer stroke.
+ */
+export function getShortStrokeOutline(stroke: OutlinedStroke): number[][] {
+    const input: number[][] = [];
+    for (let i = 0; i + 2 < stroke.points.length; i += 3) {
+        input.push([ stroke.points[i], stroke.points[i + 1], stroke.points[i + 2] ]);
+    }
     return getStroke(input, {
-        size: stroke.size,
-        thinning: isHighlighter ? 0 : 0.6,
-        smoothing: 0.5,
-        streamline: 0.35,
-        simulatePressure: !isHighlighter && stroke.simulatePressure,
-        last: complete
+        ...outlineOptions(stroke),
+        streamline: STREAMLINE,
+        simulatePressure: stroke.tool !== "highlighter" && stroke.simulatePressure,
+        last: true
     });
+}
+
+function outlineOptions(stroke: Pick<Stroke, "tool" | "size">) {
+    return {
+        size: stroke.size,
+        thinning: stroke.tool === "highlighter" ? 0 : 0.6,
+        smoothing: 0.5
+    };
 }
 
 /** Whether the segment from `a` to `b`, widened by `radius`, touches the centerline of `stroke`. */

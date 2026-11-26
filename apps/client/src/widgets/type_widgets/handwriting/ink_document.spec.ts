@@ -1,8 +1,32 @@
+import { getStroke } from "perfect-freehand";
 import { describe, expect, it } from "vitest";
 
 import {
-    AUTO_COLOR, createStroke, parseInkDocument, serializeInkDocument, strokeHitsSegment, StrokeIndex
+    AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, outlineStrokePoints,
+    parseInkDocument, serializeInkDocument, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
+
+function distanceToPolygon(x: number, y: number, polygon: number[][]) {
+    let closest = Infinity;
+    for (const [ index, [ ax, ay ] ] of polygon.entries()) {
+        const [ bx, by ] = polygon[(index + 1) % polygon.length];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const lengthSquared = dx * dx + dy * dy;
+        const t = lengthSquared ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / lengthSquared)) : 0;
+        closest = Math.min(closest, Math.hypot(ax + t * dx - x, ay + t * dy - y));
+    }
+    return closest;
+}
+
+/** A wavy line of `count` raw points with a varying pressure, as a pen draws it. */
+function wavyPoints(count: number) {
+    const points: number[] = [];
+    for (let i = 0; i < count; i++) {
+        points.push(i * 1.7, Math.sin(i / 4) * 20 + (i % 3) * 0.4, 0.3 + 0.5 * Math.abs(Math.sin(i / 9)));
+    }
+    return points;
+}
 
 function makeStroke(points: number[], order = 0) {
     return createStroke({
@@ -39,6 +63,52 @@ describe("ink document", () => {
             expect(parseInkDocument(content)).toEqual({ paper: "ruled", strokes: [] });
         }
         expect(parseInkDocument(JSON.stringify({ paper: "plaid", strokes: [] })).paper).toBe("ruled");
+    });
+
+    it("outlines a pen stroke as perfect-freehand does, built all at once or point by point", () => {
+        const stroke = makeStroke(wavyPoints(300));
+        const raw: number[][] = [];
+        for (let i = 0; i < stroke.points.length; i += 3) {
+            raw.push(stroke.points.slice(i, i + 3));
+        }
+        const expected = getStroke(raw, {
+            size: 4, thinning: 0.6, smoothing: 0.5, streamline: 0.35, simulatePressure: false, last: true
+        });
+        expect(getStrokeOutline(stroke)).toEqual(expected);
+
+        const builder = new StrokeBuilder(stroke);
+        for (let i = 0; i + 5 < stroke.points.length; i += 3) {
+            builder.add(stroke.points[i], stroke.points[i + 1], stroke.points[i + 2]);
+        }
+        const finished = buildStrokePoints(stroke);
+        expect(builder.points).toEqual(finished.slice(0, -1));
+
+        const before = builder.points.length;
+        const preview = builder.preview(stroke.points.slice(-3));
+        expect(builder.points).toHaveLength(before);
+        expect(preview).toHaveLength(1);
+        expect(preview[0].point).not.toEqual(finished[finished.length - 1].point);
+    });
+
+    it("gives a run of stroke points the width it has in the whole stroke", () => {
+        for (const simulatePressure of [ false, true ]) {
+            const stroke = createStroke({
+                tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure, points: wavyPoints(200), order: 0
+            });
+            const points = buildStrokePoints(stroke);
+            const whole = outlineStrokePoints(stroke, points);
+            const run = outlineStrokePoints(stroke, points.slice(100));
+            const [ startX, startY ] = points[100].point;
+            const [ endX, endY ] = points[points.length - 1].point;
+
+            // Away from the round caps at both ends of the run, its outline lies on the whole one.
+            const sides = run.filter(([ x, y ]) =>
+                Math.hypot(x - startX, y - startY) > 8 && Math.hypot(x - endX, y - endY) > 8);
+            expect(sides.length).toBeGreaterThan(50);
+            for (const [ x, y ] of sides) {
+                expect(distanceToPolygon(x, y, whole)).toBeLessThan(0.05);
+            }
+        }
     });
 
     it("hits a stroke only where the eraser reaches its centerline", () => {

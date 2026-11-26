@@ -1,7 +1,8 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createStroke, getStrokeOutline, type InkDocument, type InkTool,
-    type PaperStyle, serializeInkDocument, type Stroke, strokeHitsSegment, StrokeIndex
+    AUTO_COLOR, type Bounds, createStroke, getShortStrokeOutline, getStrokeOutline, type InkDocument,
+    type InkTool, outlineStrokePoints, type PaperStyle, serializeInkDocument, type Stroke,
+    StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 
 export type SurfaceTool = InkTool | "eraser";
@@ -31,11 +32,20 @@ const ERASER_RADIUS = 8;
 const HIGHLIGHTER_ALPHA = 0.35;
 /** The bit of `PointerEvent.buttons` that a pen sets while its eraser end touches the screen. */
 const PEN_ERASER_BUTTON = 32;
+/** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
+const SETTLE_CHUNK = 48;
+/**
+ * How many stroke points before the end of a settled run the outline drawn after it starts from.
+ * The outline of a point depends on its neighbors, so the runs overlap where theirs differ.
+ */
+const SETTLE_OVERLAP = 8;
 
 /**
- * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on
- * another above it, so a pointer move repaints only the stroke in progress. Panning moves the
- * pixels of the first canvas and draws only the strips that scroll into view.
+ * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
+ * more above it: `settledCanvas` holds the part of the stroke that further points no longer
+ * change, and `liveCanvas` its end, drawn again on each animation frame. The cost of a frame
+ * therefore does not grow with the length of the stroke. Panning moves the pixels of the first
+ * canvas and draws only the strips that scroll into view.
  */
 export default class InkSurface {
 
@@ -45,8 +55,11 @@ export default class InkSurface {
     readOnly = false;
 
     private baseCanvas: HTMLCanvasElement;
+    private liveLayer: HTMLDivElement;
+    private settledCanvas: HTMLCanvasElement;
     private liveCanvas: HTMLCanvasElement;
     private base: CanvasRenderingContext2D;
+    private settled: CanvasRenderingContext2D;
     private live: CanvasRenderingContext2D;
     private resizeObserver: ResizeObserver;
     private abort = new AbortController();
@@ -71,6 +84,12 @@ export default class InkSurface {
     private penSeen = false;
     private touches = new Map<number, { x: number, y: number }>();
     private liveStroke: Stroke | undefined;
+    private liveBuilder: StrokeBuilder | undefined;
+    /** The index of the stroke point up to which the stroke being drawn is on `settledCanvas`. */
+    private settledUpTo = 0;
+    /** Raw `x, y, pressure` triples of the input that the browser predicts after the last move. */
+    private predicted: number[] = [];
+    private liveFrame: number | undefined;
     private erased: Stroke[] = [];
     private lastX = 0;
     private lastY = 0;
@@ -79,9 +98,14 @@ export default class InkSurface {
     private pinchDistance = 0;
 
     constructor(private container: HTMLElement, private options: InkSurfaceOptions) {
-        this.baseCanvas = this.createCanvas();
-        this.liveCanvas = this.createCanvas();
+        this.baseCanvas = this.createCanvas(container);
+        this.liveLayer = document.createElement("div");
+        this.liveLayer.className = "handwriting-live-layer";
+        container.append(this.liveLayer);
+        this.settledCanvas = this.createCanvas(this.liveLayer);
+        this.liveCanvas = this.createCanvas(this.liveLayer);
         this.base = getContext(this.baseCanvas);
+        this.settled = getContext(this.settledCanvas);
         this.live = getContext(this.liveCanvas);
 
         const listener = { signal: this.abort.signal };
@@ -105,8 +129,9 @@ export default class InkSurface {
         this.abort.abort();
         this.resizeObserver.disconnect();
         if (this.fullRedrawFrame !== undefined) cancelAnimationFrame(this.fullRedrawFrame);
+        if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
         this.baseCanvas.remove();
-        this.liveCanvas.remove();
+        this.liveLayer.remove();
     }
 
     load(doc: InkDocument) {
@@ -223,8 +248,12 @@ export default class InkSurface {
                 points: [],
                 order: this.nextOrder
             });
+            this.liveBuilder = new StrokeBuilder(this.liveStroke);
+            this.settledUpTo = 0;
+            this.predicted = [];
+            this.liveLayer.style.opacity = tool === "highlighter" ? String(HIGHLIGHTER_ALPHA) : "";
             this.addLivePoints([ e ]);
-            this.drawLiveStroke([]);
+            this.scheduleLiveFrame();
         } else if (mode === "erase") {
             this.erased = [];
             this.eraseAlong(e.clientX, e.clientY, e.clientX, e.clientY);
@@ -254,7 +283,12 @@ export default class InkSurface {
         if (this.mode === "draw" && this.liveStroke) {
             const events = e.getCoalescedEvents?.() ?? [];
             this.addLivePoints(events.length ? events : [ e ]);
-            this.drawLiveStroke(e.getPredictedEvents?.() ?? []);
+            this.predicted = [];
+            for (const event of e.getPredictedEvents?.() ?? []) {
+                const { x, y } = this.toWorld(event.clientX, event.clientY);
+                this.predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
+            }
+            this.scheduleLiveFrame();
         } else if (this.mode === "erase") {
             this.eraseAlong(this.lastX, this.lastY, e.clientX, e.clientY);
         } else if (this.mode === "pan") {
@@ -312,8 +346,7 @@ export default class InkSurface {
     }
 
     private cancelGesture() {
-        this.liveStroke = undefined;
-        this.clearLive();
+        this.endLiveStroke();
         if (this.erased.length) {
             this.applyHistory(this.erased, []);
             this.erased = [];
@@ -338,29 +371,70 @@ export default class InkSurface {
                 && Math.hypot(x - stroke.points[length - 3], y - stroke.points[length - 2]) < minDistance) {
                 continue;
             }
-            stroke.points.push(x, y, stroke.simulatePressure ? 0.5 : event.pressure);
+            const pressure = stroke.simulatePressure ? 0.5 : event.pressure;
+            stroke.points.push(x, y, pressure);
+            this.liveBuilder?.add(x, y, pressure);
         }
     }
 
-    private drawLiveStroke(predicted: PointerEvent[]) {
-        const stroke = this.liveStroke;
-        if (!stroke) return;
+    private scheduleLiveFrame() {
+        if (this.liveFrame !== undefined) return;
+        this.liveFrame = requestAnimationFrame(() => {
+            this.liveFrame = undefined;
+            this.drawLiveStroke();
+        });
+    }
 
-        const extra: number[] = [];
-        for (const event of predicted) {
-            const { x, y } = this.toWorld(event.clientX, event.clientY);
-            extra.push(x, y, stroke.simulatePressure ? 0.5 : event.pressure);
+    /** Settles the stroke points that the next ones can no longer change and draws the rest. */
+    private drawLiveStroke() {
+        const stroke = this.liveStroke;
+        const builder = this.liveBuilder;
+        if (!stroke || !builder) return;
+
+        this.clearCanvas(this.live, this.liveCanvas);
+        this.applyWorldTransform(this.live);
+        if (stroke.points.length <= 6) {
+            this.fillOpaque(this.live, stroke, toPath(getShortStrokeOutline(stroke)));
+            return;
         }
 
-        this.clearLive();
-        this.applyWorldTransform(this.live);
-        this.fillStroke(this.live, stroke, toPath(getStrokeOutline(stroke, extra, false)));
+        const { points } = builder;
+        if (points.length - SETTLE_OVERLAP - this.settledUpTo >= SETTLE_CHUNK) {
+            this.applyWorldTransform(this.settled);
+            while (points.length - SETTLE_OVERLAP - this.settledUpTo >= SETTLE_CHUNK) {
+                const end = this.settledUpTo + SETTLE_CHUNK;
+                const run = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP), end + 1);
+                this.fillOpaque(this.settled, stroke, toPath(outlineStrokePoints(stroke, run)));
+                this.settledUpTo = end;
+            }
+        }
+
+        const tail = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP));
+        tail.push(...builder.preview(this.predicted));
+        this.fillOpaque(this.live, stroke, toPath(outlineStrokePoints(stroke, tail)));
+    }
+
+    /** Draws the stroke being drawn again from its start, after the view moved under it. */
+    private redrawLiveStroke() {
+        if (!this.liveStroke) return;
+        this.clearCanvas(this.settled, this.settledCanvas);
+        this.settledUpTo = 0;
+        this.scheduleLiveFrame();
+    }
+
+    private endLiveStroke() {
+        if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
+        this.liveFrame = undefined;
+        this.liveStroke = undefined;
+        this.liveBuilder = undefined;
+        this.predicted = [];
+        this.clearCanvas(this.settled, this.settledCanvas);
+        this.clearCanvas(this.live, this.liveCanvas);
     }
 
     private commitLiveStroke() {
         const live = this.liveStroke;
-        this.liveStroke = undefined;
-        this.clearLive();
+        this.endLiveStroke();
         if (!live || live.points.length < 3) return;
 
         const stroke = createStroke(live);
@@ -429,6 +503,7 @@ export default class InkSurface {
         this.zoom = zoom;
         this.syncPaper();
         this.scheduleFullRedraw();
+        this.redrawLiveStroke();
         this.reportState();
     }
 
@@ -444,6 +519,7 @@ export default class InkSurface {
         this.tx += wholeX;
         this.ty += wholeY;
         this.syncPaper();
+        this.redrawLiveStroke();
 
         const { width, height } = this.baseCanvas;
         if (this.fullRedrawFrame !== undefined) return;
@@ -471,12 +547,13 @@ export default class InkSurface {
         const height = Math.max(1, Math.round(rect.height * this.dpr));
         if (width === this.baseCanvas.width && height === this.baseCanvas.height) return;
 
-        for (const canvas of [ this.baseCanvas, this.liveCanvas ]) {
+        for (const canvas of [ this.baseCanvas, this.settledCanvas, this.liveCanvas ]) {
             canvas.width = width;
             canvas.height = height;
         }
         this.syncPaper();
         this.redrawAll();
+        this.redrawLiveStroke();
     }
 
     /** Positions the paper pattern, which is a CSS background of the container. */
@@ -568,25 +645,30 @@ export default class InkSurface {
         ctx.setTransform(scale, 0, 0, scale, this.tx, this.ty);
     }
 
-    private fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, path?: Path2D) {
-        if (!path) {
-            stroke.path ??= toPath(getStrokeOutline(stroke));
-            path = stroke.path;
-        }
+    private fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
+        stroke.path ??= toPath(getStrokeOutline(stroke));
         ctx.globalAlpha = stroke.tool === "highlighter" ? HIGHLIGHTER_ALPHA : 1;
-        ctx.fillStyle = stroke.color === AUTO_COLOR ? this.autoColor : stroke.color;
-        ctx.fill(path);
+        this.fillOpaque(ctx, stroke, stroke.path);
         ctx.globalAlpha = 1;
     }
 
-    private clearLive() {
-        this.live.setTransform(1, 0, 0, 1, 0, 0);
-        this.live.clearRect(0, 0, this.liveCanvas.width, this.liveCanvas.height);
+    /**
+     * Fills a part of the stroke being drawn. The parts overlap, so they are filled opaque and
+     * `liveLayer` takes the highlighter's transparency.
+     */
+    private fillOpaque(ctx: CanvasRenderingContext2D, stroke: Stroke, path: Path2D) {
+        ctx.fillStyle = stroke.color === AUTO_COLOR ? this.autoColor : stroke.color;
+        ctx.fill(path);
     }
 
-    private createCanvas() {
+    private clearCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    private createCanvas(parent: HTMLElement) {
         const canvas = document.createElement("canvas");
-        this.container.append(canvas);
+        parent.append(canvas);
         return canvas;
     }
 
