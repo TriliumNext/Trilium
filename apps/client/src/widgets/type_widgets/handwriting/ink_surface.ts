@@ -32,6 +32,8 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 8;
 const ERASER_RADIUS = 8;
 const HIGHLIGHTER_ALPHA = 0.35;
+/** How much wider than the pen at the same thickness the highlighter draws. */
+export const HIGHLIGHTER_WIDTH_FACTOR = 5;
 /** The bit of `PointerEvent.buttons` that a pen sets while its eraser end touches the screen. */
 const PEN_ERASER_BUTTON = 32;
 /** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
@@ -318,7 +320,7 @@ export default class InkSurface {
             this.liveStroke = createStroke({
                 tool,
                 color: this.color,
-                size: tool === "highlighter" ? this.size * 5 : this.size,
+                size: tool === "highlighter" ? this.size * HIGHLIGHTER_WIDTH_FACTOR : this.size,
                 simulatePressure: e.pointerType !== "pen",
                 points: [],
                 order: this.nextOrder

@@ -17,7 +17,7 @@
         overflow: hidden;
         color: var(--main-text-color);
         background-color: var(--main-background-color);
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='6' cy='6' r='3' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='6' cy='6' r='3' fill='none' stroke='black' stroke-width='1'/%3E%3C/svg%3E") 6 6, crosshair;
+        cursor: crosshair;
         touch-action: none;
         user-select: none;
         -webkit-user-select: none;

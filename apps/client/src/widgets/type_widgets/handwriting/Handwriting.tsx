@@ -16,7 +16,7 @@ import OverlayControlGroup, {
 import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
 import { AUTO_COLOR, type InkDocument, PAPER_STYLES, parseInkDocument } from "./ink_document";
-import InkSurface, { type InkSurfaceState, type SurfaceTool } from "./ink_surface";
+import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
 const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
     { tool: "pen", icon: "bx-pen", title: () => t("handwriting.pen") },
@@ -102,7 +102,12 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             ref={setContainerEl}
             className={clsx("handwriting-container", isPageFullscreen && "handwriting-page-fullscreen")}
         >
-            <div ref={surfaceElRef} className="handwriting-surface" data-tool={isReadOnly ? "pan" : tool} />
+            <div
+                ref={surfaceElRef}
+                className="handwriting-surface"
+                data-tool={isReadOnly ? "pan" : tool}
+                style={{ cursor: isReadOnly ? undefined : getInkCursor(tool, size, state.zoom) }}
+            />
 
             {!isReadOnly && (
                 <OverlayControlGroup placement="top-center" className="handwriting-tools">
@@ -177,6 +182,27 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
  * Safari closes an element's fullscreen on a downward drag, which panning makes all the time.
  * Escape or the button leaves either mode, and so does opening another note.
  */
+/** Cursors browsers show reliably are at most 128 px wide; this leaves room for the outline. */
+const MAX_CURSOR_DIAMETER = 120;
+const MIN_CURSOR_DIAMETER = 4;
+
+/**
+ * Returns the cursor of the pen and the highlighter: a ring as wide on screen as the line they
+ * draw at a pressure of one half, drawn black inside white to show on any background. Returns
+ * `undefined` for the eraser, whose cursor is in the stylesheet.
+ */
+function getInkCursor(tool: SurfaceTool, size: number, zoom: number) {
+    if (tool === "eraser") return undefined;
+    const width = tool === "highlighter" ? size * HIGHLIGHTER_WIDTH_FACTOR : size;
+    const diameter = Math.min(MAX_CURSOR_DIAMETER, Math.max(MIN_CURSOR_DIAMETER, width * zoom));
+    const box = Math.ceil(diameter) + 4;
+    const center = box / 2;
+    const ring = (color: string, strokeWidth: number) =>
+        `<circle cx='${center}' cy='${center}' r='${diameter / 2}' fill='none' stroke='${color}' stroke-width='${strokeWidth}'/>`;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${box}' height='${box}'>${ring("white", 3)}${ring("black", 1)}</svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${center} ${center}, crosshair`;
+}
+
 function useNoteFullscreen(containerEl: HTMLElement | null, noteId: string | undefined): [ boolean, boolean, () => void ] {
     const [ isScreenFullscreen, toggleScreenFullscreen ] = useFullscreen(containerEl);
     const [ isPageFullscreen, setPageFullscreen ] = useState(false);
