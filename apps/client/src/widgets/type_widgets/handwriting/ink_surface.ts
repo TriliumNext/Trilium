@@ -5,7 +5,7 @@ import {
     PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
-import { lineToPoints, recognizeLine } from "./ink_shapes";
+import { lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle } from "./ink_shapes";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -43,11 +43,11 @@ const PEN_ERASER_BUTTON = 32;
 /** How long two fingers can rest on the screen, and how far they can move, for a tap that undoes. */
 const TWO_FINGER_TAP_TIME = 300;
 const TWO_FINGER_TAP_SLOP = 10;
-/** How long the pointer rests at the end of a stroke, and how far it can move, to straighten it. */
+/** How long the pointer rests at the end of a stroke, and how far it can move, to make a shape of it. */
 const HOLD_TIME = 500;
 const HOLD_SLOP = 5;
-/** The shortest stroke that a hold straightens, in CSS pixels. */
-const MIN_LINE_LENGTH = 20;
+/** The shortest line and the shortest side of a rectangle that a hold makes, in CSS pixels. */
+const MIN_SHAPE_SIZE = 20;
 /** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
 const SETTLE_CHUNK = 48;
 /**
@@ -149,10 +149,10 @@ export default class InkSurface {
     private holdX = 0;
     private holdY = 0;
     /**
-     * Set once a hold has made a straight line of the stroke being drawn: the start and the
-     * pressure of the line, and the stroke as it was drawn.
+     * Set once a hold has made a shape of the stroke being drawn: the stroke as it was drawn and,
+     * for a straight line, its start and its pressure.
      */
-    private straightened: { fromX: number, fromY: number, pressure: number, drawn: Stroke } | undefined;
+    private snapped: { drawn: Stroke, line?: { fromX: number, fromY: number, pressure: number } } | undefined;
     private warmTimer: ReturnType<typeof setTimeout> | undefined;
     private erased: Stroke[] = [];
     private lastX = 0;
@@ -494,11 +494,11 @@ export default class InkSurface {
         if (e.pointerId !== this.activePointerId) return;
 
         if (this.mode === "draw" && this.liveStroke) {
-            if (this.straightened) {
-                const { fromX, fromY, pressure } = this.straightened;
+            if (this.snapped?.line) {
+                const { fromX, fromY, pressure } = this.snapped.line;
                 const { x, y } = this.toWorld(e.clientX, e.clientY);
                 this.liveStroke.points = lineToPoints({ fromX, fromY, toX: x, toY: y }, pressure);
-            } else {
+            } else if (!this.snapped) {
                 const events = e.getCoalescedEvents?.() ?? [];
                 this.addLivePoints(events.length ? events : [ e ]);
                 this.predicted = [];
@@ -619,18 +619,21 @@ export default class InkSurface {
         this.holdX = e.clientX;
         this.holdY = e.clientY;
         clearTimeout(this.holdTimer);
-        this.holdTimer = setTimeout(() => this.straightenLiveStroke(), HOLD_TIME);
+        this.holdTimer = setTimeout(() => this.snapLiveStroke(), HOLD_TIME);
     }
 
     /**
-     * Makes a straight line of the stroke being drawn when it was drawn as one. The line has one
-     * width, from the mean pressure of the stroke, and its end then follows the pointer.
+     * Makes a straight line or a rectangle of the stroke being drawn when it was drawn as one. The
+     * shape has one width, from the mean pressure of the stroke. The end of a line then follows
+     * the pointer.
      */
-    private straightenLiveStroke() {
+    private snapLiveStroke() {
         const stroke = this.liveStroke;
-        if (!stroke || this.straightened) return;
-        const line = recognizeLine(stroke.points, MIN_LINE_LENGTH / this.zoom);
-        if (!line) return;
+        if (!stroke || this.snapped) return;
+        const minSize = MIN_SHAPE_SIZE / this.zoom;
+        const line = recognizeLine(stroke.points, minSize);
+        const corners = line ? undefined : recognizeRectangle(stroke.points, minSize);
+        if (!line && !corners) return;
 
         const strokePoints = this.liveBuilder?.points ?? [];
         let pressure = 0.5;
@@ -640,8 +643,9 @@ export default class InkSurface {
                 pressure += point.pressure / strokePoints.length;
             }
         }
-        this.straightened = { fromX: line.fromX, fromY: line.fromY, pressure, drawn: stroke };
-        this.liveStroke = { ...stroke, simulatePressure: false, points: lineToPoints(line, pressure) };
+        this.snapped = { drawn: stroke, line: line && { fromX: line.fromX, fromY: line.fromY, pressure } };
+        const points = line ? lineToPoints(line, pressure) : polygonToPoints(corners ?? [], pressure);
+        this.liveStroke = { ...stroke, simulatePressure: false, points };
         this.predicted = [];
         this.redrawLiveStroke();
     }
@@ -662,7 +666,7 @@ export default class InkSurface {
 
         this.clearCanvas(this.live, this.liveCanvas);
         this.applyWorldTransform(this.live);
-        if (this.straightened) {
+        if (this.snapped) {
             this.fillOpaque(this.live, stroke, toPath(getStrokeOutline(stroke)));
             return;
         }
@@ -700,7 +704,7 @@ export default class InkSurface {
         this.liveFrame = undefined;
         clearTimeout(this.holdTimer);
         this.holdTimer = undefined;
-        this.straightened = undefined;
+        this.snapped = undefined;
         this.liveStroke = undefined;
         this.liveBuilder = undefined;
         this.predicted = [];
@@ -710,11 +714,11 @@ export default class InkSurface {
 
     private commitLiveStroke() {
         const live = this.liveStroke;
-        const drawn = this.straightened?.drawn;
+        const drawn = this.snapped?.drawn;
         this.endLiveStroke();
         if (!live || live.points.length < 3) return;
 
-        // Undoing a straightened line first gives back the stroke as it was drawn.
+        // Undoing a stroke that a hold made a shape of first gives back the stroke as it was drawn.
         const original = drawn && createStroke(drawn);
         if (original) {
             this.nextOrder++;

@@ -222,6 +222,26 @@ describe("ink surface input", () => {
         vi.advanceTimersByTime(600);
         pointer("pointerup", "pen", 1, 100, 200);
         expect(drawn()).toEqual([ curve.flat() ]);
+        surface.undo();
+
+        // A rest where a stroke around a rectangle closes puts every point on its sides, and
+        // the pen leaves it there.
+        const rectangle = [
+            [ 50, 100 ], [ 150, 103 ], [ 250, 100 ], [ 247, 150 ], [ 250, 200 ], [ 150, 197 ], [ 50, 200 ], [ 53, 150 ], [ 50, 100 ]
+        ];
+        draw(...rectangle);
+        vi.advanceTimersByTime(600);
+        pointer("pointermove", "pen", 1, 300, 300);
+        pointer("pointerup", "pen", 1, 300, 300);
+        const [ sides, ...others ] = parseInkDocument(surface.serialize()).strokes;
+        expect(others).toEqual([]);
+        expect(sides.points.length).toBeGreaterThan(rectangle.length * 3);
+        for (let i = 0; i < sides.points.length; i += 3) {
+            const [ x, y ] = sides.points.slice(i, i + 2);
+            expect(x === 50 || x === 250 || y === 100 || y === 200).toBe(true);
+        }
+        surface.undo();
+        expect(drawn()).toEqual([ rectangle.flat() ]);
     });
 
     function swipe(type: string, pointerId: number, y: number) {

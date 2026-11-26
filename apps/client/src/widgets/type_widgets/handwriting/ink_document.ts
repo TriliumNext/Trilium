@@ -403,7 +403,7 @@ export function strokeHitsSegment(
     return false;
 }
 
-function pointToSegmentSquared(
+export function pointToSegmentSquared(
     px: number, py: number, ax: number, ay: number, bx: number, by: number
 ) {
     const dx = bx - ax;
