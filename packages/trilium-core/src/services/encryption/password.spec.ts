@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { withServerTexts } from "../../test/translations.js";
 import events from "../events.js";
 import options from "../options.js";
 import { getContext } from "../context.js";
@@ -92,15 +93,21 @@ describe("password service (real DB)", () => {
             expect(Array.from(dataKeyAfter)).toEqual(Array.from(dataKeyBefore));
         });
 
-        it("refuses while the data key cannot be read, and changes nothing", async () => {
+        it("refuses while the data key cannot be read, says why, and changes nothing", async () => {
             vi.spyOn(passwordEncryptionService, "getDataKey").mockResolvedValueOnce(false);
             const before = passwordOptions();
 
-            const result = await getContext().init(() =>
-                passwordService.changePassword("brandNewPass-123", "thirdPass-789")
+            const result = await withServerTexts(
+                { "password.change-data-key-unreadable": "unreadable" },
+                () => getContext().init(() =>
+                    passwordService.changePassword("brandNewPass-123", "thirdPass-789"))
             );
 
-            expect(result).toMatchObject({ success: false, code: "data-key-unreadable" });
+            expect(result).toEqual({
+                success: false,
+                message: "unreadable",
+                code: "data-key-unreadable"
+            });
             expect(passwordOptions()).toEqual(before);
             expect(await passwordEncryptionService.verifyPassword("brandNewPass-123")).toBe(true);
         });
@@ -201,9 +208,13 @@ describe("password service (real DB)", () => {
             const encryptedDataKey = options.getOption("encryptedDataKey");
             getContext().init(() => options.setOption("passwordVerificationHash", ""));
 
-            const refused = await getContext().init(() =>
-                passwordService.setPassword("a-visitor's-password"));
-            expect(refused).toMatchObject({ success: false, code: "password-not-restored" });
+            const refused = await withServerTexts({ "password.restore-refused": "not restored" },
+                () => getContext().init(() => passwordService.setPassword("a-visitor's-password")));
+            expect(refused).toEqual({
+                success: false,
+                message: "not restored",
+                code: "password-not-restored"
+            });
             expect(passwordService.isPasswordSet()).toBe(false);
             expect(options.getOption("encryptedDataKey")).toBe(encryptedDataKey);
 

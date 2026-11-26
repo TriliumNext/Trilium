@@ -8,6 +8,7 @@
  */
 import { ValidationError } from "@triliumnext/core";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { t } from "i18next";
 
 import { isInternalElectronRequest } from "../../services/electron_request.js";
 import { getSecondFactorState } from "../../services/second_factor.js";
@@ -71,8 +72,7 @@ export function checkDownloadToken(kind: DownloadKind): RequestHandler {
             && grant.filePath === req.query.filePath && grant.sessionId === req.sessionID;
         if (!isGranted) {
             res.setHeader("Content-Type", "text/plain").status(401)
-                .send("Until the second factor is set up again, "
-                    + "a download asks for the password and a current code.");
+                .send(t("second_factor.download-refused"));
             return;
         }
 

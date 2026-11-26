@@ -9,6 +9,7 @@ import {
     password_encryption as passwordEncryptionService,
     resetSetupAuth
 } from "@triliumnext/core";
+import { withServerTexts } from "@triliumnext/core/src/test/translations.js";
 import type { NextFunction, Request, Response } from "express";
 import { Application } from "express";
 import supertest from "supertest";
@@ -837,6 +838,32 @@ describe("Auth", () => {
                 expect(attempts()).toEqual([ "no-code:10" ]);
                 expect(readWrongCodes().count).toBe(0);
                 expect(describeRefusal({ factor: "totp" })).toBe("Incorrect TOTP token");
+            });
+
+            it("describes refusals in the server's language, wrong codes in English", async () => {
+                const waitUntil = Date.parse("2026-01-01T00:00:00.000Z");
+                const texts = {
+                    "second_factor.refused-wait": "wait {{time}}",
+                    "second_factor.refused-step-ahead": "ahead {{time}}",
+                    "second_factor.refused-unreadable": "unreadable",
+                    "second_factor.refused-removed": "removed"
+                };
+
+                const messages = await withServerTexts(texts, () => [
+                    describeRefusal({ factor: "totp", reason: "wait", waitUntil }),
+                    describeRefusal({ factor: "totp", reason: "step-ahead", waitUntil }),
+                    describeRefusal({ factor: "totp", reason: "unreadable" }),
+                    describeRefusal({ factor: "totp", reason: "removed" }),
+                    describeRefusal({ factor: "totp" })
+                ]);
+
+                expect(messages).toEqual([
+                    "wait 2026-01-01T00:00:00.000Z",
+                    "ahead 2026-01-01T00:00:00.000Z",
+                    "unreadable",
+                    "removed",
+                    "Incorrect TOTP token"
+                ]);
             });
         });
     });

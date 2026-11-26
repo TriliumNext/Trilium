@@ -7,7 +7,9 @@ const PAGE_TOKEN = "the-page's-csrf-token";
 
 type Handler = (...args: any[]) => void;
 
-const { state, getLogMock, configMock, randomStringMock, WebSocketServerMock } = vi.hoisted(() => {
+const {
+    state, loaded, getLogMock, configMock, randomStringMock, WebSocketServerMock
+} = vi.hoisted(() => {
     const state: { instances: any[] } = { instances: [] };
 
     class WebSocketServerMock {
@@ -34,6 +36,7 @@ const { state, getLogMock, configMock, randomStringMock, WebSocketServerMock } =
 
     return {
         state,
+        loaded: { csrfProtection: false, sessionSecret: false },
         WebSocketServerMock,
         getLogMock: { error: vi.fn(), info: vi.fn() },
         configMock: { General: { noAuthentication: false } as { noAuthentication: boolean } | undefined },
@@ -47,9 +50,15 @@ vi.mock("ws", () => ({
 }));
 vi.mock("./config.js", () => ({ default: configMock }));
 vi.mock("./utils.js", () => ({ randomString: randomStringMock }));
-vi.mock("../routes/csrf_protection.js", () => ({
-    isValidCsrfToken: (_req: unknown, token: unknown) => token === PAGE_TOKEN
-}));
+// Records what the provider loads, since `core_init.ts` imports it before core starts.
+vi.mock("../routes/csrf_protection.js", () => {
+    loaded.csrfProtection = true;
+    return {};
+});
+vi.mock("./session_secret.js", () => {
+    loaded.sessionSecret = true;
+    return { default: "" };
+});
 vi.mock("@triliumnext/core", async () => {
     // use the real shouldLogMessage so the suppression tests cover the actual filter
     const { shouldLogMessage } = await vi.importActual<typeof import("@triliumnext/core/src/services/messaging/index.js")>(
@@ -116,10 +125,15 @@ describe("WebSocketMessagingProvider", () => {
         })).toBe(false);
     });
 
+    it("loads nothing that reads the session secret, which needs a started core", () => {
+        expect(loaded).toEqual({ csrfProtection: false, sessionSecret: false });
+    });
+
     function init() {
         const httpServer = {} as any;
         const sessionParser = vi.fn((_req: any, _params: any, cb: () => void) => cb());
-        provider.attachToHttpServer(httpServer, sessionParser as any);
+        const isValidCsrfToken = (_req: unknown, token: unknown) => token === PAGE_TOKEN;
+        provider.attachToHttpServer(httpServer, sessionParser as any, isValidCsrfToken);
         return { server: state.instances[0], sessionParser };
     }
 

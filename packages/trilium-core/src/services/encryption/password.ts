@@ -1,4 +1,6 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
+import { t } from "i18next";
+
 import events from "../events.js";
 import options from "../options.js";
 import protectedSessionService from "../protected_session.js";
@@ -52,7 +54,7 @@ export async function changePassword(
     if (!dataKey) {
         return {
             success: false,
-            message: "The key of protected notes cannot be read, so the password was not changed.",
+            message: t("password.change-data-key-unreadable"),
             code: "data-key-unreadable"
         };
     }
@@ -120,7 +122,7 @@ async function restorePassword(password: string): Promise<ChangePasswordResponse
     if (!(await passwordEncryptionService.getDataKey(password))) {
         return {
             success: false,
-            message: "The password of this knowledge base was removed. Enter the password it had.",
+            message: t("password.restore-refused"),
             code: "password-not-restored"
         };
     }

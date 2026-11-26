@@ -1,7 +1,12 @@
+import { cls } from "@triliumnext/core";
 import crypto from "crypto";
+import type { Request } from "express";
 import fs from "fs";
+import path from "path";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
+import totpRoute from "../../routes/api/totp.js";
+import totp from "../totp.js";
 import { getKeyFilePath, isSealed, open, seal } from "./second_factor_key.js";
 
 // Spec files run in parallel and share the key file of `spec/db`, so this one gets its own.
@@ -49,6 +54,31 @@ describe("the key file of the second factor", () => {
 
         expect(() => seal(FIELD, "the secret")).toThrow(/cannot be read/);
         expect(open(FIELD, sealed)).toBeNull();
+    });
+
+    it("lets an enrollment set aside a key file that it cannot read, never a readable one", () => {
+        const secret = "JBSWY3DPEHPK3PXP";
+        const enroll = () => cls.init(() => totpRoute.enableSecret({
+            body: { secret, recoveryCodes: [ "recovery-code" ] }
+        } as unknown as Request));
+        const setAside = () => fs.readdirSync(dataDir)
+            .filter((name) => name.startsWith("second_factor_key.unreadable-"))
+            .map((name) => fs.readFileSync(path.join(dataDir, name), "ascii"));
+
+        try {
+            enroll();
+            const key = fs.readFileSync(getKeyFilePath(), "ascii");
+            enroll();
+            expect(fs.readFileSync(getKeyFilePath(), "ascii")).toBe(key);
+            expect(setAside()).toEqual([]);
+
+            fs.writeFileSync(getKeyFilePath(), "truncated");
+            expect(enroll).not.toThrow();
+            expect(totp.getTotpSecret()).toBe(secret);
+            expect(setAside()).toEqual([ "truncated" ]);
+        } finally {
+            cls.init(() => totp.resetTotp());
+        }
     });
 
     it("passes on an error other than a key file that another process wrote first", () => {

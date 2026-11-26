@@ -62,6 +62,20 @@ function ensureKey(): Buffer {
     return key;
 }
 
+/**
+ * Renames a key file that exists but cannot be read, so that the next `seal()` creates a new key.
+ * Only an enrollment calls it, since it replaces every value sealed with the key.
+ */
+export function setAsideUnreadableKey() {
+    if (!fs.existsSync(getKeyFilePath()) || readKey()) {
+        return;
+    }
+
+    const asideName = `second_factor_key.unreadable-${Date.now()}.txt`;
+    fs.renameSync(getKeyFilePath(), path.join(dataDir.TRILIUM_DATA_DIR, asideName));
+    getLog().info(`Renamed ${KEY_FILE_NAME}, which cannot be read, to ${asideName}.`);
+}
+
 export function isSealed(value: string | null | undefined): boolean {
     return !!value?.startsWith(SEALED_PREFIX);
 }

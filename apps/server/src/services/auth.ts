@@ -8,6 +8,7 @@ import {
     password_encryption as passwordEncryptionService
 } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
+import { t } from "i18next";
 
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
@@ -23,8 +24,7 @@ import {
     hasResetWords,
     matchesResetWords,
     readWrongCodes,
-    recordSignInAttempt,
-    RESET_VARIABLE
+    recordSignInAttempt
 } from "./second_factor.js";
 import sqlInit from "./sql_init.js";
 import totp from "./totp.js";
@@ -331,20 +331,19 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
 
 /** Returns the message that `checkCredentials()` sends for a refused second factor. */
 export function describeRefusal({ reason, waitUntil }: LoginRefusal): string {
-    const until = waitUntil ? new Date(waitUntil).toISOString() : "";
+    const time = waitUntil ? new Date(waitUntil).toISOString() : "";
     switch (reason) {
         case "wait":
-            return `Too many wrong codes. Try again after ${until}.`;
+            return t("second_factor.refused-wait", { time });
         case "step-ahead":
-            return "A code was used while the server clock was ahead. "
-                + `Codes work again after ${until}.`;
+            return t("second_factor.refused-step-ahead", { time });
         case "unreadable":
-            return "The second factor cannot be checked. "
-                + `Restart the server with ${RESET_VARIABLE} to remove it.`;
+            return t("second_factor.refused-unreadable");
         case "removed":
-            return "The second factor was removed. "
-                + `Restart the server with ${RESET_VARIABLE} and send its words as the code.`;
+            return t("second_factor.refused-removed");
         default:
+            // `getRefusedFactor()` in `setup.tsx` matches this text, "Incorrect password" and
+            // "TOTP token is required", so the three stay English.
             return "Incorrect TOTP token";
     }
 }

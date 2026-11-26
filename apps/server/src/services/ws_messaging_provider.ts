@@ -4,12 +4,14 @@ import type { IncomingMessage, Server as HttpServer } from "http";
 import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
-import { isValidCsrfToken } from "../routes/csrf_protection.js";
 import config from "./config.js";
 import { isInteractiveSession } from "./login_session.js";
 import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
+
+/** Whether a token is the page's CSRF token for the request that opened a connection. */
+export type CsrfTokenCheck = (req: IncomingMessage, token: unknown) => boolean;
 
 /** The close code of a connection that sent no CSRF token in time, or a wrong one. */
 export const CSRF_REFUSED_CLOSE_CODE = 4403;
@@ -17,14 +19,19 @@ export const CSRF_REFUSED_CLOSE_CODE = 4403;
 const CSRF_TOKEN_DEADLINE_MS = 10 * 1000;
 
 /**
- * A messaging provider that serves clients over the TCP HTTP listener and so
- * needs the `http.Server` (and session parser for auth) handed to it once www.ts
- * has built them. www.ts detects this capability via the type guard below rather
- * than a concrete `instanceof`, so a desktop composite that wraps a WS provider
+ * A messaging provider that serves clients over the TCP HTTP listener. www.ts passes it the
+ * `http.Server`, the session parser and the CSRF token check once it has built them. This module
+ * imports neither of the last two: they read the session secret, which needs a started core, and
+ * `core_init.ts` loads this module before core starts. www.ts detects this capability via the type
+ * guard below rather than a concrete `instanceof`, so a desktop composite that wraps a WS provider
  * qualifies too.
  */
 export interface HttpAttachableMessagingProvider extends MessagingProvider {
-    attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler): void;
+    attachToHttpServer(
+        httpServer: HttpServer,
+        sessionParser: express.RequestHandler,
+        isValidCsrfToken: CsrfTokenCheck
+    ): void;
     /** Asks every client connected over the TCP listener to reload, then closes its connection. */
     disconnectAllClients(reason: string): void;
 }
@@ -50,7 +57,11 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
     private clientMap = new Map<string, WebSocket>();
     private clientMessageHandler?: ClientMessageHandler;
 
-    attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler) {
+    attachToHttpServer(
+        httpServer: HttpServer,
+        sessionParser: express.RequestHandler,
+        isValidCsrfToken: CsrfTokenCheck
+    ) {
         this.webSocketServer = new WebSocketServer({
             verifyClient: (info, done) => {
                 sessionParser(info.req as express.Request, {} as express.Response, () => {

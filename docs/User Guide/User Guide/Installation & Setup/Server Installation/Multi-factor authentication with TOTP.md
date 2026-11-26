@@ -86,13 +86,15 @@ Before the upgrade, a sync peer could also change the settings that each device 
 
 ## Removing a second factor that cannot be used
 
-The server cannot check one-time passwords when `second_factor_key.txt` is missing, or when a sync peer wrote one of the settings of the second factor, which _Security records of this device_ reports. It then refuses every sign-in, recovery codes included. To remove such a factor, or one whose authenticator and recovery codes are both lost:
+The server cannot check one-time passwords when `second_factor_key.txt` is missing or damaged, or when a sync peer wrote one of the settings of the second factor, which _Security records of this device_ reports. It then refuses every sign-in, recovery codes included. To remove such a factor, or one whose authenticator and recovery codes are both lost:
 
 1.  Stop the server.
 2.  If the factor still works but you lost its codes, delete `second_factor_key.txt` from the data directory.
 3.  Start the server with the `TRILIUM_RESET_SECOND_FACTOR` environment variable set to words of your own, at least 16 characters long.
 4.  Sign in with your password, and enter these words as the one-time password.
 5.  Set up TOTP again, then restart the server without the variable.
+
+Setting TOTP up again replaces a `second_factor_key.txt` that the server cannot read. The old file stays in the data directory under a name that starts with `second_factor_key.unreadable`, and can be deleted.
 
 Until TOTP is set up again, every start needs the variable: without it, the server refuses every sign-in. The log says when the variable is set but never shows its value, and the server removes the variable from its environment, so the programs it starts do not inherit it.
 

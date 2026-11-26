@@ -1,4 +1,5 @@
 import { cls, options } from "@triliumnext/core";
+import { withServerTexts } from "@triliumnext/core/src/test/translations.js";
 import type { NextFunction, Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,14 +11,20 @@ const FILE = "/backups/backup-daily.db";
 
 function download(query: Record<string, string>, sessionID = "session-a") {
     const req = { query, sessionID, headers: {} } as unknown as Request;
-    const outcome = { isPassed: false, status: 0 };
+    const outcome: { isPassed: boolean; status: number; body?: string } = {
+        isPassed: false,
+        status: 0
+    };
     const res = {
         setHeader: () => res,
         status: (status: number) => {
             outcome.status = status;
             return res;
         },
-        send: () => res
+        send: (body: string) => {
+            outcome.body = body;
+            return res;
+        }
     } as unknown as Response;
     checkDownloadToken("backup")(req, res, (() => { outcome.isPassed = true; }) as NextFunction);
     return outcome;
@@ -36,6 +43,17 @@ describe("download tokens while the second factor is legacy", () => {
 
     it("lets every download through while the factor is not legacy", () => {
         expect(download({ filePath: FILE })).toEqual({ isPassed: true, status: 0 });
+    });
+
+    it("refuses a download without a token in the server's language", async () => {
+        cls.init(() => options.setOption("secondFactorState", "legacy"));
+
+        const outcome = await withServerTexts(
+            { "second_factor.download-refused": "refused" },
+            () => download({ filePath: FILE })
+        );
+
+        expect(outcome).toEqual({ isPassed: false, status: 401, body: "refused" });
     });
 
     it("lets through only the token's file, for its session, once and within a minute", () => {

@@ -37,6 +37,7 @@ const mocks = vi.hoisted(() => ({
     isScriptingEnabled: vi.fn(),
     publishHealthcheckTarget: vi.fn(),
     sessionParser: vi.fn(),
+    isValidCsrfToken: vi.fn(),
     removeLeftoverStagingFiles: vi.fn()
 }));
 
@@ -92,6 +93,7 @@ vi.mock("./services/utils.js", () => ({ get isElectron() { return state.isElectr
 vi.mock("./services/healthcheck.js", () => ({ publishHealthcheckTarget: mocks.publishHealthcheckTarget }));
 vi.mock("./services/sql_init.js", () => ({ getDbSize: () => 2 }));
 vi.mock("./routes/session_parser.js", () => ({ default: mocks.sessionParser }));
+vi.mock("./routes/csrf_protection.js", () => ({ isValidCsrfToken: mocks.isValidCsrfToken }));
 
 import startTriliumServer from "./www.js";
 
@@ -203,7 +205,8 @@ describe("startTriliumServer", () => {
         expect(app.get("port")).toBe(8080);
         expect(app.get("host")).toBe("0.0.0.0");
 
-        expect(state.messaging.attachToHttpServer).toHaveBeenCalledWith(server, mocks.sessionParser);
+        expect(state.messaging.attachToHttpServer)
+            .toHaveBeenCalledWith(server, mocks.sessionParser, mocks.isValidCsrfToken);
         expect(mocks.installProcessErrorHandlers.mock.invocationCallOrder[0])
             .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
         expect(mocks.removeLeftoverStagingFiles).toHaveBeenCalledOnce();

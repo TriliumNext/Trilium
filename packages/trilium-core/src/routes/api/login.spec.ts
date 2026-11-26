@@ -6,6 +6,7 @@ import protectedSession from "../../services/protected_session";
 import { encodeBase64 } from "../../services/utils/binary";
 import ws from "../../services/ws";
 import { CoreApiTester } from "../../test/api_tester";
+import { withServerTexts } from "../../test/translations";
 
 // The protected-session login does real scrypt (N=16384) password verification
 // and data-key derivation. Under the browser provider that runs in pure JS
@@ -49,10 +50,17 @@ describe("Login (protected session) API (core)", () => {
         getContext().init(() => options.setOption(
             "encryptedDataKey", encodeBase64(Uint8Array.from({ length: 12 }, (_, i) => i))));
         try {
-            const res = await api.post<{ success: boolean; code?: string }>(
-                "/api/login/protected", { body: { password: "demo1234" } });
+            const res = await withServerTexts(
+                { "password.session-data-key-unreadable": "unreadable" },
+                () => api.post<{ success: boolean; message?: string; code?: string }>(
+                    "/api/login/protected", { body: { password: "demo1234" } })
+            );
             expect(res.status).toBe(200);
-            expect(res.body).toMatchObject({ success: false, code: "data-key-unreadable" });
+            expect(res.body).toEqual({
+                success: false,
+                message: "unreadable",
+                code: "data-key-unreadable"
+            });
             expect(protectedSession.isProtectedSessionAvailable()).toBe(false);
         } finally {
             getContext().init(() => options.setOption("encryptedDataKey", stored));

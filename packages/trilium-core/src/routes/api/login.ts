@@ -1,3 +1,5 @@
+import { t } from "i18next";
+
 import type { Request } from "../../http_interface";
 import events from "../../services/events.js";
 import passwordEncryptionService from "../../services/encryption/password_encryption.js";
@@ -20,7 +22,7 @@ async function loginToProtectedSession(req: Request) {
         // is right.
         return {
             success: false,
-            message: "The password is right, but the key of protected notes cannot be read.",
+            message: t("password.session-data-key-unreadable"),
             code: "data-key-unreadable"
         };
     }

@@ -3,6 +3,7 @@ import { device_records, options, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import recoveryCodesService from "../../services/encryption/recovery_codes.js";
+import { setAsideUnreadableKey } from "../../services/encryption/second_factor_key.js";
 import {
     getSecondFactorCheck,
     getSecondFactorState,
@@ -61,6 +62,7 @@ function enableTOTP(req: Request) {
     // rewrites while it already reads as "local". Setting it here makes "secret committed" always
     // imply "TOTP enforced at login".
     options.setOption("mfaMethod", "totp");
+    setAsideUnreadableKey();
     totpService.setSecret(secret);
     recoveryCodesService.setRecoveryCodes(recoveryCodes.join(","));
     // A new secret makes the factor in every older copy of the database worthless.
