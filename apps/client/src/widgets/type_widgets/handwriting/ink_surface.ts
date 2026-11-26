@@ -1,8 +1,8 @@
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, getShortStrokeOutline, getStrokeOutline, type InkDocument,
-    type InkTool, outlineStrokePoints, type PaperStyle, serializeInkDocument, type Stroke,
-    StrokeBuilder, strokeHitsSegment, StrokeIndex
+    type InkTool, outlineStrokePoints, type PaperStyle, serializeInkDocument, serializeStroke,
+    type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 
 export type SurfaceTool = InkTool | "eraser";
@@ -39,6 +39,8 @@ const SETTLE_CHUNK = 48;
  * The outline of a point depends on its neighbors, so the runs overlap where theirs differ.
  */
 const SETTLE_OVERLAP = 8;
+/** How many loaded strokes `warmSerialization()` encodes per task. */
+const WARM_BATCH = 2000;
 
 /**
  * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
@@ -90,6 +92,7 @@ export default class InkSurface {
     /** Raw `x, y, pressure` triples of the input that the browser predicts after the last move. */
     private predicted: number[] = [];
     private liveFrame: number | undefined;
+    private warmTimer: ReturnType<typeof setTimeout> | undefined;
     private erased: Stroke[] = [];
     private lastX = 0;
     private lastY = 0;
@@ -130,6 +133,7 @@ export default class InkSurface {
         this.resizeObserver.disconnect();
         if (this.fullRedrawFrame !== undefined) cancelAnimationFrame(this.fullRedrawFrame);
         if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
+        clearTimeout(this.warmTimer);
         this.baseCanvas.remove();
         this.liveLayer.remove();
     }
@@ -148,6 +152,24 @@ export default class InkSurface {
         this.syncPaper();
         this.redrawAll();
         this.reportState();
+        this.warmSerialization(doc.strokes);
+    }
+
+    /**
+     * Encodes the JSON of loaded strokes in short tasks, so that the first save after loading a
+     * large note does not encode them all at once.
+     */
+    private warmSerialization(strokes: Stroke[]) {
+        clearTimeout(this.warmTimer);
+        let next = 0;
+        const step = () => {
+            const end = Math.min(strokes.length, next + WARM_BATCH);
+            for (; next < end; next++) {
+                serializeStroke(strokes[next]);
+            }
+            this.warmTimer = next < strokes.length ? setTimeout(step, 0) : undefined;
+        };
+        this.warmTimer = setTimeout(step, 0);
     }
 
     serialize() {

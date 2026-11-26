@@ -58,6 +58,16 @@ describe("ink document", () => {
         expect(doc.strokes[1].bounds).toEqual({ minX: -7.2, minY: 4, maxX: 16.3, maxY: 29.7 });
     });
 
+    it("joins the JSON that each stroke keeps from its first save", () => {
+        const strokes = [ makeStroke([ 1, 2, 0.5, 3, 4, 0.5 ], 0), makeStroke([ 5, 6, 1 ], 1) ];
+        const content = serializeInkDocument("dots", strokes);
+        expect(content).toBe(JSON.stringify(JSON.parse(content)));
+        expect(strokes[0].json).toBe(JSON.stringify(JSON.parse(content).strokes[0]));
+
+        strokes[0].points[0] = 100;
+        expect(serializeInkDocument("dots", strokes)).toBe(content);
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
             expect(parseInkDocument(content)).toEqual({ paper: "ruled", strokes: [] });

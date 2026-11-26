@@ -28,6 +28,8 @@ export interface Stroke {
     /** The position of the stroke in the drawing order. */
     order: number;
     path?: Path2D;
+    /** The JSON of the stroke in the saved document, kept as a stroke does not change once drawn. */
+    json?: string;
 }
 
 export interface InkDocument {
@@ -64,23 +66,32 @@ export function createStroke(
     return { ...props, bounds: computeBounds(props.points, props.size) };
 }
 
+/**
+ * Returns the saved document. It joins the JSON of each stroke, which `serializeStroke()` computes
+ * once per stroke, so saving a large document does not encode every point again.
+ */
 export function serializeInkDocument(paper: PaperStyle, strokes: Iterable<Stroke>): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
-    const doc: SerializedDocument = {
-        version: 1,
-        paper,
-        strokes: sorted.map((stroke) => {
-            const serialized: SerializedStroke = {
-                c: stroke.color,
-                w: stroke.size,
-                p: encodePoints(stroke.points)
-            };
-            if (stroke.tool === "highlighter") serialized.t = "h";
-            if (stroke.simulatePressure) serialized.s = 1;
-            return serialized;
-        })
-    };
-    return JSON.stringify(doc);
+    const parts: string[] = [];
+    for (const stroke of sorted) {
+        parts.push(serializeStroke(stroke));
+    }
+    return `{"version":1,"paper":${JSON.stringify(paper)},"strokes":[${parts.join(",")}]}`;
+}
+
+/** Returns the JSON of `stroke` in the saved document, computed on the first call. */
+export function serializeStroke(stroke: Stroke): string {
+    if (stroke.json === undefined) {
+        const serialized: SerializedStroke = {
+            c: stroke.color,
+            w: stroke.size,
+            p: encodePoints(stroke.points)
+        };
+        if (stroke.tool === "highlighter") serialized.t = "h";
+        if (stroke.simulatePressure) serialized.s = 1;
+        stroke.json = JSON.stringify(serialized);
+    }
+    return stroke.json;
 }
 
 export function parseInkDocument(content: string | null | undefined): InkDocument {
