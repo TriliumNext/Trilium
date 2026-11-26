@@ -2660,6 +2660,7 @@
     "book": "Collection",
     "mermaid-diagram": "Mermaid Diagram",
     "canvas": "Canvas",
+    "handwriting": "Handwriting",
     "web-view": "Web View",
     "mind-map": "Mind Map",
     "file": "File",
@@ -4362,6 +4363,16 @@
     "sample_event_modeling": "Event Modeling",
     "sample_use_case": "Use Case",
     "sample_agentflow": "Agentflow"
+  },
+  "handwriting": {
+    "pen": "Pen",
+    "highlighter": "Highlighter",
+    "eraser": "Eraser",
+    "pen_settings": "Pen settings",
+    "thickness": "Thickness",
+    "change_paper": "Change paper",
+    "undo": "Undo",
+    "redo": "Redo"
   },
   "mind-map": {
     "addChild": "Add child",

@@ -511,7 +511,7 @@ describe("new template badges", () => {
             expect(menu.map(key)).toEqual([
                 "text", "markdown", "code", "spreadsheet", "llmChat",
                 "separator",
-                "canvas", "mermaid", "mindMap", "relationMap",
+                "canvas", "handwriting", "mermaid", "mindMap", "relationMap",
                 "separator",
                 "note_types.more"
             ]);

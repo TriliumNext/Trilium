@@ -135,7 +135,8 @@ export const ALLOWED_NOTE_TYPES = [
     "code",
     "mindMap",
     "spreadsheet",
-    "llmChat"
+    "llmChat",
+    "handwriting"
 ] as const;
 export type NoteType = (typeof ALLOWED_NOTE_TYPES)[number];
 

@@ -45,6 +45,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
 
     // Graphic notes
     { type: "canvas", mime: "application/json", title: t("note_types.canvas"), icon: "bx-pen" },
+    { type: "handwriting", mime: "application/json", title: t("note_types.handwriting"), icon: "bx-pencil", isBeta: true, isNew: true },
     { type: "mermaid", mime: "text/mermaid", title: t("note_types.mermaid-diagram"), icon: "bx-selection" },
 
     // Map notes
@@ -290,7 +291,7 @@ function buildNoteTypeItems(data: NoteTypeData, command?: TreeCommandNames) {
  */
 const MENU_GROUPS: Pick<NoteTypeMapping, "type" | "mime">[][] = [
     [ { type: "text" }, { type: "code", mime: MARKDOWN_NOTE_TYPE_MIME }, { type: "code", mime: "text/plain" }, { type: "spreadsheet" }, { type: "llmChat" } ],
-    [ { type: "canvas" }, { type: "mermaid" }, { type: "mindMap" }, { type: "relationMap" } ]
+    [ { type: "canvas" }, { type: "handwriting" }, { type: "mermaid" }, { type: "mindMap" }, { type: "relationMap" } ]
 ];
 const MORE_GROUP: Pick<NoteTypeMapping, "type" | "mime">[] = [
     { type: "noteMap" }, { type: "render" }, { type: "search" }, { type: "webView" }

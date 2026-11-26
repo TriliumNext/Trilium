@@ -109,6 +109,11 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         printable: true,
         isFullHeight: true
     },
+    handwriting: {
+        view: () => import("./type_widgets/handwriting/Handwriting"),
+        className: "note-detail-handwriting",
+        isFullHeight: true
+    },
     mindMap: {
         view: () => import("./type_widgets/mind_map/MindMap"),
         className: "note-detail-mind-map",

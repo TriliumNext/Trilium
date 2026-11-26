@@ -24,7 +24,8 @@ export const NOTE_TYPE_ICONS = {
     contentWidget: "bx bxs-widget",
     mindMap: "bx bx-sitemap",
     spreadsheet: "bx bx-table",
-    llmChat: "bx bx-message-square-dots"
+    llmChat: "bx bx-message-square-dots",
+    handwriting: "bx bx-pencil"
 };
 
 /**
@@ -413,7 +414,7 @@ const MARKDOWN_MIME_TYPES = [ "text/markdown", "text/x-markdown", "text/x-gfm" ]
 
 const FULL_WIDTH_NOTE_TYPES = [
     "code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap",
-    "mindMap", "spreadsheet"
+    "mindMap", "spreadsheet", "handwriting"
 ];
 
 function getFileMimeIcon(mime: string): string {

@@ -46,6 +46,7 @@ const READ_ONLY_CAPABLE_TYPES: string[] = [
     "mermaid",
     "canvas",
     "mindMap",
+    "handwriting",
     "spreadsheet",
     "noteMap",
     "relationMap",
