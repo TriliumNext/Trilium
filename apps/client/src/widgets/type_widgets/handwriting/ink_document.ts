@@ -16,6 +16,8 @@ export type InkTool = "pen" | "highlighter";
 
 /** The color of a stroke that follows the theme's text color. */
 export const AUTO_COLOR = "auto";
+/** The opacity of the highlighter's ink. */
+export const HIGHLIGHTER_ALPHA = 0.35;
 
 export interface Bounds {
     minX: number;
@@ -348,6 +350,27 @@ export function buildStrokePoints(stroke: Pick<Stroke, "size" | "simulatePressur
 export function getStrokeOutline(stroke: OutlinedStroke): number[][] {
     if (stroke.points.length <= 6) return getShortStrokeOutline(stroke);
     return outlineStrokePoints(stroke, buildStrokePoints(stroke));
+}
+
+/** Returns the path of a finished stroke, which the stroke keeps for the next time it is drawn. */
+export function getStrokePath(stroke: Stroke) {
+    stroke.path ??= outlineToPath(getStrokeOutline(stroke));
+    return stroke.path;
+}
+
+/** Returns a path through the midpoints of the edges of `outline`, curved at its points. */
+export function outlineToPath(outline: number[][]) {
+    const path = new Path2D();
+    if (outline.length < 2) return path;
+
+    path.moveTo(outline[0][0], outline[0][1]);
+    for (let i = 0; i < outline.length; i++) {
+        const [ x, y ] = outline[i];
+        const [ nextX, nextY ] = outline[(i + 1) % outline.length];
+        path.quadraticCurveTo(x, y, (x + nextX) / 2, (y + nextY) / 2);
+    }
+    path.closePath();
+    return path;
 }
 
 /** Returns the outline of a run of a stroke's points, which can be any part of the stroke. */

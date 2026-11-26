@@ -1,11 +1,12 @@
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getShortStrokeOutline,
-    getStrokeOutline, type InkDocument, type InkLayout, type InkTool, type InkView, outlineStrokePoints,
-    PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
-    type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
+    getStrokeOutline, getStrokePath, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool,
+    type InkView, outlineStrokePoints, outlineToPath, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle,
+    serializeInkDocument, serializeStroke, type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
+import InkThumbnail from "./ink_thumbnail";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -35,7 +36,6 @@ type Mode = "idle" | "draw" | "erase" | "pan" | "pinch";
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 8;
 const ERASER_RADIUS = 8;
-const HIGHLIGHTER_ALPHA = 0.35;
 /** How much wider than the pen at the same thickness the highlighter draws. */
 export const HIGHLIGHTER_WIDTH_FACTOR = 5;
 /** The bit of `PointerEvent.buttons` that a pen sets while its eraser end touches the screen. */
@@ -100,6 +100,10 @@ export default class InkSurface {
 
     private strokes = new Set<Stroke>();
     private index = new StrokeIndex();
+    private thumbnail = new InkThumbnail({
+        getAll: () => this.strokes,
+        query: (bounds) => this.index.query(bounds)
+    });
     private nextOrder = 0;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
@@ -213,6 +217,7 @@ export default class InkSurface {
         this.nextOrder = doc.strokes.length;
         this.paper = doc.paper;
         this.layout = doc.layout;
+        this.thumbnail.reset(doc.layout);
         this.pageCount = countPages(doc.strokes);
         this.viewShown = false;
         this.undoStack = [];
@@ -242,6 +247,21 @@ export default class InkSurface {
 
     serialize() {
         return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout);
+    }
+
+    /** Returns the picture that previews show, or `undefined` while the saved one is current. */
+    exportThumbnail() {
+        return this.thumbnail.export();
+    }
+
+    /** Records that the picture of `version`, from {@link exportThumbnail}, was saved. */
+    markThumbnailSaved(version: number) {
+        this.thumbnail.markSaved(version);
+    }
+
+    /** Has the next save send the picture, as for a note whose picture was never saved. */
+    invalidateThumbnail() {
+        this.thumbnail.invalidate();
     }
 
     /** The world point at the middle of the container, and the zoom. */
@@ -328,6 +348,7 @@ export default class InkSurface {
     setLayout(layout: InkLayout) {
         if (layout === this.layout) return;
         this.layout = layout;
+        this.thumbnail.setLayout(layout);
         this.cancelZoomPreview();
         this.redrawAll();
         this.reportState();
@@ -667,11 +688,11 @@ export default class InkSurface {
         this.clearCanvas(this.live, this.liveCanvas);
         this.applyWorldTransform(this.live);
         if (this.snapped) {
-            this.fillOpaque(this.live, stroke, toPath(getStrokeOutline(stroke)));
+            this.fillOpaque(this.live, stroke, outlineToPath(getStrokeOutline(stroke)));
             return;
         }
         if (stroke.points.length <= 6) {
-            this.fillOpaque(this.live, stroke, toPath(getShortStrokeOutline(stroke)));
+            this.fillOpaque(this.live, stroke, outlineToPath(getShortStrokeOutline(stroke)));
             return;
         }
 
@@ -681,14 +702,14 @@ export default class InkSurface {
             while (points.length - SETTLE_OVERLAP - this.settledUpTo >= SETTLE_CHUNK) {
                 const end = this.settledUpTo + SETTLE_CHUNK;
                 const run = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP), end + 1);
-                this.fillOpaque(this.settled, stroke, toPath(outlineStrokePoints(stroke, run)));
+                this.fillOpaque(this.settled, stroke, outlineToPath(outlineStrokePoints(stroke, run)));
                 this.settledUpTo = end;
             }
         }
 
         const tail = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP));
         tail.push(...builder.preview(this.predicted));
-        this.fillOpaque(this.live, stroke, toPath(outlineStrokePoints(stroke, tail)));
+        this.fillOpaque(this.live, stroke, outlineToPath(outlineStrokePoints(stroke, tail)));
     }
 
     /** Draws the stroke being drawn again from its start, after the view moved under it. */
@@ -728,6 +749,7 @@ export default class InkSurface {
         this.nextOrder++;
         this.strokes.add(stroke);
         this.index.add(stroke);
+        this.thumbnail.add(stroke);
         this.pushHistory({ added: [ stroke ], removed: original ? [ original ] : [] });
 
         if (!this.zoomPreview) {
@@ -753,6 +775,7 @@ export default class InkSurface {
             if (!strokeHitsSegment(stroke, from.x, from.y, to.x, to.y, radius)) continue;
             this.strokes.delete(stroke);
             this.index.remove(stroke);
+            this.thumbnail.markChanged(stroke);
             this.erased.push(stroke);
             this.redrawBounds(stroke.bounds);
         }
@@ -768,11 +791,13 @@ export default class InkSurface {
         for (const stroke of remove) {
             this.strokes.delete(stroke);
             this.index.remove(stroke);
+            this.thumbnail.markChanged(stroke);
             this.redrawBounds(stroke.bounds);
         }
         for (const stroke of add) {
             this.strokes.add(stroke);
             this.index.add(stroke);
+            this.thumbnail.markChanged(stroke);
             this.redrawBounds(stroke.bounds);
         }
         this.updatePageCount();
@@ -1132,9 +1157,8 @@ export default class InkSurface {
     }
 
     private fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
-        stroke.path ??= toPath(getStrokeOutline(stroke));
         ctx.globalAlpha = stroke.tool === "highlighter" ? HIGHLIGHTER_ALPHA : 1;
-        this.fillOpaque(ctx, stroke, stroke.path);
+        this.fillOpaque(ctx, stroke, getStrokePath(stroke));
         ctx.globalAlpha = 1;
     }
 
@@ -1169,18 +1193,4 @@ function getContext(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext
     const ctx = canvas.getContext("2d", settings);
     if (!ctx) throw new Error("The 2D canvas context is not available.");
     return ctx;
-}
-
-function toPath(outline: number[][]) {
-    const path = new Path2D();
-    if (outline.length < 2) return path;
-
-    path.moveTo(outline[0][0], outline[0][1]);
-    for (let i = 0; i < outline.length; i++) {
-        const [ x, y ] = outline[i];
-        const [ nextX, nextY ] = outline[(i + 1) % outline.length];
-        path.quadraticCurveTo(x, y, (x + nextX) / 2, (y + nextY) / 2);
-    }
-    path.closePath();
-    return path;
 }

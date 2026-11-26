@@ -254,7 +254,7 @@ const PREVIEWED_TYPES = new Set([
     "book", "search", "text", "markdown", "code", "iconPack", "image", "canvas", "canvasDrawing",
     "mermaidDiagram",
     "mindMap", "spreadsheet", "office", "pdf", "audio", "video", "mermaid", "render", "doc",
-    "llmChat"
+    "llmChat", "handwriting"
 ]);
 
 /**
@@ -331,7 +331,7 @@ export async function getRenderedContent(
         await renderSourceEmbed(entity, type, $renderedContent, options);
     } else if (type === "image" && options.mediaEnvironment === "embedded") {
         await renderImageViewer(entity, $renderedContent);
-    } else if (["image", "canvas", "mermaid", "mindMap", "spreadsheet"].includes(type)) {
+    } else if (["image", "canvas", "mermaid", "mindMap", "spreadsheet", "handwriting"].includes(type)) {
         await renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && type === "office") {
         await renderOffice(entity, $renderedContent, options);

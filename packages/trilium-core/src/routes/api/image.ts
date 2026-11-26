@@ -28,7 +28,7 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
         res.set("Content-Type", "image/png");
         // return res.send(fs.readFileSync(`${RESOURCE_DIR}/db/image-deleted.png`));
         return res.sendStatus(404);
-    } else if (!["image", "canvas", "mermaid", "mindMap", "spreadsheet"].includes(image.type)) {
+    } else if (!["image", "canvas", "mermaid", "mindMap", "spreadsheet", "handwriting"].includes(image.type)) {
         return res.sendStatus(400);
     }
 
@@ -38,6 +38,8 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
         renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
     } else if (image.type === "mindMap") {
         renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
+    } else if (image.type === "handwriting") {
+        renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting);
     } else if (image.type === "spreadsheet") {
         renderPngAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.spreadsheet);
     } else {

@@ -39,7 +39,8 @@ export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
     canvas: "canvas-export.svg",
     mermaid: "mermaid-export.svg",
     mindMap: "mindmap-export.svg",
-    spreadsheet: "spreadsheet-export.png"
+    spreadsheet: "spreadsheet-export.png",
+    handwriting: "handwriting-export.svg"
 } as const satisfies Partial<Record<NoteType, string>>;
 
 /**

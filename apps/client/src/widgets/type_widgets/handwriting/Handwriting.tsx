@@ -1,14 +1,17 @@
 import "./Handwriting.css";
 
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import clsx from "clsx";
 import type { CSSProperties, TargetedKeyboardEvent } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import server from "../../../services/server";
 import { isIOS } from "../../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen } from "../../react/hooks/dom";
-import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { type SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useTriliumOptionBool } from "../../react/hooks/options";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
@@ -70,6 +73,9 @@ const HAS_TOUCH = navigator.maxTouchPoints > 0;
 /** The view of each note left in this session, which reopening the note shows again. */
 const sessionViews = new Map<string, InkView>();
 
+/** The version of the thumbnail that each save sends. */
+const thumbnailVersions = new WeakMap<SavedData, number>();
+
 export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const surfaceElRef = useRef<HTMLDivElement>(null);
     const [ containerEl, setContainerEl ] = useState<HTMLDivElement | null>(null);
@@ -94,9 +100,19 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         note,
         noteContext,
         noteType: "handwriting",
-        getData() {
+        async getData() {
             const surface = surfaceRef.current;
-            return surface ? { content: surface.serialize() } : undefined;
+            if (!surface) return undefined;
+            const content = surface.serialize();
+            const thumbnail = await exportThumbnail(surface);
+            if (!thumbnail) return { content };
+            const data: SavedData = { content, attachments: [ getThumbnailRow(thumbnail.svg) ] };
+            thumbnailVersions.set(data, thumbnail.version);
+            return data;
+        },
+        dataSaved(data) {
+            const version = thumbnailVersions.get(data);
+            if (version !== undefined) surfaceRef.current?.markThumbnailSaved(version);
         },
         onContentChange(content) {
             const doc = parseInkDocument(content);
@@ -120,6 +136,24 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         if (!previous || previous !== noteId) {
             shownNoteIdRef.current = noteId;
             surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
+            if (note?.noteId === noteId && doc.strokes.length) void saveMissingThumbnail(surface, note);
+        }
+    }
+
+    /** Saves the thumbnail of `shown`, a note saved before thumbnails or imported without one. */
+    async function saveMissingThumbnail(surface: InkSurface, shown: FNote) {
+        const attachments = await shown.getAttachments();
+        if (attachments.some((attachment) => attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting)) return;
+        if (surface.readOnly || shownNoteIdRef.current !== shown.noteId) return;
+
+        surface.invalidateThumbnail();
+        const thumbnail = await exportThumbnail(surface);
+        if (!thumbnail) return;
+        try {
+            await server.post(`notes/${shown.noteId}/attachments?matchBy=title`, getThumbnailRow(thumbnail.svg));
+            surface.markThumbnailSaved(thumbnail.version);
+        } catch (e) {
+            console.error(`Could not save the thumbnail of the handwriting note '${shown.noteId}'`, e);
         }
     }
 
@@ -507,4 +541,18 @@ function disableEditablesOutside(element: HTMLElement) {
     return () => {
         for (const editable of disabled) editable.inert = false;
     };
+}
+
+/** The thumbnail of `surface`, or `undefined` when the saved one is current or it cannot be drawn. */
+async function exportThumbnail(surface: InkSurface) {
+    try {
+        return await surface.exportThumbnail();
+    } catch (e) {
+        console.error("Could not draw the thumbnail of a handwriting note", e);
+        return undefined;
+    }
+}
+
+function getThumbnailRow(svg: string) {
+    return { role: "image", mime: "image/svg+xml", title: NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting, content: svg, position: 0 };
 }

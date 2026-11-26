@@ -346,6 +346,8 @@ function getImage(req: ShareRequest): ShareReply {
             return renderImageAttachment(image, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
         case "mindMap":
             return renderImageAttachment(image, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
+        case "handwriting":
+            return renderImageAttachment(image, NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting);
         default:
             return jsonReply(400, { message: "Requested note is not a shareable image" });
     }
