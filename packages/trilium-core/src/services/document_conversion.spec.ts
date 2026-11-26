@@ -297,6 +297,17 @@ describe("convertDocumentNoteToText", () => {
         expect(String(note.getContent())).toContain("<h2>Contract document</h2>");
     });
 
+    it("converts an RTF document, whose format the parser is told", async () => {
+        const rtf = String.raw`{\rtf1\ansi{\fonttbl{\f0 Arial;}}\f0 Quarterly \b review\b0\par}`;
+        const note = createFileNote("application/rtf", new TextEncoder().encode(rtf), "Review.rtf");
+
+        await getContext().init(() => convertDocumentNoteToText(note));
+
+        expect(note.type).toBe("text");
+        expect(note.title).toBe(`${counter}-Review`);
+        expect(String(note.getContent())).toMatch(/Quarterly <(b|strong)>review<\/\1>/);
+    });
+
     it("leaves a note alone when its file is replaced while it converts", async () => {
         const docx = await renderTextNoteToDocx(buildNote({ type: "text", title: "Draft" }),
             "<p>First draft</p>");
