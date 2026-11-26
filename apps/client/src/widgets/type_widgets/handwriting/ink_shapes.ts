@@ -77,6 +77,11 @@ const CORNER_STEP = 1;
 const ELLIPSE_DEVIATION = 0.2;
 /** The share of its length from which the width of an ellipse makes it a circle. */
 const CIRCLE_RATIO = 0.85;
+/**
+ * The most points of a stroke tried as an ellipse, as `trimToLoop()` compares the points of its
+ * two ends with each other. The shapes drawn with a pen on a tablet had 120 to 200.
+ */
+const MAX_STROKE_POINTS = 4000;
 /** The distance between the points of a stroke around an ellipse, in world units, and their number. */
 const ELLIPSE_STEP = 6;
 const MIN_ELLIPSE_POINTS = 24;
@@ -192,7 +197,7 @@ export function recognizeTriangle(points: number[], minSize: number): number[][]
  * within `AXIS_SNAP` degrees of them.
  */
 export function recognizeEllipse(stroke: number[], minSize: number): Ellipse | undefined {
-    if (stroke.length < 12) return undefined;
+    if (stroke.length < 12 || stroke.length > 3 * MAX_STROKE_POINTS) return undefined;
     const points = trimToLoop(stroke);
     const box = fitBox(points, getLongAxisAngle(points));
     const { cos, sin } = box;

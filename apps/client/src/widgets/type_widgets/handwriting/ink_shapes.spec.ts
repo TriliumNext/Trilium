@@ -217,6 +217,14 @@ describe("ellipse recognition", () => {
         expect(recognizeEllipse(ring(80, 80, 0, 0, 270), 20)).toBeUndefined();
         expect(recognizeEllipse(ring(80, 80, 0, 0, 720), 20)).toBeUndefined();
         expect(recognizeEllipse(ring(8, 8), 20)).toBeUndefined();
+
+        // A stroke of more points than a drawn shape has is not compared point by point.
+        const dense = (count: number) => Array.from({ length: count + 1 }, (_, index) => {
+            const turn = 2 * Math.PI * index / count;
+            return [ 300 + 80 * Math.cos(turn), 200 + 80 * Math.sin(turn), 0.5 ];
+        }).flat();
+        expect(recognizeEllipse(dense(3000), 20)).toBeDefined();
+        expect(recognizeEllipse(dense(5000), 20)).toBeUndefined();
     });
 
     it("runs a stroke of one pressure around an ellipse, on it once smoothed", () => {
