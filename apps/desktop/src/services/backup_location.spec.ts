@@ -10,7 +10,8 @@ const h = vi.hoisted(() => ({
     getFocusedWindow: vi.fn<() => object | null>(() => ({})),
     /** Each option write, and whether it ran inside a CLS context. */
     written: [] as { name: string; value: string; isInContext: boolean }[],
-    isInContext: false
+    isInContext: false,
+    backupFolder: "/data/backup" as string | null
 }));
 
 vi.mock("electron", () => ({
@@ -36,7 +37,7 @@ vi.mock("@triliumnext/core", () => ({
             }
         }
     },
-    getBackup: () => ({ getBackupFolderPath: () => "/data/backup" }),
+    getBackup: () => ({ getBackupFolderPath: () => h.backupFolder }),
     options: {
         setOption: (name: string, value: string) =>
             h.written.push({ name, value, isInContext: h.isInContext })
@@ -52,6 +53,7 @@ describe("backup location handlers", () => {
     beforeEach(() => {
         h.handlers.clear();
         h.written.length = 0;
+        h.backupFolder = "/data/backup";
         vi.clearAllMocks();
         h.getFocusedWindow.mockReturnValue({});
         h.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [ CHOSEN ] });
@@ -66,6 +68,16 @@ describe("backup location handlers", () => {
         expect(options.defaultPath).toBe("/data/backup");
         expect(h.written)
             .toEqual([ { name: "customDbBackupDir", value: CHOSEN, isInContext: true } ]);
+    });
+
+    it("opens the picker at the system's default where the service has no folder", async () => {
+        h.backupFolder = null;
+
+        expect(await invoke("backup-location-choose"))
+            .toEqual({ status: "selected", path: CHOSEN });
+
+        const [ , options ] = h.showOpenDialog.mock.calls[0] as [ unknown, OpenDialogOptions ];
+        expect(options.defaultPath).toBeUndefined();
     });
 
     it("stores nothing when the picker is dismissed or has no window to open over", async () => {

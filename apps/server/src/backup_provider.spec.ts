@@ -928,6 +928,10 @@ describe("ServerBackupService: serving only what the listing names", () => {
             expectRefused(service, filePath);
         }
         expect(service.resolveBackupPath(other)).toBe(other);
+
+        // A platform that names no database has none to keep out.
+        vi.spyOn(getPlatform(), "getDatabasePath").mockReturnValue(null);
+        expect(service.resolveBackupPath(live)).toBe(live);
     });
 });
 

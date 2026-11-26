@@ -349,8 +349,11 @@ describe("createAnonymizedCopy", () => {
 });
 
 describe("getExistingAnonymizedDatabases", () => {
-    it("returns an empty list when the directory does not exist", () => {
+    it("lists nothing and sweeps nothing when the directory does not exist", () => {
         expect(anonymization.getExistingAnonymizedDatabases()).toEqual([]);
+
+        expect(() => anonymization.removeLeftoverStagingFiles()).not.toThrow();
+        expect(fs.existsSync(COPIES_DIR)).toBe(false);
     });
 
     it("lists only anonymized .db files, with their modification date and size", () => {
