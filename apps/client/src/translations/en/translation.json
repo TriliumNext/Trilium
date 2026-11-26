@@ -2300,8 +2300,6 @@
     "save_password": "Save password",
     "password_stored": "The backup password has been saved.",
     "password_not_stored": "The backup password could not be saved.",
-    "encryption_not_disabled": "The backup password was removed, but encryption could not be switched off. Backups will not be encrypted until you turn encryption on again.",
-    "encryption_not_enabled": "The backup password was saved, but encryption could not be switched on. Backups will not be encrypted until you switch it on.",
     "compressed": "Compressed",
     "encrypted": "Encrypted"
   },

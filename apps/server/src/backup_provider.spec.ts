@@ -1,6 +1,7 @@
 import { readBackupContainer, writeBackupContainer } from "@triliumnext/backup-container";
 import type { OptionNames, SetupBackupSettings } from "@triliumnext/commons";
 import { getLog, getSql, ws } from "@triliumnext/core";
+import type { Response } from "express";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -49,7 +50,7 @@ function optionsWith(customDbBackupDir: string | null, extraOptions: OptionOverr
     return {
         getOption: (name: OptionNames) => values[name] ?? "",
         getOptionOrNull: (name: OptionNames) => values[name] ?? null,
-        getOptionBool: () => false,
+        getOptionBool: (name: OptionNames) => values[name] === "true",
         setOption: () => {}
     };
 }
@@ -164,7 +165,10 @@ describe("ServerBackupService.scheduleBackups", () => {
 
 describe("ServerBackupService: backup format", () => {
     const PASSPHRASE = "correct horse battery staple";
-    const withPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => PASSPHRASE };
+    const withPassphrase: Partial<ServerBackupConfig> = {
+        isPassphraseStored: () => true,
+        getPassphrase: async () => PASSPHRASE
+    };
 
     it("writes a plain database when neither compression nor encryption is on", async () => {
         const backupFile = await desktopService(CUSTOM_DIR).backupNow("now");
@@ -183,11 +187,7 @@ describe("ServerBackupService: backup format", () => {
     });
 
     it("writes an encrypted container, which only the passphrase opens", async () => {
-        const service = desktopService(
-            CUSTOM_DIR,
-            { backupEnableEncryption: "true" },
-            withPassphrase
-        );
+        const service = desktopService(CUSTOM_DIR, {}, withPassphrase);
 
         const backupFile = await service.backupNow("now");
 
@@ -198,11 +198,8 @@ describe("ServerBackupService: backup format", () => {
     });
 
     it("compresses and encrypts together when both are on", async () => {
-        const service = desktopService(
-            CUSTOM_DIR,
-            { backupEnableCompression: "true", backupEnableEncryption: "true" },
-            withPassphrase
-        );
+        const compressing = { backupEnableCompression: "true" };
+        const service = desktopService(CUSTOM_DIR, compressing, withPassphrase);
 
         const backupFile = await service.backupNow("now");
 
@@ -257,7 +254,7 @@ describe("ServerBackupService: backup format", () => {
 
     it("reads what each container is from its own header, not from today's options", async () => {
         await desktopService("", { backupEnableCompression: "true" }).backupNow("compressed");
-        const encrypting = desktopService("", { backupEnableEncryption: "true" }, withPassphrase);
+        const encrypting = desktopService("", {}, withPassphrase);
         await encrypting.backupNow("encrypted");
         await desktopService("").backupNow("plain");
 
@@ -317,9 +314,82 @@ describe("ServerBackupService: backup format", () => {
     });
 });
 
+describe("ServerBackupService: a backup that nobody is asked about", () => {
+    const PASSPHRASE = "correct horse battery staple";
+    /** The desktop's main process, with a passphrase file that opens. */
+    const stored: Partial<ServerBackupConfig> = {
+        isPassphraseStored: () => true,
+        getPassphrase: async () => PASSPHRASE
+    };
+
+    /** Runs the scheduler's check of the daily backup, which is due. */
+    async function runScheduler(service: ServerBackupService) {
+        const scheduler = service as unknown as { runScheduledBackups(): Promise<void> };
+        await scheduler.runScheduledBackups();
+    }
+
+    it("is encrypted whenever a passphrase is stored, whatever the option says", async () => {
+        // Planted by a peer or written by a page script before this version refused the option.
+        const service = desktopService(CUSTOM_DIR, {
+            backupEnableEncryption: "false",
+            dailyBackupEnabled: "true",
+            lastDailyBackupDate: "2020-01-01 00:00:00.000Z"
+        }, stored);
+
+        await runScheduler(service);
+        // The button "Backup now", ETAPI, `api.backupNow()` and the copy before a migration.
+        for (const name of [ "now", "etapi-name", "before-migration" ]) {
+            await service.backupNow(name);
+        }
+
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([
+            "backup-before-migration.tnbackup",
+            "backup-daily.tnbackup",
+            "backup-etapi-name.tnbackup",
+            "backup-now.tnbackup"
+        ]);
+        for (const fileName of backupNamesIn(CUSTOM_DIR)) {
+            const backupFile = path.join(CUSTOM_DIR, fileName);
+            expect(await unwrapContainer(backupFile, PASSPHRASE)).toBe("db-bytes");
+        }
+        expect(backupNamesIn(DEFAULT_DIR)).toEqual([]);
+    });
+
+    it("stays plain and in the default folder where the passphrase cannot be read", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableEncryption: "false" },
+            { isPassphraseStored: () => true, getPassphrase: async () => null }
+        );
+
+        expect(await service.backupNow("daily")).toBe(path.join(DEFAULT_DIR, "backup-daily.db"));
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([]);
+        expect(ws.sendMessageToAllClients).toHaveBeenCalledWith(expect.objectContaining({
+            type: "toast",
+            message: expect.stringContaining("not encrypted")
+        }));
+    });
+
+    it("is plain where no passphrase is stored, whatever the option says", async () => {
+        const getPassphrase = vi.fn(async () => PASSPHRASE);
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableEncryption: "true" },
+            { isPassphraseStored: () => false, getPassphrase }
+        );
+
+        expect(await service.backupNow("daily")).toBe(path.join(CUSTOM_DIR, "backup-daily.db"));
+        expect(getPassphrase).not.toHaveBeenCalled();
+        expect(ws.sendMessageToAllClients).not.toHaveBeenCalled();
+    });
+});
+
 describe("ServerBackupService.backupAs: the backup the setup screen asked for", () => {
     const PASSPHRASE = "correct horse battery staple";
-    const withPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => PASSPHRASE };
+    const withPassphrase: Partial<ServerBackupConfig> = {
+        isPassphraseStored: () => true,
+        getPassphrase: async () => PASSPHRASE
+    };
 
     /** What the screen sends, with the plainest backup there is as the starting point. */
     function asked(overrides: Partial<SetupBackupSettings> = {}): SetupBackupSettings {
@@ -364,11 +434,8 @@ describe("ServerBackupService.backupAs: the backup the setup screen asked for", 
     });
 
     it("leaves it unlocked where the user cleared the password, however the instance backs up", async () => {
-        const service = desktopService(
-            CUSTOM_DIR,
-            { backupEnableEncryption: "true", backupEnableCompression: "true" },
-            withPassphrase
-        );
+        const compressing = { backupEnableCompression: "true" };
+        const service = desktopService(CUSTOM_DIR, compressing, withPassphrase);
 
         const written = await service.backupAs(asked());
 
@@ -412,14 +479,14 @@ describe("ServerBackupService.backupAs: the backup the setup screen asked for", 
 });
 
 describe("ServerBackupService: when the backup passphrase cannot be read", () => {
-    const noPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => null };
+    /** A passphrase file that does not open, e.g. with the keyring locked. */
+    const noPassphrase: Partial<ServerBackupConfig> = {
+        isPassphraseStored: () => true,
+        getPassphrase: async () => null
+    };
 
     it("keeps the unencrypted backup out of the chosen directory and says so", async () => {
-        const service = desktopService(
-            CUSTOM_DIR,
-            { backupEnableEncryption: "true" },
-            noPassphrase
-        );
+        const service = desktopService(CUSTOM_DIR, {}, noPassphrase);
 
         const backupFile = await service.backupNow("daily");
 
@@ -437,28 +504,28 @@ describe("ServerBackupService: when the backup passphrase cannot be read", () =>
     });
 
     it("still honours compression, so only what could not be done is missing", async () => {
-        const service = desktopService(
-            CUSTOM_DIR,
-            { backupEnableCompression: "true", backupEnableEncryption: "true" },
-            noPassphrase
-        );
+        const compressing = { backupEnableCompression: "true" };
+        const service = desktopService(CUSTOM_DIR, compressing, noPassphrase);
 
         const backupFile = await service.backupNow("daily");
 
         expect(backupFile).toBe(path.join(DEFAULT_DIR, "backup-daily.tnbackup"));
     });
 
-    it("says nothing and encrypts nothing when encryption was never asked for", async () => {
-        await desktopService(CUSTOM_DIR, {}, noPassphrase).backupNow("daily");
+    it("says nothing and encrypts nothing where no passphrase is stored", async () => {
+        const none = { isPassphraseStored: () => false, getPassphrase: async () => null };
+        await desktopService(CUSTOM_DIR, {}, none).backupNow("daily");
 
         expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.db" ]);
         expect(ws.sendMessageToAllClients).not.toHaveBeenCalled();
     });
 
-    it("treats a service with no passphrase provider at all the same way", async () => {
+    it("writes plain backups where asked on a service with no passphrase provider", async () => {
+        // Every server deployment, whose `backupEnableEncryption` decides nothing either.
         const service = desktopService(CUSTOM_DIR, { backupEnableEncryption: "true" });
 
-        expect(await service.backupNow("daily")).toBe(path.join(DEFAULT_DIR, "backup-daily.db"));
+        expect(await service.backupNow("daily")).toBe(path.join(CUSTOM_DIR, "backup-daily.db"));
+        expect(ws.sendMessageToAllClients).not.toHaveBeenCalled();
     });
 });
 
@@ -768,15 +835,63 @@ describe("ServerBackupService: sending a backup for download", () => {
     });
 });
 
+describe("ServerBackupService: serving only what the listing names", () => {
+    function expectRefused(service: ServerBackupService, filePath: string) {
+        expect(service.resolveBackupPath(filePath)).toBeNull();
+        // Refused before the response is touched.
+        expect(service.sendBackup(filePath, {} as Response)).toBe(false);
+    }
+
+    it("refuses a file of a backup folder that the listing does not name", async () => {
+        fs.mkdirSync(path.join(DEFAULT_DIR, "nested"), { recursive: true });
+        fs.mkdirSync(path.join(DEFAULT_DIR, "backup-folder.db"));
+        const backup = path.join(DEFAULT_DIR, "backup-daily.db");
+        fs.writeFileSync(backup, "db-bytes");
+        const unlisted = [
+            path.join(DEFAULT_DIR, "document.db"),
+            path.join(DEFAULT_DIR, "session_secret.txt"),
+            path.join(DEFAULT_DIR, "backup-daily.db-journal"),
+            path.join(DEFAULT_DIR, "nested", "backup-daily.db")
+        ];
+        for (const filePath of unlisted) {
+            fs.writeFileSync(filePath, "secret");
+        }
+        const service = desktopService("");
+
+        expect((await service.getExistingBackups()).map((b) => b.filePath)).toEqual([ backup ]);
+        for (const filePath of [ ...unlisted, path.join(DEFAULT_DIR, "backup-folder.db") ]) {
+            expectRefused(service, filePath);
+            expect(await service.getBackupContent(filePath)).toBeNull();
+        }
+        expect(service.resolveBackupPath(backup)).toBe(backup);
+        expect(await service.getBackupContent(backup)).toEqual(Buffer.from("db-bytes"));
+    });
+
+    it("serves no file below a custom folder set to a root but its own backups", async () => {
+        // The custom folder is `tempRoot`, in place of the root of a drive.
+        fs.mkdirSync(CUSTOM_DIR, { recursive: true });
+        const keyFile = path.join(tempRoot, "id_ed25519");
+        const deeper = path.join(CUSTOM_DIR, "backup-now.db");
+        const backup = path.join(tempRoot, "backup-now.db");
+        for (const filePath of [ keyFile, deeper, backup ]) {
+            fs.writeFileSync(filePath, "bytes");
+        }
+        const service = desktopService(tempRoot);
+
+        expectRefused(service, keyFile);
+        expectRefused(service, deeper);
+        expect(service.resolveBackupPath(backup)).toBe(backup);
+    });
+});
+
 describe("ServerBackupService.adoptPassphrase", () => {
-    it("hands the password to wherever this platform keeps one, and clears it on null", async () => {
-        const stored: (string | null)[] = [];
+    it("hands the password to wherever this platform keeps one", async () => {
+        const stored: string[] = [];
         const service = desktopService("", {}, { setPassphrase: async (p) => void stored.push(p) });
 
         await service.adoptPassphrase("the restored database's password");
-        await service.adoptPassphrase(null);
 
-        expect(stored).toEqual([ "the restored database's password", null ]);
+        expect(stored).toEqual([ "the restored database's password" ]);
     });
 
     it("does nothing where there is nowhere to keep one, rather than failing the restore", async () => {

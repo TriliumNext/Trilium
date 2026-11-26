@@ -7,6 +7,7 @@ import { networkInterfaces } from "os";
 
 import buildApp from "./app.js";
 import { TRILIUM_LOGO } from "./log_provider.js";
+import anonymizationService from "./services/anonymization.js";
 import config from "./services/config.js";
 import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
@@ -69,6 +70,7 @@ export default async function startTriliumServer(): Promise<Express> {
     }
 
     const app = await buildApp();
+    anonymizationService.removeLeftoverStagingFiles();
     const httpServer = startHttpServer(app);
 
     // Only providers that serve clients over the TCP listener need the HTTP server

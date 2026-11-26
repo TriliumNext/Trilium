@@ -90,7 +90,9 @@ Once encryption is enabled, all newly created backups (both automatic and manual
 
 You can change the password anytime using the _Change password_ button. The new password will apply to backups created after the change.
 
-To disable encryption, uncheck <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Enable encryption_.
+To disable encryption, uncheck <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Enable encryption_. This forgets the password.
+
+Restoring an encrypted backup makes the password that opened it the backup password. Restoring an unencrypted backup keeps the stored password, so later backups are still encrypted.
 
 > [!NOTE]
 > On some systems, a keyring may not be available for Trilium to securely store the encryption password. In such cases, the encryption option is disabled.

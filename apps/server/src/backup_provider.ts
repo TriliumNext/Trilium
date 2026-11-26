@@ -36,12 +36,15 @@ export interface ServerBackupConfig {
      */
     getPassphrase?: () => Promise<string | null>;
     /**
-     * Stores the backup passphrase, or lets go of the stored one when given `null`. Set alongside
-     * {@link getPassphrase}, and used by the restore rather than by any screen: unset, an instance
-     * simply has nowhere to keep a passphrase, and there is nothing for a restore to bring up to
-     * date.
+     * Whether a passphrase is stored, without reading it. While one is, every backup that nobody is
+     * asked about is encrypted.
      */
-    setPassphrase?: (passphrase: string | null) => Promise<void>;
+    isPassphraseStored?: () => boolean;
+    /**
+     * Stores the backup passphrase. Set alongside {@link getPassphrase}, and used by the restore
+     * rather than by any screen.
+     */
+    setPassphrase?: (passphrase: string) => Promise<void>;
 }
 
 /** How a backup is to be written, once the options and the passphrase have both had their say. */
@@ -148,14 +151,6 @@ export default class ServerBackupService extends BackupService {
         return resolvedPath ? fs.readFileSync(resolvedPath) : null;
     }
 
-    /**
-     * The absolute path of an existing backup, or `null` for anything that is not one.
-     *
-     * A path arriving from a client is a request to name a file, not permission to reach it: without
-     * this, an endpoint taking one would read any file the process can. Callers that only need the
-     * path use this directly rather than {@link getBackupContent}, which reads the whole file into
-     * memory — no use at all for a backup measured in gigabytes.
-     */
     override sendBackup(filePath: string, res: Response): boolean {
         const resolved = this.resolveBackupPath(filePath);
         if (!resolved) {
@@ -174,59 +169,57 @@ export default class ServerBackupService extends BackupService {
         return true;
     }
 
+    /**
+     * The absolute path of a backup that {@link getExistingBackups} lists, or `null` for any other
+     * path. Every route that takes a backup path from a client goes through here.
+     */
     resolveBackupPath(filePath: string): string | null {
         const resolvedPath = path.resolve(filePath);
+        const directory = path.dirname(resolvedPath);
 
-        if (!this.getBackupDirectories().some((dir) => isInsideDirectory(dir, resolvedPath))) {
+        if (!this.getBackupDirectories().includes(directory)) {
             return null;
         }
 
-        return fs.existsSync(resolvedPath) ? resolvedPath : null;
+        return isListedBackup(directory, path.basename(resolvedPath)) ? resolvedPath : null;
     }
 
-    /** Whether there is a passphrase to be had, without letting the caller learn what it is. */
+    /** Whether there is a passphrase that opens, without letting the caller learn what it is. */
     override async hasStoredPassphrase(): Promise<boolean> {
         return !!(await this.config.getPassphrase?.());
     }
 
     /**
-     * Takes on the passphrase a restored backup was locked with, or lets go of the stored one when
-     * the backup brought none.
-     *
-     * The passphrase is not kept in the database, so a restore replaces every option that says how
-     * this instance backs up while leaving the password those options are carried out with. What is
-     * left is an instance encrypting its backups with the password of a database that is no longer
-     * here, saying nothing about it, and producing backups the user cannot open.
+     * Takes on the passphrase that a restored backup was locked with. The passphrase is not kept in
+     * the database, so a restore does not replace it otherwise.
      */
-    async adoptPassphrase(passphrase: string | null): Promise<void> {
+    async adoptPassphrase(passphrase: string): Promise<void> {
         await this.config.setPassphrase?.(passphrase);
     }
 
     /**
      * Settles what the backup is written as, from what the user asked for where they were asked at
-     * all, and from the instance's own options where they were not.
+     * all, and from the instance's own setup where they were not.
      *
      * Compression needs nothing but the answer. Encryption also needs a passphrase, and where the
      * stored one was asked for and cannot be read the backup falls back to being unencrypted and
      * local rather than not being taken at all.
      *
-     * @param settings what the setup screen asked for; absent for the scheduled backups, which run
-     *                 with nobody there to ask.
+     * @param settings what the setup screen asked for; absent for every other backup, which is
+     *                 encrypted whenever a passphrase is stored.
      */
     private async resolveFormat(settings?: SetupBackupSettings): Promise<BackupFormat> {
         // Read leniently: the pre-migration backup runs before the options added by newer versions
         // exist.
-        const isEnabled = (name: "backupEnableCompression" | "backupEnableEncryption") =>
-            this.options.getOptionOrNull(name) === "true";
-
-        const compress = settings?.compress ?? isEnabled("backupEnableCompression");
+        const compress = settings?.compress
+            ?? this.options.getOptionOrNull("backupEnableCompression") === "true";
 
         // A backup someone asked for carries the password they typed while asking. Wanting the
         // stored one instead is a request rather than a value, since the passphrase is kept where
         // the interface that asked cannot read it.
         const useStored = settings
             ? settings.useStoredPassphrase
-            : isEnabled("backupEnableEncryption");
+            : this.config.isPassphraseStored?.() ?? false;
         if (!useStored) {
             return { compress, passphrase: settings?.passphrase || null, keepLocal: false };
         }
@@ -280,13 +273,6 @@ function getDefaultBackupDir(): string {
     return path.resolve(dataDir.BACKUP_DIR);
 }
 
-/** Both paths must already be resolved. Unlike a prefix comparison, this also holds at a drive root. */
-function isInsideDirectory(directory: string, filePath: string): boolean {
-    const relative = path.relative(directory, filePath);
-
-    return !!relative && !relative.startsWith("..") && !path.isAbsolute(relative);
-}
-
 function listBackupsIn(directory: string): DatabaseBackup[] {
     let fileNames: string[];
     try {
@@ -297,16 +283,11 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
     }
 
     return fileNames
-        // The extension check excludes intermediate files (e.g. *.db-journal, *.part) created while
-        // a backup is in progress.
-        // Case-insensitively: the backup the setup screen takes before replacing a database is named
-        // for a person reading a directory listing, and starts with a capital.
-        .filter((fileName) => fileName.toLowerCase().includes("backup")
-            && (fileName.endsWith(DATABASE_EXTENSION) || fileName.endsWith(CONTAINER_EXTENSION)))
+        .filter(isBackupFileName)
         .flatMap((fileName) => {
             const filePath = path.resolve(directory, fileName);
             const stat = fs.statSync(filePath, { throwIfNoEntry: false });
-            if (!stat) {
+            if (!stat?.isFile()) {
                 return [];
             }
 
@@ -318,6 +299,23 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
                     ...describeContainer(filePath, fileName) }
             ];
         });
+}
+
+/** Whether {@link listBackupsIn} lists the file of this name in `directory`. */
+function isListedBackup(directory: string, fileName: string): boolean {
+    const stat = fs.statSync(path.resolve(directory, fileName), { throwIfNoEntry: false });
+
+    return isBackupFileName(fileName) && !!stat?.isFile();
+}
+
+/**
+ * Whether a file name is one of a backup. The extension check excludes intermediate files
+ * (`*.db-journal`, `*.part`). The name test ignores case, since the setup screen names its backup
+ * for a person ("Backup …").
+ */
+function isBackupFileName(fileName: string): boolean {
+    return fileName.toLowerCase().includes("backup")
+        && (fileName.endsWith(DATABASE_EXTENSION) || fileName.endsWith(CONTAINER_EXTENSION));
 }
 
 /**
