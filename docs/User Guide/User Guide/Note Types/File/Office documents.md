@@ -54,7 +54,7 @@ In an EPUB e-book, the headings are the entries of the book's own table of conte
 
 ## Limitations
 
-*   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.
+*   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. A Word, OpenDocument Text or RTF document can also be converted into a <a class="reference-link" href="../Text.md">Text</a> note from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Convert to text note_; see <a class="reference-link" href="../Converting%20between%20note%20types.md">Converting between note types</a>.
 *   The preview is a simplified rendering: complex layouts (columns, text boxes, headers and footers), charts and the precise styling of table borders are not reproduced.
 *   Documents larger than 20 MB are not previewed, to keep the server responsive. A message says the document is too large to preview, and the usual download and open actions remain available.
 *   If the document cannot be converted, a notice is displayed instead and the file can still be downloaded or opened externally.

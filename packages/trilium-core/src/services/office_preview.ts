@@ -7,6 +7,7 @@ import {
     OFFICE_PREVIEW_TOO_LARGE_MESSAGE,
     XLSX_MIME
 } from "@triliumnext/commons";
+import type { GeneratorConfig, OfficeContentNode } from "officeparser";
 
 import { ValidationError } from "../errors.js";
 import type { TocPassOutcome } from "./toc/epub.js";
@@ -26,6 +27,11 @@ export interface OfficePreviewOptions {
     trim?: boolean;
     /** Receives the outcome of the ToC pass of an EPUB, for the body that the call returns. */
     onTocPass?(outcome: TocPassOutcome): void;
+    /**
+     * Keeps the page breaks of a text document as `<hr class="page-break">`, for its conversion
+     * into a text note. The preview has none.
+     */
+    pageBreaks?: boolean;
 }
 
 /**
@@ -67,7 +73,7 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
         }
     }
 
-    const convert = (bytes: Uint8Array) => convertWithOfficeParser(bytes, mime);
+    const convert = (bytes: Uint8Array) => convertWithOfficeParser(bytes, mime, options.pageBreaks);
     return isEpubMime(mime) ? convertEpub(buffer, convert, options) : convert(buffer);
 }
 
@@ -155,31 +161,65 @@ function isEpubMime(mime: string) {
     return (EPUB_MIME_TYPES as readonly string[]).includes(mime);
 }
 
-async function convertWithOfficeParser(buffer: Uint8Array, mime: string) {
+async function convertWithOfficeParser(buffer: Uint8Array, mime: string, pageBreaks = false) {
     const fileType = OFFICE_FILE_TYPE_HINTS[mime];
-    const { OfficeConverter } = await import("officeparser");
-    const { value } = await OfficeConverter.convert(buffer, "html", {
-        // Pass the explicit fileType only when auto-detection is unreliable (RTF/EPUB).
-        parseConfig: fileType ? { fileType } : undefined,
-        generatorConfig: {
-            // Charts would be emitted as a Chart.js <script> (loaded from a CDN) that the
-            // client-side sanitizer strips anyway, so don't bother generating them.
-            includeCharts: false,
-            // Inline every embedded image as a data: URI, which the client-side sanitizer permits
-            // on <img>. Above the default cap a fragment emits `<img src="<attachment name>">`,
-            // which resolves against the note's URL and 404s.
-            maxInlineImageBytes: Infinity,
-            // Emit an embeddable fragment instead of a full standalone <html> document.
-            htmlConfig: { standalone: false },
-            // A heading's slug id can equal a bookmark's name or a book's own id, so that a link to
-            // either lands on the heading. The ToC formats of these mark headings with ids of their
-            // own.
-            generateIds: !NO_GENERATED_IDS.has(mime)
-        }
-    });
+    const { OfficeConverter, OfficeGenerator, OfficeParser } = await import("officeparser");
+    const generatorConfig: GeneratorConfig<"html"> = {
+        // Charts would be emitted as a Chart.js <script> (loaded from a CDN) that the
+        // client-side sanitizer strips anyway, so don't bother generating them.
+        includeCharts: false,
+        // Inline every embedded image as a data: URI, which the client-side sanitizer permits
+        // on <img>. Above the default cap a fragment emits `<img src="<attachment name>">`,
+        // which resolves against the note's URL and 404s.
+        maxInlineImageBytes: Infinity,
+        // Emit an embeddable fragment instead of a full standalone <html> document.
+        htmlConfig: { standalone: false },
+        // A heading's slug id can equal a bookmark's name or a book's own id, so that a link to
+        // either lands on the heading. The ToC formats of these mark headings with ids of their
+        // own.
+        generateIds: !NO_GENERATED_IDS.has(mime)
+    };
+
+    let value: unknown;
+    if (pageBreaks) {
+        // `includeBreakNodes` also reports where the editor last broke the pages and column
+        // breaks, which the HTML writer turns into `<br>`, so those are taken out of the AST
+        // between parsing and writing. `OfficeConverter.convert()` extracts the attachments
+        // when the output has pictures; parsing alone has to ask for them.
+        const ast = await OfficeParser.parseOffice(buffer, {
+            ...(fileType ? { fileType } : {}),
+            includeBreakNodes: true,
+            extractAttachments: true
+        });
+        ast.content = withoutLayoutBreaks(ast.content);
+        ({ value } = await OfficeGenerator.generate(ast, "html", generatorConfig));
+    } else {
+        ({ value } = await OfficeConverter.convert(buffer, "html", {
+            // Pass the explicit fileType only when auto-detection is unreliable (RTF/EPUB).
+            parseConfig: fileType ? { fileType } : undefined,
+            generatorConfig
+        }));
+    }
 
     // Defensive: officeparser types `value` as string for the 'html' destination, so the
     // fallback arm is unreachable unless the library breaks its own contract.
     /* v8 ignore next */
     return typeof value === "string" ? value : "";
+}
+
+/** Break types that mark the layout of the last save rather than a break the author typed. */
+const LAYOUT_BREAK_TYPES = new Set([ "lastRenderedPage", "column" ]);
+
+function withoutLayoutBreaks(nodes: OfficeContentNode[]): OfficeContentNode[] {
+    const kept: OfficeContentNode[] = [];
+    for (const node of nodes) {
+        const breakType = node.type === "break" && node.metadata && "breakType" in node.metadata
+            ? node.metadata.breakType
+            : undefined;
+        if (breakType && LAYOUT_BREAK_TYPES.has(breakType)) {
+            continue;
+        }
+        kept.push(node.children ? { ...node, children: withoutLayoutBreaks(node.children) } : node);
+    }
+    return kept;
 }

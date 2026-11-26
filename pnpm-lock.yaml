@@ -1457,6 +1457,9 @@ importers:
       color:
         specifier: 5.0.3
         version: 5.0.3
+      docx:
+        specifier: 9.16.0
+        version: 9.16.0
       ejs:
         specifier: 7.0.2
         version: 7.0.2
@@ -4887,6 +4890,9 @@ packages:
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
 
+  '@types/node@26.6.10':
+    resolution: {integrity: sha512-WJuPHoGB8WNQuTksNF7SOQpnH02PXeDYz4iueWbBT6/hTWnShY5F3T/hoJA3fY9+uYReDZ7pyTKKx83jQa7aGg==}
+
   '@types/pngjs@6.0.5':
     resolution: {integrity: sha512-0k5eKfrA83JOZPppLtS2C7OUtyNAl2wKNxfyYl9Q5g9lPkgBl/9hNyAu6HuEH2J4XmIv2znEpkDd0SaZVxW6iQ==}
 
@@ -6890,6 +6896,10 @@ packages:
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
+
+  docx@9.16.0:
+    resolution: {integrity: sha512-fvAuqxV0705bEQ9OGPLt6onJqufGJTMS+b7PtRxNktea+iPWYgc1zO+OQBMW9ZmRLj9THTnOeiAoxTDz2ub0Fw==}
+    engines: {node: '>=16'}
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -11032,6 +11042,9 @@ packages:
 
   undici-types@7.24.6:
     resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
+
+  undici-types@8.9.0:
+    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
   undici@6.28.1:
     resolution: {integrity: sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==}
@@ -16080,6 +16093,10 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
 
+  '@types/node@26.6.10':
+    dependencies:
+      undici-types: 8.9.0
+
   '@types/pngjs@6.0.5':
     dependencies:
       '@types/node': 24.13.3
@@ -18696,6 +18713,12 @@ snapshots:
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
+
+  docx@9.16.0:
+    dependencies:
+      '@types/node': 26.6.10
+      fflate: 0.8.3
+      nanoid: 6.0.1
 
   dom-serializer@2.0.0:
     dependencies:
@@ -23694,6 +23717,8 @@ snapshots:
   undici-types@7.18.2: {}
 
   undici-types@7.24.6: {}
+
+  undici-types@8.9.0: {}
 
   undici@6.28.1: {}
 

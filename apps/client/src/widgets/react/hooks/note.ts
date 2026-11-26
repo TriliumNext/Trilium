@@ -404,10 +404,14 @@ export function useNote(noteId: string | null | undefined, silentNotFoundError =
 
 export function useNoteIcon(note: FNote | null | undefined) {
     const [ icon, setIcon ] = useState(note?.getIcon());
-    const iconClass = useNoteLabel(note, "iconClass");
+    const [ iconClass ] = useNoteLabel(note, "iconClass");
+    const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
+    // A note without an icon of its own shows the one of its type and MIME type.
+    const type = useNoteProperty(note, "type");
+    const mime = useNoteProperty(note, "mime");
     useEffect(() => {
         setIcon(note?.getIcon());
-    }, [ note, iconClass ]);
+    }, [ note, iconClass, workspaceIconClass, type, mime ]);
 
     return icon;
 }

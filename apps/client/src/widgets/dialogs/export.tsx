@@ -1,5 +1,6 @@
 import "./export.css";
 
+import type { NoteType } from "@triliumnext/commons";
 import { useState } from "preact/hooks";
 
 import froca from "../../services/froca";
@@ -18,6 +19,7 @@ import SelectableCard, { SelectableCardGrid } from "../react/SelectableCard";
 interface ExportDialogProps {
     branchId?: string | null;
     noteTitle?: string;
+    noteType?: NoteType;
     defaultType?: "subtree" | "single";
 }
 
@@ -27,6 +29,7 @@ interface ExportFormat {
     description: string;
     icon: string;
     recommended?: boolean;
+    beta?: boolean;
 }
 
 export default function ExportDialog() {
@@ -47,14 +50,17 @@ export default function ExportDialog() {
         setExportType(defaultType ?? "subtree");
         setOpts({
             noteTitle: noteId && await tree.getNoteTitle(noteId),
+            noteType: noteId ? (await froca.getNote(noteId))?.type : undefined,
             defaultType,
             branchId
         });
         setShown(true);
     });
 
-    const formats = exportType === "subtree" ? subtreeFormats : singleFormats;
-    const selectedFormat = exportType === "subtree" ? subtreeFormat : singleFormat;
+    const formats = exportType === "subtree" ? subtreeFormats : getSingleFormats(opts?.noteType);
+    const selectedFormat = exportType === "subtree"
+        ? subtreeFormat
+        : formats.some((format) => format.value === singleFormat) ? singleFormat : HTML_FORMAT.value;
     const setSelectedFormat = exportType === "subtree" ? setSubtreeFormat : setSingleFormat;
 
     return (
@@ -96,9 +102,7 @@ export default function ExportDialog() {
                         {formats.map((format) => (
                             <SelectableCard
                                 key={format.value} icon={format.icon}
-                                title={format.recommended
-                                    ? <span className="export-format-heading">{format.name}<Badge text={t("export.recommended")} className="export-recommended-badge" outline /></span>
-                                    : format.name}
+                                title={<FormatHeading format={format} />}
                                 description={format.description}
                                 selected={selectedFormat === format.value} onSelect={() => setSelectedFormat(format.value)}
                             />
@@ -114,13 +118,34 @@ export default function ExportDialog() {
     );
 }
 
+/** The name of an export format, with the badge that marks it recommended or in beta. */
+function FormatHeading({ format }: { format: ExportFormat }) {
+    if (!format.recommended && !format.beta) {
+        return <>{format.name}</>;
+    }
+
+    return (
+        <span className="export-format-heading">
+            {format.name}
+            {format.recommended
+                ? <Badge text={t("export.recommended")} className="export-format-badge" outline />
+                : <Badge text={t("note_types.beta-feature")} className="export-format-badge" outline />}
+        </span>
+    );
+}
+
 const HTML_FORMAT: ExportFormat = { value: "html", name: t("export.format_html_name"), description: t("export.format_html_description"), icon: "bx bxl-html5", recommended: true };
 const MARKDOWN_FORMAT: ExportFormat = { value: "markdown", name: t("export.format_markdown_name"), description: t("export.format_markdown_description"), icon: "bx bxl-markdown" };
 const SHARE_FORMAT: ExportFormat = { value: "share", name: t("export.format_share_name"), description: t("export.format_share_description"), icon: "bx bx-globe" };
+const DOCX_FORMAT: ExportFormat = { value: "docx", name: t("export.format_docx_name"), description: t("export.format_docx_description"), icon: "bx bxs-file-doc", beta: true };
 const OPML_FORMAT: ExportFormat = { value: "opml", name: t("export.format_opml_name"), description: t("export.format_opml_description"), icon: "bx bx-list-ul" };
 
 const subtreeFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT, SHARE_FORMAT, OPML_FORMAT];
-const singleFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT];
+
+/** A Word document is made only from a text note. */
+function getSingleFormats(noteType: NoteType | undefined): ExportFormat[] {
+    return noteType === "text" ? [HTML_FORMAT, MARKDOWN_FORMAT, DOCX_FORMAT] : [HTML_FORMAT, MARKDOWN_FORMAT];
+}
 
 // One-line summary of what the chosen export actually produces, shown in the dialog's result admonition.
 function exportResultText(exportType: "subtree" | "single", format: string) {
@@ -131,6 +156,9 @@ function exportResultText(exportType: "subtree" | "single", format: string) {
         return t("export.result_share");
     }
     if (exportType === "single") {
+        if (format === "docx") {
+            return t("export.result_single_docx");
+        }
         return format === "markdown" ? t("export.result_single_markdown") : t("export.result_single_html");
     }
     return format === "markdown" ? t("export.result_subtree_markdown") : t("export.result_subtree_html");

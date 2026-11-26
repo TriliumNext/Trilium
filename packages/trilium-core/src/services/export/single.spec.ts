@@ -1,4 +1,6 @@
+import { DOCX_MIME } from "@triliumnext/commons";
 import type { Response } from "../../http_interface";
+import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
@@ -9,7 +11,7 @@ import type { ExportFormat } from "../../meta.js";
 import TaskContext from "../task_context.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../virtual_notes.js";
-import singleExportService, { mapByNoteType } from "./single.js";
+import singleExportService, { mapByNoteType, type SingleExportFormat } from "./single.js";
 
 describe("Note type mappings", () => {
     it("supports mermaid note", () => {
@@ -266,15 +268,15 @@ describe("inlineAttachments", () => {
 
 describe("exportSingleNote", () => {
     /**
-     * `format` is deliberately widened past {@link ExportFormat} so the "unrecognized format" guard —
-     * which only a caller bypassing the route's own validation can reach — stays testable.
+     * `format` is deliberately widened past {@link SingleExportFormat} so the "unrecognized format"
+     * guard — which only a caller bypassing the route's own validation can reach — stays testable.
      */
-    function exportNote(note: BNote, format: ExportFormat | "pdf") {
+    function exportNote(note: BNote, format: SingleExportFormat | "pdf") {
         const branch = { getNote: () => note } as unknown as BBranch;
         const res = { setHeader: vi.fn(), send: vi.fn() } as unknown as Response;
         const taskContext = TaskContext.getInstance(`export-single-${note.type}-${format}`, "export", null);
 
-        return { result: singleExportService.exportSingleNote(taskContext, branch, format as ExportFormat, res), res };
+        return { result: singleExportService.exportSingleNote(taskContext, branch, format as SingleExportFormat, res), res };
     }
 
     it("writes the mapped payload and download headers for a supported note", async () => {
@@ -338,5 +340,29 @@ describe("exportSingleNote", () => {
         await expect(exportNote(buildNote({ type: "text", title: "Texty" }), "pdf").result).rejects.toThrow(
             expect.objectContaining({ name: "ValidationError", statusCode: 400, message: "Unrecognized format 'pdf'" })
         );
+        await expect(exportNote(buildNote({ type: "code", title: "Script" }), "docx").result).rejects.toThrow(
+            expect.objectContaining({
+                name: "ValidationError",
+                statusCode: 400,
+                message: "Note type 'code' cannot be exported as a Word document."
+            })
+        );
+
+        const binaryText = buildNote({ type: "text", title: "Bytes" });
+        vi.spyOn(binaryText, "getContent").mockReturnValue(new Uint8Array([ 1 ]));
+        await expect(exportNote(binaryText, "docx").result).rejects.toThrow("Unsupported content type for export.");
+    });
+
+    it("sends a text note as a Word document", async () => {
+        const note = buildNote({ type: "text", title: "Review", content: "<p>Hello</p>" });
+
+        const { result, res } = exportNote(note, "docx");
+        await result;
+
+        expect(res.setHeader).toHaveBeenCalledWith("Content-Disposition", expect.stringContaining("Review.docx"));
+        expect(res.setHeader).toHaveBeenCalledWith("Content-Type", DOCX_MIME);
+        const payload = vi.mocked(res.send).mock.calls[0][0];
+        expect(payload).toBeInstanceOf(Uint8Array);
+        expect(strFromU8(unzipSync(payload as Uint8Array)["word/document.xml"])).toContain("Hello");
     });
 });

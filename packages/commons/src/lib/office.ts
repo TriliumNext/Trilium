@@ -49,6 +49,29 @@ export function isOfficeMimeType(mime: string | null | undefined): boolean {
 }
 
 /**
+ * The colors that word processors give hyperlinks by default, in hex and in the `rgb()` form a
+ * `CSSStyleDeclaration` can serialize them to, lowercase and without spaces.
+ */
+const DEFAULT_HYPERLINK_COLORS = new Set([
+    "#000080", "rgb(0,0,128)", // LibreOffice "Internet Link"
+    "#0563c1", "rgb(5,99,193)", // Word (Office theme)
+    "#0000ff", "rgb(0,0,255)", // classic hyperlink blue
+    "#0000ee", "rgb(0,0,238)" // HTML user-agent default
+]);
+
+/** Whether a link's color is a word processor's default rather than one its author chose. */
+export function isDefaultHyperlinkColor(color: string): boolean {
+    return DEFAULT_HYPERLINK_COLORS.has(color.toLowerCase().replaceAll(" ", ""));
+}
+
+/** The word-processing formats whose file notes can be converted into text notes. */
+const TEXT_CONVERTIBLE_MIME_TYPES = new Set([ DOCX_MIME, ODT_MIME, "application/rtf", "text/rtf" ]);
+
+export function isConvertibleToText(mime: string | null | undefined): boolean {
+    return !!mime && TEXT_CONVERTIBLE_MIME_TYPES.has(mime);
+}
+
+/**
  * How the office preview route's refusal of a document above its size limit starts. The client
  * reads it to tell that refusal apart from a failed conversion.
  */

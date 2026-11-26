@@ -488,4 +488,46 @@ describe("NoteContextMenu", () => {
         expect(await convert([], [ "b2" ])).toHaveLength(2);
         expect(await convert([], [])).toEqual([ "note_actions.convert_to_markdown_successful" ]);
     });
+
+    it("converts a word-processing document into a text note, and only such a document", async () => {
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        vi.spyOn(dialog, "confirm").mockResolvedValue(true);
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockResolvedValue(undefined);
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+
+        /** Opens the menu of a file note and returns its "Convert to text note" row, if any. */
+        async function openMenu(mime: string) {
+            const note = buildNote({ title: "Document", type: "file", mime });
+            const noteContext = new NoteContext(`ntx-document-${mime}`);
+            noteContext.noteId = note.noteId;
+            noteContext.viewScope = { viewMode: "default" };
+            render(null, host);
+            render((
+                <ParentComponent.Provider value={new Component()}>
+                    <NoteContextContext.Provider value={noteContext}>
+                        <NoteContextMenu note={note} noteContext={noteContext} />
+                    </NoteContextContext.Provider>
+                </ParentComponent.Provider>
+            ), host);
+            host.querySelector<HTMLButtonElement>("button")?.click();
+            const rows = await vi.waitFor(() => {
+                const found = [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ];
+                expect(found.length).toBeGreaterThan(0);
+                return found;
+            });
+            return { note, row: rows.find((row) => row.textContent?.trim() === "note_actions.convert_to_text") };
+        }
+
+        expect((await openMenu("application/pdf")).row).toBeUndefined();
+
+        const { note, row } = await openMenu("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        expect(row).toBeTruthy();
+        await act(async () => row?.click());
+        await vi.waitFor(() => expect(showMessage).toHaveBeenCalledWith("note_actions.convert_to_text_successful"));
+        expect(post).toHaveBeenCalledWith(`notes/${note.noteId}/convert-to-text`);
+        render(null, host);
+    });
 });

@@ -7,6 +7,7 @@ import type TabManager from "../components/tab_manager.js";
 import FBranch from "../entities/fbranch.js";
 import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
+import frocaUpdater from "../services/froca_updater.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
 import LoadResults from "../services/load_results.js";
@@ -333,6 +334,36 @@ describe("NoteTreeWidget", () => {
             expect(widget.getNodesByNoteId("newNote")).toHaveLength(1);
             expect(widget.getNodesByNoteId("parent")[0].isExpanded()).toBe(false);
             expect(parentBranch?.isExpanded).toBe(false);
+        });
+
+        it("updates a note whose type and content one request changed, as converting a document does", async () => {
+            const { widget } = await renderTreeWithActiveChild();
+            const other = froca.notes.other;
+            other.blobId = "documentBlob";
+            const before = widget.getNodesByNoteId("other")[0].icon;
+
+            let loadResults: LoadResults | undefined;
+            vi.spyOn(appContext, "triggerEvent").mockImplementation(async (name, data) => {
+                if (name === "entitiesReloaded") {
+                    loadResults = (data as EventData<"entitiesReloaded">).loadResults;
+                }
+                return [];
+            });
+            await frocaUpdater.processEntityChanges([ {
+                entityName: "notes", entityId: "other", componentId: "client", hash: "h",
+                isSynced: false, isErased: false,
+                entity: {
+                    ...other, type: "file", mime: "application/pdf", blobId: "textBlob"
+                }
+            } as unknown as EntityChange ]);
+            expect(loadResults).toBeDefined();
+            if (loadResults) {
+                await widget.entitiesReloadedEvent({ loadResults });
+            }
+
+            const after = widget.getNodesByNoteId("other")[0].icon;
+            expect(after).not.toBe(before);
+            expect(after).toBe(other.getIcon());
         });
 
         it("reveals the active note under its new parent when it is moved and the tree follows it", async () => {

@@ -51,6 +51,19 @@ export function sanitizeHtml(dirtyHtml: string) {
         ],
         "border-width": sizeRegex
     };
+    // A converted Word document gives cells a value for each side, in points.
+    const length = String.raw`\d+(?:\.\d+)?(?:px|em|%|pt)`;
+    const sides = (value: string) => new RegExp(String.raw`^\s*${value}(?:\s+${value}){0,3}\s*$`, "i");
+    const borderStyle = "(?:none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)";
+    const tableCellStyles = {
+        ...tableBorderStyles,
+        "border-color": [ ...borderColorRegex, sides("#[0-9a-f]+") ],
+        "border-style": [ sides(borderStyle) ],
+        "border-width": [ sides(length) ],
+        padding: [ sides(length) ],
+        "vertical-align": [ /^\s*(top|middle|bottom)\s*$/ ],
+        height: [ new RegExp(`^\\s*${length}\\s*$`) ]
+    };
 
     // to minimize document changes, compress H
     return sanitizeHtmlCustom(dirtyHtml, {
@@ -98,6 +111,11 @@ export function sanitizeHtml(dirtyHtml: string) {
             section: {
                 "--include-note-width": sizeRegex
             },
+            // The editor's page break.
+            div: {
+                "page-break-after": [ /^\s*always\s*$/ ],
+                "page-break-before": [ /^\s*always\s*$/ ]
+            },
             // The width of a resized aside.
             aside: {
                 "--aside-width": sizeRegex
@@ -109,8 +127,8 @@ export function sanitizeHtml(dirtyHtml: string) {
                 height: sizeRegex
             },
             table: tableBorderStyles,
-            td: tableBorderStyles,
-            th: tableBorderStyles,
+            td: tableCellStyles,
+            th: tableCellStyles,
             col: {
                 width: sizeRegex
             }

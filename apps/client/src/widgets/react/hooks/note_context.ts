@@ -14,7 +14,7 @@ import { consumeSearchTerms } from "../../../services/search_jump";
 import type { ReactWrappedWidget } from "../../basic_widget";
 import { findClosestNoteContext, NoteContextContext, ParentComponent } from "../react_utils";
 import { useTriliumEvent, useTriliumEvents } from "./events";
-import { useNoteLabelBoolean } from "./note";
+import { useNoteLabelBoolean, useNoteProperty } from "./note";
 
 export function useNoteContext() {
     const parentComponent = useContext(ParentComponent) as ReactWrappedWidget;
@@ -170,6 +170,8 @@ export function useIsNoteReadOnly(note: FNote | null | undefined, noteContext: N
     const [ isReadOnly, setIsReadOnly ] = useState<boolean | undefined>(undefined);
     const [ readOnlyAttr ] = useNoteLabelBoolean(note, "readOnly");
     const [ autoReadOnlyDisabledAttr ] = useNoteLabelBoolean(note, "autoReadOnlyDisabled");
+    // Converting a note changes its type, and with it whether it can be read-only.
+    const noteType = useNoteProperty(note, "type");
     const [ temporarilyEditable, setTemporarilyEditable ] = useState(false);
     const isLocked = note?.isContentWritable === false;
 
@@ -188,7 +190,7 @@ export function useIsNoteReadOnly(note: FNote | null | undefined, noteContext: N
                 setTemporarilyEditable(false);
             });
         }
-    }, [ note, noteContext, noteContext?.viewScope, readOnlyAttr, autoReadOnlyDisabledAttr ]);
+    }, [ note, noteContext, noteContext?.viewScope, noteType, readOnlyAttr, autoReadOnlyDisabledAttr ]);
 
     useTriliumEvent("readOnlyTemporarilyDisabled", ({noteContext: eventNoteContext}) => {
         if (noteContext?.ntxId === eventNoteContext.ntxId && !isLocked) {

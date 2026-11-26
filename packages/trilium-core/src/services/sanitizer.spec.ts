@@ -130,6 +130,15 @@ describe("sanitize", () => {
         expect(sanitizeHtml(dirty)).toBe(dirty);
     });
 
+    it("keeps the page break the editor writes, and no other value of its style", () => {
+        const pageBreak = `<div class="page-break" style="page-break-after:always"></div>`;
+        expect(sanitizeHtml(pageBreak)).toBe(pageBreak);
+        expect(sanitizeHtml(`<div style="page-break-before:always">x</div>`))
+            .toBe(`<div style="page-break-before:always">x</div>`);
+        expect(sanitizeHtml(`<div style="page-break-after:auto">x</div>`)).toBe("<div>x</div>");
+        expect(sanitizeHtml(`<p style="page-break-after:always">x</p>`)).toBe("<p>x</p>");
+    });
+
     it("keeps a fractional image aspect-ratio (OneNote reports fractional pixel dimensions)", () => {
         // CKEditor's usual integer ratio still passes...
         expect(sanitizeHtml(`<img style="aspect-ratio:991/403" src="x.png" />`)).toContain("aspect-ratio:991/403");

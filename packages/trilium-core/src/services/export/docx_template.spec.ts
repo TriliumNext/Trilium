@@ -1,0 +1,344 @@
+import { DOCX_MIME } from "@triliumnext/commons";
+import {
+    Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TextRun
+} from "docx";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type BNote from "../../becca/entities/bnote.js";
+import { getContext } from "../context.js";
+import noteService from "../notes.js";
+import { renderTextNoteToDocx } from "./docx.js";
+import { DEFAULT_TEXT_WIDTH, prepareDocxTemplate, readDocxBodyFontSize } from "./docx_template.js";
+
+/** A 1×1 PNG. */
+const PNG = new Uint8Array([
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1,
+    8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 218, 99, 252, 207,
+    192, 80, 15, 0, 4, 133, 1, 128, 132, 169, 140, 33, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66,
+    96, 130
+]);
+
+/**
+ * A filled-in form: a 9.5pt body, teal headings, a footer and a landscape page, with a picture and
+ * text in its body, and without a numbering part, as Word saves a document that has no lists.
+ */
+async function buildTemplate() {
+    const picture = new ImageRun({
+        type: "png", data: PNG, transformation: { width: 9, height: 9 }
+    });
+    const docx = await Packer.pack(new Document({
+        styles: {
+            default: {
+                document: { run: { size: 19 } },
+                heading2: { run: { color: "00425B", size: 26 } }
+            }
+        },
+        sections: [ {
+            properties: { page: { size: { orientation: "landscape" } } },
+            footers: { default: new Footer({ children: [ new Paragraph("Form footer") ] }) },
+            children: [
+                new Paragraph({ text: "Last year's review", heading: HeadingLevel.HEADING_2 }),
+                new Paragraph({ children: [ new TextRun("Old answers"), picture ] })
+            ]
+        } ]
+    }), "uint8array");
+
+    const files = unzipSync(docx);
+    delete files["word/numbering.xml"];
+    for (const path of [ "word/_rels/document.xml.rels", "[Content_Types].xml" ]) {
+        files[path] = strToU8(strFromU8(files[path])
+            .replace(/<(Relationship|Override)\b[^>]*numbering[^>]*\/>/g, ""));
+    }
+    return zipSync(files);
+}
+
+/**
+ * A form with a cover page and a closing page around a `{{content}}` line, which Word has split
+ * into two runs. The cover is portrait and the closing page landscape.
+ */
+async function buildMarkedTemplate() {
+    return Packer.pack(new Document({ sections: [
+        { children: [
+            new Paragraph({ children: [ new TextRun("Cover page"), new ImageRun({
+                type: "png", data: PNG, transformation: { width: 9, height: 9 }
+            }) ] }),
+            new Paragraph({ children: [ new TextRun("{{ con"), new TextRun("tent }}") ] })
+        ] },
+        {
+            properties: { page: { size: { orientation: "landscape" } } },
+            children: [ new Paragraph("Signatures") ]
+        }
+    ] }), "uint8array");
+}
+
+function xmlZip(files: Record<string, string>) {
+    return zipSync(Object.fromEntries(Object.entries(files).map(([ path, xml ]) => [ path, strToU8(xml) ])));
+}
+
+function readPart(docx: Uint8Array, path: string) {
+    const part = unzipSync(docx)[path];
+    return part ? strFromU8(part) : undefined;
+}
+
+describe("prepareDocxTemplate", () => {
+    it("empties the body to the placeholder and page setup, dropping its pictures", async () => {
+        const { data: shell, textWidth } = prepareDocxTemplate(await buildTemplate());
+
+        const document = readPart(shell, "word/document.xml");
+        const body = document?.match(/<w:body>([\s\S]*)<\/w:body>/)?.[1];
+        expect(body).toMatch(
+            /^<w:p><w:r><w:t>\{\{content\}\}<\/w:t><\/w:r><\/w:p><w:sectPr\b/);
+        expect(body).toContain(`w:orient="landscape"`);
+        expect(body).toContain("<w:footerReference");
+        expect(body).not.toContain("Old answers");
+
+        const files = Object.keys(unzipSync(shell));
+        expect(files.filter((path) => path.startsWith("word/media/"))).toEqual([]);
+        const relationships = readPart(shell, "word/_rels/document.xml.rels");
+        expect(relationships).not.toContain("relationships/image");
+        expect(readPart(shell, "word/styles.xml")).toContain(`w:styleId="TableText"`);
+        expect(textWidth).toBe(16838 - 2 * 1440);
+    });
+
+    it("keeps the body around a {{content}} line, and reads the width of its section", async () => {
+        const { data: shell, textWidth } = prepareDocxTemplate(await buildMarkedTemplate());
+
+        const document = readPart(shell, "word/document.xml") ?? "";
+        expect(document).toContain("Cover page");
+        expect(document).toContain("Signatures");
+        expect(Object.keys(unzipSync(shell)).some((path) => path.startsWith("word/media/")))
+            .toBe(true);
+        // The portrait A4 page of the section holding the line, not the landscape last one.
+        expect(textWidth).toBe(11906 - 2 * 1440);
+    });
+
+    it("reads the size of the {{content}} line from its styles, whatever their ids", async () => {
+        const template = await Packer.pack(new Document({
+            styles: {
+                default: { document: { run: { size: 20 } } },
+                paragraphStyles: [
+                    { id: "Large[2]", name: "Large", basedOn: "Normal", run: { size: 40 } },
+                    { id: "Answer", name: "Answer", basedOn: "Large[2]", run: { bold: true } }
+                ]
+            },
+            sections: [ { children: [
+                new Paragraph({ style: "Answer", children: [ new TextRun("{{content}}") ] })
+            ] } ]
+        }), "uint8array");
+
+        expect(prepareDocxTemplate(template).contentFontSize).toBe(20);
+    });
+
+    it("keeps the look of a heading {{content}} line, but not its pagination", async () => {
+        const template = await Packer.pack(new Document({ sections: [ { children: [
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [ new TextRun({ text: "{{content}}", font: "Lato", bold: false }) ]
+            })
+        ] } ] }), "uint8array");
+
+        const styles = readPart(prepareDocxTemplate(template).data, "word/styles.xml") ?? "";
+        const noteText = styles.match(/<w:style [^>]*w:styleId="NoteText".*?<\/w:style>/s)?.[0];
+        expect(noteText).toContain(`<w:basedOn w:val="Heading2"/>`);
+        expect(noteText).toContain(`<w:keepNext w:val="0"/>`);
+        expect(noteText).toContain(`<w:keepLines w:val="0"/>`);
+        expect(noteText).toContain(`<w:outlineLvl w:val="9"/>`);
+    });
+
+    it("refuses a file that is not a Word document, or one without a body", () => {
+        for (const docx of [
+            new Uint8Array([ 1, 2, 3 ]),
+            xmlZip({ "word/styles.xml": "<w:styles/>" }),
+            xmlZip({ "word/document.xml": "<w:document/>" })
+        ]) {
+            expect(() => prepareDocxTemplate(docx)).toThrow(
+                expect.objectContaining({ name: "ValidationError" }));
+        }
+    });
+
+    it("reads the page and styles of a template written by another program", () => {
+        const marked = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr></w:r>`
+                + `<w:r><w:t>{{content}}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12000"/>`
+                + `<w:pgMar w:start="1000" w:end="1500"/></w:sectPr></w:body></w:document>`,
+            "word/styles.xml": `<w:styles><w:style w:type="paragraph" w:styleId="NoteText"/>`
+                + `<w:style w:type="paragraph" w:styleId="TableText"/></w:styles>`
+        }));
+        expect(marked).toMatchObject({ textWidth: 9500, contentStyle: "NoteText", contentFontSize: undefined });
+        expect(readPart(marked.data, "word/styles.xml")).not.toContain("Note Text");
+
+        // A page narrower than its gutter, and a body without the section properties that close it.
+        const narrow = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p>`
+                + `<w:sectPr><w:pgSz w:w="1000"/><w:pgMar w:gutter="2000"/></w:sectPr>`
+                + `</w:body></w:document>`
+        }));
+        const unmarked = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:pPr><w:sectPr><w:pgSz w:w="12000"/>`
+                + `</w:sectPr></w:pPr><w:r><w:t>Old</w:t></w:r></w:p></w:body></w:document>`
+        }));
+        expect([ narrow.textWidth, unmarked.textWidth ]).toEqual([ DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_WIDTH ]);
+        expect(readPart(unmarked.data, "word/document.xml")).toBe(
+            "<w:document><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p></w:body></w:document>");
+    });
+});
+
+describe("readDocxBodyFontSize", () => {
+    function docxWithStyles(styles: string) {
+        return zipSync({ "word/styles.xml": strToU8(`<w:styles>${styles}</w:styles>`) });
+    }
+
+    it("reads the Normal style, then the document defaults, then Word's own size", () => {
+        const defaults = `<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="19"/></w:rPr>`
+            + `</w:rPrDefault></w:docDefaults>`;
+        const normal = (properties: string) =>
+            `<w:style w:type="paragraph" w:styleId="Normal">${properties}</w:style>`;
+
+        expect(readDocxBodyFontSize(docxWithStyles(defaults
+            + normal(`<w:rPr><w:sz w:val="24"/></w:rPr>`)))).toBe(12);
+        expect(readDocxBodyFontSize(docxWithStyles(defaults
+            + normal(`<w:name w:val="normal"/>`)))).toBe(9.5);
+        expect(readDocxBodyFontSize(docxWithStyles(""))).toBe(10);
+        expect(readDocxBodyFontSize(xmlZip({ "word/document.xml": "<w:document/>" }))).toBe(10);
+        expect(readDocxBodyFontSize(new Uint8Array([ 1, 2, 3 ]))).toBeUndefined();
+    });
+});
+
+describe("renderTextNoteToDocx with a template", () => {
+    let counter = 0;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function createNotes(templateMime: string, templateContent: Uint8Array) {
+        counter++;
+        return getContext().init(() => {
+            const template = noteService.createNewNote({
+                parentNoteId: "root", title: `${counter}-Form.docx`, content: templateContent,
+                type: "file", mime: templateMime
+            }).note;
+            const parent = noteService.createNewNote({
+                parentNoteId: "root", title: `${counter}-Reviews`, content: "", type: "text"
+            }).note;
+            parent.addRelation("docxTemplate", template.noteId, true);
+            const note = noteService.createNewNote({
+                parentNoteId: parent.noteId, title: `${counter}-Review`, content: "", type: "text"
+            }).note;
+            return note;
+        });
+    }
+
+    it("writes the note into the inherited template, with its styles, footer, sizes", async () => {
+        const note = createNotes(DOCX_MIME, await buildTemplate());
+
+        const docx = await renderTextNoteToDocx(note, `<h2>Strengths</h2>`
+            + `<p><span class="text-huge">Annual review</span></p>`
+            + `<ul><li>Ownership</li></ul><ol><li>First</li><li>Second</li></ol>`
+            + `<figure class="table"><table><tbody><tr><td>Cell</td></tr></tbody></table>`
+            + `</figure>`);
+
+        const document = readPart(docx, "word/document.xml") ?? "";
+        expect(document).not.toContain("Old answers");
+        expect(document).not.toContain("trilium_content");
+        expect(document).toMatch(/<w:pStyle w:val="Heading2"\/>.*Strengths/s);
+        // 1.8 × the template's 9.5pt body, in half-points.
+        expect(document).toMatch(/<w:sz w:val="34"\/>.*Annual review/s);
+        expect(document).toMatch(/<w:pStyle w:val="TableText"\/>.*Cell/s);
+        expect(document.match(/<w:numId w:val="\d+"\/>/g)).toHaveLength(3);
+        expect(document).toContain(`w:orient="landscape"`);
+        expect(document).toContain("<w:footerReference");
+
+        expect(readPart(docx, "word/styles.xml")).toMatch(/w:styleId="Heading2".*?00425B/s);
+        expect(readPart(docx, "word/numbering.xml")).toContain("<w:abstractNum ");
+        expect(Object.values(unzipSync(docx)).some((part) =>
+            strFromU8(part).includes("Form footer"))).toBe(true);
+        expect(readPart(docx, "docProps/core.xml"))
+            .toContain(`<dc:title>${counter}-Review</dc:title>`);
+    });
+
+    it("sizes tables against the width of the text on the template's page", async () => {
+        const note = createNotes(DOCX_MIME, await buildTemplate());
+
+        const docx = await renderTextNoteToDocx(note,
+            `<figure class="table"><table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>`
+            + `</figure><figure class="table" style="width:50%;"><table><tbody>`
+            + `<tr><td>c</td></tr></tbody></table></figure>`);
+
+        // A landscape A4 page with 1-inch margins leaves 16838 - 2 × 1440 twips for the text.
+        const document = readPart(docx, "word/document.xml") ?? "";
+        const tables = document.match(/<w:tbl>.*?<\/w:tbl>/gs) ?? [];
+        expect(tables).toHaveLength(2);
+        const [ full, half ] = tables.map((table) => ({
+            width: table.match(/<w:tblW w:type="dxa" w:w="(\d+)"\/>/)?.[1],
+            grid: [ ...table.matchAll(/<w:gridCol w:w="(\d+)"\/>/g) ]
+                .reduce((sum, match) => sum + Number(match[1]), 0)
+        }));
+        expect(full).toEqual({ width: "13958", grid: 13958 });
+        expect(half).toEqual({ width: "6979", grid: 6979 });
+    });
+
+    it("writes the note in place of the {{content}} line, between the rest", async () => {
+        const note = createNotes(DOCX_MIME, await buildMarkedTemplate());
+
+        const docx = await renderTextNoteToDocx(note, `<p>Feedback text</p>`);
+
+        const document = readPart(docx, "word/document.xml") ?? "";
+        expect(document).toMatch(/Cover page.*Feedback text.*Signatures/s);
+        expect(document).not.toContain("{{ con");
+        expect(document).not.toContain("tent }}");
+    });
+
+    it("writes the note's text in the font and size of the {{content}} line", async () => {
+        const template = await Packer.pack(new Document({
+            styles: { default: { heading2: { run: { font: "Play" } } } },
+            sections: [ { children: [
+                new Paragraph({ children: [
+                    new TextRun({ text: "{{con", font: "Lato", size: 21 }),
+                    new TextRun({ text: "tent}}", font: "Lato", size: 21 })
+                ] })
+            ] } ]
+        }), "uint8array");
+        const note = createNotes(DOCX_MIME, template);
+
+        const docx = await renderTextNoteToDocx(note, `<h2>Strengths</h2>`
+            + `<p>Feedback <span class="text-big">text</span></p><ul><li>Ownership</li></ul>`
+            + `<figure class="table"><table><tbody><tr><td>Cell</td></tr></tbody></table>`
+            + `</figure>`);
+
+        const styles = readPart(docx, "word/styles.xml") ?? "";
+        const noteText = styles.match(/<w:style [^>]*w:styleId="NoteText".*?<\/w:style>/s)?.[0];
+        expect(noteText).toContain(`w:ascii="Lato"`);
+        expect(noteText).toContain(`<w:sz w:val="21"/>`);
+        expect(noteText).toContain(`<w:basedOn w:val="Normal"/>`);
+        expect(styles).toMatch(/w:styleId="TableText">.*?<w:basedOn w:val="NoteText"\/>/s);
+
+        const document = readPart(docx, "word/document.xml") ?? "";
+        const paragraphOf = (text: string) => [ ...document.matchAll(/<w:p>.*?<\/w:p>/gs) ]
+            .map((match) => match[0]).find((paragraph) => paragraph.includes(text));
+        expect(paragraphOf("Strengths")).toContain(`<w:pStyle w:val="Heading2"/>`);
+        expect(paragraphOf("Strengths")).not.toContain("Lato");
+        expect(paragraphOf("Feedback")).toContain(`<w:pStyle w:val="NoteText"/>`);
+        // 1.4 × the line's 10.5pt, in half-points.
+        expect(paragraphOf("Feedback")).toContain(`<w:sz w:val="29"/>`);
+        expect(paragraphOf("Ownership")).toContain(`<w:pStyle w:val="NoteText"/>`);
+        expect(paragraphOf("Cell")).toContain(`<w:pStyle w:val="TableText"/>`);
+    });
+
+    it("refuses a template that is not a Word document, whatever its content", async () => {
+        const note = createNotes("application/pdf", await buildTemplate());
+
+        await expect(renderTextNoteToDocx(note, "<p>x</p>"))
+            .rejects.toThrow(/is not a Word document/);
+    });
+
+    it("refuses a protected template while the protected session is locked", async () => {
+        const note = createNotes(DOCX_MIME, await buildTemplate());
+        const template = note.getRelationTarget("docxTemplate");
+        expect(template).toBeTruthy();
+        vi.spyOn(template as BNote, "isContentAvailable").mockReturnValue(false);
+
+        await expect(renderTextNoteToDocx(note, "<p>x</p>")).rejects.toThrow(/is protected/);
+    });
+});
