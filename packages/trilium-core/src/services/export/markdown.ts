@@ -143,11 +143,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
 }
 
-/**
- * Emphasis is written with `_`, but `_` cannot open or close emphasis inside a word, so a partly
- * italic word such as `un<em>believ</em>able` would come back as the plain text `un_believ_able`.
- * Emphasis that touches a letter, digit or underscore is written with `*`, which works there.
- */
+/** Writes emphasis next to a letter, digit or `_` with `*`: `_` can't open or close emphasis inside a word. */
 const intrawordEmphasisFilter: Rule = {
     filter: (node) => (node.nodeName === "EM" || node.nodeName === "I") && touchesWordCharacter(node),
     replacement: (content) => wrapInlineContent(content, (text) => `*${text}*`)
