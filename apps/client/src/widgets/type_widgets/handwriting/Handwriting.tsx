@@ -110,12 +110,17 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
         page: 0, pageCount: 1
     });
-    /** The tool the pen uses now, the eraser while a button of the pen erases. */
-    const activeTool: SurfaceTool = state.penErasing && tool !== "pan" ? "eraser" : tool;
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
     /** Whether the space bar is held over the surface, which makes a pen or a mouse pan. */
     const [ spaceHeld, setSpaceHeld ] = useState(false);
+    /**
+     * The tool the pen uses now: the pan tool while the space bar is held, and the eraser while a
+     * button of the pen erases.
+     */
+    let activeTool: SurfaceTool = tool;
+    if (spaceHeld) activeTool = "pan";
+    else if (state.penErasing && tool !== "pan") activeTool = "eraser";
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -275,10 +280,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             <div
                 ref={surfaceElRef}
                 className="handwriting-surface"
-                data-tool={isReadOnly || spaceHeld ? "pan" : activeTool}
-                style={{
-                    cursor: isReadOnly || spaceHeld ? undefined : getInkCursor(activeTool, size, state.zoom)
-                }}
+                data-tool={isReadOnly ? "pan" : activeTool}
+                style={{ cursor: isReadOnly ? undefined : getInkCursor(activeTool, size, state.zoom) }}
             />
 
             {!isReadOnly && (
