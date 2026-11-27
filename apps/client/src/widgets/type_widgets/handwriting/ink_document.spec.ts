@@ -169,6 +169,18 @@ describe("ink document", () => {
         expect(JSON.parse(saved).texts).toEqual([ { id: "abc_123", x: 10, y: 20, w: 320, html: box.html } ]);
         expect(parseInkDocument(saved).texts).toEqual([ { ...box, x: 10 } ]);
 
+        // A box keeps a font size of its own, within what can be read.
+        const sized = serializeInkDocument("ruled", [], undefined, "pages", [], undefined, [], [ { ...box, fontSize: 12.04 } ]);
+        expect(JSON.parse(sized).texts[0]).toMatchObject({ s: 12 });
+        expect(parseInkDocument(sized).texts?.[0].fontSize).toBe(12);
+        const sizes = parseInkDocument(JSON.stringify({ version: 1, strokes: [], texts: [
+            { id: "a", x: 0, y: 0, w: 10, html: "", s: 0.5 },
+            { id: "b", x: 0, y: 0, w: 10, html: "", s: 9000 },
+            { id: "c", x: 0, y: 0, w: 10, html: "", s: "12" },
+            { id: "d", x: 0, y: 0, w: 10, html: "", s: -3 }
+        ] })).texts?.map(({ fontSize }) => fontSize);
+        expect(sizes).toEqual([ 4, 400, undefined, undefined ]);
+
         const parsed = parseInkDocument(JSON.stringify({ version: 1, strokes: [], texts: [
             { noteId: "abc", x: 0, y: 0, w: 10 },
             { id: "abc", x: 0, y: 0, w: 0, html: "" },

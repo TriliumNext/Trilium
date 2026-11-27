@@ -117,7 +117,13 @@ export interface InkTextBox {
     x: number;
     y: number;
     width: number;
+    /** The font size in world units, or `undefined` for the font size of text notes. */
+    fontSize?: number;
 }
+
+/** The smallest and the largest font size of a text box, in world units. */
+const MIN_FONT_SIZE = 4;
+const MAX_FONT_SIZE = 400;
 
 export interface InkDocument {
     paper: PaperStyle;
@@ -168,7 +174,8 @@ interface SerializedDocument {
      */
     sheets?: number[][];
     images?: SerializedImage[];
-    texts?: { id: string, x: number, y: number, w: number, html: string }[];
+    /** `s` is the font size, left out for the font size of text notes. */
+    texts?: { id: string, x: number, y: number, w: number, s?: number, html: string }[];
     strokes: SerializedStroke[];
     view?: InkView;
 }
@@ -222,8 +229,10 @@ export function serializeInkDocument(
         ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
         : "";
     const savedTexts = texts.length
-        ? `,"texts":${JSON.stringify(texts.map(({ id, x, y, width, html }) =>
-            ({ id, x: round(x, 10), y: round(y, 10), w: round(width, 10), html })))}`
+        ? `,"texts":${JSON.stringify(texts.map(({ id, x, y, width, fontSize, html }) => ({
+            id, x: round(x, 10), y: round(y, 10), w: round(width, 10),
+            ...(fontSize !== undefined && { s: round(fontSize, 10) }), html
+        })))}`
         : "";
     return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${legacyPdf ? `,"pdf":${JSON.stringify(legacyPdf)}` : ""}${savedPdfs}${savedSheets}${savedImages}${savedTexts},"strokes":[${parts.join(",")}]}`;
 }
@@ -334,12 +343,13 @@ function isSheetSide(value: unknown): value is number {
 function parseTexts(raw: unknown): InkTextBox[] {
     const texts: InkTextBox[] = [];
     if (!Array.isArray(raw)) return texts;
-    for (const serialized of raw as Partial<Record<"id" | "x" | "y" | "w" | "html", unknown>>[]) {
-        const { id, x, y, w, html } = serialized ?? {};
+    for (const serialized of raw as Partial<Record<"id" | "x" | "y" | "w" | "s" | "html", unknown>>[]) {
+        const { id, x, y, w, s, html } = serialized ?? {};
         if (typeof id !== "string" || typeof html !== "string") continue;
         if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) continue;
         if (texts.some((text) => text.id === id)) continue;
-        texts.push({ id, x, y, width: w, html });
+        const fontSize = isFiniteNumber(s) && s > 0 ? Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, s)) : undefined;
+        texts.push({ id, x, y, width: w, html, ...(fontSize !== undefined && { fontSize }) });
     }
     return texts;
 }

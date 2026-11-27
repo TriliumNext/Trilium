@@ -157,6 +157,21 @@
             cursor: text;
         }
 
+        &.sized {
+            --ck-content-font-size: 1em;
+            --ck-content-line-height: 1.25;
+
+            .ck-content,
+            .ck.ck-editor__editable_inline {
+                font-size: 1em;
+                line-height: 1.25;
+            }
+
+            .handwriting-text-box-bar {
+                font-size: var(--bs-body-font-size, 1rem);
+            }
+        }
+
         .handwriting-text-preview {
             user-select: none;
 

@@ -154,9 +154,13 @@ function TextBox({
             className={clsx(
                 "handwriting-text-box",
                 isInteractive && "interactive", isSelected && "selected",
-                isEditing && isEditorReady && "editing"
+                isEditing && isEditorReady && "editing",
+                box.fontSize !== undefined && "sized"
             )}
-            style={{ left: `${box.x}px`, top: `${box.y}px`, width: `${box.width}px` }}
+            style={{
+                left: `${box.x}px`, top: `${box.y}px`, width: `${box.width}px`,
+                ...(box.fontSize !== undefined && { fontSize: `${box.fontSize}px` })
+            }}
             onPointerDown={() => {
                 if (!isSelected) onSelect();
             }}
