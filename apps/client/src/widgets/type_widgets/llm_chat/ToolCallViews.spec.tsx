@@ -69,4 +69,52 @@ describe("markdownToPlainPreview", () => {
     it("strips a tag that removing another one leaves behind", () => {
         expect(markdownToPlainPreview("<<b>script>alert(1)<</b>/script>")).toBe("alert(1)");
     });
+
+    it("drops the separator row of a table, whatever its alignment, spacing or line ending", () => {
+        const rows = [
+            ["| a | b |", "| --- | --- |", "| 1 | 2 |"],
+            ["| a | b |", "| :--- | ---: |", "| 1 | 2 |"],
+            ["| a | b |", "|:-:|:-:|", "| 1 | 2 |"],
+            ["a | b", "- | -", "1 | 2"],
+            ["| a | b |", "  |  ---  |  ---  |  ", "| 1 | 2 |"],
+            ["| a | b |", "|\u00a0---\u00a0|\t---\t|", "| 1 | 2 |"]
+        ];
+        for (const [header, separator, body] of rows) {
+            for (const eol of ["\n", "\r\n"]) {
+                const table = [header, separator, body].join(eol) + eol;
+                expect(markdownToPlainPreview(table)).toBe("a b 1 2");
+            }
+        }
+    });
+
+    it("keeps a row that only looks like a separator because of its text", () => {
+        expect(markdownToPlainPreview("| --- |\n| - x - |")).toBe("- x -");
+    });
+
+    it("reads a run of whitespace in linear time", () => {
+        // The elapsed time of `calls` runs of the preview over `size` characters, per run.
+        const perCall = (size: number) => {
+            const input = `${" ".repeat(size)}x`;
+            let best = Infinity;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                let calls = 0;
+                const start = performance.now();
+                do {
+                    markdownToPlainPreview(input);
+                    calls++;
+                } while (performance.now() - start < 5);
+                best = Math.min(best, (performance.now() - start) / calls);
+            }
+            return best;
+        };
+
+        // A line of N spaces is cubic in N when the separator pattern backtracks, so 4x the size
+        // costs about 64x the time; a linear pass costs about 4x. The bound sits between the two.
+        // The ratio is of two timings taken the same way, so the speed of the machine cancels out.
+        // The check runs first because on the cubic pattern the 50k input below does not finish.
+        expect(perCall(2000) / perCall(500)).toBeLessThan(12);
+
+        expect(markdownToPlainPreview(`${" ".repeat(50000)}x`)).toBe("x");
+        expect(markdownToPlainPreview(" \n".repeat(25000) + "x")).toBe("x");
+    });
 });
