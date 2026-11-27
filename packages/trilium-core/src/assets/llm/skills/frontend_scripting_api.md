@@ -51,6 +51,14 @@ interface FrontendApi {
     reloadNotes(noteIds: string[]): Promise<void>;
     /** Creates a new note as a child of the given parent, entirely on the frontend — no backend scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). */
     createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+    /** Sets the value of the first label of that name that the note owns, or adds a label that is not inheritable when the note owns none. */
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /** Removes the labels of that name that the note owns. */
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /** Sets the target of the first relation of that name that the note owns, or adds a relation that is not inheritable when the note owns none. */
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+    /** Removes the relations of that name that the note owns. */
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
     /** Instance name identifies particular Trilium instance. */
     getInstanceName(): string | null;
     /** Adds given text to the editor cursor */
@@ -132,6 +140,14 @@ interface FrontendApi {
     log(...args: unknown[]): void;
     /** The Preact API surface (components, hooks) for render scripts. */
     preact: Preact;
+    /** The notifications of the bell: raise, change and dismiss them, show transient notifications of an operation, and register the handlers of their actions. */
+    notifications: FrontendNotificationApi;
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: ChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: ChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note as its enabling reviewed them. */
+    channelSettings?: Record<string, string>;
 }
 
 /** A note as seen by frontend scripts (subset of the client's `FNote`). */
@@ -438,6 +454,24 @@ interface NoteContext {
     getTextEditor(): Promise<TextEditor | null>;
 }
 
+/** `api.notifications` of frontend scripts, with the handlers of actions. */
+interface FrontendNotificationApi extends ScriptNotificationApi {
+    /** Raises a notification. */
+    create(input: NotificationInput): Promise<Notification | null>;
+    /** With an ID, changes the current notification of that ID. */
+    update(target: string | Notification, patch: NotificationPatch): Promise<Notification | null>;
+    /** With an ID, dismisses the current notification of that ID, persistent ones included. */
+    dismiss(target: string | NotificationRef): Promise<void>;
+    getById(id: string): Promise<Notification | null>;
+    /** Every notification with the tag, newest first. */
+    getByTag(tag: string): Promise<Notification[]>;
+    /** Shows a transient notification, and returns its handle at once. */
+    createTransientNotification(input: TransientNotificationInput): TransientNotificationHandle;
+    /** Registers the handler of the notifications whose `handler` is `name`, such as `myscript:reminder`. */
+    registerActionHandler(name: string, handler: NotificationActionHandler): void;
+    getActionHandler(name: string): NotificationActionHandler | undefined;
+}
+
 /** A date as day.js wraps it (subset). */
 interface DayjsInstance {
     /** Formats the date, such as `"YYYY-MM-DD"` for `2026-10-22`. */
@@ -448,6 +482,21 @@ interface DayjsInstance {
     subtract(value: number, unit: string): DayjsInstance;
     /** Returns the date as a JavaScript `Date`. */
     toDate(): Date;
+}
+
+/** Changes a transient notification. */
+interface TransientNotificationHandle {
+    readonly id: string;
+    setTitle(title: string): void;
+    setDescription(description: string): void;
+    setProtectedTitle(title: string): void;
+    setProtectedDescription(description: string): void;
+    setIcon(icon: string): void;
+    setProgress(progress: number): void;
+    setProgressLabel(label: string): void;
+    setActions(actions: NotificationAction[]): void;
+    /** Ends the notification. */
+    dismiss(): void;
 }
 
 /** A jQuery object: one or more page elements with jQuery's methods, as `$(…)` returns. */
@@ -536,6 +585,27 @@ interface LinkOptions {
 /** The Preact API that render notes import from `trilium:preact`: Preact's own functions and hooks, and Trilium's components and `defineWidget()`. */
 interface Preact {}
 
+/** What a notification channel script receives as `api.notification`. */
+interface ChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+interface ChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /** Aborts when the attempt times out, after 30 seconds. */
+    signal: AbortSignal;
+}
+
 /** One resolved tree path to a note (subset of the client's `NotePathRecord`). */
 interface NotePathRecord {
     /** Whether a note on the path, the note itself included, is archived, which means it has the `#archived` label, owned or inherited. */
@@ -622,5 +692,107 @@ interface CreateAttribute {
     isInheritable?: boolean;
     /** The place of the attribute among the note's attributes, which are listed by ascending `position`. */
     position?: number;
+}
+
+/** What a script passes to `api.notifications.create()`. */
+interface NotificationInput {
+    /** Identifies the notification: ASCII letters, digits and `_ . : -`, at most 100 characters. */
+    id?: string;
+    /** The public text. `title` is required unless `noteId`, `link` or a private text is given; the note's own title is shown then. */
+    title?: string;
+    description?: string;
+    /** The private text of a sensitive notification. */
+    protectedTitle?: string;
+    protectedDescription?: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+    /** The note that the notification is about. */
+    noteId?: string;
+    /** Where a click on the notification goes: a link hash such as `#root/abc?block=xyz`, which is `#`, a note path and the parameters of an internal link. */
+    link?: string;
+    /** Groups notifications for `getByTag()`. */
+    tag?: string;
+    /** `general` by default. */
+    category?: "general" | "reminder" | "softwareUpdate";
+    /** `standard` by default. */
+    type?: "standard" | "persistent";
+    /** `medium` by default. */
+    attentionLevel?: "low" | "medium" | "high";
+    /** From 0 to 1, and a negative value shows a bar without a known end. */
+    progress?: number;
+    progressLabel?: string;
+    /** At most five buttons. */
+    actions?: NotificationAction[];
+    /** The name under which a frontend script registers the handler of the actions, with `api.notifications.registerActionHandler()`. */
+    handler?: string;
+    /** When the event happened, in UTC, as `YYYY-MM-DD HH:mm:ss.SSSZ`, at most an hour ahead. */
+    raisedAt?: string;
+    /** `true` makes the notification sensitive. */
+    sensitive?: boolean;
+}
+
+/** A stored notification, as `api.notifications` gives it. */
+interface Notification extends NotificationInput {
+    /** The key of this generation of the `id`, which a raise again with a later time replaces. */
+    notificationId: string;
+    /** Identifies the notification: ASCII letters, digits and `_ . : -`, at most 100 characters. */
+    id: string;
+    /** When the event happened, in UTC, as `YYYY-MM-DD HH:mm:ss.SSSZ`, at most an hour ahead. */
+    raisedAt: string;
+    updatedAt: string;
+    /** Changes whenever the stored text changes. `update()` with a notification compares it. */
+    revision: string;
+    /** `general` by default. */
+    category: "general" | "reminder" | "softwareUpdate";
+    /** `standard` by default. */
+    type: "standard" | "persistent";
+    /** `medium` by default. */
+    attentionLevel: "low" | "medium" | "high";
+    state: "pending" | "seen" | "read";
+    /** What raised the notification: a built-in feature, `script:<noteId>` or `client`. */
+    producer: string;
+}
+
+/** What `api.notifications.update()` changes. */
+type NotificationPatch = Partial<Pick<NotificationInput, "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "progress" | "progressLabel" | "actions" | "sensitive">>;
+
+/** One generation of a notification: what a handler was given. */
+interface NotificationRef {
+    id: string;
+    raisedAt: string;
+}
+
+/** A notification of an ongoing operation, which is never stored. */
+type TransientNotificationInput = Pick<NotificationInput, "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "noteId" | "progress" | "progressLabel" | "actions" | "handler" | "sensitive">;
+
+type NotificationActionHandler = (context: NotificationActionContext) => NotificationActionResult | Promise<NotificationActionResult>;
+
+/** A button of a notification. */
+interface NotificationAction {
+    /** Tells the handler which button was pressed. */
+    id: string;
+    /** The text of the button. */
+    caption: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+}
+
+/** What an action handler is called with. */
+interface NotificationActionContext {
+    /** The pressed action, or `null` for a click on the notification itself. */
+    action: NotificationAction | null;
+    notification: Notification | TransientNotification;
+}
+
+/** What an action handler asks for: nothing, which marks a standard notification read; the dismissal of the notification that it was given; or an update of it. */
+type NotificationActionResult = void | { dismiss: true } | { update: NotificationPatch };
+
+/** A transient notification, as an action handler gets it. */
+interface TransientNotification extends TransientNotificationInput {
+    id: string;
+    /** Tells a transient notification apart from a stored one. */
+    type: "transient";
+    producer: string;
+    createdAt: string;
 }
 ```

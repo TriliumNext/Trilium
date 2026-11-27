@@ -12,6 +12,7 @@ import {
     type CandidateDatabase,
     type DatabaseValidation,
     looksLikeSqlite,
+    notifications,
     validateDatabase
 } from "@triliumnext/core";
 
@@ -120,6 +121,8 @@ export async function restoreDatabase(
         }
 
         report({ stage: "swapping" });
+        // The delivery record keeps forwarding paused until the user has looked at the restored state.
+        await notifications.getNotificationForwarder().pauseFor("restore");
         await swapIn(target, live, candidate);
 
         report({ stage: "done" });

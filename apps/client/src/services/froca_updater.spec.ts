@@ -6,10 +6,11 @@ import FAttribute from "../entities/fattribute.js";
 import FBranch from "../entities/fbranch.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
-import frocaUpdater from "./froca_updater.js";
+import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { getNoteImageSourceToLoad } from "./image_urls.js";
 import type LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
+import notificationStore from "./notifications.js";
 import options from "./options.js";
 import utils from "./utils.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -55,6 +56,30 @@ describe("froca_updater - empty / no-op handling", () => {
         await process([ec({ entityName: "blobs", entityId: "blob1", entity: { isDeleted: false } as any })]);
         expect(triggerSpy).not.toHaveBeenCalled();
         expect(invalidateSpy).not.toHaveBeenCalled();
+    });
+
+    it("hands the changes of notifications to their store, without an event", async () => {
+        const applySpy = vi.spyOn(notificationStore, "applyEntityChanges")
+            .mockImplementation(() => {});
+        const entityNames = [
+            "notifications", "notification_marks", "notification_private_texts",
+            "notification_channel_records"
+        ] as const;
+        const changes = entityNames.map((entityName) => ec({ entityName, entityId: "n" }));
+        await process([ ...changes, ec({ entityName: "blobs", entityId: "blob1" }) ]);
+
+        expect(triggerSpy).not.toHaveBeenCalled();
+        expect(applySpy).toHaveBeenCalledWith(changes);
+        applySpy.mockRestore();
+    });
+
+    it("names a change of notifications by its entity, ID and number in messages", () => {
+        const change = ec({ id: 7, entityName: "notification_private_texts", entityId: "n",
+            entity: { protectedTitle: "Private" } as never });
+        expect(getLoggableEntityChange(change))
+            .toEqual({ entityName: "notification_private_texts", entityId: "n", id: 7 });
+        const note = ec({ entityName: "notes", entityId: "x" });
+        expect(getLoggableEntityChange(note)).toBe(note);
     });
 
     it("throws a wrapped error for an unknown entityName", async () => {

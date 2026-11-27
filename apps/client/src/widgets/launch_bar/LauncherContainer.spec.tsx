@@ -333,7 +333,11 @@ describe("LauncherContainer on a tablet", () => {
         h.isMobile = true;
         buildNote({ id: "_lbMobileVisibleLaunchers", title: "Mobile Visible Launchers", children: [
             { id: "_lbMobileSpacerStub", title: "Spacer", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" },
-            { id: "_lbMobileJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" }
+            { id: "_lbMobileJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" },
+            {
+                id: "_lbMobileBellStub", title: "Notifications", type: "launcher",
+                "#launcherType": "builtinWidget", "#builtinWidget": "notifications"
+            }
         ] });
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -345,6 +349,9 @@ describe("LauncherContainer on a tablet", () => {
 
         expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileSpacerStub']")).not.toBeNull();
         expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileJumpToStub']")).toBeNull();
+        // A phone has no tab bar, so its bell is a launcher.
+        const bell = "[data-launcher-id='_lbMobileBellStub'] .notification-bell-glyph";
+        expect(container.querySelector(bell)).toBeInstanceOf(HTMLElement);
     });
 
     it("shows the AI chat launcher on desktop, where the right pane takes the chat", async () => {

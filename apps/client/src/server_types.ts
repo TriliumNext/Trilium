@@ -23,4 +23,6 @@ export interface EntityChange {
     instanceId?: string | null;
 }
 
-export type EntityType = "notes" | "branches" | "attributes" | "note_reordering" | "revisions" | "options" | "attachments" | "blobs" | "etapi_tokens";
+export type EntityType = "notes" | "branches" | "attributes" | "note_reordering" | "revisions"
+    | "options" | "attachments" | "blobs" | "etapi_tokens" | "notifications" | "notification_marks"
+    | "notification_private_texts" | "notification_channel_records";

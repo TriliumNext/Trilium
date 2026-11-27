@@ -5,7 +5,8 @@ import { getMaxMigrationVersion } from "../migrations/migrations.js";
 
 // 41: in-app help notes became virtual (never persisted/synced); un-migrated peers would
 //     still push _help entity changes, so they must upgrade before syncing.
-const SYNC_VERSION = 41;
+// 42: the four tables of notifications, whose rows an instance of an earlier version skips.
+const SYNC_VERSION = 42;
 const CLIPPER_PROTOCOL_VERSION = "1.1";
 
 const appInfo: AppInfo = {

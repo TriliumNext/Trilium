@@ -118,19 +118,38 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
     return await call<T>("POST", url, componentId, { data, timeoutMs, ...silence });
 }
 
-/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+/**
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that
+ * handles the failure itself.
+ */
 async function put<T>(
-    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+    url: string, data?: unknown, componentId?: string,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
 ) {
     return await call<T>("PUT", url, componentId, { data, ...silence });
 }
 
-async function patch<T>(url: string, data: unknown, componentId?: string) {
-    return await call<T>("PATCH", url, componentId, { data });
+/**
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that shows the
+ * failure itself.
+ */
+async function patch<T>(
+    url: string, data: unknown, componentId?: string,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
+) {
+    return await call<T>("PATCH", url, componentId, { data, ...silence });
 }
 
-async function remove<T>(url: string, componentId?: string) {
-    return await call<T>("DELETE", url, componentId);
+/**
+ * @param data a body, for a route that needs one, such as a token.
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that
+ * handles the failure itself.
+ */
+async function remove<T>(
+    url: string, componentId?: string, data?: unknown,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
+) {
+    return await call<T>("DELETE", url, componentId, { data, ...silence });
 }
 
 async function upload(url: string, fileToUpload: File, componentId?: string, method = "PUT") {
@@ -332,9 +351,15 @@ export interface Credentials {
     code: string;
 }
 
-/** Sends a request to a route that asks for the password and, when a factor is set, a code. */
+/**
+ * Sends a request to a route that asks for the password and, when a factor is set, a code.
+ *
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that shows the
+ * failure itself.
+ */
 async function withCredentials<T>(
-    method: "POST" | "PUT", url: string, data: unknown, { password, code }: Credentials
+    method: "POST" | "PUT" | "DELETE", url: string, data: unknown, { password, code }: Credentials,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
 ) {
     // `checkCredentials()` reads the password after the colon and ignores the user name.
     const bytes = new TextEncoder().encode(`user:${password}`);
@@ -342,7 +367,7 @@ async function withCredentials<T>(
     if (code) {
         headers["trilium-totp"] = code;
     }
-    return await call<T>(method, url, undefined, { data, headers });
+    return await call<T>(method, url, undefined, { data, headers, ...silence });
 }
 
 /**

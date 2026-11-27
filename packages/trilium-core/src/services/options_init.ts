@@ -411,6 +411,9 @@ const defaultOptions: DefaultOption[] = [
         isSynced: true
     },
     { name: "experimentalFeatures", value: "[]", isSynced: true },
+    { name: "notificationSoundEnabled", value: "true", isSynced: true },
+    { name: "notificationDisabledCategories", value: "[]", isSynced: true },
+    { name: "notificationsSilent", value: "false", isSynced: false },
 
     // AI / LLM
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.
@@ -456,7 +459,8 @@ const DEVICE_OPTIONS_TAKING_THEIR_DEFAULT = [
     "codeBlockTheme", "codeBlockThemeMatchesApp",
     "codeBlockThemeLight", "codeBlockThemeDark", "textNoteScrollRailHighlightsEnabled",
     "textNoteStickyTableHeadersEnabled", "textNoteVimModeEnabled", "textNoteVimModeNoticeShown",
-    "layoutOrientation", "noteTitleStyle", "backgroundEffects", "mcpEnabled"
+    "layoutOrientation", "noteTitleStyle", "backgroundEffects", "mcpEnabled",
+    "notificationsSilent"
 ] as const satisfies readonly OptionNames[];
 
 /**

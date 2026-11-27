@@ -1,0 +1,71 @@
+:where(:root) {
+    --notification-bell-count-background-color: var(--admonition-caution-accent-color, #ff2e2e);
+    --notification-bell-count-text-color: #fff;
+    --notification-bell-dot-color: var(--muted-text-color);
+    --notification-bell-activity-color: var(--admonition-note-accent-color, #0d6efd);
+}
+
+@keyframes notification-bell-activity-turn {
+    to {
+        rotate: 1turn;
+    }
+}
+
+.notification-bell {
+    align-self: flex-start;
+}
+
+.notification-bell-glyph {
+    display: inline-flex;
+    padding: 6px;
+}
+
+.notification-bell-button,
+.notification-bell-glyph {
+    position: relative;
+
+    .notification-bell-count {
+        --color: var(--notification-bell-count-background-color);
+
+        position: absolute;
+        inset-block-start: -3px;
+        inset-inline-end: -5px;
+        border-radius: 8px;
+        padding-inline: 4px;
+        min-width: 16px;
+        height: 16px;
+        color: var(--notification-bell-count-text-color);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    .notification-bell-activity {
+        position: absolute;
+        inset-block-end: 1px;
+        inset-inline-end: 1px;
+        border: 2px solid var(--notification-bell-activity-color);
+        border-block-start-color: transparent;
+        border-radius: 50%;
+        width: 9px;
+        height: 9px;
+        pointer-events: none;
+        animation: notification-bell-activity-turn 1s linear infinite;
+
+        @media (prefers-reduced-motion: reduce) {
+            animation: none;
+        }
+    }
+
+    .notification-bell-dot {
+        position: absolute;
+        inset-block-start: 2px;
+        inset-inline-end: 2px;
+        border-radius: 50%;
+        width: 7px;
+        height: 7px;
+        background-color: var(--notification-bell-dot-color);
+        pointer-events: none;
+    }
+}

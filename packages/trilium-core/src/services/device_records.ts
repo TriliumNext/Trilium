@@ -7,6 +7,7 @@
  */
 import type { DeviceRecordEntry } from "@triliumnext/commons";
 
+import { raiseStartupRepairNotice } from "./notifications/index.js";
 import optionService from "./options.js";
 import dateUtils from "./utils/date.js";
 
@@ -30,7 +31,10 @@ export function readDeviceRecord(
     return now - lastAt > RECORD_LAPSE_MS ? [] : entries;
 }
 
-/** Counts each name once more in a record, dated now. */
+/**
+ * Counts each name once more in a record, dated now. What a start or a reader of a time put back
+ * also raises a notice, which a peer can erase while the record stays.
+ */
 export function addDeviceRecordEntries(option: DeviceRecordOption, names: string[]) {
     if (names.length === 0) {
         return;
@@ -49,6 +53,9 @@ export function addDeviceRecordEntries(option: DeviceRecordOption, names: string
     }
 
     optionService.setOption(option, JSON.stringify(entries));
+    if (option === "startupRepairRecord") {
+        raiseStartupRepairNotice(names);
+    }
 }
 
 /**

@@ -1,5 +1,16 @@
-import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
-import type { BackendApi as PublicBackendApi, ScriptAppInfo, ScriptBAttachment, ScriptBEtapiToken, ScriptBNote as PublicScriptBNote, ScriptBOption, ScriptRequest, ScriptResponse, ScriptSearchParams, ScriptSql } from "@triliumnext/commons/src/lib/script_api.js";
+import {
+    type AttributeRow, dayjs, formatLogMessage, type NotificationApi,
+    type NotificationChannelDelivery, type NotificationChannelPayload, type NotificationInput,
+    type NotificationPatch, type TransientNotification, type TransientNotificationInput,
+    type TriliumNotification
+} from "@triliumnext/commons";
+import type {
+    BackendApi as PublicBackendApi, ScriptAppInfo, ScriptBAttachment, ScriptBEtapiToken,
+    ScriptBNote as PublicScriptBNote, ScriptBOption, ScriptChannelDelivery, ScriptChannelPayload,
+    ScriptNotification, ScriptNotificationApi, ScriptNotificationInput, ScriptNotificationPatch,
+    ScriptRequest, ScriptResponse, ScriptSearchParams, ScriptSql, ScriptTransientNotification,
+    ScriptTransientNotificationInput
+} from "@triliumnext/commons/src/lib/script_api.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import Becca from "../becca/becca-interface";
 import * as htmlParser from "node-html-parser";
@@ -26,6 +37,7 @@ import config from "./config.js";
 import dateNoteService from "./date_notes.js";
 import log, { getLog } from "./log.js";
 import noteService from "./notes.js";
+import { createScriptNotificationApi } from "./notifications/script_api.js";
 import optionsService from "./options.js";
 import searchService from "./search/services/search.js";
 import type { SearchParams as CoreSearchParams } from "./search/services/types.js";
@@ -232,6 +244,15 @@ export interface Api {
     backupNow(backupName: string): Promise<string>;
 
     duplicateSubtree(origNoteId: string, newParentNoteId: string): { note: BNote; branch: BBranch; }
+
+    notifications: NotificationApi;
+
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: NotificationChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: NotificationChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note, as enabled. */
+    channelSettings?: Record<string, string>;
 
     /**
      * This object contains "at your risk" and "no BC guarantees" objects for advanced use cases.
@@ -542,6 +563,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.runOutsideOfSync = syncMutex.doExclusively;
     this.backupNow = (name: string) => getBackup().backupNow(name);
     this.duplicateSubtree = noteService.duplicateSubtree;
+    this.notifications = createScriptNotificationApi(this.startNote?.noteId ?? currentNote.noteId);
 
     this.__private = {
         becca
@@ -588,3 +610,19 @@ const _searchParamsDriftGuard: [_MissingSearchParams] extends [never] ? true : _
 const _appInfoDriftGuard: [_MissingAppInfoMembers] extends [never] ? true : _MissingAppInfoMembers = true;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _sqlDriftGuard: [_MissingSqlMembers] extends [never] ? true : _MissingSqlMembers = true;
+// The notification types of the public surface name the same fields as those of the service, both
+// ways, since the public surface redeclares them.
+type _Mismatch<A, B> = Exclude<keyof A, keyof B> | Exclude<keyof B, keyof A>;
+type _NotificationDrift =
+    | _Mismatch<ScriptNotificationApi, NotificationApi>
+    | _Mismatch<ScriptNotificationInput, NotificationInput>
+    | _Mismatch<ScriptNotification, TriliumNotification>
+    | _Mismatch<ScriptNotificationPatch, NotificationPatch>
+    | _Mismatch<ScriptTransientNotificationInput, TransientNotificationInput>
+    | _Mismatch<ScriptTransientNotification, TransientNotification>
+    | _Mismatch<ScriptChannelPayload, NotificationChannelPayload>
+    | _Mismatch<ScriptChannelDelivery, NotificationChannelDelivery>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _notificationDriftGuard: [_NotificationDrift] extends [never]
+    ? true
+    : _NotificationDrift = true;

@@ -5,11 +5,12 @@ import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import type { default as FNote, FNoteRow } from "../entities/fnote.js";
-import type { EntityChange } from "../server_types.js";
+import type { EntityChange, EntityType } from "../server_types.js";
 import froca from "./froca.js";
 import { invalidateNoteImages } from "./image_urls.js";
 import LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
+import notificationStore from "./notifications.js";
 import options from "./options.js";
 
 async function processEntityChanges(changes: EntityChange[]) {
@@ -40,15 +41,21 @@ async function processEntityChanges(changes: EntityChange[]) {
                 processAttachment(loadResults, ec);
             } else if (ec.entityName === "blobs") {
                 // NOOP - these entities are handled at the backend level and don't require frontend processing
+            } else if (NOTIFICATION_ENTITY_NAMES.has(ec.entityName)) {
+                // Not part of froca: the notification store takes them below.
             } else if (ec.entityName === "etapi_tokens") {
                 loadResults.hasEtapiTokenChanges = true;
             } else {
                 throw new Error(`Unknown entityName '${ec.entityName}'`);
             }
         } catch (e: any) {
-            throw new Error(`Can't process entity ${JSON.stringify(ec)} with error ${e.message} ${e.stack}`);
+            const loggable = JSON.stringify(getLoggableEntityChange(ec));
+            throw new Error(`Can't process entity ${loggable} with error ${e.message} ${e.stack}`);
         }
     }
+
+    notificationStore.applyEntityChanges(
+        entityChanges.filter(({ entityName }) => NOTIFICATION_ENTITY_NAMES.has(entityName)));
 
     // froca is supposed to contain all notes currently being visible to the users in the tree / otherwise being processed
     // and their complete "ancestor relationship", so it's always possible to go up in the hierarchy towards the root.
@@ -376,6 +383,21 @@ function getImageNoteIds(entityChanges: EntityChange[]) {
         }
     }
     return noteIds;
+}
+
+const NOTIFICATION_ENTITY_NAMES = new Set<EntityType>([
+    "notifications", "notification_marks", "notification_private_texts",
+    "notification_channel_records"
+]);
+
+/**
+ * A change as the console and error messages show it. A change of notifications shows its entity,
+ * its ID and its number only, since its row can hold private text.
+ */
+export function getLoggableEntityChange(ec: EntityChange) {
+    return NOTIFICATION_ENTITY_NAMES.has(ec.entityName)
+        ? { entityName: ec.entityName, entityId: ec.entityId, id: ec.id }
+        : ec;
 }
 
 export default {

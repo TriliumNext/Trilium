@@ -14,7 +14,7 @@ import { getPlatform } from "./platform";
 import { isSetupAuthRequired, isSetupSecondFactorRequired } from "./setup_auth";
 import { getSetupTargetScreen, hasExistingData, isSetupRequested } from "./setup_mode";
 import sqlInit from "./sql_init";
-import { md5 } from "./utils/index";
+import { hashedBlobId, md5 } from "./utils/index";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
     const sql = getSql();
@@ -68,6 +68,7 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         layoutOrientation: options.layoutOrientation as "vertical" | "horizontal",
         maxEntityChangeIdAtLoad: sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes"),
         maxEntityChangeSyncIdAtLoad: sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1"),
+        documentIdHash: hashedBlobId(`trilium:notification-tabs:${options.documentId}`),
         isProtectedSessionAvailable: protected_session.isProtectedSessionAvailable(),
         theme,
         themeBase: themeUseNextAsBase as "next" | "next-light" | "next-dark" | undefined,

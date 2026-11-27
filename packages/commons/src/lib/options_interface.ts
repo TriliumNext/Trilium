@@ -425,6 +425,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
+    /** Whether the toast of a notification plays a sound. */
+    notificationSoundEnabled: boolean;
+    /** JSON array of the notification categories that are turned off. */
+    notificationDisabledCategories: string;
+    /** Silences the toasts and the sound of notifications on this device. */
+    notificationsSilent: boolean;
+
     // AI / LLM
     /** Whether the AI/LLM features (chat sidebar, LLM chat notes) are enabled. */
     aiEnabled: boolean;

@@ -6,7 +6,7 @@ const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export default class NodejsCryptoProvider implements CryptoProvider {
 
-    createHash(algorithm: "md5" | "sha1" | "sha512", content: string | Uint8Array): Uint8Array {
+    createHash(algorithm: "md5" | "sha1" | "sha256" | "sha512", content: string | Uint8Array): Uint8Array {
         return crypto.createHash(algorithm).update(content).digest();
     }
 

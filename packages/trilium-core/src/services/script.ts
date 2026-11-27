@@ -61,7 +61,26 @@ function executeNoteNoException(note: BNote, apiParams: ApiParams) {
     }
 }
 
+/** Runs a backend bundle, and logs the failure of its execution before it throws it again. */
 export function executeBundle(bundle: Bundle, apiParams: ApiParams = {}) {
+    assertScriptingEnabled();
+
+    try {
+        return runBundle(bundle, apiParams);
+    } catch (e: any) {
+        getLog().error(`Execution of script "${bundle.note?.title}" (${bundle.note?.noteId}) failed with error: ${e.message}`);
+
+        throw e;
+    }
+}
+
+/**
+ * Runs a backend bundle: the guard of `backendScriptingEnabled`, the context and the evaluation.
+ * It logs nothing, so a caller that must not copy an exception message records its own code.
+ *
+ * @returns what the root script returns, a promise for a script that returns one.
+ */
+export function runBundle(bundle: Bundle, apiParams: ApiParams = {}) {
     // Security boundary: all backend script execution funnels through here, so this is the
     // single point that enforces the backendScriptingEnabled toggle. Call sites may also check
     // beforehand to fail gracefully (skip, return [], 403), but this guarantees no script runs
@@ -87,10 +106,6 @@ ${bundle.script}\r
 
     try {
         return execute(ctx, script);
-    } catch (e: any) {
-        getLog().error(`Execution of script "${bundle.note?.title}" (${bundle.note?.noteId}) failed with error: ${e.message}`);
-
-        throw e;
     } finally {
         getContext().set("componentId", originalComponentId);
     }
@@ -184,16 +199,66 @@ function getScriptBundleForFrontend(note: BNote, script?: string, params?: Scrip
     return bundle;
 }
 
+/** An owned attribute of a note of a script's record. */
+export interface ScriptRecordAttribute {
+    type: "label" | "relation";
+    name: string;
+    value: string;
+    isInheritable: boolean;
+}
+
+/**
+ * What a bundle is built from: a note with everything that the build reads of it, and the
+ * notes that it includes, in order.
+ */
+export interface ScriptRecordNote {
+    noteId: string;
+    title: string;
+    type: string;
+    mime: string;
+    env: string | null;
+    kind: "javascript" | "jsx" | "html";
+    content: string;
+    attributes: ScriptRecordAttribute[];
+    children: ScriptRecordNote[];
+    /** A note that the bundle includes before: it adds its module and nothing else. */
+    isRepeat: boolean;
+}
+
+/** The script and the markup of a bundle, and the notes that it includes. */
+export interface BuiltBundle {
+    script: string;
+    html: string;
+    allNoteIds: string[];
+}
+
 export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: string | null = null, includedNoteIds: string[] = [], overrideContent: string | null = null): Bundle | undefined {
+    const notes = new Map<string, BNote | null>(includedNoteIds.map((noteId) => [ noteId, null ]));
+    const record = collectScriptRecord(note, scriptEnv, root, notes);
+    return record ? toBundle(record, notes, scriptEnv, root, overrideContent) : undefined;
+}
+
+/**
+ * Collects the record of a script from Becca: the note, the notes that it includes and every
+ * owned attribute of each.
+ *
+ * @param notes the notes included so far, by ID, which the call fills. An ID without its note
+ *              counts as included.
+ * @returns `undefined` for a note that the bundle does not include.
+ * @throws for a note whose content is not available.
+ */
+export function collectScriptRecord(
+    note: BNote,
+    scriptEnv: string | null,
+    root = true,
+    notes = new Map<string, BNote | null>()
+): ScriptRecordNote | undefined {
     if (!note.isContentAvailable()) {
         throw new Error(`Cannot execute script note '${note.noteId}' because it is protected and protected session is not available. Enter protected session and try again.`);
     }
 
-    if (!(note.isJavaScript() || note.isHtml() || note.isJsx())) {
-        return;
-    }
-
-    if (!root && note.hasOwnedLabel("disableInclusion")) {
+    const kind = getScriptKind(note);
+    if (!kind || (!root && note.hasOwnedLabel("disableInclusion"))) {
         return;
     }
 
@@ -201,36 +266,72 @@ export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: st
         return;
     }
 
-    const bundle: Bundle = {
-        note,
-        script: "",
-        html: "",
-        allNotes: [note]
+    const record: ScriptRecordNote = {
+        noteId: note.noteId,
+        title: note.title,
+        type: note.type,
+        mime: note.mime,
+        env: note.getScriptEnv(),
+        kind,
+        content: "",
+        attributes: note.getOwnedAttributes().map(({ type, name, value, isInheritable }) => ({
+            type: type === "relation" ? "relation" : "label",
+            name,
+            value,
+            isInheritable: !!isInheritable
+        })),
+        children: [],
+        isRepeat: notes.has(note.noteId)
     };
+    if (record.isRepeat) {
+        notes.set(note.noteId, notes.get(note.noteId) ?? note);
+        return record;
+    }
 
-    if (includedNoteIds.includes(note.noteId)) {
+    notes.set(note.noteId, note);
+    for (const child of note.getChildNotes()) {
+        const childRecord = collectScriptRecord(child, scriptEnv, false, notes);
+        if (childRecord) {
+            record.children.push(childRecord);
+        }
+    }
+    record.content = unwrapStringOrBuffer(note.getContent());
+    return record;
+}
+
+/** The kind of script that a note is, or `null` for a note that no bundle includes. */
+function getScriptKind(note: BNote): ScriptRecordNote["kind"] | null {
+    if (note.isJsx()) {
+        return "jsx";
+    }
+    if (note.isJavaScript()) {
+        return "javascript";
+    }
+    return note.isHtml() ? "html" : null;
+}
+
+/** Builds a bundle from a script's record alone. */
+export function buildBundle(
+    record: ScriptRecordNote,
+    scriptEnv: string | null,
+    root = true,
+    overrideContent: string | null = null
+): BuiltBundle {
+    const bundle: BuiltBundle = { script: "", html: "", allNoteIds: [ record.noteId ] };
+    if (record.isRepeat) {
         return bundle;
     }
 
-    includedNoteIds.push(note.noteId);
-
-    const modules: BNote[] = [];
-
-    for (const child of note.getChildNotes()) {
-        const childBundle = getScriptBundle(child, false, scriptEnv, includedNoteIds);
-
-        if (childBundle) {
-            // An HTML child only contributes markup; it defines no module to pass as a parameter.
-            if (child.isJavaScript() || child.isJsx()) {
-                modules.push(child);
-            }
-            bundle.script += childBundle.script;
-            bundle.html += childBundle.html;
-            /* v8 ignore next -- a bundle built here always carries its notes */
-            if (bundle.allNotes && childBundle.allNotes) {
-                bundle.allNotes = bundle.allNotes.concat(childBundle.allNotes);
-            }
+    const modules: ScriptRecordNote[] = [];
+    for (const child of record.children) {
+        const childBundle = buildBundle(child, scriptEnv, false);
+        // An HTML child only contributes markup; it defines no module to pass as a parameter.
+        if (child.kind !== "html") {
+            modules.push(child);
         }
+        bundle.script += childBundle.script;
+        bundle.html += childBundle.html;
+        bundle.allNoteIds.push(...childBundle.allNoteIds);
     }
 
     const moduleNoteIds = modules.map((mod) => mod.noteId);
@@ -238,18 +339,16 @@ export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: st
     // only frontend scripts are async. Backend cannot be async because of transaction management.
     const isFrontend = scriptEnv === "frontend";
 
-    if (note.isJsx() || note.isJavaScript()) {
-        let scriptContent = note.getContent();
-
-        if (note.isJsx()) {
-            scriptContent = buildJsx(scriptContent).code;
-        }
+    if (record.kind !== "html") {
+        const scriptContent = record.kind === "jsx"
+            ? buildJsx(record.content).code
+            : record.content;
 
         // Titles and note IDs go in as JSON string literals. Either can contain a quote, a
         // backslash or a line break, and the ID of a synced note is not validated.
-        const noteId = JSON.stringify(note.noteId);
+        const noteId = JSON.stringify(record.noteId);
         const failurePrefix = JSON.stringify(
-            `Load of script note "${note.title}" (${note.noteId}) failed with: `);
+            `Load of script note "${record.title}" (${record.noteId}) failed with: `);
 
         bundle.script += `
 apiContext.modules[${noteId}] = { exports: {} };
@@ -262,10 +361,34 @@ return module.exports;
 }).call({}, {}, apiContext.modules[${noteId}], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis[${noteId}]${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules[${JSON.stringify(mod.noteId)}].exports`).join(", ")}));
 `;
     } else {
-        bundle.html += note.getContent();
+        bundle.html += record.content;
     }
 
     return bundle;
+}
+
+/** The bundle of a record, with the notes that `collectScriptRecord()` collected for it. */
+export function toBundle(
+    record: ScriptRecordNote,
+    notes: ReadonlyMap<string, BNote | null>,
+    scriptEnv: string | null,
+    root = true,
+    overrideContent: string | null = null
+): Bundle {
+    const built = buildBundle(record, scriptEnv, root, overrideContent);
+    const allNotes: BNote[] = [];
+    for (const noteId of built.allNoteIds) {
+        const note = notes.get(noteId);
+        if (note) {
+            allNotes.push(note);
+        }
+    }
+    return {
+        note: notes.get(record.noteId) ?? undefined,
+        script: built.script,
+        html: built.html,
+        allNotes
+    };
 }
 
 /**

@@ -1,4 +1,6 @@
 import optionsApiRoute from "./api/options";
+import notificationChannelsApiRoute from "./api/notification_channels";
+import notificationsApiRoute from "./api/notifications";
 import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
@@ -90,6 +92,12 @@ interface SharedApiRoutesContext {
     checkCredentials: any;
     uploadMiddlewareWithErrorHandling: any;
     importMiddlewareWithErrorHandling: any;
+    /**
+     * Parses the upload of a notification sound and keeps no more of the file than
+     * `NOTIFICATION_SOUND_MAX_BYTES`, refusing a longer one, also when the request declares no
+     * length.
+     */
+    soundUploadMiddleware: any;
     csrfMiddleware: any;
 }
 
@@ -110,6 +118,7 @@ export function buildSharedApiRoutes({
     loginRateLimiter,
     uploadMiddlewareWithErrorHandling,
     importMiddlewareWithErrorHandling,
+    soundUploadMiddleware,
     csrfMiddleware
 }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
@@ -121,6 +130,48 @@ export function buildSharedApiRoutes({
     asyncApiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
     apiRoute(GET, "/api/options/user-fonts", optionsApiRoute.getUserFonts);
+
+    apiRoute(GET, "/api/notifications", notificationsApiRoute.getNotifications);
+    apiRoute(PST, "/api/notifications", notificationsApiRoute.createNotification);
+    apiRoute(PST, "/api/notifications/state", notificationsApiRoute.setNotificationState);
+    apiRoute(PST, "/api/notifications/dismiss", notificationsApiRoute.dismissNotifications);
+    apiRoute(PATCH, "/api/notifications/:id", notificationsApiRoute.updateNotification);
+    apiRoute(PUT, "/api/notifications/transient/:id",
+        notificationsApiRoute.putTransientNotification);
+    apiRoute(DEL, "/api/notifications/transient/:id",
+        notificationsApiRoute.dismissTransientNotification);
+    route(GET, "/api/notifications/sound", [ checkApiAuthOrElectron ],
+        notificationsApiRoute.getSound);
+    // The token comes before the parser, so that a request without one is refused unread.
+    route(PST, "/api/notifications/sound",
+        [ checkApiAuthOrElectron, csrfMiddleware, soundUploadMiddleware ],
+        notificationsApiRoute.uploadSound);
+    apiRoute(DEL, "/api/notifications/sound", notificationsApiRoute.resetSound);
+
+    apiRoute(GET, "/api/notification-channels", notificationChannelsApiRoute.listChannels);
+    apiRoute(PST, "/api/notification-channels", notificationChannelsApiRoute.createChannel);
+    asyncApiRoute(PST, "/api/notification-channels/resume",
+        notificationChannelsApiRoute.resumeForwarding);
+    asyncApiRoute(PST, "/api/notification-channels/deliveries/claim",
+        notificationChannelsApiRoute.claimDelivery);
+    apiRoute(PST, "/api/notification-channels/deliveries/result",
+        notificationChannelsApiRoute.reportDeliveryResult);
+    apiRoute(PATCH, "/api/notification-channels/:channelId",
+        notificationChannelsApiRoute.editChannel);
+    asyncApiRoute(DEL, "/api/notification-channels/:channelId",
+        notificationChannelsApiRoute.deleteChannel);
+    apiRoute(GET, "/api/notification-channels/:channelId/review",
+        notificationChannelsApiRoute.getReview);
+    asyncApiRoute(PST, "/api/notification-channels/:channelId/enable",
+        notificationChannelsApiRoute.enableChannel);
+    asyncApiRoute(DEL, "/api/notification-channels/:channelId/enable",
+        notificationChannelsApiRoute.disableChannel);
+    apiRoute(PATCH, "/api/notification-channels/:channelId/settings",
+        notificationChannelsApiRoute.changeSettings);
+    apiRoute(GET, "/api/notification-channels/:channelId/config-widget",
+        notificationChannelsApiRoute.getConfigWidget);
+    asyncApiRoute(PST, "/api/notification-channels/:channelId/test",
+        notificationChannelsApiRoute.testChannel);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);
@@ -272,7 +323,7 @@ export function buildSharedApiRoutes({
     apiRoute(PST, "/api/sync/confirm-alone", syncApiRoute.confirmAlone);
     route(GET, "/api/sync/check", [checkSyncAuth], syncApiRoute.checkSync, apiResultHandler);
     route(GET, "/api/sync/changed", [checkSyncAuth], syncApiRoute.getChanged, apiResultHandler);
-    route(PUT, "/api/sync/update", [checkSyncAuth], syncApiRoute.update, apiResultHandler);
+    asyncRoute(PUT, "/api/sync/update", [checkSyncAuth], syncApiRoute.update, apiResultHandler);
     route(PST, "/api/sync/finished", [checkSyncAuth], syncApiRoute.syncFinished, apiResultHandler);
     route(PST, "/api/sync/check-entity-changes",
         [checkSyncAuth], syncApiRoute.checkEntityChanges, apiResultHandler);

@@ -257,6 +257,7 @@ export class CoreApiTester {
             loginRateLimiter: noop,
             uploadMiddlewareWithErrorHandling: noop,
             importMiddlewareWithErrorHandling: noop,
+            soundUploadMiddleware: noop,
             csrfMiddleware: noop
         });
     }

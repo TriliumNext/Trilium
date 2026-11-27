@@ -38,6 +38,7 @@
 /api/notes/*/attachments
 /api/notes/*/blob
 /api/notes/*/metadata
+/api/notifications
 /api/recent-notes
 /api/script/startup?mobile=true
 /api/script/widgets
@@ -72,6 +73,7 @@
 /packages/commons/src/lib/mermaid_config.ts
 /packages/commons/src/lib/mime_type.ts
 /packages/commons/src/lib/notes.ts
+/packages/commons/src/lib/notifications.ts
 /packages/commons/src/lib/office.ts
 /packages/commons/src/lib/promoted_attribute_definition_parser.ts
 /packages/commons/src/lib/rows.ts
@@ -163,6 +165,7 @@
 /src/services/note_autocomplete.ts
 /src/services/note_create.ts
 /src/services/note_presets.ts
+/src/services/notifications.ts
 /src/services/oauth_status.ts
 /src/services/office_renderer.ts
 /src/services/open.ts
@@ -302,6 +305,8 @@
 /src/widgets/note_title.tsx
 /src/widgets/note_types.tsx
 /src/widgets/note_wrapper.ts
+/src/widgets/notifications/NotificationBell.css
+/src/widgets/notifications/NotificationBell.tsx
 /src/widgets/promoted_attribute_cells.ts
 /src/widgets/quick_search.css
 /src/widgets/quick_search.tsx
@@ -359,6 +364,7 @@
 /src/widgets/react/hooks/legacy.tsx
 /src/widgets/react/hooks/note.ts
 /src/widgets/react/hooks/note_context.ts
+/src/widgets/react/hooks/notifications.ts
 /src/widgets/react/hooks/options.ts
 /src/widgets/react/hooks/shortcuts.ts
 /src/widgets/react/hooks/tooltip.ts

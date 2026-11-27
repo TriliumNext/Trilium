@@ -771,11 +771,12 @@ class ConsistencyChecks {
             }
         );
 
+        // The columns are named in full: `notifications` has an `id` column too.
         this.findAndFixIssues(
             `
-            SELECT id, entityId
+            SELECT entity_changes.id AS id, entity_changes.entityId AS entityId
             FROM entity_changes
-            LEFT JOIN ${entityName} ON entityId = ${entityName}.${key}
+            LEFT JOIN ${entityName} ON entity_changes.entityId = ${entityName}.${key}
             WHERE
             entity_changes.isErased = 0
             AND entity_changes.entityName = '${entityName}'
@@ -793,9 +794,9 @@ class ConsistencyChecks {
 
         this.findAndFixIssues(
             `
-            SELECT id, entityId
+            SELECT entity_changes.id AS id, entity_changes.entityId AS entityId
             FROM entity_changes
-            JOIN ${entityName} ON entityId = ${entityName}.${key}
+            JOIN ${entityName} ON entity_changes.entityId = ${entityName}.${key}
             WHERE
             entity_changes.isErased = 1
             AND entity_changes.entityName = '${entityName}'`,
@@ -821,6 +822,10 @@ class ConsistencyChecks {
         this.runEntityChangeChecks("branches", "branchId");
         this.runEntityChangeChecks("attributes", "attributeId");
         this.runEntityChangeChecks("etapi_tokens", "etapiTokenId");
+        this.runEntityChangeChecks("notifications", "notificationId");
+        this.runEntityChangeChecks("notification_marks", "markId");
+        this.runEntityChangeChecks("notification_private_texts", "notificationId");
+        this.runEntityChangeChecks("notification_channel_records", "recordId");
         this.runEntityChangeChecks("options", "name");
     }
 
@@ -913,7 +918,11 @@ class ConsistencyChecks {
             return `${tableName}: ${count}`;
         }
 
-        const tables = ["notes", "revisions", "attachments", "branches", "attributes", "etapi_tokens", "blobs"];
+        const tables = [
+            "notes", "revisions", "attachments", "branches", "attributes", "etapi_tokens", "blobs",
+            "notifications", "notification_marks", "notification_private_texts",
+            "notification_channel_records"
+        ];
 
         getLog().info(`Table counts: ${tables.map((tableName) => getTableRowCount(tableName)).join(", ")}`);
     }

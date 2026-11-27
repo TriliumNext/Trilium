@@ -302,6 +302,21 @@ describe("BrowserSqlProvider serialize / load / lifecycle", () => {
         local.close();
     });
 
+    it("closes the database that a load from a buffer replaces", () => {
+        const local = newProviderWithModule();
+        local.loadFromMemory();
+        local.exec("CREATE TABLE notes (noteId TEXT)");
+        const bytes = local.serialize();
+        const replaced = (local as unknown as { db: { close(): void } }).db;
+        const close = vi.spyOn(replaced, "close");
+
+        local.loadFromBuffer(bytes);
+
+        expect(close).toHaveBeenCalledOnce();
+        expect(local.isDbInitialized()).toBe(true);
+        local.close();
+    });
+
     it("isDbInitialized() is false for a database without the notes table", () => {
         const empty = newProviderWithModule();
         empty.loadFromMemory();

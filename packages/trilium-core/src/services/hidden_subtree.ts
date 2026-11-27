@@ -1,4 +1,4 @@
-import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import { type HiddenSubtreeItem, RESOURCES_NOTE_ID } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
@@ -154,6 +154,14 @@ function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
                 title: t("hidden-subtree.custom-dictionary-title"),
                 type: "code",
                 icon: "bx-book"
+            },
+            {
+                // The files of built-in features, such as the custom notification sound, which
+                // the feature creates at its first upload.
+                id: RESOURCES_NOTE_ID,
+                title: t("hidden-subtree.resources-folder-title"),
+                type: "book",
+                icon: "bx-folder"
             },
             {
                 // place for user scripts hidden stuff (scripts should not create notes directly under hidden root)
@@ -329,7 +337,11 @@ function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
                     // Integrations
                     { id: "_optionsAi", title: "AI Chat", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsLlm", title: t("hidden-subtree.llm-title"), type: "contentWidget", icon: "bx-bot" },
-                    
+                    {
+                        id: "_optionsNotifications", title: t("hidden-subtree.notifications-title"),
+                        type: "contentWidget", icon: "bx-bell"
+                    },
+
                     // Infrastructure, security
                     { id: "_optionsSync", title: t("hidden-subtree.sync-title"), type: "contentWidget", icon: "bx-wifi" },
                     // Password and ETAPI both answer to something reaching the instance over

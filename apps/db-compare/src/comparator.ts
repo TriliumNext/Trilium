@@ -71,6 +71,28 @@ export const COMPARISONS: Comparison[] = [
         column: "etapiTokenId",
         query: "SELECT etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified, isDeleted FROM etapi_tokens"
     },
+    // The tables of notifications without their dates, which can differ while the hashes agree.
+    {
+        table: "notifications",
+        column: "notificationId",
+        query: "SELECT notificationId, id, raisedAt, tag, noteId, category, type, attentionLevel, "
+            + "isSensitive, producer, content FROM notifications"
+    },
+    {
+        table: "notification_marks",
+        column: "markId",
+        query: "SELECT markId, notificationId, kind FROM notification_marks"
+    },
+    {
+        table: "notification_private_texts",
+        column: "notificationId",
+        query: "SELECT notificationId, content FROM notification_private_texts"
+    },
+    {
+        table: "notification_channel_records",
+        column: "recordId",
+        query: "SELECT recordId, channelId, kind, content FROM notification_channel_records"
+    },
     {
         table: "entity_changes",
         column: "uniqueId",

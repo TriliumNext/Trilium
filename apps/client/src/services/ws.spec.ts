@@ -25,7 +25,10 @@ const optionsCtrl = vi.hoisted(() => ({ is: vi.fn(() => false) }));
 vi.mock("./toast.js", () => ({ default: toast, showUnhandledError }));
 vi.mock("./bundle.js", () => ({ default: bundle }));
 vi.mock("../components/app_context.js", () => ({ default: appCtx }));
-vi.mock("./froca_updater.js", () => ({ default: frocaUpdater }));
+vi.mock("./froca_updater.js", async (orig) => ({
+    ...(await orig<typeof import("./froca_updater.js")>()),
+    default: frocaUpdater
+}));
 vi.mock("./options.js", () => ({ default: optionsCtrl }));
 vi.mock("./utils.js", async (orig) => {
     const actual = (await orig()) as Record<string, unknown>;
@@ -198,6 +201,28 @@ describe("frontend-update / executeFrontendUpdate", () => {
 
         await ws.dispatchMessage({ type: "frontend-update", data: { entityChanges: [{ id: 101, entityName: "notes", entityId: "nA" }] } } as any);
         expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("boom"));
+    });
+
+    it("prints a change of notifications by its entity, ID and number, never its row", async () => {
+        const ws = await loadWs();
+        const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        utilsCtrl.timeLimit
+            .mockRejectedValueOnce(Object.assign(new Error("boom3"), { stack: "stk" }));
+        optionsCtrl.is.mockReturnValue(true);
+        const changes = [
+            { id: 301, entityName: "notifications", entityId: "nKey",
+                entity: { protectedTitle: "Recognizable private title" } },
+            { id: 302, entityName: "notification_private_texts", entityId: "nKey",
+                entity: { protectedDescription: "Recognizable private description" } }
+        ];
+
+        await ws.dispatchMessage(
+            { type: "frontend-update", data: { entityChanges: changes } } as any);
+        const printed = JSON.stringify([ debug.mock.calls, log.mock.calls ]);
+        expect(printed).toContain("nKey");
+        expect(printed).not.toContain("Recognizable");
+        expect(toast.showError).toHaveBeenCalled();
     });
 
     it("shows a toast instead of reloading when debug mode is enabled", async () => {
@@ -509,6 +534,28 @@ describe("WebSocket transport", () => {
         vi.advanceTimersByTime(1000);
         // a brand-new socket was created by connectWebSocket()
         expect(lastSocket).not.toBe(first);
+    });
+
+    it("tells the reconnect listeners when a connection is admitted after another", async () => {
+        const ws = await loadWsFresh();
+        const listener = vi.fn();
+        ws.subscribeToReconnect(listener);
+        vi.advanceTimersByTime(0);
+        const ping = { data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>;
+
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).not.toHaveBeenCalled();
+
+        const first = lastSocket;
+        first.readyState = FakeSocket.CLOSED;
+        vi.advanceTimersByTime(1000);
+        expect(lastSocket).not.toBe(first);
+        // The backend sends nothing before it admits a connection.
+        expect(listener).not.toHaveBeenCalled();
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).toHaveBeenCalledOnce();
     });
 
     it("sends the page's CSRF token as the first message of a connection", async () => {

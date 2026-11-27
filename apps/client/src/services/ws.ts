@@ -3,7 +3,7 @@ import { WebSocketMessage } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
-import frocaUpdater from "./froca_updater.js";
+import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
@@ -12,6 +12,8 @@ import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
+/** The listeners of {@link subscribeToReconnect}. */
+const reconnectListeners: (() => void)[] = [];
 
 let ws: WebSocket;
 // In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
@@ -33,6 +35,10 @@ let isCsrfTokenRenewed = false;
 let isRenewingCsrfToken = false;
 /** Whether the renewed token was refused too, after which the socket stays closed. */
 let areLiveUpdatesRefused = false;
+/** Whether the backend has admitted the current connection, which its first message tells. */
+let isConnectionAdmitted = false;
+/** Whether the backend has admitted a connection since the page loaded. */
+let wasConnectionAdmitted = false;
 
 function sendOutgoing(message: object): boolean {
     if (ipcWs) {
@@ -74,6 +80,14 @@ export function subscribeToMessages(messageHandler: MessageHandler) {
 
 export function unsubscribeToMessage(messageHandler: MessageHandler) {
     messageHandlers = messageHandlers.filter(handler => handler !== messageHandler);
+}
+
+/**
+ * Calls `listener` each time the backend admits a connection after an earlier one. The messages
+ * sent in between are lost, so a listener loads what it shows again.
+ */
+export function subscribeToReconnect(listener: () => void) {
+    reconnectListeners.push(listener);
 }
 
 /**
@@ -147,7 +161,8 @@ function logRows(entityChanges: EntityChange[]) {
     const filteredRows = entityChanges.filter((row) => !processedEntityChangeIds.has(row.id) && (row.entityName !== "options" || row.entityId !== "openNoteContexts"));
 
     if (filteredRows.length > 0) {
-        console.debug(utils.now(), "Frontend update data: ", filteredRows);
+        console.debug(utils.now(), "Frontend update data: ",
+            filteredRows.map(getLoggableEntityChange));
     }
 }
 
@@ -225,6 +240,15 @@ async function runInUpdateQueue(task: () => Promise<void>) {
 async function handleWebSocketMessage(event: MessageEvent<string>) {
     // Messages arrive only over a connection that the backend admitted.
     isCsrfTokenRenewed = false;
+    if (!isConnectionAdmitted) {
+        isConnectionAdmitted = true;
+        if (wasConnectionAdmitted) {
+            for (const listener of reconnectListeners) {
+                listener();
+            }
+        }
+        wasConnectionAdmitted = true;
+    }
     const message = JSON.parse(event.data) as WebSocketMessage;
     await dispatchMessage(message);
 }
@@ -285,7 +309,8 @@ async function consumeFrontendUpdateData() {
                 // if there's an error in updating the frontend, then the easy option to recover is to reload the frontend completely
                 utils.reloadFrontendApp(`processing entity changes failed: ${e.message}`);
             } else {
-                console.log("nonProcessedEntityChanges causing the timeout", nonProcessedEntityChanges);
+                console.log("nonProcessedEntityChanges causing the timeout",
+                    nonProcessedEntityChanges.map(getLoggableEntityChange));
 
                 toastService.showError(t("ws.encountered-error", { message: e.message }));
             }
@@ -314,6 +339,7 @@ function connectWebSocket() {
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
+    isConnectionAdmitted = false;
     ws.onopen = () => {
         // The backend admits a connection only when its first message is the page's CSRF token.
         ws.send(JSON.stringify({ type: "csrf-token", token: glob.csrfToken }));

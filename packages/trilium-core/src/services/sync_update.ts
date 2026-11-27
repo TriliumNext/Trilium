@@ -10,6 +10,15 @@ import blobService from "./blob.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
 import {
+    checkSyncedChange,
+    getOwnerNotificationId,
+    isNotificationEntityName
+} from "./notifications/model.js";
+import {
+    deleteParts as deleteNotificationParts,
+    isErased as isNotificationErased
+} from "./notifications/store.js";
+import {
     getDefaultOptionSyncedFlag,
     isDeviceOption as isDeviceOptionName
 } from "./options_init.js";
@@ -24,19 +33,38 @@ interface UpdateContext {
     alreadyErased: number;
     erased: number;
     updated: Record<string, string[]>;
+    /** The one reading of the clock that a batch compares and stores dates with. */
+    now: string;
 }
 
-function updateEntities(entityChanges: EntityChangeRecord[], instanceId: string) {
+/** When this instance last applied a batch of sync, pushed to it or pulled by it. */
+let lastSyncedBatchTime = 0;
+
+export function getLastSyncedBatchTime() {
+    return lastSyncedBatchTime;
+}
+
+/**
+ * Applies a batch of sync. `nowMs` is the reading of the clock that the batch compares with, the
+ * one that the delivery record of the channels took it by.
+ */
+function updateEntities(
+    entityChanges: EntityChangeRecord[],
+    instanceId: string,
+    nowMs = Date.now()
+) {
     if (entityChanges.length === 0) {
         return;
     }
+    lastSyncedBatchTime = Date.now();
 
     let atLeastOnePullApplied = false;
     const updateContext = {
         updated: {},
         alreadyUpdated: 0,
         erased: 0,
-        alreadyErased: 0
+        alreadyErased: 0,
+        now: dateUtils.utcDateTimeStr(new Date(nowMs))
     };
 
     for (const { entityChange, entity } of entityChanges) {
@@ -58,7 +86,8 @@ function updateEntities(entityChanges: EntityChangeRecord[], instanceId: string)
         updateEntity(entityChange, entity, instanceId, updateContext);
     }
 
-    logUpdateContext(updateContext);
+    const { now: _now, ...counts } = updateContext;
+    logUpdateContext(counts);
 }
 
 function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undefined, instanceId: string, updateContext: UpdateContext) {
@@ -74,6 +103,17 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
     if (remoteEC.entityName === "options" && remoteEntityRow
         && !isOptionRowTaken(remoteEC, remoteEntityRow)) {
         return;
+    }
+
+    if (isNotificationEntityName(remoteEC.entityName)) {
+        const code = checkSyncedChange(
+            remoteEC.entityName, remoteEC.entityId, !!remoteEC.isErased, remoteEntityRow);
+        if (code) {
+            // The key comes from the peer, so it is escaped and cut.
+            getLog().error(`Skipped a synced change of ${remoteEC.entityName} `
+                + `${JSON.stringify(remoteEC.entityId.substring(0, 40))}: ${code}.`);
+            return;
+        }
     }
 
     const updated = remoteEC.entityName === "note_reordering"
@@ -124,18 +164,35 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
     // unknown: an incoming one is stored as now, and a local one loses the conflict. Whatever the
     // sender says, what a peer sends is synced: a change it calls local stays on this instance, out
     // of the hash check.
-    const now = dateUtils.utcNowDateTime();
+    const { now } = updateContext;
     const remoteEC = {
         ...incomingEC,
         isSynced: true,
-        utcDateChanged: incomingEC.utcDateChanged && incomingEC.utcDateChanged > now
-            ? now
-            : incomingEC.utcDateChanged
+        utcDateChanged: clampDate(incomingEC.utcDateChanged, now)
     };
     const localEC = getSql().getRow<EntityChange | undefined>(/*sql*/`SELECT * FROM entity_changes WHERE entityName = ? AND entityId = ?`, [remoteEC.entityName, remoteEC.entityId]);
-    const localECIsFromTheFuture = !!localEC?.utcDateChanged && localEC.utcDateChanged > now;
-    const localECIsOlderOrSameAsRemote = localEC && (localECIsFromTheFuture
-        || (localEC.utcDateChanged && remoteEC.utcDateChanged && localEC.utcDateChanged <= remoteEC.utcDateChanged));
+
+    if (localEC && ERASURE_WINS.has(remoteEC.entityName)) {
+        if (localEC.isErased && !remoteEC.isErased) {
+            // The sender still has the row, so the erasure is queued again to reach it.
+            entityChangesService.putEntityChangeForOtherInstances(localEC);
+            return false;
+        }
+        if (remoteEC.isErased && !localEC.isErased) {
+            eraseEntity(remoteEC);
+            entityChangesService.putEntityChangeWithInstanceId(remoteEC, instanceId);
+            updateContext.erased++;
+            return true;
+        }
+    }
+    if (NOTIFICATION_PARTS.has(remoteEC.entityName)
+        && isNotificationErased(getOwnerNotificationId(remoteEC.entityId))) {
+        // What belongs to an erased notification is not stored.
+        return false;
+    }
+
+    const localECIsOlderOrSameAsRemote = !!localEC
+        && isIncomingChangeTaken(localEC, incomingEC, now);
 
     if (!localEC || localECIsOlderOrSameAsRemote) {
         if (remoteEC.isErased) {
@@ -183,6 +240,34 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
 
     return false;
 }
+
+/**
+ * Whether an incoming change wins over the local one by its date, as `updateNormalEntity()`
+ * decides: an incoming date later than `now` counts as `now`, and a local one later than `now`
+ * loses.
+ */
+export function isIncomingChangeTaken(
+    localEC: Pick<EntityChange, "utcDateChanged"> | null | undefined,
+    incomingEC: Pick<EntityChange, "utcDateChanged">,
+    now: string
+) {
+    if (!localEC) {
+        return true;
+    }
+    const remoteDate = clampDate(incomingEC.utcDateChanged, now);
+    const isLocalFromTheFuture = !!localEC.utcDateChanged && localEC.utcDateChanged > now;
+    return isLocalFromTheFuture
+        || (!!localEC.utcDateChanged && !!remoteDate && localEC.utcDateChanged <= remoteDate);
+}
+
+function clampDate(utcDateChanged: string | undefined, now: string) {
+    return utcDateChanged && utcDateChanged > now ? now : utcDateChanged;
+}
+
+/** Entities whose erasure is final: it wins against every write, whatever the dates. */
+const ERASURE_WINS = new Set([ "notifications" ]);
+/** Rows that belong to a notification. Their ID starts with the ID of the notification. */
+const NOTIFICATION_PARTS = new Set([ "notification_marks", "notification_private_texts" ]);
 
 const columnsByTable = new Map<string, Set<string>>();
 
@@ -302,7 +387,9 @@ function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow
 function eraseEntity(entityChange: EntityChange) {
     const { entityName, entityId } = entityChange;
 
-    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs"];
+    const entityNames = [
+        "notes", "branches", "attributes", "revisions", "attachments", "blobs", "notifications"
+    ];
 
     if (!entityNames.includes(entityName)) {
         getLog().error(`Cannot erase ${entityName} '${entityId}'.`);
@@ -312,9 +399,13 @@ function eraseEntity(entityChange: EntityChange) {
     const primaryKeyName = entity_constructor.getEntityFromEntityName(entityName).primaryKeyName;
 
     getSql().execute(/*sql*/`DELETE FROM ${entityName} WHERE ${primaryKeyName} = ?`, [entityId]);
+
+    if (entityName === "notifications") {
+        deleteNotificationParts([ entityId ]);
+    }
 }
 
-function logUpdateContext(updateContext: UpdateContext) {
+function logUpdateContext(updateContext: Omit<UpdateContext, "now">) {
     const message = JSON.stringify(updateContext).replaceAll('"', "").replaceAll(":", ": ").replaceAll(",", ", ");
 
     getLog().info(message.substr(1, message.length - 2));

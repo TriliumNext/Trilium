@@ -164,6 +164,7 @@ function captureRegistrations(): { builders: Map<string, string>; middleware: Ma
         loginRateLimiter: stub("loginRateLimiter"),
         uploadMiddlewareWithErrorHandling: stub("uploadMiddlewareWithErrorHandling"),
         importMiddlewareWithErrorHandling: stub("importMiddlewareWithErrorHandling"),
+        soundUploadMiddleware: stub("soundUploadMiddleware"),
         csrfMiddleware: stub("csrfMiddleware")
     });
 

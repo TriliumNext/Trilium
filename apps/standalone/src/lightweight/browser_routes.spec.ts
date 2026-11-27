@@ -1,5 +1,6 @@
 import {
-    becca, cls, consistency_checks, getConfig, getSql, note_service as noteService, routes, sql_init
+    becca, cls, consistency_checks, getConfig, getSql, hidden_subtree, note_service as noteService,
+    routes, sql_init
 } from "@triliumnext/core";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -133,6 +134,36 @@ describe("registerRoutes (real wiring)", () => {
         expect(parseJson(res.body))
             .toStrictEqual({ uploaded: true, blobId: becca.getNoteOrThrow(noteId).blobId });
         expect(text((await router.dispatch("GET", `http://localhost/api/notes/${noteId}/open`)).body)).toBe("uploaded");
+    });
+
+    // The custom sound as the service worker and the mobile bridge forward it: an upload stored by
+    // the format of its bytes, served with `nosniff`, and a refusal that keeps its status.
+    it("stores, serves and refuses the custom notification sound", async () => {
+        // The fixture predates `_resources`, which every start creates.
+        cls.init(() => hidden_subtree.checkHiddenSubtree(true));
+        const post = async (file: File) => {
+            const form = new FormData();
+            form.append("upload", file);
+            const encoded = new Response(form);
+            return router.dispatch("POST", "http://localhost/api/notifications/sound",
+                await encoded.arrayBuffer(),
+                { "content-type": encoded.headers.get("content-type") ?? "" });
+        };
+
+        const refused = await post(new File([ "<!doctype html>" ], "page.mp3",
+            { type: "audio/mpeg" }));
+        expect(refused.status).toBe(400);
+        expect(parseJson(refused.body)).toEqual({ code: "unsupported-format" });
+
+        const mp3 = Uint8Array.from([ 0xff, 0xfb, 0x90, 0x64, 0, 0, 0, 0 ]);
+        expect((await post(new File([ mp3 ], "page.html", { type: "text/html" }))).status)
+            .toBe(204);
+        const sound = await router.dispatch("GET", "http://localhost/api/notifications/sound");
+        expect(sound.status).toBe(200);
+        expect(sound.headers).toMatchObject({
+            "Content-Type": "audio/mpeg", "X-Content-Type-Options": "nosniff"
+        });
+        expect(new Uint8Array(sound.body ?? new ArrayBuffer(0))).toEqual(mp3);
     });
 
     // The whole standalone media path in one request: the core handler slices the note's content,

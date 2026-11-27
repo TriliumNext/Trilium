@@ -27,6 +27,7 @@ import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
 import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
+import notificationSecretsRoute from "./api/notification_secrets.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
 import recoveryCodes from './api/recovery_codes.js';
@@ -39,7 +40,11 @@ import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import {
+    apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route,
+    router, shareTargetMiddlewareWithErrorHandling, soundUploadMiddleware,
+    uploadMiddlewareWithErrorHandling
+} from "./route_api.js";
 
 const GET = "get",
     PST = "post",
@@ -106,6 +111,22 @@ function register(app: express.Application) {
     route(PST, '/api/database/download-token', withCredentials,
         downloadTokenRoute.issueDownloadToken, apiResultHandler);
 
+    // The secrets of a webhook channel. A change is refused before the password is checked on an
+    // instance that does not forward or that has no password.
+    const withChannelSecretCredentials = [
+        auth.checkApiAuth,
+        csrfMiddleware,
+        loginRateLimiter,
+        notificationSecretsRoute.checkSecretChange,
+        auth.checkCredentials
+    ];
+    asyncApiRoute(GET, "/api/notification-channels/:channelId/secret",
+        notificationSecretsRoute.getSecret);
+    asyncRoute(PUT, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.putSecret, apiResultHandler);
+    asyncRoute(DEL, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.deleteSecret, apiResultHandler);
+
     routes.buildSharedApiRoutes({
         route,
         asyncRoute,
@@ -124,6 +145,7 @@ function register(app: express.Application) {
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
         importMiddlewareWithErrorHandling,
+        soundUploadMiddleware,
         csrfMiddleware
     });
 

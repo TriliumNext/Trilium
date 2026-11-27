@@ -482,6 +482,8 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             // Cached statements reference the previous DB and become invalid
             // once we swap connections. Drop them so callers re-prepare.
             this.clearStatementCache();
+            // Closing the replaced database frees the memory of its copy in the WASM heap.
+            this.db?.close();
             this.db = new this.sqlite3!.oo1.DB({ filename: ":memory:", flags: "c" });
             this.sahPoolDbName = undefined;
 

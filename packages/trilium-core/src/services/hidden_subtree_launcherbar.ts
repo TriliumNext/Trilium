@@ -229,6 +229,13 @@ export default function buildLaunchBarConfig() {
             type: "launcher",
             builtinWidget: "mobileTabSwitcher",
             icon: "bx bx-rectangle"
+        },
+        {
+            id: "_lbMobileNotifications",
+            title: t("hidden-subtree.notifications-title"),
+            type: "launcher",
+            builtinWidget: "notifications",
+            icon: "bx bx-bell"
         }
     ];
 

@@ -1,0 +1,94 @@
+:where(:root) {
+    --notification-panel-width: 380px;
+    --notification-panel-list-max-height: min(70vh, 640px);
+    --notification-panel-transients-max-height: min(30vh, 240px);
+    --notification-panel-border-color: var(--main-border-color);
+}
+
+.notification-panel {
+    width: min(var(--notification-panel-width), calc(100vw - 32px));
+
+    .notification-panel-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .notification-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-block-end: 1px solid var(--notification-panel-border-color);
+        padding: 2px 6px 6px 12px;
+    }
+
+    .notification-panel-title {
+        flex-grow: 1;
+        font-weight: 600;
+    }
+
+    .notification-panel-notices {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 10px 0;
+
+        .alert {
+            margin: 0;
+            padding: 6px 10px;
+            font-size: 0.9em;
+        }
+    }
+
+    .notification-panel-transients {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        border-block-end: 1px solid var(--notification-panel-border-color);
+        padding: 6px;
+        max-height: var(--notification-panel-transients-max-height);
+        overflow-y: auto;
+    }
+
+    .notification-panel-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px;
+        max-height: var(--notification-panel-list-max-height);
+        overflow-y: auto;
+    }
+
+    .notification-panel-more {
+        align-self: center;
+        margin-block: 6px;
+    }
+
+    .notification-panel-loading {
+        display: flex;
+        justify-content: center;
+        padding: 24px;
+    }
+}
+
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts. */
+@media (max-width: 991px) {
+    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.notification-panel.show {
+        display: flex;
+        flex-direction: column;
+        width: auto;
+        overflow-y: hidden;
+
+        .notification-panel-content {
+            min-height: 0;
+        }
+
+        .notification-panel-transients {
+            flex-shrink: 0;
+        }
+
+        .notification-panel-list {
+            min-height: 0;
+            max-height: none;
+        }
+    }
+}

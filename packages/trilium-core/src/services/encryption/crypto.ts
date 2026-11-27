@@ -13,7 +13,7 @@ export interface ScryptOptions {
 }
 
 export interface CryptoProvider {
-    createHash(algorithm: "md5" | "sha1" | "sha512", content: string | Uint8Array): Uint8Array;
+    createHash(algorithm: "md5" | "sha1" | "sha256" | "sha512", content: string | Uint8Array): Uint8Array;
     randomBytes(size: number): Uint8Array;
     randomString(length: number): string;
     createCipheriv(algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher;

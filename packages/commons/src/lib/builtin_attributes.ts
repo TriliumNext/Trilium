@@ -117,6 +117,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "runAtHour", valueType: "number", isDangerous: false },
     { type: "label", name: "customRequestHandler", valueType: "text", isDangerous: true },
     { type: "label", name: "customResourceProvider", valueType: "text", isDangerous: true },
+    // Makes the note a channel that forwards notifications, once the user enables it.
+    { type: "label", name: "notificationChannel", valueType: "boolean", isDangerous: true },
     { type: "label", name: "widget", valueType: "boolean", isDangerous: true },
     { type: "label", name: "workspace", valueType: "boolean" },
     { type: "label", name: "workspaceIconClass", valueType: "text" },
@@ -265,7 +267,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "builtinWidget", valueType: "select", selectOptions: [
         "calendar", "spacer", "bookmarks", "protectedSession", "syncStatus", "backInHistoryButton",
         "forwardInHistoryButton", "todayInJournal", "quickSearch", "mobileTabSwitcher", "sidebarChat",
-        "colorSchemeSwitcher", "recordMeeting"
+        "colorSchemeSwitcher", "recordMeeting", "notifications"
     ] },
     // Dangerous together with `~script` below: it makes the launcher run its own content instead, so
     // neutralising only the relation would leave this as a way around it.
@@ -412,6 +414,8 @@ const BUILTIN_ATTRIBUTES = [
     // Both execute a script, unlike the handlers above only once the user opens or clicks something.
     // Flagged all the same, so a safe import cannot leave one primed behind a single keystroke.
     { type: "relation", name: "script", isDangerous: true },
+    // The settings widget of a notification channel.
+    { type: "relation", name: "configWidget", isDangerous: true },
     { type: "relation", name: "hoistedNote" },
     { type: "relation", name: "shareCss" },
     { type: "relation", name: "shareLogo" },

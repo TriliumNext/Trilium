@@ -1,0 +1,50 @@
+:where(:root) {
+    --notification-channel-change-kind-color: var(--muted-text-color);
+    --notification-channel-widget-error-color: var(--admonition-caution-accent-color, #ff2e2e);
+}
+
+.modal.notification-channel-dialog {
+    .tn-card,
+    .admonition,
+    .notification-channel-runs-on,
+    .notification-channel-backend-scripting,
+    .notification-channel-widget {
+        margin-bottom: 1rem;
+    }
+
+    .notification-channel-review-text {
+        margin: 0;
+        max-height: 20em;
+        overflow-y: auto;
+    }
+
+    .notification-channel-changes {
+        display: flex;
+        flex-direction: column;
+        gap: .25em;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            gap: .5em;
+        }
+
+        code {
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .notification-channel-change-kind {
+        flex-shrink: 0;
+        color: var(--notification-channel-change-kind-color);
+    }
+
+    .notification-channel-widget-error {
+        margin: .5em 0 0;
+        color: var(--notification-channel-widget-error-color);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+}

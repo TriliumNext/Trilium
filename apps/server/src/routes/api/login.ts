@@ -4,7 +4,9 @@
  * Protected session routes (loginToProtectedSession, logoutFromProtectedSession,
  * touchProtectedSession) are now in core and registered via buildSharedApiRoutes.
  */
-import { app_info as appInfo, date_utils as dateUtils, getInstanceId, options } from "@triliumnext/core";
+import {
+    app_info as appInfo, date_utils as dateUtils, getInstanceId, notifications, options
+} from "@triliumnext/core";
 import type { Request } from "express";
 
 import { verifyLoginCredentials } from "../../services/auth.js";
@@ -61,6 +63,7 @@ async function loginSync(req: Request) {
 
     // Only the sync routes, since every copy of the database holds the document secret.
     markLoggedIn(req.session, "sync");
+    notifications.getNotificationForwarder().onSyncLogin(req.body.pullCursor);
 
     return {
         instanceId: getInstanceId(),

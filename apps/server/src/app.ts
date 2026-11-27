@@ -18,6 +18,7 @@ import routes from "./routes/routes.js";
 import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
 import { desktopNetworkAccessGate } from "./services/desktop_network_gate.js";
+import { createDeliveryRecordFile } from "./services/notifications/delivery_record_file.js";
 import { createReactiveOidcMiddleware } from "./services/open_id.js";
 import { startSecondFactor, takeResetWords } from "./services/second_factor.js";
 import { setupSecondFactor } from "./services/setup_second_factor.js";
@@ -134,7 +135,12 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    const { sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n } = await import("@triliumnext/core");
+    const {
+        sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n,
+        notifications
+    } = await import("@triliumnext/core");
+    // Before a pull or a route can make the forwarder of the notification channels.
+    notifications.initDeliveryRecordPort(createDeliveryRecordFile());
     sync.startSyncTimer();
 
     // What the setup wizard asks for besides the password, where this instance has one. Registered
@@ -158,6 +164,7 @@ export default async function buildApp() {
 
     consistency_checks.startConsistencyChecks();
     scheduler.startScheduler();
+    void becca_loader.beccaLoaded.then(() => notifications.startNotifications());
 
     erase.startScheduledCleanup();
 

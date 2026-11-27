@@ -348,6 +348,8 @@ export function registerRoutes(router: BrowserRouter): void {
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
         importMiddlewareWithErrorHandling: importUploadMiddleware,
+        // The page posts a file it holds already, and the route refuses one over the limit.
+        soundUploadMiddleware: noopMiddleware,
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);

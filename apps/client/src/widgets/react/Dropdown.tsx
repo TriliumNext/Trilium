@@ -94,6 +94,11 @@ export interface DropdownPanelProps extends DropdownProps {
      * `::before` covers it whatever the content scrolls to.
      */
     scrollable?: boolean;
+    /**
+     * A press in an element this selector matches does not close the panel, for a surface that its
+     * content opens elsewhere in the page, such as the context menu of one of its rows.
+     */
+    keepOpenSelector?: string;
 }
 
 /** Opens and closes a dropdown from outside it, for a caller that decides when. */
@@ -153,7 +158,7 @@ export default function Dropdown(props: DropdownProps) {
  * A popup under a toggle for content other than a menu's rows, such as a picker, a form or a
  * list of links. Its fields keep their keys; Up and Down move between its `.dropdown-item`s.
  */
-export function DropdownPanel({ scrollable, ...props }: DropdownPanelProps) {
+export function DropdownPanel({ scrollable, keepOpenSelector, ...props }: DropdownPanelProps) {
     return (
         <DropdownToggle
             {...props}
@@ -168,6 +173,7 @@ export function DropdownPanel({ scrollable, ...props }: DropdownPanelProps) {
                     reveal
                     className={clsx("dropdown-menu show", className, bottomSheet && "mobile-bottom-menu")}
                     startAt={startAt}
+                    keepOpenSelector={keepOpenSelector}
                     onDismiss={dismiss}
                 >
                     {scrollable
