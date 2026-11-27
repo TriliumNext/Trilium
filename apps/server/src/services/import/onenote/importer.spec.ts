@@ -613,7 +613,8 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         graphMock.listPages.mockResolvedValue([
             { id: "1-rich", title: "Rich Page", level: 0, pageId: "aaaaaaaa-0000-0000-0000-000000000001" },
             { id: "1-linked", title: "Linked Page", level: 0, pageId: linkedGuid },
-            { id: "1-clean", title: "Clean Image Page", level: 0, createdDateTime: "not a date" }
+            { id: "1-clean", title: "Clean Image Page", level: 0, createdDateTime: "not a date" },
+            { id: "1-ink", title: "Ink Page", level: 0 }
         ]);
         graphMock.getPageContent.mockImplementation(async (_token, pageId) => {
             if (pageId === "1-rich") {
@@ -627,6 +628,22 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
                         + `<a class="onenote-attachment" data-mime="text/plain" href="${RESOURCES}/broken-file/$value">gone.txt</a>`
                         + `<a href="onenote:#Linked&page-id={${linkedGuid}}&end">Linked Page</a>`
                         + `<a href="onenote:#Elsewhere&page-id={${outsideGuid}}&end">Elsewhere</a></p>`,
+                    inkml: ""
+                };
+            }
+            if (pageId === "1-ink") {
+                return {
+                    html: `<html><body data-absolute-enabled="true" style="font-family:Calibri;font-size:12pt">`
+                        + `<div style="position:absolute;left:48px;top:163px;width:720px">`
+                        + `<p>See <a href="onenote:#Linked&page-id={${linkedGuid}}&end">Linked Page</a></p>`
+                        + `<p><img width="20" height="10" src="${RESOURCES}/img1/$value"></p>`
+                        + `<object data-attachment="notes.pdf" type="application/pdf" data="${RESOURCES}/file1/$value"></object>`
+                        + `</div>`
+                        + `<!-- InkNode is not supported -->`
+                        + `<img width="480" height="270" src="${RESOURCES}/img2/$value" style="position:absolute;left:120px;top:835px">`
+                        + `<img width="40" height="30" src="${RESOURCES}/broken-img/$value" style="position:absolute;left:10px;top:20px">`
+                        + `<div style="position:absolute;left:444px;top:235px;width:624px"><ul><li>Second box</li></ul></div>`
+                        + `</body></html>`,
                     inkml: INKML
                 };
             }
@@ -709,21 +726,46 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         // A link to a page outside the selection keeps its onenote: target.
         expect(content.querySelector("a[href^=\"onenote:\"]")?.textContent).toBe("Elsewhere");
 
-        // The handwriting is appended as an inline SVG image.
-        expect(content.querySelector("figure.image > img")?.getAttribute("src")).toMatch(/^api\/attachments\/\w+\/image\/OneNote%20ink\.svg$/);
+        // A page with ink is a handwriting note: its strokes, and each text box and image at its place.
+        const inkPage = section?.getChildNotes().find((note) => note.title === "Ink Page");
+        expect(inkPage).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json" });
+        const sheet = JSON.parse(String(inkPage?.getContent()));
+        expect(sheet).toMatchObject({ version: 1, paper: "blank", layout: "infinite" });
+        expect(sheet.strokes).toEqual([ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]);
+        // The image whose picture could not be downloaded is left out.
+        expect(sheet.images).toEqual([ { url: expect.stringMatching(/^api\/attachments\/\w+\/image\/image\.png$/), x: 120, y: 835, w: 480, h: 270 } ]);
+        // The text of a box starts where it did, inside the padding of the box, at 12pt.
+        expect(sheet.texts.map(({ html, ...box }: { html: string }) => box)).toEqual([
+            { id: "onenote1", x: 40, y: 159, w: 736, s: 16 },
+            { id: "onenote2", x: 436, y: 231, w: 640, s: 16 }
+        ]);
+        const firstBox = parse(sheet.texts[0].html);
+        const [ inkFile ] = inkPage?.getAttachments().filter((attachment) => attachment.role === "file") ?? [];
+        expect(inkFile).toMatchObject({ title: "notes.pdf", mime: "application/pdf" });
+        expect(firstBox.querySelectorAll("a.reference-link").map((a) => a.getAttribute("href"))).toEqual([
+            `#root/${linkedPage?.noteId}`,
+            `#root/${inkPage?.noteId}?viewMode=attachments&attachmentId=${inkFile?.attachmentId}`
+        ]);
+        expect(firstBox.querySelector("img")?.getAttribute("src")).toMatch(/^api\/attachments\/\w+\/image\/image\.png$/);
+        expect(parse(sheet.texts[1].html).querySelector("li")?.textContent).toBe("Second box");
+        // The links in the box relate the note to their targets, as the links of a text note do:
+        // the linked page, and the note itself for the link to its attachment.
+        expect(inkPage?.getRelations().filter((relation) => relation.name === "internalLink").map((relation) => relation.value))
+            .toEqual([ linkedPage?.noteId, inkPage?.noteId ]);
 
         // Debug mode keeps the Graph source next to each page, plus the InkML where there is any.
         const sourcesOf = (note: typeof richPage) => note?.getAttachments().filter((attachment) => attachment.role === "importSource").map((attachment) => attachment.title);
-        expect(sourcesOf(richPage)).toEqual(["OneNote source.html", "OneNote ink.inkml"]);
+        expect(sourcesOf(inkPage)).toEqual(["OneNote source.html", "OneNote ink.inkml"]);
         expect(sourcesOf(linkedPage)).toEqual(["OneNote source.html"]);
 
         const report = String(parent.getChildNotes()[0]?.getContent());
-        expect(report).toContain(`<tr><th scope="row">Images</th><td>3 (`);
-        expect(report).toContain(`<tr><th scope="row">File attachments</th><td>2 (`);
+        expect(report).toContain(`<tr><th scope="row">Images</th><td>5 (`);
+        expect(report).toContain(`<tr><th scope="row">File attachments</th><td>3 (`);
         expect(report).toContain(`<tr><th scope="row">Pages with handwriting or drawings</th><td>1</td></tr>`);
-        expect(report).toContain("1 resolved, 1 pointing outside the imported selection");
+        expect(report).toContain("2 resolved, 1 pointing outside the imported selection");
         expect(report).toContain(`href="#root/${richPage?.noteId}"`);
         expect(report).toContain("2 resources could not be downloaded");
+        expect(report).toContain(`href="#root/${inkPage?.noteId}"`);
         expect(report).not.toContain("Clean Image Page");
     });
 
@@ -751,9 +793,20 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         expect([fetchFailed?.isProtected, processFailed?.isProtected, parent.getChildNotes()[0]?.isProtected]).toEqual([false, false, false]);
     });
 
-    it("leaves images in place and drops the ink figure when an attachment cannot be created", async () => {
-        graphMock.listPages.mockResolvedValue([{ id: "1-noatt", title: "No Attachment Page", level: 0 }]);
-        graphMock.getPageContent.mockResolvedValue({ html: `${RAW}<p><img src="${RESOURCES}/img4/$value"></p>`, inkml: INKML });
+    it("leaves images in place when an attachment cannot be created, and out of a handwriting note", async () => {
+        graphMock.listPages.mockResolvedValue([
+            { id: "1-noatt", title: "No Attachment Page", level: 0 },
+            { id: "1-noatt-ink", title: "No Attachment Ink Page", level: 0 },
+            { id: "1-ink-only", title: "Ink Only Page", level: 0 }
+        ]);
+        graphMock.getPageContent.mockImplementation(async (_token, pageId) => {
+            if (pageId === "1-ink-only") return { html: "<html><body></body></html>", inkml: INKML };
+            return {
+                html: `${RAW}<p><img src="${RESOURCES}/img4/$value"></p>`
+                    + `<img width="4" height="3" src="${RESOURCES}/img5/$value" style="position:absolute;left:1px;top:2px">`,
+                inkml: pageId === "1-noatt-ink" ? INKML : ""
+            };
+        });
         graphMock.getResource.mockResolvedValue({ content: PNG, contentType: "image/png" });
         const saveSpy = vi.spyOn(imageService, "saveImageToAttachment").mockReturnValue({ attachmentId: undefined, title: "image.png" });
 
@@ -767,11 +820,26 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
 
         const page = Object.values(becca.notes).find((note) => note.title === "No Attachment Page");
         const content = parse(String(page?.getContent()));
-        // One call for the image, one for the ink.
-        expect(saveCalls).toBe(2);
+        // One call for each of the two images of each of the two pages.
+        expect(saveCalls).toBe(4);
         expect(page?.hasOwnedLabel("oneNoteImportFailed")).toBe(false);
         expect(content.querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img4/$value`);
-        expect(content.querySelector("figure")).toBeNull();
+
+        // In a handwriting note, the image inside a text box keeps its source, and the image that
+        // lies on the page is left out, as the note cannot load it.
+        const inkPage = Object.values(becca.notes).find((note) => note.title === "No Attachment Ink Page");
+        const sheet = JSON.parse(String(inkPage?.getContent()));
+        expect(sheet).not.toHaveProperty("images");
+        expect(sheet.strokes).toHaveLength(1);
+        expect(sheet.texts).toHaveLength(1);
+        expect(parse(sheet.texts[0].html).querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img4/$value`);
+
+        // A page of ink alone holds only its strokes.
+        const inkOnly = Object.values(becca.notes).find((note) => note.title === "Ink Only Page");
+        expect(inkOnly?.isHandwriting()).toBe(true);
+        expect(JSON.parse(String(inkOnly?.getContent()))).toEqual({
+            version: 1, paper: "blank", layout: "infinite", strokes: [ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]
+        });
     });
 
     it("reports an unexpected failure as a task error, whatever was thrown", async () => {

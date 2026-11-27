@@ -1,5 +1,6 @@
 import {
-    encodePoints, lineToPoints, MAX_STROKE_SIZE, polygonToPoints, POSITION_SCALE, type SerializedStroke
+    dropRepeatedPoints, encodePoints, lineToPoints, MAX_STROKE_SIZE, polygonToPoints, type SerializedImage,
+    serializeImportedHandwriting, type SerializedStroke, type SerializedTextBox, TEXT_BOX_PADDING
 } from "@triliumnext/commons";
 import { gunzipSync, zlibSync } from "fflate";
 
@@ -28,16 +29,8 @@ export interface RnoteImage {
     height: number;
 }
 
-/** A text box as the client's `parseInkDocument()` reads it. */
-export interface RnoteTextBox {
-    id: string;
-    x: number;
-    y: number;
-    w: number;
-    /** The font size, in world units. */
-    s: number;
-    html: string;
-}
+/** A text box with a font size, in world units. */
+export type RnoteTextBox = SerializedTextBox & { s: number };
 
 /**
  * Converts an RNote document (`.rnote`, gzipped JSON) to the parts of a handwriting note. The pen
@@ -106,23 +99,12 @@ export function convertRnote(file: Uint8Array): RnoteConversion | undefined {
 export function serializeRnote(
     { paper, strokes, images, texts }: RnoteConversion, imageUrls: (string | undefined)[] = []
 ) {
-    const round = (value: number) => Math.round(value * POSITION_SCALE) / POSITION_SCALE;
-    const savedImages: object[] = [];
+    const savedImages: SerializedImage[] = [];
     for (const [ index, { x, y, width, height } ] of images.entries()) {
         const url = imageUrls[index];
-        if (url) savedImages.push({ url, x: round(x), y: round(y), w: round(width), h: round(height) });
+        if (url) savedImages.push({ url, x, y, w: width, h: height });
     }
-    const savedTexts = texts.map(({ id, x, y, w, s, html }) =>
-        ({ id, x: round(x), y: round(y), w: round(w), s: round(s), html }));
-    const parts = [
-        `"version":1`,
-        `"paper":${JSON.stringify(paper)}`,
-        `"layout":"infinite"`,
-        ...(savedImages.length ? [ `"images":${JSON.stringify(savedImages)}` ] : []),
-        ...(savedTexts.length ? [ `"texts":${JSON.stringify(savedTexts)}` ] : []),
-        `"strokes":[${strokes.join(",")}]`
-    ];
-    return `{${parts.join(",")}}`;
+    return serializeImportedHandwriting({ paper, strokes, images: savedImages, texts });
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -147,8 +129,6 @@ const DEFAULT_FONT_SIZE = 32;
 const CHARACTER_WIDTH = 0.6;
 /** The narrowest text box, which must match the client's `MIN_WIDTH` in TextBoxLayer.tsx. */
 const MIN_TEXT_WIDTH = 80;
-/** The padding across and down, which must match `.handwriting-text-box` in the client's Handwriting.css. */
-const TEXT_PADDING = [ 8, 4 ];
 
 const GZIP_MAGIC = [ 0x1f, 0x8b ];
 
@@ -242,22 +222,12 @@ function getShapePoints(shape: JsonRecord): number[] | undefined {
     return polygonToPoints(corners, EVEN_PRESSURE);
 }
 
-/**
- * Builds a saved stroke from flat `x, y, pressure` triples. A point that falls on the previous one
- * once rounded to the precision of a saved stroke is left out.
- */
+/** Builds a saved stroke from flat `x, y, pressure` triples, without its repeated points. */
 function buildStroke(
     look: Pick<SerializedStroke, "t" | "c">, size: number, sensitivity: number, points: number[]
 ): SerializedStroke | undefined {
     if (!(size > 0)) return undefined;
-    const kept: number[] = [];
-    let previous: number[] | undefined;
-    for (let i = 0; i + 2 < points.length; i += 3) {
-        const rounded = [ Math.round(points[i] * POSITION_SCALE), Math.round(points[i + 1] * POSITION_SCALE) ];
-        if (previous && rounded[0] === previous[0] && rounded[1] === previous[1]) continue;
-        kept.push(points[i], points[i + 1], points[i + 2]);
-        previous = rounded;
-    }
+    const kept = dropRepeatedPoints(points);
     if (!kept.length) return undefined;
 
     return {
@@ -326,9 +296,9 @@ function convertText(stroke: JsonRecord): Omit<RnoteTextBox, "id"> | undefined {
     }
     const width = isFiniteNumber(maxWidth) && maxWidth > 0 ? maxWidth : longestLine * fontSize * CHARACTER_WIDTH;
     return {
-        x: affine[6] - TEXT_PADDING[0],
-        y: affine[7] - TEXT_PADDING[1],
-        w: Math.max(MIN_TEXT_WIDTH, width * scaleX + 2 * TEXT_PADDING[0]),
+        x: affine[6] - TEXT_BOX_PADDING.x,
+        y: affine[7] - TEXT_BOX_PADDING.y,
+        w: Math.max(MIN_TEXT_WIDTH, width * scaleX + 2 * TEXT_BOX_PADDING.x),
         s: fontSize * Math.min(scaleX, scaleY),
         html: `<p>${html}</p>`
     };

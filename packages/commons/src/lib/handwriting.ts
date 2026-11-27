@@ -32,6 +32,62 @@ export interface SerializedStroke {
     p: number[];
 }
 
+/** An image in the saved content of a handwriting note. */
+export interface SerializedImage {
+    /** Where the attachment holding the picture is served from: `api/attachments/{id}/image/{title}`. */
+    url: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+/** A text box in the saved content of a handwriting note. */
+export interface SerializedTextBox {
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    /** The font size, left out for the font size of text notes. */
+    s?: number;
+    html: string;
+}
+
+/**
+ * The space between the edge of a text box and its text, across and down, in world units. It must
+ * match the padding of `.handwriting-text-box` in the client's Handwriting.css.
+ */
+export const TEXT_BOX_PADDING = { x: 8, y: 4 };
+
+/** The parts of a handwriting note that an importer builds. */
+export interface ImportedHandwriting {
+    paper: string;
+    /** The JSON of each `SerializedStroke`, in drawing order. */
+    strokes: string[];
+    images?: SerializedImage[];
+    texts?: SerializedTextBox[];
+}
+
+/**
+ * Returns the content of a handwriting note on a canvas without bounds, as the client's
+ * `parseInkDocument()` reads it. Positions and sizes are rounded to the precision of a saved stroke.
+ */
+export function serializeImportedHandwriting({ paper, strokes, images = [], texts = [] }: ImportedHandwriting) {
+    const round = (value: number) => Math.round(value * POSITION_SCALE) / POSITION_SCALE;
+    const savedImages = images.map(({ url, x, y, w, h }) => ({ url, x: round(x), y: round(y), w: round(w), h: round(h) }));
+    const savedTexts = texts.map(({ id, x, y, w, s, html }) =>
+        ({ id, x: round(x), y: round(y), w: round(w), ...(s !== undefined && { s: round(s) }), html }));
+    const parts = [
+        `"version":1`,
+        `"paper":${JSON.stringify(paper)}`,
+        `"layout":"infinite"`,
+        ...(savedImages.length ? [ `"images":${JSON.stringify(savedImages)}` ] : []),
+        ...(savedTexts.length ? [ `"texts":${JSON.stringify(savedTexts)}` ] : []),
+        `"strokes":[${strokes.join(",")}]`
+    ];
+    return `{${parts.join(",")}}`;
+}
+
 /** How many steps a world unit is divided into in a saved stroke. */
 export const POSITION_SCALE = 10;
 const PRESSURE_SCALE = 255;
@@ -52,6 +108,25 @@ export function encodePoints(points: number[]) {
         previous = current;
     }
     return encoded;
+}
+
+/**
+ * Returns flat `x, y, pressure` triples without the points that fall on the one before them once
+ * rounded to the precision of a saved stroke.
+ */
+export function dropRepeatedPoints(points: number[]) {
+    const kept: number[] = [];
+    let previousX: number | undefined;
+    let previousY: number | undefined;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        const x = Math.round(points[i] * POSITION_SCALE);
+        const y = Math.round(points[i + 1] * POSITION_SCALE);
+        if (x === previousX && y === previousY) continue;
+        kept.push(points[i], points[i + 1], points[i + 2]);
+        previousX = x;
+        previousY = y;
+    }
+    return kept;
 }
 
 /** Returns the points of a saved stroke, or `undefined` when one of its values is not a finite number. */

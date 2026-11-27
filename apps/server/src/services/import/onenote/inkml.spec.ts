@@ -5,235 +5,112 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { parsePageContent } from "./graph.js";
-import { inkmlToSvg } from "./inkml.js";
+import { inkmlToStrokes } from "./inkml.js";
 
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-/** A minimal OneNote-style InkML document with one red brush and a multi-point trace. */
-const INKML = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-    <inkml:definitions>
-        <inkml:brush xml:id="br0">
-            <inkml:brushProperty name="color" value="#FF0000"/>
-            <inkml:brushProperty name="width" value="120"/>
-            <inkml:brushProperty name="transparency" value="0"/>
-        </inkml:brush>
-    </inkml:definitions>
-    <inkml:trace brushRef="#br0">100 100, 200 150, 300 100</inkml:trace>
-</inkml:ink>`;
+interface BrushOptions {
+    color?: string;
+    width?: number;
+    height?: number;
+    transparency?: number;
+    ignorePressure?: boolean;
+}
 
-describe("inkmlToSvg", () => {
-    it("renders a trace as an SVG path using its brush color and width", () => {
-        const svg = inkmlToSvg(INKML);
-        expect(svg).toBeTruthy();
-        expect(svg).toContain("<svg");
-        expect(svg).toContain("viewBox=");
-        expect(svg).toContain("<path");
-        expect(svg).toContain(`stroke="#FF0000"`);
-        expect(svg).toContain(`stroke-width="120"`);
-        // The path should move to the first point and line to the rest.
-        expect(svg).toMatch(/d="M \d+ \d+ L \d+ \d+ L \d+ \d+"/);
+function brush(id: string, { color = "#FF0000", width = 120, height = width, transparency = 0, ignorePressure = false }: BrushOptions = {}) {
+    return `<inkml:brush xml:id="${id}">
+        <inkml:brushProperty name="color" value="${color}"/>
+        <inkml:brushProperty name="width" value="${width}"/>
+        <inkml:brushProperty name="height" value="${height}"/>
+        <inkml:brushProperty name="transparency" value="${transparency}"/>
+        <inkml:brushProperty name="ignorePressure" value="${ignorePressure}"/>
+    </inkml:brush>`;
+}
+
+function ink(definitions: string, traces: string) {
+    return `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML"><inkml:definitions>${definitions}</inkml:definitions>${traces}</inkml:ink>`;
+}
+
+const PRESSURE_CONTEXT = `<inkml:context xml:id="ctxPressure"><inkml:inkSource><inkml:traceFormat>
+    <inkml:channel name="X" type="integer" units="himetric"/>
+    <inkml:channel name="Y" type="integer" units="himetric"/>
+    <inkml:channel name="F" type="integer" max="32767" units="dev"/>
+</inkml:traceFormat></inkml:inkSource></inkml:context>`;
+
+describe("inkmlToStrokes", () => {
+    it("places a trace in pixels from the corner of the page, with the size and the color of its brush", () => {
+        const strokes = inkmlToStrokes(ink(brush("br0"), `<inkml:trace brushRef="#br0">100 100, 200 150, 300 100</inkml:trace>`));
+        // A himetric unit is 96/2540 of a pixel: 100 units are 3.78 px, saved in tenths. The width
+        // of 120 units is 4.54 px, and a trace without pressure has one width all along.
+        expect(strokes).toEqual([ { c: "#ff0000", w: 4.54, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]);
+
+        // Another unit of the X channel scales the trace, here a centimeter of 37.8 px.
+        const context = `<inkml:context xml:id="cm"><inkml:channel name="X" units="cm"/><inkml:channel name="Y" units="cm"/></inkml:context>`;
+        const [ metric ] = inkmlToStrokes(ink(brush("br0") + context, `<inkml:trace contextRef="#cm" brushRef="#br0">1 1, 2 1</inkml:trace>`));
+        expect(metric.p).toEqual([ 378, 378, 128, 378, 0, 0 ]);
     });
 
-    it("caps the displayed size while keeping the true coordinate space in the viewBox", () => {
-        const svg = inkmlToSvg(INKML) ?? "";
-        const width = Number(svg.match(/width="(\d+)"/)?.[1]);
-        expect(width).toBeLessThanOrEqual(800);
-        // 300 - 100 + 2*padding(10) = 220 wide in coordinate units.
-        expect(svg).toContain("viewBox=\"0 0 220");
+    it("keeps the pressure of a trace that has it, unless the brush ignores it", () => {
+        const traces = `<inkml:trace contextRef="#ctxPressure" brushRef="#pen">0 0 16384, 2540 0 32767, 5080 0 99999</inkml:trace>`
+            + `<inkml:trace contextRef="#ctxPressure" brushRef="#flat">0 0 16384, 2540 0 32767</inkml:trace>`;
+        const [ pen, flat ] = inkmlToStrokes(ink(PRESSURE_CONTEXT + brush("pen") + brush("flat", { ignorePressure: true }), traces));
+        // Half pressure, then full pressure, which a value over the maximum stays at. The stroke
+        // has the default sensitivity, at which its size is its width at half pressure.
+        expect(pen).toEqual({ c: "#ff0000", w: 4.54, p: [ 0, 0, 128, 960, 0, 127, 960, 0, 0 ] });
+        expect(flat).toEqual({ c: "#ff0000", w: 4.54, k: 0, p: [ 0, 0, 128, 960, 0, 0 ] });
     });
 
-    it("renders a single-point trace as a circle", () => {
-        const dot = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:trace>50 60</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(dot) ?? "";
-        expect(svg).toContain("<circle");
-        expect(svg).not.toContain("<path");
-        // The default brush is black ink, so the dot fills theme-adaptively via an inline style.
-        expect(svg).toContain(`style="fill:light-dark(#000000, #ffffff)"`);
-        expect(svg).toContain("<style>svg{color-scheme:light dark}</style>");
+    it("turns translucent ink into highlighter ink as wide as the longer side of its tip", () => {
+        const definitions = PRESSURE_CONTEXT
+            + brush("marker", { color: "#FAF320", width: 56, height: 400, transparency: 0.5 })
+            + brush("huge", { color: "#FAF320", width: 56, height: 4000, transparency: 0.5 });
+        const [ marker, huge ] = inkmlToStrokes(ink(definitions,
+            `<inkml:trace contextRef="#ctxPressure" brushRef="#marker">0 0 1000, 2540 0 32767</inkml:trace>`
+            + `<inkml:trace brushRef="#huge">0 0, 2540 0</inkml:trace>`));
+        // The highlighter has one width, whatever the pressure.
+        expect(marker).toEqual({ t: "h", c: "#faf320", w: 15.12, p: [ 0, 0, 128, 960, 0, 0 ] });
+        expect(huge.w).toBe(60);
     });
 
-    it("renders a readable-colored single-point trace with a literal fill", () => {
-        const dot = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="br0"><inkml:brushProperty name="color" value="#FF0000"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#br0">50 60</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(dot) ?? "";
-
-        // A color readable under both themes is baked into the dot's fill; no adaptive style is emitted.
-        expect(svg).toContain("<circle");
-        expect(svg).toContain(`fill="#FF0000"`);
-        expect(svg).not.toContain("light-dark");
-        expect(svg).not.toContain("<style>");
+    it("gives near-black and near-white ink the text color of the theme, and keeps every other color", () => {
+        const colors = [ "#404040", "#333333", "black", "#FFFFFF", "#000080", "#FAF320", "#808080", "not a color" ];
+        const definitions = colors.map((color, index) => brush(`b${index}`, { color })).join("");
+        const traces = colors.map((_, index) => `<inkml:trace brushRef="#b${index}">0 0, 100 0</inkml:trace>`).join("");
+        expect(inkmlToStrokes(ink(definitions, traces)).map(({ c }) => c))
+            .toEqual([ undefined, undefined, undefined, undefined, "#000080", "#faf320", "#808080", undefined ]);
     });
 
-    it("works without namespace prefixes and falls back to a default (black) brush", () => {
-        const plain = `<ink><trace>0 0, 10 10</trace></ink>`;
-        const svg = inkmlToSvg(plain) ?? "";
-        expect(svg).toContain("<path");
-        // The default brush is black ink: rendered theme-adaptively, never hard black.
-        expect(svg).toContain(`style="stroke:light-dark(#000000, #ffffff)"`);
-        expect(svg).not.toContain(`stroke="#000000"`);
-    });
-
-    it("renders black ink and its dark-canvas inverse (white) theme-adaptively", () => {
-        const blackAndWhite = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="black"><inkml:brushProperty name="color" value="#000000"/></inkml:brush>
-                <inkml:brush xml:id="white"><inkml:brushProperty name="color" value="#FFFFFF"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#black">0 0, 10 10</inkml:trace>
-            <inkml:trace brushRef="#white">20 20, 30 30</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(blackAndWhite) ?? "";
-
-        // Lightness reflection maps black and white onto the same black-on-light/white-on-dark pair.
-        expect((svg.match(/style="stroke:light-dark\(#000000, #ffffff\)"/gi) ?? [])).toHaveLength(2);
-        expect(svg).not.toContain(`stroke="#000000"`);
-        expect(svg).not.toContain(`stroke="#FFFFFF"`);
-
-        // The adaptive <style> is emitted once, keyed to the embedding context's color-scheme.
-        expect((svg.match(/<style>/g) ?? [])).toHaveLength(1);
-        expect(svg).toContain("svg{color-scheme:light dark}");
-    });
-
-    it("adapts palette near-blacks like #333333 for dark mode, keeping them literal in light mode", () => {
-        // The reported regression: OneNote's black-looking pens are per-client near-blacks
-        // (#333333, #404040, ...), not #000000. Reflected lightness lands within a rounding error
-        // of OneNote's own dark-mode rendering (#333333 -> #cbc8c8 in OneNote, #cccccc here).
-        const nearBlacks = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="b33"><inkml:brushProperty name="color" value="#333333"/></inkml:brush>
-                <inkml:brush xml:id="b40"><inkml:brushProperty name="color" value="#404040"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#b33">0 0, 10 10</inkml:trace>
-            <inkml:trace brushRef="#b40">20 20, 30 30</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(nearBlacks) ?? "";
-
-        expect(svg).toContain(`style="stroke:light-dark(#333333, #cccccc)"`);
-        expect(svg).toContain(`style="stroke:light-dark(#404040, #bfbfbf)"`);
-        expect(svg).not.toContain(`stroke="#333333"`);
-    });
-
-    it("keeps the hue when adapting saturated colors, in either direction", () => {
-        // A dark blue must lighten to a readable *blue*, not to gray; a near-white pink must darken
-        // to a red. The light-mode side always keeps the exact color OneNote sent.
-        const saturated = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="navy"><inkml:brushProperty name="color" value="#000080"/></inkml:brush>
-                <inkml:brush xml:id="pink"><inkml:brushProperty name="color" value="#ffe6e6"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#navy">0 0, 10 10</inkml:trace>
-            <inkml:trace brushRef="#pink">20 20, 30 30</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(saturated) ?? "";
-
-        expect(svg).toContain(`style="stroke:light-dark(#000080, #7f7fff)"`);
-        expect(svg).toContain(`style="stroke:light-dark(#190000, #ffe6e6)"`);
-    });
-
-    it("adapts named colors, keeping the original token on the as-sent side", () => {
-        const named = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="b0"><inkml:brushProperty name="color" value="Black"/></inkml:brush>
-                <inkml:brush xml:id="b1"><inkml:brushProperty name="color" value="white"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#b0">0 0, 10 10</inkml:trace>
-            <inkml:trace brushRef="#b1">20 20, 30 30</inkml:trace>
-        </inkml:ink>`;
-        const svg = inkmlToSvg(named) ?? "";
-
-        expect(svg).toContain(`style="stroke:light-dark(Black, #ffffff)"`);
-        expect(svg).toContain(`style="stroke:light-dark(#000000, white)"`);
-    });
-
-    it("leaves ink readable under both themes literal and omits the adaptive style", () => {
-        // #FF0000 (lightness exactly 0.5) and a mid-light gray are untouched — including #cccccc,
-        // which is a dark-mode *target* but as source ink is readable on both canvases — and with no
-        // adapted strokes there's no <style> block. An unparseable color also stays literal.
-        const readable = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
-            <inkml:definitions>
-                <inkml:brush xml:id="gray"><inkml:brushProperty name="color" value="#cccccc"/></inkml:brush>
-                <inkml:brush xml:id="odd"><inkml:brushProperty name="color" value="not-a-color"/></inkml:brush>
-            </inkml:definitions>
-            <inkml:trace brushRef="#gray">0 0, 10 10</inkml:trace>
-            <inkml:trace brushRef="#odd">20 20, 30 30</inkml:trace>
-        </inkml:ink>`;
-        const graySvg = inkmlToSvg(readable) ?? "";
-        expect(graySvg).toContain(`stroke="#cccccc"`);
-        expect(graySvg).toContain(`stroke="not-a-color"`);
-        expect(graySvg).not.toContain("light-dark");
-        expect(graySvg).not.toContain("<style>");
-
-        const svg = inkmlToSvg(INKML) ?? "";
-        expect(svg).toContain(`stroke="#FF0000"`);
-        expect(svg).not.toContain("<style>");
-    });
-
-    it("tolerates malformed brush and trace data, falling back to defaults", () => {
-        // An id-less brush is skipped; a name-less property and non-numeric width/height are ignored
-        // (keeping the defaults); a bare (un-prefixed) brushRef still resolves; a trace with
-        // unparseable coordinates contributes nothing.
-        const messy = `<ink>
-            <definitions>
-                <brush><brushProperty name="color" value="#123456"/></brush>
-                <brush xml:id="b1">
-                    <brushProperty value="orphan"/>
-                    <brushProperty name="width" value="wide"/>
-                    <brushProperty name="height" value="tall"/>
-                    <brushProperty name="color" value="#00AA00"/>
-                </brush>
-            </definitions>
-            <trace brushRef="b1">0 0, 10 10</trace>
-            <trace>squiggle</trace>
-        </ink>`;
-        const svg = inkmlToSvg(messy) ?? "";
-
-        expect((svg.match(/<path/g) ?? [])).toHaveLength(1);
-        expect(svg).toContain(`style="stroke:light-dark(#00AA00, #55ff55)"`); // dark green, adapted
-        expect(svg).toContain(`stroke-width="70"`); // default width kept over the unparseable one
-        expect(svg).not.toContain("#123456"); // the id-less brush is never referenced
-    });
-
-    it("scales fractional coordinates and survives a missing closing tag", () => {
-        // Fractional coords are scaled up 10000x for precision; the truncated document (no </ink>)
-        // still parses. 1.5→15000, 3.5→35000: 20000 wide + 2*padding(10).
-        const svg = inkmlToSvg(`<ink><trace>1.5 2.5, 3.5 4.5</trace>`) ?? "";
-        expect(svg).toContain(`viewBox="0 0 20020 20020"`);
-    });
-
-    it("returns null for empty input or ink with no traces", () => {
-        expect(inkmlToSvg("")).toBeNull();
-        expect(inkmlToSvg("   ")).toBeNull();
-        expect(inkmlToSvg(`<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML"></inkml:ink>`)).toBeNull();
+    it("tolerates ink without prefixes, brushes or clean points, and returns nothing for no ink", () => {
+        const strokes = inkmlToStrokes(`<ink>
+            <definitions><brush><brushProperty name="width" value="500"/></brush><brush xml:id="odd"><brushProperty name="width" value="wide"/><brushProperty name="color"/></brush></definitions>
+            <trace brushRef="#missing">100 100, junk, 100.4 100, 100 100.2, 200 100, 300</trace>
+            <trace brushRef="odd">0 0</trace>
+            <trace>nothing here</trace>
+        </ink> trailing junk <trace>0 0, 9 9</trace>`);
+        // The default brush is 70 units wide and black. Points that are not numbers and points
+        // that fall on the one before them are left out, as is a trace without points.
+        expect(strokes).toEqual([
+            { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 0, 0 ] },
+            { w: 2.65, k: 0, p: [ 0, 0, 128 ] }
+        ]);
+        expect(inkmlToStrokes("")).toEqual([]);
+        expect(inkmlToStrokes("  \n ")).toEqual([]);
+        expect(inkmlToStrokes("<ink><definitions/></ink>")).toEqual([]);
     });
 
     it("converts a real OneNote ink export (curly-brace brush ids, traceGroup, himetric coords)", () => {
-        const svg = inkmlToSvg(readFileSync(join(FIXTURES_DIR, "sample.inkml"), "utf-8")) ?? "";
-
-        // One <path> per <trace>, each resolving its brush color despite the `#{guid}{n}` brushRef ids.
-        // The pens are all dark colors (including the palette's near-black #404040 rather than
-        // #000000), so each adapts for dark mode while keeping its exact color in light mode.
-        expect((svg.match(/<path/g) ?? []).length).toBe(42);
-        for (const color of ["#404040", "#1353BA", "#167D1D", "#C62938", "#904C15"]) {
-            expect(svg).toContain(`style="stroke:light-dark(${color}, #`);
-        }
-        expect(svg).toContain(`style="stroke:light-dark(#404040, #bfbfbf)"`);
-
-        // Highlighter strokes (transparency 0.496, rectangle tip) keep their literal mid-light
-        // yellow, render translucent, and use the larger height as their thickness rather than the
-        // thin pen-style width.
-        expect(svg).toContain(`opacity="0.50"`);
-        expect(svg).toContain(`stroke="#FAF320" stroke-width="1000"`);
-
-        // The displayed size is capped while the true himetric coordinate space stays in the viewBox.
-        const dims = svg.match(/width="(\d+)" height="(\d+)" viewBox="0 0 (\d+) (\d+)"/);
-        expect(Number(dims?.[1])).toBeLessThanOrEqual(800);
-        expect(Number(dims?.[3])).toBeGreaterThan(20000);
+        const inkml = readFileSync(join(FIXTURES_DIR, "sample.inkml"), "utf8");
+        const strokes = inkmlToStrokes(inkml);
+        expect(strokes).toHaveLength(42);
+        // The first trace starts at (1684, 4198) with the near-black pen of 70 units.
+        expect(strokes[0]).toMatchObject({ w: 2.65, k: 0 });
+        expect(strokes[0]).not.toHaveProperty("c");
+        expect(strokes[0].p.slice(0, 3)).toEqual([ 636, 1587, 128 ]);
+        // The three highlighter brushes are yellow and have a rectangular tip.
+        const highlights = strokes.filter(({ t }) => t === "h");
+        expect(highlights.length).toBeGreaterThan(0);
+        expect(new Set(highlights.map(({ c }) => c))).toEqual(new Set([ "#faf320" ]));
+        expect(new Set(strokes.map(({ c }) => c))).toEqual(new Set([ undefined, "#1353ba", "#167d1d", "#904c15", "#c62938", "#faf320" ]));
     });
 });
 

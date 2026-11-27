@@ -116,6 +116,107 @@ export function convertPageHtml(rawHtml: string): string {
     const scope = root.querySelector("body") ?? root;
 
     sortPositionedOutlines(scope);
+    convertContent(scope);
+
+    return sanitize.sanitizeHtml(scope.innerHTML);
+}
+
+/** A text box of a page: its top left corner and its width, in pixels from the corner of the page. */
+export interface PageTextBox {
+    x: number;
+    y: number;
+    width: number;
+    html: string;
+}
+
+/** An image lying on a page by itself, and the Graph URL of its picture. */
+export interface PageImage {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    url: string;
+}
+
+/** A page as OneNote lays it out, for a note that keeps the place of each text box and image. */
+export interface PageLayout {
+    /** The font size of the page in pixels, or `undefined` when the page states none. */
+    fontSize?: number;
+    texts: PageTextBox[];
+    images: PageImage[];
+}
+
+/** Where content that the page gives no position goes: the place of the first outline of a new OneNote page. */
+const DEFAULT_OUTLINE = { x: 48, y: 115, width: 624 };
+const LAYOUT_BOX_ATTRIBUTE = "data-onenote-box";
+
+/**
+ * Converts the HTML of a page as `convertPageHtml()` does, but keeps each text box and each image
+ * that lies on the page by itself apart, with its position. The text boxes are in reading order.
+ */
+export function convertPageLayout(rawHtml: string): PageLayout {
+    const root = parse(rawHtml);
+    const scope = root.querySelector("body") ?? root;
+    const fontSize = parseFontSize(parseStyle(scope.getAttribute("style")).get("font-size"));
+
+    const images: PageImage[] = [];
+    const boxes: Omit<PageTextBox, "html">[] = [];
+    for (const node of [...scope.childNodes]) {
+        if (!(node instanceof HTMLElement)) continue;
+        const style = parseStyle(node.getAttribute("style"));
+        if (!style.has("position")) continue;
+        const x = parseFloat(style.get("left") ?? "") || 0;
+        const y = parseFloat(style.get("top") ?? "") || 0;
+        const width = parseFloat(node.getAttribute("width") ?? "");
+        const height = parseFloat(node.getAttribute("height") ?? "");
+        const url = node.getAttribute("src");
+        if (node.tagName?.toLowerCase() === "img" && url && width > 0 && height > 0) {
+            images.push({ x, y, width, height, url });
+            node.remove();
+            continue;
+        }
+        // The conversion replaces some elements, so each box is found again by its index.
+        node.insertAdjacentHTML("beforebegin", `<div ${LAYOUT_BOX_ATTRIBUTE}="${boxes.length}"></div>`);
+        const wrapper = node.previousElementSibling;
+        node.remove();
+        wrapper?.appendChild(node);
+        boxes.push({ x, y, width: parseFloat(style.get("width") ?? "") || width || DEFAULT_OUTLINE.width });
+    }
+
+    convertContent(scope);
+
+    const texts: PageTextBox[] = [];
+    for (const wrapper of scope.querySelectorAll(`[${LAYOUT_BOX_ATTRIBUTE}]`)) {
+        const box = boxes[Number(wrapper.getAttribute(LAYOUT_BOX_ATTRIBUTE))];
+        // The outline of a text box is a `<div>`, whose content is the content of the box.
+        const [ outline, ...others ] = wrapper.childNodes.filter((node): node is HTMLElement => node instanceof HTMLElement);
+        const content = !others.length && outline?.tagName?.toLowerCase() === "div" ? outline : wrapper;
+        const html = sanitize.sanitizeHtml(content.innerHTML).trim();
+        wrapper.remove();
+        if (box && hasContent(html)) texts.push({ ...box, html });
+    }
+    const rest = sanitize.sanitizeHtml(scope.innerHTML).trim();
+    if (hasContent(rest)) texts.push({ ...DEFAULT_OUTLINE, html: rest });
+
+    texts.sort((a, b) => a.y - b.y || a.x - b.x);
+    return { ...(fontSize !== undefined && { fontSize }), texts, images };
+}
+
+/** Whether `html` shows something: text, or an element that needs none, such as an image. */
+function hasContent(html: string) {
+    return /<(img|hr|table|a)\b/i.test(html) || html.replace(/<[^>]*>|&nbsp;/g, "").trim().length > 0;
+}
+
+/** Returns a CSS font size in pixels, from points or pixels. */
+function parseFontSize(value: string | undefined) {
+    const match = value?.match(/^([\d.]+)(pt|px)$/);
+    const size = match ? parseFloat(match[1]) : NaN;
+    if (!match || !(size > 0)) return undefined;
+    return match[2] === "pt" ? size * 96 / 72 : size;
+}
+
+/** Converts the content under `scope` to the HTML of a text note, in place and before it is sanitized. */
+function convertContent(scope: HTMLElement) {
     convertResourceReferences(scope);
     wrapFloatingImages(scope);
     convertTags(scope);
@@ -130,8 +231,6 @@ export function convertPageHtml(rawHtml: string): string {
     removeEmptyListItems(scope);
     removeBlockLevelBreaks(scope);
     resizeTables(scope);
-
-    return sanitize.sanitizeHtml(scope.innerHTML);
 }
 
 /**
@@ -803,4 +902,4 @@ function removeBlockLevelBreaks(scope: HTMLElement) {
     }
 }
 
-export default { convertPageHtml, extractPageCreatedDate };
+export default { convertPageHtml, convertPageLayout, extractPageCreatedDate };

@@ -927,6 +927,52 @@ describe("extractPageCreatedDate", () => {
     });
 });
 
+describe("convertPageLayout", () => {
+    const RESOURCES = "https://graph.microsoft.com/v1.0/me/onenote/resources";
+
+    it("keeps each text box, and each image lying by itself, at its place on the page", () => {
+        const layout = converter.convertPageLayout(`<html><body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+            <div style="position:absolute;left:444px;top:235px;width:624px"><ul><li style="font-family:Aptos">List goes here</li></ul></div>
+            <!-- InkNode is not supported -->
+            <img width="480" height="270" src="${RESOURCES}/img1/$value" data-fullres-src="${RESOURCES}/full/$value" style="position:absolute;left:120px;top:835px" />
+            <div style="position:absolute;left:48px;top:163px;width:720px"><p style="margin-top:0pt;margin-bottom:0pt">Hi <span style="background-color:yellow">there</span></p><img width="20" height="10" src="${RESOURCES}/img2/$value" /></div>
+            <div style="position:absolute;left:10px;top:10px;width:100px"><br /></div>
+            <img src="${RESOURCES}/img3/$value" style="position:absolute;left:5px;top:2000px" />
+            <p>Loose text</p>
+        </body></html>`);
+
+        // 11pt is 14.67 px.
+        expect(layout.fontSize).toBeCloseTo(11 * 96 / 72);
+        expect(layout.images).toEqual([ { x: 120, y: 835, width: 480, height: 270, url: `${RESOURCES}/img1/$value` } ]);
+
+        // The boxes are in reading order. Text without a position goes where a new page starts,
+        // an image without a size stays in a box of its own, and an empty box is left out.
+        expect(layout.texts.map(({ x, y, width }) => [ x, y, width ])).toEqual([
+            [ 48, 115, 624 ], [ 48, 163, 720 ], [ 444, 235, 624 ], [ 5, 2000, 624 ]
+        ]);
+        const [ loose, formatted, list, picture ] = layout.texts.map(({ html }) => parse(html));
+        expect(loose.querySelector("p")?.textContent).toBe("Loose text");
+        expect(loose.querySelectorAll("img, li")).toHaveLength(0);
+        // The content of a box is converted as the content of a text note is.
+        expect(formatted.querySelector("span")?.getAttribute("style")).toBe("background-color:#ffff00");
+        expect(formatted.querySelector("figure.image > img")?.getAttribute("src")).toBe(`${RESOURCES}/img2/$value`);
+        expect(list.querySelectorAll("li").map((item) => item.textContent)).toEqual([ "List goes here" ]);
+        expect(picture.querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img3/$value`);
+        // A box holds the content of its outline, without the outline itself.
+        expect(layout.texts[2].html).toBe("<ul><li>List goes here</li></ul>");
+        for (const { html } of layout.texts) {
+            expect(html).not.toMatch(/position|data-onenote|InkNode|^<div/);
+        }
+    });
+
+    it("returns a page without a font size or positions as one box", () => {
+        const layout = converter.convertPageLayout(`<p>Only <b>text</b></p>`);
+        expect(layout).toEqual({ texts: [ { x: 48, y: 115, width: 624, html: "<p>Only <b>text</b></p>" } ], images: [] });
+        expect(converter.convertPageLayout(`<body style="font-size:16px"></body>`)).toEqual({ fontSize: 16, texts: [], images: [] });
+        expect(converter.convertPageLayout(`<body style="font-size:large"></body>`)).toEqual({ texts: [], images: [] });
+    });
+});
+
 /** One note tag's icon, in the markup a text note stores icons as. */
 function icon(name: string) {
     return `<span class="tn-icon bx ${name}"></span>`;

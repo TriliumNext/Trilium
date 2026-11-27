@@ -5,15 +5,18 @@
  * client-side import toasts apply unchanged.
  */
 
-import type { OneNoteFolderRef, OneNoteSectionSelection } from "@triliumnext/commons";
-import { becca, binary_utils, type BNote, cls, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
+import {
+    HANDWRITING_MIME, type OneNoteFolderRef, type OneNoteSectionSelection, type SerializedImage,
+    serializeImportedHandwriting, type SerializedTextBox, TEXT_BOX_PADDING
+} from "@triliumnext/commons";
+import { becca, type BNote, cls, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
 import { t } from "i18next";
 import { parse } from "node-html-parser";
 
 import sql from "../../sql.js";
-import converter, { ONENOTE_ATTACHMENT_CLASS } from "./converter.js";
+import converter, { ONENOTE_ATTACHMENT_CLASS, type PageLayout } from "./converter.js";
 import graph, { type AccessTokenProvider, type OneNotePage, sanitizeGraphUrl } from "./graph.js";
-import { inkmlToSvg } from "./inkml.js";
+import { inkmlToStrokes } from "./inkml.js";
 import { type LinkTarget, rewritePageLinks } from "./links.js";
 import { type FailedPageReport, type FailedSectionReport, type ImportReportData, renderImportReport } from "./report.js";
 
@@ -34,8 +37,8 @@ interface FetchedPage {
     rawHtml: string;
     /** The unmodified InkML (handwriting) returned by the Graph API, kept only when debug mode is on. */
     rawInkml: string;
-    /** The page's handwriting/drawing rendered to an SVG, embedded as an inline image (null if none). */
-    inkSvg: string | null;
+    /** The ink and the layout of a page that holds ink, which is imported as a handwriting note. */
+    handwriting?: HandwritingDraft;
     /** Binary resources (images, file attachments) referenced by the page, downloaded up front. */
     resources: DownloadedResource[];
     /** How many of the page's resources failed to download (skipped, reported in the import report). */
@@ -217,7 +220,7 @@ export async function importSelection({ getAccessToken, parentNoteId, sections, 
                 try {
                     const html = converter.convertPageHtml(rawHtml);
                     const { resources, failedResourceCount } = await downloadPageResources(getAccessToken, page.title, html);
-                    fetchedPages.push({ id: page.id, title: page.title, level: page.level, pageId: page.pageId, html, rawHtml, rawInkml: inkml, inkSvg: inkmlToSvg(inkml), resources, failedResourceCount, createdDateTime: converter.extractPageCreatedDate(rawHtml) ?? page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime });
+                    fetchedPages.push({ id: page.id, title: page.title, level: page.level, pageId: page.pageId, html, rawHtml, rawInkml: inkml, handwriting: buildHandwritingDraft(inkml, rawHtml), resources, failedResourceCount, createdDateTime: converter.extractPageCreatedDate(rawHtml) ?? page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime });
                 } catch (e: unknown) {
                     const message = e instanceof Error ? e.message : String(e);
                     getLog().error(`OneNote import: fetched page '${page.title}' (${page.id}) but could not process its content; a placeholder note will be imported instead: ${message}`);
@@ -263,7 +266,7 @@ function toFetchedSection(section: OneNoteSectionSelection, pages: FetchedPage[]
 /** A content-less stand-in for a page that could not be fetched or processed; imported so the tree and
  *  cross-page links stay intact and the failure is reported (see {@link FetchedPage.fetchError}). */
 function buildPlaceholderPage(page: OneNotePage, error: string): FetchedPage {
-    return { id: page.id, title: page.title, level: page.level, pageId: page.pageId, html: "", rawHtml: "", rawInkml: "", inkSvg: null, resources: [], failedResourceCount: 0, fetchError: error, createdDateTime: page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime };
+    return { id: page.id, title: page.title, level: page.level, pageId: page.pageId, html: "", rawHtml: "", rawInkml: "", resources: [], failedResourceCount: 0, fetchError: error, createdDateTime: page.createdDateTime, lastModifiedDateTime: page.lastModifiedDateTime };
 }
 
 function createNotes(parentNoteId: string, sections: FetchedSection[], debug: boolean, shrinkImages: boolean, startedAtMs: number): string {
@@ -341,12 +344,15 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
 
         for (const [index, page] of section.pages.entries()) {
             const parentIndex = parentIndexByPage[index];
+            // A page with ink becomes a handwriting note, which keeps the place of its text and images.
+            const draft = page.fetchError === undefined ? page.handwriting : undefined;
+            const initialContent = draft ? serializeImportedHandwriting({ paper: "blank", strokes: draft.strokes }) : page.html;
             const { note: pageNote } = noteService.createNewNote({
                 parentNoteId: parentIndex >= 0 ? pageNoteIds[parentIndex] : sectionNote.noteId,
                 title: page.title,
-                content: page.fetchError === undefined ? page.html : renderFailedPagePlaceholder(page.fetchError),
-                type: "text",
-                mime: "text/html",
+                content: page.fetchError === undefined ? initialContent : renderFailedPagePlaceholder(page.fetchError),
+                type: draft ? "code" : "text",
+                mime: draft ? HANDWRITING_MIME : "text/html",
                 isProtected
             });
             pageNoteIds[index] = pageNote.noteId;
@@ -366,19 +372,15 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
                 continue;
             }
 
-            // Resources and ink both need the page note to exist (attachments hang off it), so build
-            // the per-page content now: swap Graph URLs for local attachment references, then append
-            // the page's handwriting/drawing as an inline SVG image. Cross-page links are deferred to a
-            // second pass below, once every page has a note to point at.
-            let content = page.html;
+            // Resources need the page note to exist (attachments hang off it), so build the per-page
+            // content now: swap Graph URLs for local attachment references. Cross-page links are
+            // deferred to a second pass below, once every page has a note to point at.
+            let content = draft ? renderLayoutHtml(draft.layout) : page.html;
             if (page.resources.length > 0) {
                 content = rewritePageResources(pageNote, content, page.resources, shrinkImages);
             }
-            if (page.inkSvg) {
-                content += renderInkFigure(pageNote, page.inkSvg, shrinkImages);
-            }
 
-            createdPages.push({ note: pageNote, original: page.html, content, page });
+            createdPages.push({ note: pageNote, original: initialContent, content, page });
 
             // Debug aid: keep the unmodified Graph HTML (and InkML, when present) alongside the
             // converted note so the two can be compared when diagnosing conversion issues.
@@ -406,7 +408,7 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
     let resolvedLinkCount = 0;
     let unresolvedLinkCount = 0;
     for (const { note, original, content, page } of createdPages) {
-        const finalContent = rewritePageLinks(content, (pageId) => {
+        const linkedContent = rewritePageLinks(content, (pageId) => {
             const target = targetByPageId.get(pageId) ?? null;
             if (target) {
                 resolvedLinkCount++;
@@ -415,6 +417,7 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
             }
             return target;
         });
+        const finalContent = page.handwriting ? serializeHandwritingPage(page.handwriting, linkedContent) : linkedContent;
         if (finalContent !== original) {
             note.setContent(finalContent);
             void noteService.asyncPostProcessContent(note, finalContent);
@@ -439,7 +442,7 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
         imageBytes: sumResources(allPages, "image", (resource) => resource.content.length),
         attachmentCount: sumResources(allPages, "file", () => 1),
         attachmentBytes: sumResources(allPages, "file", (resource) => resource.content.length),
-        inkPageCount: allPages.filter(({ page }) => page.inkSvg !== null).length,
+        inkPageCount: allPages.filter(({ page }) => page.handwriting !== undefined).length,
         resolvedLinkCount,
         unresolvedLinkCount,
         throttledRequestCount: throttleStats.requestCount,
@@ -524,16 +527,67 @@ function toUtcDbDate(isoDateTime: string | undefined): string | undefined {
     return Number.isNaN(date.getTime()) ? undefined : date_utils.utcDateTimeStr(date);
 }
 
+/** The ink of a page as the JSON of each stroke, and where its text boxes and images lie. */
+interface HandwritingDraft {
+    strokes: string[];
+    layout: PageLayout;
+}
+
+/** Returns the parts of the handwriting note of a page, or `undefined` for a page without ink. */
+function buildHandwritingDraft(inkml: string, rawHtml: string): HandwritingDraft | undefined {
+    const strokes = inkmlToStrokes(inkml);
+    if (!strokes.length) return undefined;
+    return { strokes: strokes.map((stroke) => JSON.stringify(stroke)), layout: converter.convertPageLayout(rawHtml) };
+}
+
+const LAYOUT_TEXT_ATTRIBUTE = "data-onenote-text";
+const LAYOUT_IMAGE_ATTRIBUTE = "data-onenote-image";
+/** The URL of an image attachment, as the client's `IMAGE_URL_PATTERN`: the only image URL a handwriting note loads. */
+const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#]*$/;
+
 /**
- * Saves a page's rendered ink SVG as an image attachment on the note and returns the `<figure>` markup
- * that embeds it inline. Returns an empty string if the attachment could not be created.
+ * Returns the text boxes and the images of `layout` as one HTML document, each marked with its
+ * index, so that `rewritePageResources()` and `rewritePageLinks()` take the page in one pass.
+ * `serializeHandwritingPage()` reads the result back.
  */
-function renderInkFigure(note: BNote, svg: string, shrinkImages: boolean): string {
-    const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, binary_utils.encodeUtf8(svg), "OneNote ink.svg", shrinkImages);
-    if (!attachmentId) {
-        return "";
+function renderLayoutHtml({ texts, images }: PageLayout) {
+    return [
+        ...texts.map(({ html }, index) => `<section ${LAYOUT_TEXT_ATTRIBUTE}="${index}">${html}</section>`),
+        ...images.map(({ url }, index) => `<img ${LAYOUT_IMAGE_ATTRIBUTE}="${index}" src="${url.replaceAll("&", "&amp;").replaceAll("\"", "&quot;")}">`)
+    ].join("");
+}
+
+/**
+ * Returns the content of the handwriting note of a page from its ink and the document of
+ * `renderLayoutHtml()`, whose resources and links now point into Trilium. An image whose picture
+ * was not downloaded is left out.
+ */
+function serializeHandwritingPage({ strokes, layout }: HandwritingDraft, html: string) {
+    const root = parse(html);
+    const texts: SerializedTextBox[] = [];
+    for (const section of root.querySelectorAll(`section[${LAYOUT_TEXT_ATTRIBUTE}]`)) {
+        const box = layout.texts[Number(section.getAttribute(LAYOUT_TEXT_ATTRIBUTE))];
+        /* v8 ignore next -- every section is rendered from a box of the layout */
+        if (!box) continue;
+        texts.push({
+            id: `onenote${texts.length + 1}`,
+            x: box.x - TEXT_BOX_PADDING.x,
+            y: box.y - TEXT_BOX_PADDING.y,
+            w: box.width + 2 * TEXT_BOX_PADDING.x,
+            ...(layout.fontSize !== undefined && { s: layout.fontSize }),
+            html: section.innerHTML
+        });
     }
-    return `<figure class="image"><img src="api/attachments/${attachmentId}/image/${encodeURIComponent(title)}"></figure>`;
+
+    const images: SerializedImage[] = [];
+    for (const img of root.querySelectorAll(`img[${LAYOUT_IMAGE_ATTRIBUTE}]`)) {
+        const image = layout.images[Number(img.getAttribute(LAYOUT_IMAGE_ATTRIBUTE))];
+        const url = img.getAttribute("src") ?? "";
+        if (image && IMAGE_URL_PATTERN.test(url)) {
+            images.push({ url, x: image.x, y: image.y, w: image.width, h: image.height });
+        }
+    }
+    return serializeImportedHandwriting({ paper: "blank", strokes, images, texts });
 }
 
 /**
