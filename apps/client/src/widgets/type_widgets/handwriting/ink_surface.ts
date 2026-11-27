@@ -7,6 +7,7 @@ import {
     trimPrediction
 } from "./ink_document";
 import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
+import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
 
 export type SurfaceTool = InkTool | "eraser" | "pan";
@@ -74,28 +75,10 @@ const SETTLE_OVERLAP = 8;
 const WARM_BATCH = 2000;
 /** How long after the last zoom step the strokes are drawn again at the new scale, in ms. */
 const ZOOM_SETTLE_DELAY = 150;
-/**
- * The paper as Xournal++ draws it, in world units, which are pixels at 96 DPI: rules 24 pt apart
- * below a header of 80 pt and above a footer of 60 pt, and 5 mm squares, 42 across an A4 page.
- */
-const RULED_STEP = 32;
-const RULED_HEADER = 80 * 96 / 72;
-const RULED_FOOTER = 60 * 96 / 72;
-const GRID_STEP = PAGE_WIDTH / 42;
-/** How close to the edge of a page a line of the grid or a dot can be, in world units. */
-const PAPER_EDGE_CLEARANCE = 0.5;
 /** The room left around the content when the view fits it, in CSS pixels. */
 const FIT_MARGIN = 32;
 /** The largest zoom at which the view fits the width of a page. */
 const MAX_FIT_WIDTH_ZOOM = 2;
-/** The opacity of the paper's lines over the background, in the text color. */
-const PAPER_LINE_ALPHA = 0.16;
-/**
- * The opacity of the text color over the background around the pages, in a theme without a
- * `--note-list-view-content-background`, and along their edges.
- */
-const DESK_ALPHA = 0.06;
-const PAGE_EDGE_ALPHA = 0.18;
 
 /**
  * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
@@ -1075,7 +1058,7 @@ export default class InkSurface {
         const { width, height } = this.baseCanvas;
         this.base.save();
         this.base.setTransform(1, 0, 0, 1, 0, 0);
-        this.drawPaper(0, 0, width, height);
+        drawPaper(this.base, 0, 0, width, height, this.getPaperScene());
         this.base.drawImage(
             preview.snapshot,
             this.tx - preview.tx * scale,
@@ -1131,7 +1114,7 @@ export default class InkSurface {
         ctx.beginPath();
         ctx.rect(x, y, width, height);
         ctx.clip();
-        this.drawPaper(x, y, width, height);
+        drawPaper(ctx, x, y, width, height, this.getPaperScene());
         this.applyWorldTransform(ctx);
 
         const strokes = this.index.query({
@@ -1146,123 +1129,20 @@ export default class InkSurface {
         ctx.restore();
     }
 
-    /**
-     * Fills a rectangle of the base canvas, in device pixels, with the background and the paper:
-     * on pages, the sheets on a tinted desk, with the paper's lines inside them.
-     */
-    private drawPaper(x: number, y: number, width: number, height: number) {
-        const ctx = this.base;
-        ctx.fillStyle = this.backgroundColor;
-        ctx.fillRect(x, y, width, height);
-        if (this.layout === "infinite") {
-            this.drawPattern(x, y, width, height, this.tx, this.ty);
-            return;
-        }
-
-        ctx.fillStyle = this.deskColor ?? this.autoColor;
-        ctx.globalAlpha = this.deskColor ? 1 : DESK_ALPHA;
-        ctx.fillRect(x, y, width, height);
-        ctx.globalAlpha = 1;
-
-        const scale = this.zoom * this.dpr;
-        const edge = Math.max(1, Math.round(this.dpr));
-        const left = Math.round(this.tx);
-        const right = Math.round(this.tx + PAGE_WIDTH * scale);
-        if (right + edge <= x || left - edge >= x + width) return;
-
-        const first = Math.max(0, Math.floor((y - this.ty) / scale / (PAGE_HEIGHT + PAGE_GAP)));
-        for (let page = first; page < this.pageCount; page++) {
-            const top = Math.round(this.ty + getPageTop(page) * scale);
-            const bottom = Math.round(this.ty + (getPageTop(page) + PAGE_HEIGHT) * scale);
-            if (top - edge >= y + height) break;
-            if (bottom + edge <= y) continue;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(x, y, width, height);
-            ctx.clip();
-            ctx.fillStyle = this.autoColor;
-            ctx.globalAlpha = PAGE_EDGE_ALPHA;
-            ctx.fillRect(left - edge, top - edge, right - left + 2 * edge, bottom - top + 2 * edge);
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = this.backgroundColor;
-            ctx.fillRect(left, top, right - left, bottom - top);
-
-            const clipLeft = Math.max(x, left);
-            const clipTop = Math.max(y, top);
-            const clipRight = Math.min(x + width, right);
-            const clipBottom = Math.min(y + height, bottom);
-            if (clipRight > clipLeft && clipBottom > clipTop) {
-                ctx.beginPath();
-                ctx.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
-                ctx.clip();
-                this.drawPattern(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop, left, top, true);
-            }
-            ctx.restore();
-        }
-    }
-
-    /**
-     * Draws the paper's lines over a rectangle of the base canvas, in device pixels, from the
-     * device position of the world point they start at. Each line is placed from the view's
-     * transform and rounded to a whole device pixel on its own, so the lines stay sharp and in
-     * line with the strokes at any zoom. On a `page`, the lines start from its top left corner
-     * and stay off its edges, and the rules leave a header and a footer.
-     */
-    private drawPattern(
-        x: number, y: number, width: number, height: number, originX: number, originY: number, page = false
-    ) {
-        if (this.paper === "blank") return;
-        const ctx = this.base;
-        const scale = this.zoom * this.dpr;
-        const thickness = Math.max(1, Math.round(this.dpr));
-        // The device positions of the lines at world `start + k * step` in `from`..`from + length`,
-        // and between world `min` and `max`.
-        const lines = (
-            origin: number, from: number, length: number, start: number, step: number, min: number, max: number
-        ) => {
-            const positions: number[] = [];
-            const first = Math.max(
-                Math.ceil(((from - thickness - origin) / scale - start) / step),
-                Math.ceil((min - start) / step)
-            );
-            for (let k = first; start + k * step <= max; k++) {
-                const position = origin + (start + k * step) * scale;
-                if (position >= from + length) break;
-                positions.push(Math.round(position));
-            }
-            return positions;
+    /** The note's paper as `drawPaper()` draws it in the current view and theme. */
+    private getPaperScene(): PaperScene {
+        return {
+            paper: this.paper,
+            layout: this.layout,
+            pageCount: this.pageCount,
+            tx: this.tx,
+            ty: this.ty,
+            scale: this.zoom * this.dpr,
+            dpr: this.dpr,
+            textColor: this.autoColor,
+            backgroundColor: this.backgroundColor,
+            deskColor: this.deskColor
         };
-        const gridLines = (origin: number, from: number, length: number, pageLength: number) => page
-            ? lines(origin, from, length, 0, GRID_STEP, PAPER_EDGE_CLEARANCE, pageLength - PAPER_EDGE_CLEARANCE)
-            : lines(origin, from, length, 0, GRID_STEP, -Infinity, Infinity);
-
-        ctx.fillStyle = this.autoColor;
-        ctx.globalAlpha = PAPER_LINE_ALPHA;
-        if (this.paper === "ruled") {
-            const rules = page
-                ? lines(originY, y, height, RULED_HEADER, RULED_STEP, RULED_HEADER, PAGE_HEIGHT - RULED_FOOTER)
-                : lines(originY, y, height, 0, RULED_STEP, -Infinity, Infinity);
-            for (const py of rules) {
-                ctx.fillRect(x, py, width, thickness);
-            }
-        } else if (this.paper === "grid") {
-            for (const py of gridLines(originY, y, height, PAGE_HEIGHT)) {
-                ctx.fillRect(x, py, width, thickness);
-            }
-            for (const px of gridLines(originX, x, width, PAGE_WIDTH)) {
-                ctx.fillRect(px, y, thickness, height);
-            }
-        } else {
-            const dot = thickness * 2;
-            const rows = gridLines(originY, y, height, PAGE_HEIGHT);
-            for (const px of gridLines(originX, x, width, PAGE_WIDTH)) {
-                for (const py of rows) {
-                    ctx.fillRect(px, py, dot, dot);
-                }
-            }
-        }
-        ctx.globalAlpha = 1;
     }
 
     private applyWorldTransform(ctx: CanvasRenderingContext2D) {

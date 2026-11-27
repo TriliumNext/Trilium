@@ -216,33 +216,6 @@ describe("ink surface input", () => {
         expect(sheets.map(([ x, y, , height ]) => [ x, y, height ])).toEqual([ [ 101, 150, 281 ] ]);
     });
 
-    it("lays the paper out on a page as Xournal++ does", () => {
-        surface.destroy();
-        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 900, 300));
-        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
-        const paperLines = (paper: "grid" | "ruled") => {
-            surface.load({ paper, layout: "pages", strokes: [] });
-            fillRects.length = 0;
-            // The page spans 53 to 847 across and starts at the top of the view.
-            surface.showView({ x: 397, y: 150, zoom: 1 });
-            return fillRects.filter(([ , , , , alpha ]) => alpha === 0.16);
-        };
-
-        // 5 mm squares from the top left corner, 42 across the width of A4, with no line along an edge.
-        const grid = paperLines("grid");
-        const step = 794 / 42;
-        const columns = [ ...new Set(grid.filter(([ , , width ]) => width === 1).map(([ x ]) => x)) ];
-        expect(columns).toEqual(Array.from({ length: 41 }, (_, index) => Math.round(53 + (index + 1) * step)));
-        const rows = grid.filter(([ , , , height ]) => height === 1);
-        expect(rows[0][1]).toBe(Math.round(step));
-        // The lines run from edge to edge.
-        for (const [ x, , width ] of rows) expect([ x, width ]).toEqual([ 53, 794 ]);
-
-        // Rules 32 apart, below a header of 80 pt.
-        const rules = paperLines("ruled").map(([ , y ]) => y);
-        expect([ ...new Set(rules) ]).toEqual([ 107, 139, 171, 203, 235, 267, 299 ]);
-    });
-
     it("puts the pages on the background of the note list, or on a tint of the text color", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
