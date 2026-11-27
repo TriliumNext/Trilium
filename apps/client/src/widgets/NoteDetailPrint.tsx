@@ -6,7 +6,7 @@ import dialog from "../services/dialog";
 import { t } from "../services/i18n";
 import { endLivePrint, getLivePrintTarget, printLiveInBrowser } from "../services/live_print";
 import toast from "../services/toast.js";
-import { isElectron } from "../services/utils";
+import { isElectron, isIOS, isMobileApp } from "../services/utils";
 import type { ExtendedNoteType } from "./note_types";
 import { NoteListWithLinks } from "./react/NoteList";
 
@@ -28,6 +28,13 @@ export function printNote(
 
     if (liveTarget) {
         void printLiveInBrowser(note, liveTarget);
+        return;
+    }
+
+    // Every browser on iOS prints the whole tab rather than the frame that asks, so the print
+    // page takes over the tab instead of printing from a hidden frame.
+    if (isIOS() && !isMobileApp() && noteContext.notePath) {
+        void printInThisTab(noteContext.notePath);
         return;
     }
 
@@ -79,6 +86,26 @@ export function printNote(
             document.body.removeChild(iframe);
         });
     };
+}
+
+/**
+ * Saves every open note, then opens the print page of `notePath` in this tab, which opens the print
+ * sheet itself once the note has rendered. Stays in the app while a save has not landed.
+ */
+export async function printInThisTab(notePath: string) {
+    const ntxIds = appContext.tabManager.getNoteContexts()
+        .map((noteContext) => noteContext.ntxId)
+        .filter((ntxId): ntxId is string => !!ntxId);
+    await appContext.triggerEvent("beforeNoteContextRemove", { ntxIds });
+
+    // `triggerEvent()` logs a failed save instead of throwing, and iOS browsers never ask before
+    // leaving a page, so leaving now would drop the changes still queued.
+    if (!appContext.isAllSaved()) {
+        toast.showMessage(t("app_context.please_wait_for_save"), 10000);
+        return;
+    }
+
+    window.location.assign(`?print&autoprint#${notePath}`);
 }
 
 /** Ends an Electron print, which reports its outcome through `onPrintDone`. */
