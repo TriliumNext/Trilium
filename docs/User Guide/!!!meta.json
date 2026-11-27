@@ -4680,6 +4680,78 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "Q2MCMjHbxohz",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "gh7bpGYxajRS",
+                                "Q2MCMjHbxohz"
+                            ],
+                            "title": "Notifications",
+                            "notePosition": 110,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "notifications",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-bell",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Notifications.md",
+                            "attachments": [],
+                            "dirFileName": "Notifications",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "hEKnvzPYgJsx",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Q2MCMjHbxohz",
+                                        "hEKnvzPYgJsx"
+                                    ],
+                                    "title": "Notification channels",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "channels",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-broadcast",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Notification channels.md",
+                                    "attachments": []
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "YzMcWlCVeW09",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -4687,7 +4759,7 @@
                                 "YzMcWlCVeW09"
                             ],
                             "title": "Active content",
-                            "notePosition": 110,
+                            "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -12159,6 +12231,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "cpyUatFJZklS",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "CdNpE2pqjmI6",
+                                "cpyUatFJZklS"
+                            ],
+                            "title": "Notifications in scripts",
+                            "notePosition": 130,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "notifications",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-bell",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Notifications in scripts.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "cNpC0ITcfX0N",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -12166,7 +12272,7 @@
                                 "cNpC0ITcfX0N"
                             ],
                             "title": "Breaking changes",
-                            "notePosition": 130,
+                            "notePosition": 140,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "book",
@@ -12397,7 +12503,7 @@
                                 "fiHicjpHjIRJ"
                             ],
                             "title": "Security",
-                            "notePosition": 140,
+                            "notePosition": 150,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

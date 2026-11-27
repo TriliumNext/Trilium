@@ -26,7 +26,7 @@ const SOUND_FILE_TYPES = "audio/mpeg,audio/ogg,audio/wav,.mp3,.ogg,.oga,.wav";
 export default function NotificationSettings() {
     return (
         <>
-            <OptionsPageHeader />
+            <OptionsPageHeader helpUrl="Q2MCMjHbxohz" />
             <AlertSettings />
             <CategorySettings />
             <LazyComponent loader={() => import("./notification_channels/ChannelsCard")} />

@@ -284,7 +284,7 @@ function TemplateCard({ template, isEditable, availableValues, onChange }: Templ
             className="webhook-template"
             heading={t("notification_channels.template")}
             description={t("notification_channels.template_description")}
-            actions={<HelpButton />}
+            actions={<HelpButton helpPage="hEKnvzPYgJsx" />}
         >
             <CardSection>
                 {isEditable ? <>

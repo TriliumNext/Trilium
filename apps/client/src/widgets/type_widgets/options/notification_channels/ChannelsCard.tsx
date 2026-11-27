@@ -24,6 +24,7 @@ import { Badge } from "../../../react/Badge";
 import Button from "../../../react/Button";
 import { Card, CardSection, ItemCreationRow, OptionCardSection } from "../../../react/Card";
 import FormToggle from "../../../react/FormToggle";
+import HelpButton from "../../../react/HelpButton";
 import Icon from "../../../react/Icon";
 import NoItems from "../../../react/NoItems";
 import { getOutcomeText, getRefusalMessage } from "./channel_messages";
@@ -115,6 +116,7 @@ export default function NotificationChannelsCard() {
             className="notification-channels"
             heading={t("notification_channels.title")}
             description={t("notification_channels.description")}
+            actions={<HelpButton helpPage="hEKnvzPYgJsx" />}
         >
             {list && (
                 <ForwardingSections
