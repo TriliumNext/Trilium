@@ -175,10 +175,15 @@ describe("OverlayControlGroup", () => {
             </OverlayControlGroup>
         );
 
-        // Never flipped to a side, where the tooltip would cover the neighbouring buttons.
-        expect(tooltipFor("Zoom out")).toEqual({ title: "Zoom out", placement: "bottom", fallbackPlacements: [ "bottom" ] });
+        // Never flipped to a side, where the tooltip would cover the neighbouring buttons, and shown
+        // without a fade.
+        expect(tooltipFor("Zoom out")).toEqual({
+            title: "Zoom out", placement: "bottom", fallbackPlacements: [ "bottom" ], animation: false
+        });
         // A button placed unlike its neighbours overrides what the group hands down.
-        expect(tooltipFor("Elsewhere")).toEqual({ title: "Elsewhere", placement: "left", fallbackPlacements: [ "left" ] });
+        expect(tooltipFor("Elsewhere")).toEqual({
+            title: "Elsewhere", placement: "left", fallbackPlacements: [ "left" ], animation: false
+        });
     });
 
     it("names its shortcut in the tooltip, but not in the button's name", () => {

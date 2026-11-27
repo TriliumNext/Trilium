@@ -135,7 +135,9 @@ export function OverlayControlButton(props: OverlayControlButtonProps) {
     // Memoized so the tooltip is only rebuilt when what it says (or where it opens) actually changes,
     // rather than on every render of the group.
     const tooltipConfig = useMemo(
-        () => ({ title: tooltip, placement, fallbackPlacements: placement && [ placement ] }),
+        () => ({
+            title: tooltip, placement, fallbackPlacements: placement && [ placement ], animation: false
+        }),
         [ tooltip, placement ]
     );
     useStaticTooltip(buttonRef, tooltipConfig);
@@ -173,7 +175,10 @@ interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "
  */
 export function OverlayControlDropdown({ title, icon, panel, ...props }: OverlayControlDropdownProps) {
     const direction = useContext(TooltipDirection);
-    const titleOptions = useMemo(() => ({ fallbackPlacements: direction && [ direction ] }), [ direction ]);
+    const titleOptions = useMemo(
+        () => ({ fallbackPlacements: direction && [ direction ], animation: false }),
+        [ direction ]
+    );
     const Toggle = panel ? DropdownPanel : Dropdown;
     return (
         <Toggle
