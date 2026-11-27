@@ -36,6 +36,10 @@
             cursor: default;
         }
 
+        &[data-tool="text"] {
+            cursor: text;
+        }
+
         .handwriting-image-box {
             position: absolute;
             outline: 2px solid var(--main-link-color, #4d99e6);
@@ -122,12 +126,6 @@
 
     &:focus {
         outline: none;
-    }
-
-    .handwriting-text-catcher {
-        position: absolute;
-        inset: 0;
-        cursor: text;
     }
 
     .handwriting-text-layer {

@@ -15,12 +15,18 @@ const TextBoxEditor = lazy(loadTextBoxEditor);
 /** The width of a new text box and the narrowest one, in world units. */
 const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 80;
+/** How far a press can move, in CSS pixels, and still be a tap that adds a text box. */
+const TAP_SLOP = 6;
 
 interface TextBoxLayerProps {
     /** The element that the view of the surface moves and scales, as `Handwriting` places it. */
     layerRef: RefObject<HTMLDivElement | null>;
+    /** The element of the surface, where a tap adds a text box. */
+    surfaceRef: RefObject<HTMLDivElement | null>;
+    /** The note that `boxes` belong to. The selection and the editors of another note do not carry over. */
+    noteId: string | undefined;
     boxes: InkTextBox[];
-    /** Whether a press on the paper adds a text box, as with the text tool. */
+    /** Whether a tap on the paper adds a text box, as with the text tool. Drags and pinches still move the view. */
     isAdding: boolean;
     /** Whether the boxes take presses: to select, move and edit them. Otherwise the pen writes through them. */
     isInteractive: boolean;
@@ -41,12 +47,20 @@ interface TextBoxLayerProps {
  * A prototype: the boxes have no undo, are not part of the thumbnail and lie over the ink.
  */
 export default function TextBoxLayer({
-    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, takeOrder, onChange, onSelect
+    layerRef, surfaceRef, noteId, boxes, isAdding, isInteractive, toWorld, getZoom, takeOrder, onChange, onSelect
 }: TextBoxLayerProps) {
-    const [ selectedId, setSelectedId ] = useState<string>();
-    const [ editedId, setEditedId ] = useState<string>();
+    // Keyed by the note as well, as two imported notes can hold boxes of the same ID.
+    const [ selectedKey, setSelectedKey ] = useState<string>();
+    const [ editedKey, setEditedKey ] = useState<string>();
     const boxesRef = useRef(boxes);
     boxesRef.current = boxes;
+    const noteIdRef = useRef(noteId);
+    noteIdRef.current = noteId;
+    const addBoxRef = useRef(addBox);
+    addBoxRef.current = addBox;
+    const getKey = (id: string) => `${noteId}:${id}`;
+    const setSelectedId = (id: string | undefined) => setSelectedKey(id && getKey(id));
+    const setEditedId = (id: string | undefined) => setEditedKey(id && getKey(id));
 
     useEffect(() => {
         if (isInteractive) {
@@ -58,9 +72,38 @@ export default function TextBoxLayer({
         setEditedId(undefined);
     }, [ isInteractive ]);
 
+    // A tap adds a box, which leaves drags and pinches to the surface, as the text tool pans it.
+    useEffect(() => {
+        const surface = surfaceRef.current;
+        if (!isAdding || !surface) return;
+        const presses = new Map<number, { x: number, y: number }>();
+        let isGesture = false;
+        const onDown = (e: PointerEvent) => {
+            presses.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (presses.size > 1) isGesture = true;
+        };
+        const onEnd = (e: PointerEvent) => {
+            const start = presses.get(e.pointerId);
+            presses.delete(e.pointerId);
+            if (e.type === "pointerup" && start && !isGesture && e.button === 0
+                && Math.hypot(e.clientX - start.x, e.clientY - start.y) <= TAP_SLOP) {
+                addBoxRef.current(e.clientX, e.clientY);
+            }
+            if (!presses.size) isGesture = false;
+        };
+        surface.addEventListener("pointerdown", onDown);
+        surface.addEventListener("pointerup", onEnd);
+        surface.addEventListener("pointercancel", onEnd);
+        return () => {
+            surface.removeEventListener("pointerdown", onDown);
+            surface.removeEventListener("pointerup", onEnd);
+            surface.removeEventListener("pointercancel", onEnd);
+        };
+    }, [ isAdding, surfaceRef ]);
+
     // A press outside the boxes lets go of the selection and finishes the edit.
     useEffect(() => {
-        if (!selectedId && !editedId) return;
+        if (!selectedKey && !editedKey) return;
         const onPointerDown = (e: PointerEvent) => {
             if (isInTextBox(e.target) || isEditorPopup(e.target)) return;
             setSelectedId(undefined);
@@ -68,7 +111,7 @@ export default function TextBoxLayer({
         };
         document.addEventListener("pointerdown", onPointerDown, true);
         return () => document.removeEventListener("pointerdown", onPointerDown, true);
-    }, [ selectedId, editedId ]);
+    }, [ selectedKey, editedKey ]);
 
     function setBoxes(next: InkTextBox[]) {
         boxesRef.current = next;
@@ -91,30 +134,33 @@ export default function TextBoxLayer({
         onSelect();
     }
 
+    // An editor that closes as another note opens changes nothing in the note now shown.
+    const ifShown = <A extends unknown[]>(action: (...args: A) => void) => {
+        const boxNoteId = noteId;
+        return (...args: A) => {
+            if (noteIdRef.current === boxNoteId) action(...args);
+        };
+    };
+
     return (
-        <>
-            {isAdding && (
-                <div className="handwriting-text-catcher" onClick={(e) => addBox(e.clientX, e.clientY)} />
-            )}
-            <div ref={layerRef} className="handwriting-text-layer">
-                {boxes.map((box) => (
-                    <TextBox
-                        key={box.id}
-                        box={box}
-                        isInteractive={isInteractive}
-                        isSelected={selectedId === box.id}
-                        isEditing={editedId === box.id}
-                        getZoom={getZoom}
-                        onSelect={() => select(box.id)}
-                        onEdit={(isEditing) => setEditedId(isEditing ? box.id : undefined)}
-                        onChange={(changes) => setBoxes(boxesRef.current.map((other) => (
-                            other.id === box.id ? { ...other, ...changes } : other
-                        )))}
-                        onDelete={() => setBoxes(boxesRef.current.filter((other) => other.id !== box.id))}
-                    />
-                ))}
-            </div>
-        </>
+        <div ref={layerRef} className="handwriting-text-layer">
+            {boxes.map((box) => (
+                <TextBox
+                    key={getKey(box.id)}
+                    box={box}
+                    isInteractive={isInteractive}
+                    isSelected={selectedKey === getKey(box.id)}
+                    isEditing={editedKey === getKey(box.id)}
+                    getZoom={getZoom}
+                    onSelect={() => select(box.id)}
+                    onEdit={(isEditing) => setEditedId(isEditing ? box.id : undefined)}
+                    onChange={ifShown((changes: Partial<InkTextBox>) => setBoxes(boxesRef.current.map((other) => (
+                        other.id === box.id ? { ...other, ...changes } : other
+                    ))))}
+                    onDelete={ifShown(() => setBoxes(boxesRef.current.filter((other) => other.id !== box.id)))}
+                />
+            ))}
+        </div>
     );
 }
 

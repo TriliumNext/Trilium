@@ -127,6 +127,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const shownNoteIdRef = useRef<string | undefined>(undefined);
     const [ tool, setTool ] = useState<NoteTool>("pen");
     const [ textBoxes, setTextBoxes ] = useState<InkTextBox[]>([]);
+    const [ textBoxesNoteId, setTextBoxesNoteId ] = useState<string>();
     const textLayerRef = useRef<HTMLDivElement>(null);
     const textMeasurerRef = useRef(new TextBoxMeasurer(() => textLayerRef.current));
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
@@ -200,6 +201,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         setNewer(isNewerRef.current);
         surface.load(doc);
         setTextBoxes(doc.texts ?? []);
+        setTextBoxesNoteId(noteId);
         if (!previous || previous !== noteId) {
             shownNoteIdRef.current = noteId;
             surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
@@ -421,6 +423,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
 
             <TextBoxLayer
                 layerRef={textLayerRef}
+                surfaceRef={surfaceElRef}
+                noteId={textBoxesNoteId}
                 boxes={textBoxes}
                 isAdding={!isReadOnly && activeTool === "text"}
                 isInteractive={!isReadOnly && (activeTool === "text" || activeTool === "select")}
