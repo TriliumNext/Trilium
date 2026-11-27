@@ -26,7 +26,7 @@ import { TypeWidgetProps } from "../type_widget";
 import TextBoxLayer, { isInTextBox } from "./TextBoxLayer";
 import {
     AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTextBox, type InkTool,
-    type InkView, PAPER_STYLES, parseInkDocument
+    type InkView, hasObjects, PAPER_STYLES, parseInkDocument
 } from "./ink_document";
 import { openPdf } from "./ink_pdf";
 import TextBoxMeasurer from "./ink_text";
@@ -203,8 +203,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         if (!previous || previous !== noteId) {
             shownNoteIdRef.current = noteId;
             surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
-            const hasContent = doc.strokes.length > 0 || !!doc.texts?.length;
-            if (note?.noteId === noteId && hasContent) void saveMissingThumbnail(surface, note);
+            if (note?.noteId === noteId && hasObjects(doc)) void saveMissingThumbnail(surface, note);
         }
     }
 

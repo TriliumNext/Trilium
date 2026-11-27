@@ -344,6 +344,11 @@ function serializeTextBox({ id, at, x, y, width, fontSize, html, extra }: InkTex
     });
 }
 
+/** Whether `doc` holds an object to draw: a stroke, an image or a text box. */
+export function hasObjects(doc: InkDocument) {
+    return doc.strokes.length > 0 || !!doc.images?.length || !!doc.texts?.length;
+}
+
 export function parseInkDocument(content: string | null | undefined): InkDocument {
     const empty: InkDocument = {
         version: HANDWRITING_FORMAT_VERSION, paper: "ruled", layout: "pages",

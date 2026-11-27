@@ -2,9 +2,9 @@ import { getStroke } from "perfect-freehand";
 import { describe, expect, it } from "vitest";
 
 import {
-    AUTO_COLOR, buildStrokePoints, createImage, createStroke, getStrokeOutline, outlineStrokePoints, PageLayout,
-    parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
-    strokeHitsSegment, StrokeIndex, trimPrediction
+    AUTO_COLOR, buildStrokePoints, createImage, createStroke, getStrokeOutline, hasObjects, type InkDocument,
+    outlineStrokePoints, PageLayout, parseInkDocument, serializeInkDocument, serializeStroke, splitStroke,
+    type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex, trimPrediction
 } from "./ink_document";
 
 function distanceToPolygon(x: number, y: number, polygon: number[][]) {
@@ -402,6 +402,17 @@ describe("ink document", () => {
         expect(index.query({ minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 })).toEqual([ small ]);
         index.clear();
         expect(index.query({ minX: 0, minY: 0, maxX: 50, maxY: 50 })).toEqual([]);
+    });
+});
+
+describe("hasObjects", () => {
+    it("counts strokes, images and text boxes, each on its own", () => {
+        const empty: InkDocument = { version: 2, paper: "blank", layout: "infinite", strokes: [] };
+        expect(hasObjects(empty)).toBe(false);
+        expect(hasObjects({ ...empty, images: [], texts: [] })).toBe(false);
+        expect(hasObjects({ ...empty, strokes: [ makeStroke([ 0, 0, 0.5 ]) ] })).toBe(true);
+        expect(hasObjects({ ...empty, images: [ createImage({ url: "a.png", order: 0, x: 0, y: 0, width: 1, height: 1 }) ] })).toBe(true);
+        expect(hasObjects({ ...empty, texts: [ { id: "t", order: 0, html: "<p>a</p>", x: 0, y: 0, width: 1 } ] })).toBe(true);
     });
 });
 
