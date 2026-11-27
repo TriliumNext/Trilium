@@ -20,7 +20,8 @@ vi.mock("./experimental_features.js", () => ({
 
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
 import noteTypesService, {
-    currentNoteTypeOption, isCurrentNoteType, type NoteTypeOption, noteTypeOptionIcon,
+    currentNoteTypeOption, findNoteTypeMapping, isCurrentNoteType, type NoteTypeOption,
+    noteTypeOptionIcon,
     selectableNoteTypes
 } from "./note_types";
 
@@ -652,6 +653,18 @@ describe("isCurrentNoteType", () => {
         expect(isCurrentNoteType({ type: "canvas", mime: "application/json" }, text)).toBe(false);
         expect(isCurrentNoteType(CODE, text)).toBe(false);
         expect(isCurrentNoteType(CODE, null)).toBe(false);
+    });
+});
+
+describe("findNoteTypeMapping", () => {
+    it("picks the code entry by the mime, and any other entry by the type", () => {
+        const title = (type: string, mime?: string | null) => findNoteTypeMapping(type, mime)?.title;
+        expect(title("code", "application/javascript")).toBe("note_types.code");
+        expect(title("code", undefined)).toBe("note_types.code");
+        expect(title("code", "text/x-gfm")).toBe("note_types.markdown");
+        expect(title("code", "application/vnd.triliumnotes.handwriting+json")).toBe("note_types.handwriting");
+        expect(title("canvas", "application/json")).toBe("note_types.canvas");
+        expect(title("nonexistent")).toBeUndefined();
     });
 });
 

@@ -1,6 +1,6 @@
 import type { NoteType, NoteTypeId, TemplatesResponse } from "@triliumnext/commons";
 import { buildNoteTypeId, buildTemplateId } from "@triliumnext/commons/src/lib/note_type_ids.js";
-import { getCodeLanguageIcon, HANDWRITING_MIME } from "@triliumnext/commons/src/lib/notes.js";
+import { getCodeLanguageIcon, HANDWRITING_MIME, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
@@ -70,6 +70,18 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "image", title: t("note_types.image"), reserved: true },
     { type: "launcher", mime: "", title: t("note_types.launcher"), reserved: true },
 ];
+
+/**
+ * The {@link NOTE_TYPES} entry of a note of `type` and `mime`. Code, Markdown and Handwriting are all
+ * `type: "code"`, so the mime picks among them.
+ */
+export function findNoteTypeMapping(type: string, mime?: string | null) {
+    if (type !== "code") return NOTE_TYPES.find((nt) => nt.type === type);
+    const entryMime = mime === HANDWRITING_MIME ? HANDWRITING_MIME
+        : mime && isMarkdownMime(mime) ? MARKDOWN_NOTE_TYPE_MIME
+            : "text/plain";
+    return NOTE_TYPES.find((nt) => nt.type === "code" && nt.mime === entryMime);
+}
 
 /**
  * Whether a {@link NOTE_TYPES} entry names the type `note` already has, so a menu can tick it.
