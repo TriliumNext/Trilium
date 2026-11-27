@@ -195,7 +195,10 @@
     "preparing_export": "正在准备导出…",
     "export_in_progress_with_total": "已导出 {{progressCount}} / {{totalCount}} 条笔记",
     "format": "格式",
-    "format_html_name": "HTML"
+    "format_html_name": "HTML",
+    "format_docx_name": "Word 文档",
+    "format_docx_description": "可在 Word、Google Docs 和 LibreOffice 中打开",
+    "result_single_docx": "一份 Word 文档（.docx），保留颜色、表格、列表和图片。图表和嵌入笔记不会包含在内。"
   },
   "doc_notes": {
     "hidden": "<p>隐藏树用于记录各种应用程序级数据，这些数据大部分时间可以对用户视图隐藏。</p><p>请确保您知道自己在做什么。此子树中的错误更改可能会导致应用程序崩溃。</p>",
@@ -710,7 +713,8 @@
     "calendar_hide_routine_events": "将每周重复 {{days}} 天或以上的定时事件从月视图、年视图和列表视图中隐藏。无论其值为何都会生效。",
     "exclude_from_llm": "对 AI 聊天和 MCP 服务器隐藏此笔记。将标签设为可继承，即可一并隐藏其下方的笔记。",
     "bookmark_open_mode": "点击启动栏中笔记的按钮时，笔记的打开方式：<code>当前标签页</code>（默认）、<code>新建标签页</code>、<code>新建分栏</code>、<code>新建窗口</code> 或 <code>快速编辑</code>。适用于书签、拖放到启动栏的笔记以及书签文件夹中的笔记。",
-    "vim_mode": "在这篇文本笔记中开启 Vim 模式；将值设为 <code>false</code> 则关闭，将无视本设备的 Vim 模式选项如何设置。"
+    "vim_mode": "在这篇文本笔记中开启 Vim 模式；将值设为 <code>false</code> 则关闭，将无视本设备的 Vim 模式选项如何设置。",
+    "docx_template": "将该笔记导出为 Word 文档时，内容会写入其中的 Word 文档（一篇文件笔记），并沿用它的样式、页眉、页脚和页面设置。通常设为可继承。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
