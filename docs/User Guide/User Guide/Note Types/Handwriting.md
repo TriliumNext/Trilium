@@ -77,7 +77,7 @@ A shape drawn by hand can be turned into a clean one. Draw the shape in a single
 
 A picture, such as a photo of an exercise or a screenshot of a slide, can be placed on the paper and written over. Images always lie under the ink.
 
-*   To add an image, press the <span class="tn-icon bx bx-image-add"></span> _Insert image_ button of the toolbar and choose one or more files. On a phone or a tablet, the same button also offers the camera.
+*   To add an image, press the <span class="tn-icon bx bx-plus"></span> _Insert_ button of the toolbar, select _Image_ and choose one or more files. On a phone or a tablet, the file chooser also offers the camera.
 *   Alternatively, paste an image from the clipboard with <kbd>Ctrl</kbd>+<kbd>V</kbd>, or drag an image file onto the note.
 *   A new image appears in the middle of the view, at its own size or smaller: on pages it fits inside the page, and on an infinite canvas inside the view. It is selected, and the _Select_ tool is picked, ready for the image to be moved into place.
 *   To select an image later, pick the <span class="tn-icon bx bx-pointer"></span> _Select_ tool and press the image. With this tool, a drag that starts outside the images moves the page.
@@ -94,7 +94,7 @@ Each image is saved as an [attachment](../Basic%20Concepts%20and%20Features/Note
 
 A PDF, such as the slides of a lecture, can be the paper of a handwriting note, to write over its pages. A note can hold several PDFs, one after the other.
 
-*   To add a PDF, press the <span class="tn-icon bx bxs-file-pdf"></span> _Insert PDF_ button of the toolbar and choose one or more files, or drag PDF files onto the note.
+*   To add a PDF, press the <span class="tn-icon bx bx-plus"></span> _Insert_ button of the toolbar, select _PDF_ and choose one or more files, or drag PDF files onto the note.
 *   Each page of the PDF lies on a sheet of the note, in order, under the images and the ink. The sheet takes the size of its page as printed, so a slide in landscape gets a sheet in landscape and an A4 page an A4 sheet.
 *   Ink is not held to the sheets. To write more than a page has room for, write beside it or below it.
 *   The note switches to the _Pages_ layout and shows a sheet for every page of the PDF. Once the last one has ink, A4 sheets follow.

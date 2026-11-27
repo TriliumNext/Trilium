@@ -1,5 +1,6 @@
 import "./Handwriting.css";
 
+import { HANDWRITING_FORMAT_VERSION } from "@triliumnext/commons/src/lib/handwriting.js";
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import clsx from "clsx";
 import type { CSSProperties, TargetedKeyboardEvent } from "preact";
@@ -10,6 +11,7 @@ import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isIOS } from "../../../services/utils";
+import Admonition from "../../react/Admonition";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
 import { useFullscreen } from "../../react/hooks/dom";
@@ -135,7 +137,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
         page: 0, pageCount: 1, hasSelection: false, pdfs: []
     });
-    const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    /** Whether a later build saved the note, which this one shows and does not save. */
+    const [ isNewer, setNewer ] = useState(false);
+    const isNewerRef = useRef(isNewer);
+    isNewerRef.current = isNewer;
+    const isReadOnly = useEffectiveReadOnly(note, noteContext) || isNewer;
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
     const [ savedSensitivity, setSensitivity ] = useTriliumOptionInt("handwritingPressureSensitivity");
     const sensitivity = Number.isFinite(savedSensitivity) ? savedSensitivity : DEFAULT_PRESSURE_SENSITIVITY;
@@ -157,7 +163,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         noteType: "code",
         async getData() {
             const surface = surfaceRef.current;
-            if (!surface) return undefined;
+            if (!surface || isNewerRef.current) return undefined;
             const content = surface.serialize();
             const thumbnail = await exportThumbnail(surface);
             if (!thumbnail) return { content };
@@ -187,6 +193,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         const noteId = noteIdRef.current;
         const previous = shownNoteIdRef.current;
         if (previous && previous !== noteId) sessionViews.set(previous, surface.getCenterView());
+        // Set before the document is loaded, as loading one can ask for a save.
+        isNewerRef.current = doc.version > HANDWRITING_FORMAT_VERSION;
+        setNewer(isNewerRef.current);
+        surface.readOnly ||= isNewerRef.current;
         surface.load(doc);
         setTextBoxes(doc.texts ?? []);
         if (!previous || previous !== noteId) {
@@ -414,6 +424,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 isInteractive={!isReadOnly && (activeTool === "text" || activeTool === "select")}
                 toWorld={(clientX, clientY) => surfaceRef.current?.toWorld(clientX, clientY) ?? { x: 0, y: 0 }}
                 getZoom={() => surfaceRef.current?.getView().zoom ?? 1}
+                takeOrder={() => surfaceRef.current?.takeOrder() ?? 0}
                 onChange={(boxes) => {
                     setTextBoxes(boxes);
                     surfaceRef.current?.setTextBoxes(boxes);
@@ -454,15 +465,9 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                     </OverlayControlGroup>
 
                     <OverlayControlGroup titlePosition="bottom">
-                        <OverlayControlButton
-                            title={t("handwriting.insert_image")}
-                            icon="bx-image-add"
-                            onClick={() => imageInputRef.current?.click()}
-                        />
-                        <OverlayControlButton
-                            title={t("handwriting.insert_pdf")}
-                            icon="bxs-file-pdf"
-                            onClick={() => pdfInputRef.current?.click()}
+                        <InsertMenu
+                            onInsertImage={() => imageInputRef.current?.click()}
+                            onInsertPdf={() => pdfInputRef.current?.click()}
                         />
                     </OverlayControlGroup>
 
@@ -543,11 +548,17 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 </div>
             )}
 
+            {isNewer && (
+                <div className="handwriting-toolbar">
+                    <Admonition type="warning">{t("handwriting.newer_version")}</Admonition>
+                </div>
+            )}
+
             {!isReadOnly && inkTool && (
                 <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
             )}
 
-            {/* The browser's own file chooser, which the insert image button opens. */}
+            {/* The browser's own file choosers, which the items of `InsertMenu` open. */}
             <input
                 ref={imageInputRef}
                 type="file"
@@ -664,6 +675,21 @@ export function CustomPressureItem({ value, onChange }: CustomPressureItemProps)
                 currentValue={draft} onChange={setDraft} onBlur={commit}
             />
         </FormListItem>
+    );
+}
+
+interface InsertMenuProps {
+    onInsertImage(): void;
+    onInsertPdf(): void;
+}
+
+/** The button of the toolbar whose menu adds an image or a PDF to the note, each from a file. */
+export function InsertMenu({ onInsertImage, onInsertPdf }: InsertMenuProps) {
+    return (
+        <OverlayControlDropdown title={t("handwriting.insert")} icon="bx-plus">
+            <FormListItem icon="bx bx-image-add" onClick={onInsertImage}>{t("handwriting.insert_image")}</FormListItem>
+            <FormListItem icon="bx bxs-file-pdf" onClick={onInsertPdf}>{t("handwriting.insert_pdf")}</FormListItem>
+        </OverlayControlDropdown>
     );
 }
 
