@@ -1,6 +1,7 @@
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
+import { gzipSync, strToU8 } from "fflate";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -303,6 +304,28 @@ describe("importSingleFile dispatch", () => {
         // wins; the extension isn't one importFile strips, so it stays in the title.
         expect(importedNote).toMatchObject({ type: "file", mime: "application/x-custom", title: "payload.unknownext" });
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("payload.unknownext");
+    });
+
+    it("imports an RNote document as a handwriting note, and one without ink as a file", async () => {
+        const rnote = (strokes: object[]) => Buffer.from(gzipSync(strToU8(JSON.stringify({
+            data: { engine_snapshot: { stroke_components: strokes.map((value) => ({ value })) } }
+        }))));
+        const style = { smooth: { stroke_width: 2, stroke_color: { r: 1, g: 0, b: 0, a: 1 } } };
+        const line = { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 10, 0 ] } }, style } };
+        const text = { textstroke: { text: "Typed" } };
+
+        const { importedNote } = await testImport("Lecture_notes.RNOTE", "application/octet-stream", rnote([ line, text ]));
+        expect(importedNote).toMatchObject({ type: "handwriting", mime: "application/json", title: "Lecture_notes" });
+        expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
+        expect(JSON.parse(importedNote.getContent() as string)).toEqual({
+            version: 1, paper: "blank", layout: "infinite",
+            strokes: [ { c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] } ]
+        });
+
+        const typed = await testImport("Typed.rnote", "application/octet-stream", rnote([ text ]));
+        expect(typed.importedNote).toMatchObject({ type: "file", title: "Typed.rnote" });
+        const broken = await testImport("Broken.rnote", "application/octet-stream", Buffer.from("not an RNote file"));
+        expect(broken.importedNote).toMatchObject({ type: "file", title: "Broken.rnote" });
     });
 
     it("strips the extension and underscores from a PDF's title", async () => {

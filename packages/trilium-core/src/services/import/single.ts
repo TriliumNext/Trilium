@@ -9,15 +9,18 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
+import { convertRnote } from "./rnote.js";
 import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { processStringOrBuffer } from "../utils/binary.js";
+import { getLog } from "../log.js";
 
 // MIME of an `.xlsx` upload (Office Open XML spreadsheet), as resolved by `mime-types`.
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 // MIME of a `.csv` upload, as resolved by `mime-types`.
 const CSV_MIME = "text/csv";
+const RNOTE_EXTENSION = ".rnote";
 
 /**
  * Imports one uploaded file as a note, then puts it through the same post-processing every other
@@ -74,6 +77,11 @@ async function importSingleFileAs(taskContext: TaskContext<"importNotes">, file:
     // Univer workbook JSON is re-imported verbatim, unlike `.xlsx`/`.csv` which are parsed into a workbook.
     if (mime === "text/x-spreadsheet") {
         return importCustomType(taskContext, file, parentNote, "spreadsheet", mime);
+    }
+
+    if (file.originalname.toLowerCase().endsWith(RNOTE_EXTENSION)) {
+        const note = importRnote(taskContext, file, parentNote);
+        if (note) return note;
     }
 
     if (taskContext?.data?.codeImportedAsCode && mimeService.getType(taskContext.data, mime) === "code") {
@@ -155,6 +163,34 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
         mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
+
+    taskContext.increaseProgressCount();
+
+    return note;
+}
+
+/**
+ * Imports an RNote document as a handwriting note, or returns `undefined` for a file that
+ * `convertRnote()` cannot read or that holds no ink, which is then imported as a file.
+ */
+function importRnote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    const converted = typeof file.buffer === "string" ? undefined : convertRnote(file.buffer);
+    if (!converted) return undefined;
+
+    const { note } = noteService.createNewNote({
+        parentNoteId: parentNote.noteId,
+        title: getNoteTitle(file.originalname.slice(0, -RNOTE_EXTENSION.length), !!taskContext.data?.replaceUnderscoresWithSpaces),
+        content: converted.content,
+        type: "handwriting",
+        mime: "application/json",
+        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+    });
+    note.addLabel("originalFileName", file.originalname);
+
+    const skipped = Object.entries(converted.skipped).map(([ kind, count ]) => `${count} ${kind}`);
+    if (skipped.length) {
+        getLog().info(`Imported '${file.originalname}' as handwriting without: ${skipped.join(", ")}`);
+    }
 
     taskContext.increaseProgressCount();
 

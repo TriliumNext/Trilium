@@ -107,6 +107,15 @@ A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) h
 | <kbd>Page Up</kbd> and <kbd>Page Down</kbd> | Go to the previous or next page. |
 | <kbd>Esc</kbd> | Leave fullscreen. |
 
+## Importing from RNote
+
+A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as a handwriting note. Drag the file into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, or select _Import into note_ (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>).
+
+*   Pen strokes keep their position, color, thickness and pressure. Black ink becomes ink in the _Text color_, so it stays readable in a dark theme, and translucent ink becomes highlighter ink.
+*   Lines and rectangles drawn with the shape tool become ordinary ink.
+*   The note uses the infinite canvas, with the paper nearest to the background pattern of the document, and opens where the document was last viewed.
+*   Typed text, images and the other shapes are left out, as a handwriting note cannot hold them. A document with no ink at all is imported as a <a class="reference-link" href="File.md">File</a> note instead.
+
 ## Limitations
 
 *   The eraser removes whole strokes. It is not possible to erase a part of a stroke, or to select, move or recolor ink that is already on the page.
