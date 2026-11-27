@@ -15,6 +15,8 @@ import {
     takeSwitching
 } from "./delivery_record.js";
 
+const HOUR = 60 * 60 * 1000;
+
 const switching = (channelId: string, activationId: string | null, sequence: number) =>
     ({ channelId, activationId, sequence, isRevoked: false });
 
@@ -171,9 +173,9 @@ describe("the queue of the delivery record", () => {
         expect(port.writes).toBe(0);
 
         port.isReadFailing = false;
-        await record.run((draft) => getEntry(draft, "k1", 1));
+        await record.run((draft) => getEntry(draft, "k1", Date.now()));
         port.isWriteFailing = true;
-        await record.run((draft) => getEntry(draft, "k2", 1));
+        await record.run((draft) => getEntry(draft, "k2", Date.now()));
         // Another process wrote the file meanwhile: the queue holds what the file holds.
         port.text = serializeState(createEmptyState());
         port.isWriteFailing = false;
@@ -187,7 +189,7 @@ describe("the queue of the delivery record", () => {
         await Promise.all([
             record.run((draft) => {
                 order.push("first");
-                getEntry(draft, "k", 1).grants.push(
+                getEntry(draft, "k", Date.now()).grants.push(
                     { profileId: "p", claimId: "c1", atMs: 1, isPublic: false });
             }),
             record.run((draft) => {
@@ -196,6 +198,22 @@ describe("the queue of the delivery record", () => {
             })
         ]).then(([ , second ]) => expect(second.value).toBe(1));
         expect(order).toEqual([ "first", "second" ]);
+    });
+
+    it("drops the entries first written 48 hours ago or earlier at every write", async () => {
+        const port = new FailingPort();
+        const record = new DeliveryRecord(port, () => 0);
+        const nowMs = Date.now();
+        await record.run((draft) => {
+            getEntry(draft, "old", nowMs - 48 * HOUR);
+            getEntry(draft, "recent", nowMs - 47 * HOUR);
+        });
+
+        const kept = [
+            [ ...record.getState()?.entries.keys() ?? [] ],
+            [ ...parseState(port.text ?? "").entries.keys() ]
+        ];
+        expect(kept).toEqual([ [ "recent" ], [ "recent" ] ]);
     });
 });
 

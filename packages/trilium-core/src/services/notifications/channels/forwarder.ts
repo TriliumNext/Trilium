@@ -55,7 +55,6 @@ import {
 } from "./catalog.js";
 import {
     DeliveryRecord,
-    dropOldEntries,
     endChannel,
     getEntry,
     getHighestRecordSequence,
@@ -210,8 +209,12 @@ export default class NotificationForwarder {
     private readonly getLastSyncedBatchTime: () => number;
     /** The causes of a pause from the moment this instance took them. */
     private readonly pauseCauses = new Set<NotificationPauseCause>();
-    /** The channels whose send has not settled, with the delivery that it runs. */
-    private readonly running = new Map<string, { deliveryKey: string; startedAtMs: number }>();
+    /** The channels whose attempt has not ended, with the delivery that it runs and its run. */
+    private readonly running = new Map<string, {
+        deliveryKey: string;
+        startedAtMs: number;
+        run: ChannelRun;
+    }>();
     /** The channels that a receiver asked to wait, until when. */
     private readonly heldUntil = new Map<string, number>();
     /** The first attempts of each channel in the last hour, with their producers. */
@@ -318,7 +321,8 @@ export default class NotificationForwarder {
 
     /** Since when the send of a channel has run without settling. */
     getRunningSince(channelId: string) {
-        return this.running.get(channelId)?.startedAtMs ?? null;
+        const running = this.running.get(channelId);
+        return running && running.run.lastCompletedAtMs === undefined ? running.startedAtMs : null;
     }
 
     /**
@@ -806,7 +810,6 @@ export default class NotificationForwarder {
             if (!isMissing) {
                 cls.init(() => this.takeDatabase(draft, false));
             }
-            dropOldEntries(draft, nowMs);
         });
         if (this.isPaused()) {
             this.runTimed("notice", () => this.raiseNotice(getInstanceNoticeId("paused"),
@@ -1221,8 +1224,8 @@ export default class NotificationForwarder {
     private async attempt(delivery: Delivery) {
         const { channelId, deliveryKey } = delivery;
         const startedAtMs = Date.now();
-        this.running.set(channelId, { deliveryKey, startedAtMs });
         const run: ChannelRun = { lastInvokedAtMs: startedAtMs };
+        this.running.set(channelId, { deliveryKey, startedAtMs, run });
         const attempt = delivery.attempts + 1;
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout> | null = null;
@@ -1660,15 +1663,24 @@ export default class NotificationForwarder {
         }, CHECK_DELAY_MS);
     }
 
-    /** Retries a pending switching every minute until a write carries it. */
+    /**
+     * Retries a pending switching every minute until a write carries it, then scans for the
+     * deliveries that a channel enabled meanwhile owes.
+     */
     private armPendingRetry() {
         if (!this.record.hasPending() || this.recordTimer !== null || !this.isStarted) {
             return;
         }
         this.recordTimer = setTimeout(async () => {
             this.recordTimer = null;
-            await this.record.run(() => undefined);
-            this.armPendingRetry();
+            if (this.record.hasPending()) {
+                await this.record.run(() => undefined);
+            }
+            if (this.record.hasPending()) {
+                this.armPendingRetry();
+            } else {
+                this.runTimed("scan", () => this.scan());
+            }
         }, RECORD_RETRY_MS);
     }
 

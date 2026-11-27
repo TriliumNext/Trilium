@@ -133,7 +133,8 @@ export class DeliveryRecord {
 
     /**
      * Runs a step of the queue on a copy of the record with the pending switchings laid over it,
-     * and writes the copy. A switching passed here stays pending until a write carries it.
+     * drops the old entries and writes the copy. A switching passed here stays pending until a
+     * write carries it.
      *
      * @returns whether the record was written, and what the step returned. Nothing is written
      *          while the record cannot be read.
@@ -154,6 +155,7 @@ export class DeliveryRecord {
                 takeSwitching(draft, switching);
             }
             const value = step(draft);
+            dropOldEntries(draft, Date.now());
             draft.mark = Math.max(draft.mark, this.readMark());
 
             try {

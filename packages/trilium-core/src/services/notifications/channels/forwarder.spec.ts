@@ -243,6 +243,7 @@ describe("forwarding", () => {
         expect(recordState().entries.get(key)?.endedAs).toBe("sent");
         expect(getStatus(CHANNEL)?.counts.sent).toBe(1);
         expect(getStatus(CHANNEL)?.recordHoldsActivation).toBe(true);
+        expect(getStatus(CHANNEL)?.runningSince).toBeUndefined();
     });
 
     it("skips what was read in its grace time, and forwards it without grace time", async () => {
@@ -321,6 +322,7 @@ describe("forwarding", () => {
         expect(times).toEqual([ 0, MINUTE, 6 * MINUTE, 36 * MINUTE ]);
         expect(deliveries()[0]).toMatchObject({ status: "failed", reason: "http" });
         expect(getStatus(CHANNEL)).toMatchObject({ lastErrorCode: "http", lastHttpStatus: 503 });
+        expect(getStatus(CHANNEL)?.runningSince).toBeUndefined();
 
         times.length = 0;
         const startMs = Date.now();
@@ -347,7 +349,7 @@ describe("forwarding", () => {
         raise({ id: "behind" });
 
         await vi.advanceTimersByTimeAsync(31 * SECOND);
-        expect(getStatus(CHANNEL)?.lastErrorCode).toBe("timeout");
+        expect(getStatus(CHANNEL)).toMatchObject({ lastErrorCode: "timeout", runningSince: AT });
         await vi.advanceTimersByTimeAsync(3 * MINUTE);
         expect(sends).toHaveLength(1);
 
@@ -355,8 +357,14 @@ describe("forwarding", () => {
         await vi.advanceTimersByTimeAsync(SECOND);
         expect(sends).toHaveLength(2);
         expect(deliveries()[0]).toMatchObject({ status: "sent" });
+        expect(getStatus(CHANNEL)?.runningSince).toBeUndefined();
 
-        // The second one rejects past its timeout: its retry waits a minute from then.
+        // The second one starts as the first ends, and rejects past its timeout: its retry waits
+        // a minute from then.
+        const secondAt = formatUtcDateTime(Date.now() - SECOND);
+        await vi.advanceTimersByTimeAsync(30 * SECOND);
+        expect(getStatus(CHANNEL))
+            .toMatchObject({ lastErrorCode: "timeout", runningSince: secondAt });
         settle(false);
         await vi.advanceTimersByTimeAsync(59 * SECOND);
         expect(sends).toHaveLength(2);
@@ -558,6 +566,7 @@ describe("switchings in the delivery record", () => {
         port.isWriteFailing = false;
         await vi.advanceTimersByTimeAsync(MINUTE);
         expect(forwarder.getRecordHold(CHANNEL, activationId)).toBe("live");
+        expect(sends).toHaveLength(1);
         raise({ id: "after" });
         await vi.advanceTimersByTimeAsync(SECOND);
         expect(sends).toHaveLength(2);
