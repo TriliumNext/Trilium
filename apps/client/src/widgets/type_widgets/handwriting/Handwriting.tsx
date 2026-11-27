@@ -457,8 +457,9 @@ interface CustomPressureItemProps {
  * checked while the value is none of the presets. The typed value is held as a draft and saved once
  * the box commits: on leaving it, on Enter or on a step.
  */
-function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
+export function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
     const [ draft, setDraft ] = useState(String(value));
+    const inputRef = useRef<HTMLInputElement>(null);
     useEffect(() => setDraft(String(value)), [ value ]);
 
     function commit(typed: string) {
@@ -476,10 +477,15 @@ function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
         <FormListItem
             checkable
             checked={!PRESSURE_PRESETS.some((preset) => preset.value === value)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+                // Enter on the row, from the keyboard, picks it too.
+                e.stopPropagation();
+                inputRef.current?.focus();
+            }}
         >
             {t("handwriting.pressure_custom")}
             <FormTextBox
+                inputRef={inputRef}
                 className="handwriting-pressure-input"
                 type="number"
                 data-menu-keys="ArrowUp ArrowDown"
