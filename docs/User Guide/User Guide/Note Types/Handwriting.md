@@ -84,7 +84,7 @@ The layout and the paper are set from the <span class="tn-icon bx bx-dots-horizo
 
 ### Paper
 
-The paper is _Ruled_, _Grid_, _Dots_ or _Blank_. The lines follow the theme and are not part of the ink.
+The paper is _Ruled_, _Grid_, _Dots_ or _Blank_. The rules and the dots follow the theme's text color, and the grid is pale blue. None of them are part of the ink.
 
 ## Previews
 

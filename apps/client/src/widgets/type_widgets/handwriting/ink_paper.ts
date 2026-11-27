@@ -18,13 +18,21 @@ export interface PaperScene {
 }
 
 /**
- * The paper as Xournal++ draws it, in world units, which are pixels at 96 DPI: rules 24 pt apart
- * below a header of 80 pt and above a footer of 60 pt, and 5 mm squares, 42 across an A4 page.
+ * The ruled and dotted paper as Xournal++ draws it, in world units, which are pixels at 96 DPI:
+ * rules 24 pt apart below a header of 80 pt and above a footer of 60 pt, and dots on 5 mm squares,
+ * 42 across an A4 page.
  */
 const RULED_STEP = 32;
 const RULED_HEADER = 80 * 96 / 72;
 const RULED_FOOTER = 60 * 96 / 72;
-const GRID_STEP = PAGE_WIDTH / 42;
+const DOT_STEP = PAGE_WIDTH / 42;
+/**
+ * The grid as RNote draws it: squares of 32 world units in a pale blue, which is RNote's `#cce6ff`
+ * over white and tints a dark background blue.
+ */
+const GRID_STEP = 32;
+const GRID_COLOR = "rgb(0, 130, 255)";
+const GRID_ALPHA = 0.2;
 /** How close to the edge of a page a line of the grid or a dot can be, in world units. */
 const PAPER_EDGE_CLEARANCE = 0.5;
 /** The opacity of the paper's lines over the background, in the text color. */
@@ -124,9 +132,9 @@ function drawPattern(
         }
         return positions;
     };
-    const gridLines = (origin: number, from: number, length: number, pageLength: number) => page
-        ? lines(origin, from, length, 0, GRID_STEP, PAPER_EDGE_CLEARANCE, pageLength - PAPER_EDGE_CLEARANCE)
-        : lines(origin, from, length, 0, GRID_STEP, -Infinity, Infinity);
+    const gridLines = (origin: number, from: number, length: number, pageLength: number, step: number) => page
+        ? lines(origin, from, length, 0, step, PAPER_EDGE_CLEARANCE, pageLength - PAPER_EDGE_CLEARANCE)
+        : lines(origin, from, length, 0, step, -Infinity, Infinity);
 
     ctx.fillStyle = scene.textColor;
     ctx.globalAlpha = PAPER_LINE_ALPHA;
@@ -138,16 +146,18 @@ function drawPattern(
             ctx.fillRect(x, py, width, thickness);
         }
     } else if (scene.paper === "grid") {
-        for (const py of gridLines(originY, y, height, PAGE_HEIGHT)) {
+        ctx.fillStyle = GRID_COLOR;
+        ctx.globalAlpha = GRID_ALPHA;
+        for (const py of gridLines(originY, y, height, PAGE_HEIGHT, GRID_STEP)) {
             ctx.fillRect(x, py, width, thickness);
         }
-        for (const px of gridLines(originX, x, width, PAGE_WIDTH)) {
+        for (const px of gridLines(originX, x, width, PAGE_WIDTH, GRID_STEP)) {
             ctx.fillRect(px, y, thickness, height);
         }
     } else {
         const dot = thickness * 2;
-        const rows = gridLines(originY, y, height, PAGE_HEIGHT);
-        for (const px of gridLines(originX, x, width, PAGE_WIDTH)) {
+        const rows = gridLines(originY, y, height, PAGE_HEIGHT, DOT_STEP);
+        for (const px of gridLines(originX, x, width, PAGE_WIDTH, DOT_STEP)) {
             for (const py of rows) {
                 ctx.fillRect(px, py, dot, dot);
             }
