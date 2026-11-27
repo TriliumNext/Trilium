@@ -192,6 +192,12 @@
             margin-bottom: 0;
         }
 
+        .handwriting-text-editor-host.pending {
+            position: absolute;
+            inset: 4px 8px auto;
+            visibility: hidden;
+        }
+
         .handwriting-text-missing {
             opacity: 0.5;
             font-style: italic;

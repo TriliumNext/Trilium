@@ -9,9 +9,11 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { useTriliumEvent } from "../../react/hooks/events";
+import { RawHtmlBlock } from "../../react/RawHtml";
 import type { InkTextBox } from "./ink_document";
 
-const TextEmbedEditor = lazy(() => import("../text/TextEmbedEditor"));
+const loadTextBoxEditor = () => import("./TextBoxEditor");
+const TextBoxEditor = lazy(loadTextBoxEditor);
 
 /** The width of a new text box and the narrowest one, in world units. */
 const DEFAULT_WIDTH = 320;
@@ -48,7 +50,11 @@ export default function TextBoxLayer({
     boxesRef.current = boxes;
 
     useEffect(() => {
-        if (isInteractive) return;
+        if (isInteractive) {
+            // Loads the text editor before the first box is opened.
+            void loadTextBoxEditor();
+            return;
+        }
         setSelectedId(undefined);
         setEditedId(undefined);
     }, [ isInteractive ]);
@@ -137,6 +143,13 @@ function TextBox({
     const note = useTextNote(box.noteId);
     /** Counts the saves of the editor, each of which renders the note again. */
     const [ version, setVersion ] = useState(0);
+    /** Whether the editor holds the content of the note, and so shows in place of the rendered text. */
+    const [ isEditorReady, setEditorReady ] = useState(false);
+    /** The content of the editor that closed, shown until its save lands and the note is rendered again. */
+    const [ closingContent, setClosingContent ] = useState<string>();
+    useEffect(() => {
+        if (!isEditing) setEditorReady(false);
+    }, [ isEditing ]);
     const startMove = useDrag(getZoom, (dx, dy, start) => onChange({ x: start.x + dx, y: start.y + dy }));
     const startResize = useDrag(getZoom, (dx, _dy, start) => onChange({ width: Math.max(MIN_WIDTH, start.width + dx) }));
 
@@ -144,7 +157,8 @@ function TextBox({
         <div
             className={clsx(
                 "handwriting-text-box",
-                isInteractive && "interactive", isSelected && "selected", isEditing && "editing"
+                isInteractive && "interactive", isSelected && "selected",
+                isEditing && isEditorReady && "editing"
             )}
             style={{ left: `${box.x}px`, top: `${box.y}px`, width: `${box.width}px` }}
             onPointerDown={() => {
@@ -173,15 +187,25 @@ function TextBox({
                 </div>
             )}
             {note && isEditing && (
-                <Suspense fallback={null}>
-                    <TextEmbedEditor
-                        note={note}
-                        hasFixedToolbar={false}
-                        onClose={(_content, save) => void save.finally(() => setVersion((current) => current + 1))}
-                    />
-                </Suspense>
+                <div className={clsx("handwriting-text-editor-host", !isEditorReady && "pending")}>
+                    <Suspense fallback={null}>
+                        <TextBoxEditor
+                            note={note}
+                            onReady={() => setEditorReady(true)}
+                            onClose={(content, save) => {
+                                setClosingContent(content);
+                                void save.finally(() => {
+                                    setClosingContent(undefined);
+                                    setVersion((current) => current + 1);
+                                });
+                            }}
+                        />
+                    </Suspense>
+                </div>
             )}
-            {note && !isEditing && <TextPreview note={note} version={version} />}
+            {note && !(isEditing && isEditorReady) && (
+                <TextPreview note={note} version={version} closingContent={closingContent} />
+            )}
             {note === null && <div className="handwriting-text-missing">{t("handwriting.text_box_missing")}</div>}
             {isSelected && (
                 <div className="handwriting-text-box-resize" onPointerDown={(e) => startResize(e, box)} />
@@ -190,8 +214,15 @@ function TextBox({
     );
 }
 
+interface TextPreviewProps {
+    note: FNote;
+    version: number;
+    /** The content to show in place of the note's, which the editor that closed is still saving. */
+    closingContent: string | undefined;
+}
+
 /** The rendered content of `note`, or a hint for an empty one. */
-function TextPreview({ note, version }: { note: FNote, version: number }) {
+function TextPreview({ note, version, closingContent }: TextPreviewProps) {
     const ref = useRef<HTMLDivElement>(null);
     const [ reloads, setReloads ] = useState(0);
 
@@ -200,6 +231,7 @@ function TextPreview({ note, version }: { note: FNote, version: number }) {
     });
 
     useEffect(() => {
+        if (closingContent !== undefined) return;
         let isStale = false;
         void content_renderer.getRenderedContent(note).then(({ $renderedContent }) => {
             if (isStale || !ref.current) return;
@@ -216,8 +248,15 @@ function TextPreview({ note, version }: { note: FNote, version: number }) {
         return () => {
             isStale = true;
         };
-    }, [ note, version, reloads ]);
+    }, [ note, version, reloads, closingContent ]);
 
+    if (closingContent !== undefined) {
+        return (
+            <div className="handwriting-text-preview">
+                <RawHtmlBlock className="ck-content" html={closingContent} />
+            </div>
+        );
+    }
     return <div ref={ref} className="handwriting-text-preview" />;
 }
 
