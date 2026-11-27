@@ -267,7 +267,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "builtinWidget", valueType: "select", selectOptions: [
         "calendar", "spacer", "bookmarks", "protectedSession", "syncStatus", "backInHistoryButton",
         "forwardInHistoryButton", "todayInJournal", "quickSearch", "mobileTabSwitcher", "sidebarChat",
-        "colorSchemeSwitcher", "recordMeeting"
+        "colorSchemeSwitcher", "recordMeeting", "notifications"
     ] },
     // Dangerous together with `~script` below: it makes the launcher run its own content instead, so
     // neutralising only the relation would leave this as a way around it.

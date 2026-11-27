@@ -305,6 +305,8 @@
 /src/widgets/note_title.tsx
 /src/widgets/note_types.tsx
 /src/widgets/note_wrapper.ts
+/src/widgets/notifications/NotificationBell.css
+/src/widgets/notifications/NotificationBell.tsx
 /src/widgets/promoted_attribute_cells.ts
 /src/widgets/quick_search.css
 /src/widgets/quick_search.tsx
@@ -362,6 +364,7 @@
 /src/widgets/react/hooks/legacy.tsx
 /src/widgets/react/hooks/note.ts
 /src/widgets/react/hooks/note_context.ts
+/src/widgets/react/hooks/notifications.ts
 /src/widgets/react/hooks/options.ts
 /src/widgets/react/hooks/shortcuts.ts
 /src/widgets/react/hooks/tooltip.ts

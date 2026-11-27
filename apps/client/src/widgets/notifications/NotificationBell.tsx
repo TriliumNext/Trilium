@@ -4,10 +4,12 @@ import clsx from "clsx";
 import { useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import { LaunchBarDropdownButton, type LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import { Badge } from "../react/Badge";
 import { type DropdownHandle, DropdownPanel } from "../react/Dropdown";
 import { useNotificationCount, useTransientNotifications } from "../react/hooks/notifications";
 import { useTriliumOptionBool } from "../react/hooks/options";
+import Icon from "../react/Icon";
 import { preloadLazyModule } from "../react/LazyComponent";
 
 const loadPanel = () => import("./NotificationPanel");
@@ -22,6 +24,54 @@ const MAX_SHOWN_COUNT = 99;
  * The panel loads when it first opens.
  */
 export default function NotificationBell() {
+    const bell = useBell();
+
+    return (
+        <DropdownPanel
+            {...bell.dropdownProps}
+            className="notification-bell"
+            buttonClassName={clsx(
+                "toggle-button notification-bell-button",
+                bell.iconClass,
+                bell.isActive && "is-active"
+            )}
+            iconAction
+            noSelectButtonStyle
+            hideToggleArrow
+            placement="bottom-end"
+            text={bell.marks}
+        >
+            {bell.panel}
+        </DropdownPanel>
+    );
+}
+
+/**
+ * The bell as a launcher, for the launch bar of a phone, which has no tab bar. On a phone the panel
+ * opens above the bar.
+ */
+export function NotificationLauncher({ launcherNote }: LauncherNoteProps) {
+    const bell = useBell();
+
+    return (
+        <LaunchBarDropdownButton
+            {...bell.dropdownProps}
+            panel
+            launcherNote={launcherNote}
+            text={(
+                <span className="notification-bell-glyph">
+                    <Icon icon={bell.iconClass} />
+                    {bell.marks}
+                </span>
+            )}
+        >
+            {bell.panel}
+        </LaunchBarDropdownButton>
+    );
+}
+
+/** The state that both bells show, and the props of the dropdown that opens their panel. */
+function useBell() {
     const { pending, unread } = useNotificationCount();
     const isActive = useTransientNotifications().length > 0;
     const [ isSilent ] = useTriliumOptionBool("notificationsSilent");
@@ -31,34 +81,25 @@ export default function NotificationBell() {
         ? t("notifications.bell-label-pending", { count: pending })
         : t("notifications.title");
 
-    return (
-        <DropdownPanel
-            className="notification-bell"
-            buttonClassName={clsx(
-                "toggle-button notification-bell-button bx",
-                isSilent ? "bx-bell-off" : "bx-bell",
-                isActive && "is-active"
-            )}
-            dropdownContainerClassName="notification-panel"
-            iconAction
-            noSelectButtonStyle
-            hideToggleArrow
-            title={label}
-            placement="bottom-end"
-            autoClose="outside"
-            keepOpenSelector="#context-menu-container"
-            text={<>
-                <BellMark pending={pending} unread={unread} />
-                {isActive && <span className="notification-bell-activity" />}
-            </>}
-            onShown={() => void loadPanel().then(setPanel)}
-            ready={!!panel}
-            dropdownRef={dropdownRef}
-            buttonProps={{ ...PRELOAD_PANEL_PROPS, "aria-label": label }}
-        >
-            {panel && <panel.default dropdownRef={dropdownRef} />}
-        </DropdownPanel>
-    );
+    return {
+        iconClass: isSilent ? "bx bx-bell-off" : "bx bx-bell",
+        isActive,
+        marks: <>
+            <BellMark pending={pending} unread={unread} />
+            {isActive && <span className="notification-bell-activity" />}
+        </>,
+        panel: panel && <panel.default dropdownRef={dropdownRef} />,
+        dropdownProps: {
+            title: label,
+            dropdownContainerClassName: "notification-panel",
+            autoClose: "outside" as const,
+            keepOpenSelector: "#context-menu-container",
+            onShown: () => void loadPanel().then(setPanel),
+            ready: !!panel,
+            dropdownRef,
+            buttonProps: { ...PRELOAD_PANEL_PROPS, "aria-label": label }
+        }
+    };
 }
 
 /** The count of pending notifications, or a dot while only unread ones remain. */

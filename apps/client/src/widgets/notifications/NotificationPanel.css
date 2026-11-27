@@ -69,3 +69,26 @@
         padding: 24px;
     }
 }
+
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts. */
+@media (max-width: 991px) {
+    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.notification-panel.show {
+        display: flex;
+        flex-direction: column;
+        width: auto;
+        overflow-y: hidden;
+
+        .notification-panel-content {
+            min-height: 0;
+        }
+
+        .notification-panel-transients {
+            flex-shrink: 0;
+        }
+
+        .notification-panel-list {
+            min-height: 0;
+            max-height: none;
+        }
+    }
+}

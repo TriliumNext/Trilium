@@ -53,7 +53,7 @@ export default function MobileLayout() {
             )}
             onClick={triggerLegacyCommand}
         >
-            {tablet && isPhone && <LazyTabBar fullWidth />}
+            {tablet && isPhone && <LazyTabBar fullWidth notificationBell />}
             <div id="mobile-rest-container">
                 {!isPhone && (
                     <div id="launcher-pane" className="vertical">
@@ -64,7 +64,7 @@ export default function MobileLayout() {
                 )}
                 <MobileSidebar />
                 <div id="mobile-rest-pane">
-                    {!isPhone && <LazyTabBar fullWidth={false} />}
+                    {!isPhone && <LazyTabBar fullWidth={false} notificationBell={tablet} />}
                     <NoteSplits parts={NOTE_SPLIT_PARTS} containerId="detail-container" />
                 </div>
                 {tablet && <LazyRightPanel />}
@@ -102,12 +102,19 @@ const NOTE_SPLIT_PARTS: NoteSplitParts = {
 const loadTabBar = () => import("./TabBar.js");
 const loadLeftPaneToggle = () => import("../widgets/buttons/left_pane_toggle.js");
 
-function LazyTabBar({ fullWidth }: { fullWidth: boolean }) {
+/**
+ * The tab bar. On a tablet it shows the notification bell: the launch bar there holds the desktop's
+ * launchers, and only the mobile launchers include a bell.
+ */
+function LazyTabBar({ fullWidth, notificationBell }: {
+    fullWidth: boolean;
+    notificationBell: boolean;
+}) {
     const tabBar = useLazyModule(loadTabBar);
     return tabBar && (
         <tabBar.default
             fullWidth={fullWidth} leftPaneToggle={false} rightPaneToggle={false}
-            notificationBell={false}
+            notificationBell={notificationBell}
         />
     );
 }

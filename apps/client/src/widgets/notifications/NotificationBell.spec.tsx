@@ -2,6 +2,8 @@ import type { NotificationCounts, TriliumNotification } from "@triliumnext/commo
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const launcherMenu = vi.hoisted(() => ({ show: vi.fn() }));
+
 vi.mock("../../services/i18n", () => ({
     t: (key: string, values?: { count?: number }) =>
         (values?.count === undefined ? key : `${key}:${values.count}`)
@@ -9,11 +11,16 @@ vi.mock("../../services/i18n", () => ({
 vi.mock("./NotificationPanel", () => ({
     default: () => <div className="notification-panel-content">Panel</div>
 }));
+vi.mock("../../menus/launcher_button_context_menu", () => ({
+    showLauncherContextMenu: launcherMenu.show
+}));
 
 import notificationStore from "../../services/notifications";
 import options from "../../services/options";
+import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import NotificationBell from "./NotificationBell";
+import { LaunchBarContext } from "../launch_bar/launch_bar_widgets";
+import NotificationBell, { NotificationLauncher } from "./NotificationBell";
 
 function withStates(...states: TriliumNotification["state"][]) {
     return states.map((state, index): TriliumNotification => ({
@@ -148,5 +155,70 @@ describe("NotificationBell", () => {
             menu.remove();
             document.body.classList.remove("context-menu-shown");
         }
+    });
+});
+
+describe("NotificationLauncher", () => {
+    async function renderLauncher() {
+        const launcherNote = buildNote({
+            id: "_lbMobileNotifications",
+            title: "Notifications",
+            type: "launcher",
+            "#launcherType": "builtinWidget",
+            "#builtinWidget": "notifications"
+        });
+        let container: HTMLElement | undefined;
+        await act(async () => {
+            container = renderInto(
+                <LaunchBarContext.Provider value={{ isHorizontalLayout: true }}>
+                    <NotificationLauncher launcherNote={launcherNote} />
+                </LaunchBarContext.Provider>
+            );
+        });
+        const button = container?.querySelector<HTMLButtonElement>(
+            ".right-dropdown-widget > button.right-dropdown-button.launcher-button"
+        );
+        if (!button) {
+            throw new Error("The launcher was not rendered");
+        }
+        return button;
+    }
+
+    it("shows the bell's state over its icon, and offers the launch bar's menu", async () => {
+        notificationStore.isLoaded.value = true;
+        notificationStore.notifications.value = withStates("pending", "seen");
+        const launcher = await renderLauncher();
+
+        const glyph = launcher.querySelector(".notification-bell-glyph");
+        expect(glyph?.querySelector(".tn-icon.bx-bell")).toBeInstanceOf(HTMLElement);
+        expect(glyph?.querySelector(".notification-bell-count")?.textContent).toBe("1");
+        expect(launcher.getAttribute("aria-label")).toBe("notifications.bell-label-pending:1");
+
+        const contextMenu = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        await act(async () => {
+            launcher.dispatchEvent(contextMenu);
+        });
+        await vi.waitFor(() => expect(launcherMenu.show).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ noteId: "_lbMobileNotifications" }),
+            contextMenu,
+            expect.anything()
+        ));
+
+        options.set("notificationsSilent", "true");
+        const silent = await renderLauncher();
+        expect(silent.querySelector(".notification-bell-glyph .tn-icon.bx-bell-off"))
+            .toBeInstanceOf(HTMLElement);
+        expect(silent.querySelector(".bx-bell")).toBeNull();
+    });
+
+    it("opens the panel in a popup that a phone's stylesheet pins above the bar", async () => {
+        const launcher = await renderLauncher();
+        await act(async () => launcher.click());
+
+        const popup = ".tn-dropdown-portal.right-dropdown-widget > .notification-panel";
+        await vi.waitFor(() => expect(
+            document.querySelector(`${popup} .notification-panel-content`)
+        ).not.toBeNull());
+        expect(launcher.getAttribute("aria-expanded")).toBe("true");
     });
 });

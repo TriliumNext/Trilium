@@ -170,3 +170,11 @@
         }
     }
 }
+
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts. */
+@media (max-width: 991px) {
+    body.mobile .notification-card .notification-card-heading {
+        flex-wrap: wrap;
+        row-gap: 0;
+    }
+}

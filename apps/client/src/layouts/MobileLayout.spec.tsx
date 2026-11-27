@@ -176,6 +176,9 @@ describe("MobileLayout", () => {
         await vi.waitFor(() => expect(restPane?.firstElementChild?.classList.contains("tab-row-container")).toBe(true));
         expect(restPane?.querySelector(".tab-row-widget")).toBeInstanceOf(HTMLElement);
         expect(restPane?.querySelector(".right-pane-toggle-button")).toBeNull();
+        // The desktop's launchers hold no bell, so the tab bar shows it.
+        const bell = ".tab-row-container .notification-bell-button";
+        expect(restPane?.querySelector(bell)).toBeInstanceOf(HTMLElement);
         const detail = restPane?.lastElementChild;
         expect(detail?.id).toBe("detail-container");
         // The desktop's right pane follows the notes, with its peek button.
@@ -191,6 +194,7 @@ describe("MobileLayout", () => {
         expect(restPane?.querySelector(".tab-row-container")).toBeNull();
         await vi.waitFor(() => expect(root?.firstElementChild?.classList.contains("tab-row-container")).toBe(true));
         expect(root?.querySelector(":scope > .tab-row-container .tab-row-widget.full-width")).toBeInstanceOf(HTMLElement);
+        expect(root?.querySelector(`:scope > ${bell}`)).toBeInstanceOf(HTMLElement);
         expect(root?.firstElementChild?.nextElementSibling?.id).toBe("mobile-rest-container");
         // The notes stay as they are, so turning the device does not rebuild them.
         expect(root?.querySelector("#detail-container")).toBe(detail);

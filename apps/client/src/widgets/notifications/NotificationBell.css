@@ -15,7 +15,13 @@
     align-self: flex-start;
 }
 
-.notification-bell-button {
+.notification-bell-glyph {
+    display: inline-flex;
+    padding: 6px;
+}
+
+.notification-bell-button,
+.notification-bell-glyph {
     position: relative;
 
     .notification-bell-count {
