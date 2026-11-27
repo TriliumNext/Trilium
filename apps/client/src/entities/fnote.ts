@@ -1,4 +1,5 @@
 import type { HighlightedTokenInfo, NoteType } from "@triliumnext/commons";
+import { isHandwritingNote } from "@triliumnext/commons/src/lib/handwriting.js";
 import { getNoteIcon, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 
 import cssClassManager from "../services/css_class_manager.js";
@@ -1012,6 +1013,11 @@ export default class FNote {
 
     isMarkdown() {
         return this.type === "code" && isMarkdownMime(this.mime);
+    }
+
+    /** Whether the note is a handwriting note, which is a `code` note of a media type of its own. */
+    isHandwriting() {
+        return isHandwritingNote(this.type, this.mime);
     }
 
     isIconPack() {

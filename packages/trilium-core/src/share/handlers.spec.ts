@@ -500,8 +500,8 @@ describe("share handlers", () => {
             { id: "mindMapNote", type: "mindMap", mime: "application/json", content: "not json" },
             {
                 id: "handwritingNote",
-                type: "handwriting",
-                mime: "application/json",
+                type: "code",
+                mime: "application/vnd.triliumnotes.handwriting+json",
                 content: "{\"version\":1,\"strokes\":[]}",
                 attachments: [
                     { id: "handwritingExport", title: NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting, mime: "image/svg+xml" }

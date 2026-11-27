@@ -315,7 +315,7 @@ describe("importSingleFile dispatch", () => {
         const text = { textstroke: { text: "Typed", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } };
 
         const { importedNote } = await testImport("Lecture_notes.RNOTE", "application/octet-stream", rnote([ line, text ]));
-        expect(importedNote).toMatchObject({ type: "handwriting", mime: "application/json", title: "Lecture_notes" });
+        expect(importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Lecture_notes" });
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
         expect(JSON.parse(importedNote.getContent() as string)).toEqual({
             version: 1, paper: "blank", layout: "infinite",

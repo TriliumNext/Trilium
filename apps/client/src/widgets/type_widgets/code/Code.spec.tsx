@@ -184,7 +184,7 @@ describe("EditableCode", () => {
 
 describe("note source", () => {
     it("shows a handwriting note with one stroke per line", () => {
-        const note = buildNote({ type: "handwriting", mime: "application/json", title: "H", content: "" });
+        const note = buildNote({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "H", content: "" });
         const content = JSON.stringify({
             version: 1, paper: "grid", strokes: [ { w: 3, p: [ 1, 2, 128, 3, 4, 0 ] }, { c: "#e64d4d", w: 3, p: [ 5, 6, 7 ] } ]
         });

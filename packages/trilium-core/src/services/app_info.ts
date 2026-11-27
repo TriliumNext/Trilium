@@ -5,9 +5,7 @@ import { getMaxMigrationVersion } from "../migrations/migrations.js";
 
 // 41: in-app help notes became virtual (never persisted/synced); un-migrated peers would
 //     still push _help entity changes, so they must upgrade before syncing.
-// 42: the handwriting note type; an older peer's consistency check turns notes of a type it
-//     does not know into file notes and syncs the change.
-const SYNC_VERSION = 42;
+const SYNC_VERSION = 41;
 const CLIPPER_PROTOCOL_VERSION = "1.1";
 
 const appInfo: AppInfo = {

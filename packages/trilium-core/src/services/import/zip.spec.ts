@@ -245,8 +245,8 @@ describe("processNoteContent", () => {
             files: [{
                 noteId: "handwritingNote1",
                 title: "Exercise",
-                type: "handwriting",
-                mime: "application/json",
+                type: "code",
+                mime: "application/vnd.triliumnotes.handwriting+json",
                 dataFileName: "Exercise.json",
                 attachments: [{
                     attachmentId: "sheetPicture1",

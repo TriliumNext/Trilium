@@ -2,7 +2,7 @@ import type {
     AttachmentRow, AttributeType, CloneResponse, EraseExcessRevisionsOptions, NoteRow, NoteType,
     RevisionRow, RevisionSource, SavedAttachmentRow
 } from "@triliumnext/commons";
-import { dayjs, getNoteIcon, isDerivedAttachmentRole, isMarkdownMime } from "@triliumnext/commons";
+import { dayjs, getNoteIcon, isDerivedAttachmentRole, isHandwritingNote, isMarkdownMime } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date.js";
@@ -319,6 +319,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
     isMarkdown() {
         return this.type === "code" && isMarkdownMime(this.mime);
+    }
+
+    isHandwriting() {
+        return isHandwritingNote(this.type, this.mime);
     }
 
     isImage() {

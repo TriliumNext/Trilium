@@ -41,8 +41,7 @@ describe("ALLOWED_NOTE_TYPES", () => {
             "code",
             "mindMap",
             "spreadsheet",
-            "llmChat",
-            "handwriting"
+            "llmChat"
         ]);
     });
 });

@@ -3,6 +3,8 @@
  * https://github.com/antoniotejada/Trilium-FindWidget
  */
 
+import { isHandwritingNote } from "@triliumnext/commons/src/lib/handwriting.js";
+
 import type { EventData, EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import attributeService from "../services/attributes.js";
@@ -292,7 +294,9 @@ export default class FindWidget extends NoteContextAwareWidget {
         const isSourceView = this.noteContext?.viewScope?.viewMode === "source";
 
         const isSupportedNoteId = SUPPORTED_NOTE_IDS.includes(this.note?.noteId ?? "");
-        if (!isSourceView && !isSupportedNoteId && !SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")) {
+        const hasTextToFind = SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")
+            && !isHandwritingNote(this.note?.type, this.note?.mime);
+        if (!isSourceView && !isSupportedNoteId && !hasTextToFind) {
             return;
         }
 

@@ -341,7 +341,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // typed as always present, so guard it explicitly rather than leaning on `attachmentTitle`
         // happening to be undefined in that case.
         const targetMeta = noteIdToMeta[targetNoteId];
-        const attachmentTitle = getImageAttachmentTitle(targetMeta?.type);
+        const attachmentTitle = getImageAttachmentTitle(targetMeta?.type, targetMeta?.mime);
         const attachmentMeta = targetMeta && attachmentTitle
             ? targetMeta.attachments?.find((attMeta) => attMeta.title === attachmentTitle)
             : undefined;

@@ -153,7 +153,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
-        noteType: "handwriting",
+        noteType: "code",
         async getData() {
             const surface = surfaceRef.current;
             if (!surface) return undefined;

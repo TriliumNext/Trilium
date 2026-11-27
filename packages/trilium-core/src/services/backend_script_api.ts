@@ -352,8 +352,9 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
         };
 
         // code note type can be inherited, otherwise "text" is the default
-        extraOptions.type = parentNote.type === "code" ? "code" : "text";
-        extraOptions.mime = parentNote.type === "code" ? parentNote.mime : "text/html";
+        const inheritsCode = parentNote.type === "code" && !parentNote.isHandwriting();
+        extraOptions.type = inheritsCode ? "code" : "text";
+        extraOptions.mime = inheritsCode ? parentNote.mime : "text/html";
 
         if (_extraOptions.json) {
             extraOptions.content = JSON.stringify(content || {}, null, "\t");

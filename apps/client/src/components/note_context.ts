@@ -46,7 +46,6 @@ const READ_ONLY_CAPABLE_TYPES: string[] = [
     "mermaid",
     "canvas",
     "mindMap",
-    "handwriting",
     "spreadsheet",
     "noteMap",
     "relationMap",
@@ -571,7 +570,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        if (!["book", "text", "code"].includes(note.type)) {
+        if (!["book", "text", "code"].includes(note.type) || note.isHandwriting()) {
             return false;
         }
 

@@ -114,7 +114,7 @@ export function formatViewSource(note: FNote, content: string) {
         return utils.formatHtml(content);
     }
 
-    if (note.type === "handwriting") {
+    if (note.isHandwriting()) {
         return formatHandwritingSource(content);
     }
 

@@ -1,4 +1,4 @@
-import { DOCX_MIME } from "@triliumnext/commons";
+import { DOCX_MIME, HANDWRITING_MIME } from "@triliumnext/commons";
 import type { Response } from "../../http_interface";
 import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
@@ -94,6 +94,16 @@ describe("Note type mappings", () => {
                 mime: "application/json"
             });
         }
+    });
+
+    it("exports a handwriting note as its JSON content with a .json extension", () => {
+        const content = JSON.stringify({ version: 1, paper: "ruled", strokes: [] });
+        const note = buildNote({ type: "code", mime: HANDWRITING_MIME, title: "Sheet" });
+        expect(mapByNoteType(note, content, "html")).toMatchObject({
+            payload: content,
+            extension: "json",
+            mime: "application/json"
+        });
     });
 
     it("falls back to a raw .dat dump for note types without a dedicated mapping", () => {

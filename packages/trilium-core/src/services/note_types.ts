@@ -18,8 +18,7 @@ const DEFAULT_MIMES: Record<NoteType, string> = {
     contentWidget: "",
     mindMap: "application/json",
     spreadsheet: "application/json",
-    llmChat: "application/json",
-    handwriting: "application/json"
+    llmChat: "application/json"
 };
 
 function getDefaultMimeForNoteType(typeName: string) {

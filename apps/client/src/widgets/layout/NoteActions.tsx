@@ -105,7 +105,7 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
     );
     const isElectron = getIsElectron();
     const isMobile = getIsMobile();
-    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat", "handwriting"].includes(noteType) || note.isSvg();
+    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType) || note.isSvg();
     const isSearchOrBook = ["search", "book"].includes(noteType);
     const isBoard = noteType === "book" && viewType === "board";
     const isGeoMap = noteType === "book" && viewType === "geoMap";
@@ -180,7 +180,8 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
             >
                 {isMobile && viewStrip}
 
-                {(note.type === "code" || note.noteId === "_backendLog") && <CodeProperties note={note} />}
+                {((note.type === "code" && !note.isHandwriting()) || note.noteId === "_backendLog")
+                    && <CodeProperties note={note} />}
 
                 {isReadOnly && !isLocked && <>
                     <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}

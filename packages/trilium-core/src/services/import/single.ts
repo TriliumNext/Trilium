@@ -1,4 +1,4 @@
-import { getAttachedFileMime, type NoteType } from "@triliumnext/commons";
+import { getAttachedFileMime, HANDWRITING_MIME, type NoteType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
 import imageService from "../../services/image.js";
@@ -182,8 +182,8 @@ function importRnote(taskContext: TaskContext<"importNotes">, file: File, parent
         parentNoteId: parentNote.noteId,
         title: getNoteTitle(file.originalname.slice(0, -RNOTE_EXTENSION.length), !!taskContext.data?.replaceUnderscoresWithSpaces),
         content: converted.type === "handwriting" ? converted.content : "",
-        type: converted.type,
-        mime: converted.type === "handwriting" ? "application/json" : "text/html",
+        type: converted.type === "handwriting" ? "code" : "text",
+        mime: converted.type === "handwriting" ? HANDWRITING_MIME : "text/html",
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
     note.addLabel("originalFileName", file.originalname);

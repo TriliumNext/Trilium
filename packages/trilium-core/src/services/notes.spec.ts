@@ -1,4 +1,4 @@
-import { CANVAS_ATTACHMENT_MIME, type NoteType } from "@triliumnext/commons";
+import { CANVAS_ATTACHMENT_MIME, HANDWRITING_MIME, type NoteType } from "@triliumnext/commons";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
@@ -695,7 +695,7 @@ describe("notes service (real DB)", () => {
             !!becca.getAttachment(attachmentId ?? "")?.utcDateScheduledForErasureSince;
 
         it("keeps the images on the sheet and the thumbnail, and schedules the others for erasure", () => {
-            const { note } = createNote("root", { type: "handwriting", mime: "application/json", content: sheet() });
+            const { note } = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: sheet() });
             const [ used, removed, thumbnail ] = getContext().init(() => [
                 note.saveAttachment(PNG),
                 note.saveAttachment({ ...PNG, title: "removed.png" }),
@@ -720,7 +720,7 @@ describe("notes service (real DB)", () => {
         });
 
         it("gives a duplicated note images of its own", async () => {
-            const { note } = createNote("root", { type: "handwriting", mime: "application/json", content: sheet() });
+            const { note } = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: sheet() });
             const image = getContext().init(() => note.saveAttachment(PNG));
             const pdf = getContext().init(() => note.saveAttachment(PDF));
             getContext().init(() => noteService.updateNoteData(note.noteId,
@@ -1100,6 +1100,13 @@ describe("notes service edge cases (real DB)", () => {
                 }));
 
             expect([ note.type, note.mime ]).toStrictEqual([ "code", "text/x-python" ]);
+
+            // A handwriting note is a code note that a child does not take after.
+            const sheet = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: "{}" }).note;
+            const child = getContext().init(() => noteService.createNewNoteWithTarget("into", undefined, {
+                parentNoteId: sheet.noteId, title: "spec-under-sheet", content: ""
+            })).note;
+            expect([ child.type, child.mime ]).toStrictEqual([ "text", "text/html" ]);
             expect(branch.notePosition).toBeLessThan(sibling.branch.notePosition);
             expect(() => getContext().init(() => noteService.createNewNoteWithTarget("before", undefined, {
                 parentNoteId: "root", title: "spec-no-target", content: "", type: "text"

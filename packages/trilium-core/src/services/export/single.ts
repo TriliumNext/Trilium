@@ -111,6 +111,10 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
             extension = "md";
             mime = "text/x-markdown";
         }
+    } else if (note.isHandwriting()) {
+        payload = content;
+        extension = "json";
+        mime = "application/json";
     } else if (note.type === "code") {
         payload = content;
         // Our own map wins over the `mime-types` lookup so markdown MIMEs get

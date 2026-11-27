@@ -139,14 +139,15 @@ describe("Image API (core)", () => {
         });
 
         it.each([
-            [ "canvas", "canvas-export.svg" ],
-            [ "mermaid", "mermaid-export.svg" ],
-            [ "mindMap", "mindmap-export.svg" ],
-            [ "handwriting", "handwriting-export.svg" ]
-        ])("renders a real %s note from its SVG attachment", async (type, attachmentTitle) => {
+            [ "canvas", "application/json", "canvas-export.svg" ],
+            [ "mermaid", "application/json", "mermaid-export.svg" ],
+            [ "mindMap", "application/json", "mindmap-export.svg" ],
+            // A handwriting note is a code note of a media type of its own.
+            [ "code", "application/vnd.triliumnotes.handwriting+json", "handwriting-export.svg" ]
+        ])("renders a real %s note from its SVG attachment", async (type, mime, attachmentTitle) => {
             const noteId = await createImageNote({
                 type,
-                mime: "application/json",
+                mime,
                 attachments: [ { title: attachmentTitle, content: `<svg id='${type}'><script>alert(9)</script></svg>` } ]
             });
             const res = await api.get<string>(`/api/images/${noteId}/file.svg`);

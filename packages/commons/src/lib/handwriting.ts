@@ -1,4 +1,17 @@
 /**
+ * The media type of a handwriting note. A handwriting note is a `code` note of this media type, as
+ * a Markdown note is a `code` note of a Markdown one: an instance that does not know handwriting
+ * notes then shows the note as code, where its consistency check would turn a note of a type it
+ * does not know into a file.
+ */
+export const HANDWRITING_MIME = "application/vnd.triliumnotes.handwriting+json";
+
+/** Whether a note of `type` and `mime` is a handwriting note. */
+export function isHandwritingNote(type: string | null | undefined, mime: string | null | undefined) {
+    return type === "code" && mime === HANDWRITING_MIME;
+}
+
+/**
  * A stroke in the saved content of a handwriting note, as the client's `serializeStroke()` writes
  * it and its `parseInkDocument()` reads it.
  */

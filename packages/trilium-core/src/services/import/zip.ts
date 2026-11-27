@@ -1,6 +1,6 @@
 import {
     CANVAS_ATTACHMENT_MIME, getAttachmentEmbedHref, getDrawingPictureTitle,
-    getImageAttachmentTitle, isMarkdownMime, isNoteType, type NoteType
+    getImageAttachmentTitle, isHandwritingNote, isMarkdownMime, isNoteType, type NoteType
 } from "@triliumnext/commons";
 import {
     renderToHtml as renderMarkdownToHtml
@@ -446,7 +446,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 // sibling file. An <img> aimed at it belongs back on `api/images/<noteId>`: that
                 // keeps the embed tied to the live diagram instead of freezing it into a copy of
                 // the exported picture.
-                isRenderedNoteImage: getImageAttachmentTitle(noteMeta.type) === attachmentMeta.title
+                isRenderedNoteImage: getImageAttachmentTitle(noteMeta.type, noteMeta.mime) === attachmentMeta.title
             };
         }
         // don't check for noteMeta since it's not mandatory for notes
@@ -582,7 +582,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processMarkdownCodeNoteContent(content, filePath);
         }
 
-        if ((type === "mindMap" || type === "handwriting") && typeof content === "string") {
+        if ((type === "mindMap" || isHandwritingNote(type, mime)) && typeof content === "string") {
             content = processAttachmentImageUrls(content);
         }
 

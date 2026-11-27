@@ -19,7 +19,7 @@ describe("app_info", () => {
     it("exposes the fixed sync and clipper protocol versions", () => {
         // These are protocol constants; bumping them is a deliberate,
         // breaking change, so they are locked here as a regression guard.
-        expect(appInfo.syncVersion).toBe(42); // 42: the handwriting note type
+        expect(appInfo.syncVersion).toBe(41);
         expect(appInfo.clipperProtocolVersion).toBe("1.1");
     });
 

@@ -3,6 +3,7 @@
  */
 
 import { isFontMimeType } from "./font_mimes.js";
+import { isHandwritingNote } from "./handwriting.js";
 import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
 import { isOfficeMimeType, XLSX_MIME } from "./office.js";
 import { NoteType } from "./rows.js";
@@ -41,7 +42,7 @@ export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
     mindMap: "mindmap-export.svg",
     spreadsheet: "spreadsheet-export.png",
     handwriting: "handwriting-export.svg"
-} as const satisfies Partial<Record<NoteType, string>>;
+} as const satisfies Partial<Record<NoteType | "handwriting", string>>;
 
 /**
  * The title of the attachment holding the rendered image of the given note type, or `undefined` if
@@ -50,9 +51,14 @@ export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
  * Prefer indexing {@link NOTE_TYPE_IMAGE_ATTACHMENTS} directly when the note type is known
  * statically — it narrows to the exact title instead of `string | undefined`.
  */
-export function getImageAttachmentTitle(type: NoteType | null | undefined): string | undefined {
+export function getImageAttachmentTitle(
+    type: NoteType | null | undefined, mime?: string | null
+): string | undefined {
     if (!type) {
         return undefined;
+    }
+    if (isHandwritingNote(type, mime)) {
+        return NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting;
     }
 
     return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
@@ -268,6 +274,8 @@ export function getNoteIcon({
             return "bx bx-folder";
         }
         return "bx bx-note";
+    } else if (isHandwritingNote(type, mime)) {
+        return NOTE_TYPE_ICONS.handwriting;
     } else if (type === "code") {
         return getCodeLanguageIcon(MIME_TYPES_DICT.find(m => m.mime === mime));
     } else if (type === "file") {
@@ -345,18 +353,23 @@ export function isMarkdownMime(mime: string) {
 
 /**
  * The format of the content of a note of `type` and `mime`, which a save checks before it writes:
- * the type, with Markdown apart from other code. The language of other code is not part of it.
+ * the type, with Markdown and handwriting apart from other code. The language of other code is
+ * not part of it.
  */
 export function getContentFormat(type: string, mime: string) {
     if (type !== "code") {
         return type;
+    }
+    if (isHandwritingNote(type, mime)) {
+        return "handwriting";
     }
     return isMarkdownMime(mime) ? "markdown" : "code";
 }
 
 /**
  * The kind of content a note renders as, which picks its renderer: `iconPack` for an icon pack's
- * manifest, `markdown` for a Markdown code note, else what {@link getFileContentType} names.
+ * manifest, `markdown` for a Markdown code note, `handwriting` for a handwriting note, else what
+ * {@link getFileContentType} names.
  *
  * @param hasIconPackLabel whether the note carries `#iconPack`, disabled or not.
  */
@@ -366,6 +379,9 @@ export function getNoteContentType(type: string, mime: string, hasIconPackLabel:
     }
     if (type === "code" && isMarkdownMime(mime)) {
         return "markdown";
+    }
+    if (isHandwritingNote(type, mime)) {
+        return "handwriting";
     }
     return getFileContentType(type, mime);
 }
@@ -415,7 +431,7 @@ const MARKDOWN_MIME_TYPES = [ "text/markdown", "text/x-markdown", "text/x-gfm" ]
 
 const FULL_WIDTH_NOTE_TYPES = [
     "code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap",
-    "mindMap", "spreadsheet", "handwriting"
+    "mindMap", "spreadsheet"
 ];
 
 function getFileMimeIcon(mime: string): string {

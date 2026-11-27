@@ -515,6 +515,8 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = "sqlConsole";
     } else if (note.isMarkdown()) {
         resultingType = "markdown";
+    } else if (note.isHandwriting()) {
+        resultingType = "handwriting";
     } else if (note.isIconPack()) {
         resultingType = "iconPack";
     } else if (type === "code" && (await noteContext?.isReadOnly())) {
