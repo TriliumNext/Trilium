@@ -1,4 +1,4 @@
-import { gzipSync, strToU8 } from "fflate";
+import { gzipSync, strToU8, unzlibSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
 import { convertRnote } from "./rnote.js";
@@ -40,7 +40,7 @@ function rnote(strokes: (object | null)[], times?: number[], document: Record<st
 
 function convert(file: Uint8Array) {
     const converted = convertRnote(file);
-    if (!converted) throw new Error("The file was not converted.");
+    if (converted?.type !== "handwriting") throw new Error("The file was not converted to handwriting.");
     return { ...converted, document: JSON.parse(converted.content) };
 }
 
@@ -140,10 +140,61 @@ describe("convertRnote", () => {
         expect(visited).toContain("60,31");
     });
 
-    it("returns nothing for a file that is not an RNote document or holds no ink", () => {
+    it("turns a document without ink into the paragraphs and the images of a text note, from the top", () => {
+        const text = (content: string, x: number, y: number, color = BLACK, ranges: object[] = []) => ({
+            textstroke: {
+                text: content,
+                transform: { affine: [ 1, 0, 0, 0, 1, 0, x, y, 1 ] },
+                text_style: { color, ranged_text_attributes: ranges }
+            }
+        });
+        const RED = { r: 1, g: 0, b: 0, a: 1 };
+        // Two premultiplied pixels: opaque red, and green at half opacity.
+        const pixels = btoa(String.fromCharCode(255, 0, 0, 255, 0, 64, 0, 128));
+        const image = {
+            bitmapimage: {
+                image: { data: pixels, pixel_width: 2, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                // 2 by 1 pixels scaled by 100 around (150, 150): 200 by 100, with its top at 100.
+                rectangle: { cuboid: { half_extents: [ 1, 0.5 ] }, transform: { affine: [ 100, 0, 0, 0, 100, 0, 150, 150, 1 ] } }
+            }
+        };
+        const converted = convertRnote(rnote([
+            text("Second", 0, 200),
+            // The ranges count UTF-8 bytes: "Café" is five of them.
+            text("Café\nau lait", 0, 300, RED, [ { range: { start: 0, end: 5 }, attribute: { text_color: BLACK } } ]),
+            image,
+            text("Title & <more>", 40, 0),
+            text("Title & <more>", 40, 0),
+            text("Left", 0, 0),
+            text("  ", 0, 400),
+            { shapestroke: { shape: { rect: { cuboid: { half_extents: [ 0, 0 ] }, transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } }, style: smooth() } }
+        ]));
+        if (converted?.type !== "text") throw new Error("The file was not converted to text.");
+
+        expect(converted.skipped).toEqual({ textstroke: 1, shapestroke: 1 });
+        expect(converted.blocks.map((block) => block.type === "paragraph" ? block.html : `${block.width}x${block.height}`)).toEqual([
+            "<p>Left</p>",
+            "<p>Title &amp; &lt;more&gt;</p>",
+            "200x100",
+            "<p>Second</p>",
+            "<p>Café<span style=\"color:#ff0000;--tn-color:#ff0000;\"><br>au lait</span></p>"
+        ]);
+
+        // The PNG holds the pixels with their alpha no longer premultiplied.
+        const png = converted.blocks[2];
+        if (png.type !== "image") throw new Error("No image.");
+        expect([ ...png.png.slice(0, 8) ]).toEqual([ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a ]);
+        const view = new DataView(png.png.buffer, png.png.byteOffset);
+        expect([ view.getUint32(16), view.getUint32(20) ]).toEqual([ 2, 1 ]);
+        const idatLength = view.getUint32(33);
+        expect(String.fromCharCode(...png.png.slice(37, 41))).toBe("IDAT");
+        expect([ ...unzlibSync(png.png.slice(41, 41 + idatLength)) ]).toEqual([ 0, 255, 0, 0, 255, 0, 128, 0, 128 ]);
+    });
+
+    it("returns nothing for a file that is not an RNote document or holds nothing it can convert", () => {
         expect(convertRnote(strToU8("not gzipped"))).toBeUndefined();
         expect(convertRnote(gzipSync(strToU8("not JSON")))).toBeUndefined();
         expect(convertRnote(gzipSync(strToU8(JSON.stringify({ version: "0.14.2", data: {} }))))).toBeUndefined();
-        expect(convertRnote(rnote([ { textstroke: { text: "Typed" } }, null ]))).toBeUndefined();
+        expect(convertRnote(rnote([ { textstroke: { text: " " } }, { vectorimage: {} }, null ]))).toBeUndefined();
     });
 });

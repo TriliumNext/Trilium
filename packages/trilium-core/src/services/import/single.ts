@@ -170,8 +170,9 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
 }
 
 /**
- * Imports an RNote document as a handwriting note, or returns `undefined` for a file that
- * `convertRnote()` cannot read or that holds no ink, which is then imported as a file.
+ * Imports an RNote document as a handwriting note, or as a text note when it holds only typed text
+ * and images. Returns `undefined` for a file that `convertRnote()` cannot read or that holds none
+ * of these, which is then imported as a file.
  */
 function importRnote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const converted = typeof file.buffer === "string" ? undefined : convertRnote(file.buffer);
@@ -180,16 +181,29 @@ function importRnote(taskContext: TaskContext<"importNotes">, file: File, parent
     const { note } = noteService.createNewNote({
         parentNoteId: parentNote.noteId,
         title: getNoteTitle(file.originalname.slice(0, -RNOTE_EXTENSION.length), !!taskContext.data?.replaceUnderscoresWithSpaces),
-        content: converted.content,
-        type: "handwriting",
-        mime: "application/json",
+        content: converted.type === "handwriting" ? converted.content : "",
+        type: converted.type,
+        mime: converted.type === "handwriting" ? "application/json" : "text/html",
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
     note.addLabel("originalFileName", file.originalname);
 
+    if (converted.type === "text") {
+        // The images are saved first, as the HTML refers to them by the IDs of their attachments.
+        const html = converted.blocks.map((block, index) => {
+            if (block.type === "paragraph") return block.html;
+            const attachment = imageService.saveImageToAttachment(
+                note.noteId, block.png, `image${index + 1}.png`, !!taskContext.data?.shrinkImages
+            );
+            const src = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`;
+            return `<figure class="image image_resized" style="width:${block.width}px;"><img src="${src}"></figure>`;
+        });
+        note.setContent(html.join(""));
+    }
+
     const skipped = Object.entries(converted.skipped).map(([ kind, count ]) => `${count} ${kind}`);
     if (skipped.length) {
-        getLog().info(`Imported '${file.originalname}' as handwriting without: ${skipped.join(", ")}`);
+        getLog().info(`Imported '${file.originalname}' as ${converted.type} without: ${skipped.join(", ")}`);
     }
 
     taskContext.increaseProgressCount();
