@@ -679,6 +679,27 @@ describe("notes service (real DB)", () => {
             getContext().init(() => saveLinks(map.note, buildMap("https://example.com")));
             expect(map.note.getRelations().some((r) => r.name === "internalLink" && !r.isDeleted)).toBe(false);
         });
+
+        it("relates a handwriting note to the notes its text boxes link to, and lets go of the ones dropped", () => {
+            const target = createNote("root", { title: "spec-ink-target" });
+            const sheet = (html: string) => JSON.stringify({
+                version: 1, paper: "blank", layout: "infinite",
+                texts: [ { id: "a", x: 0, y: 0, w: 100, html: "<p>plain</p>" }, { id: "b", x: 0, y: 50, w: 100, html } ],
+                strokes: []
+            });
+            const ink = createNote("root", { title: "spec-ink", type: "code", mime: HANDWRITING_MIME, content: sheet("") });
+            const links = () => ink.note.getRelations().filter((r) => r.name === "internalLink" && !r.isDeleted).map((r) => r.value);
+
+            const html = `<p>See <a class="reference-link" href="#root/${target.note.noteId}">spec-ink-target</a></p>`;
+            getContext().init(() => saveLinks(ink.note, sheet(html)));
+            expect(links()).toEqual([ target.note.noteId ]);
+
+            getContext().init(() => saveLinks(ink.note, sheet("<p>no link</p>")));
+            expect(links()).toEqual([]);
+            // Content that is not a document relates the note to nothing.
+            getContext().init(() => saveLinks(ink.note, "{"));
+            expect(links()).toEqual([]);
+        });
     });
 
     describe("handwriting images", () => {

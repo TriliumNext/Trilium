@@ -1098,6 +1098,20 @@ function findRelationMapLinks(content: string, foundLinks: FoundLink[]) {
  * is walked rather than only its nodes, so that a link stays found wherever Mind Elixir comes to
  * keep one.
  */
+/** Finds the notes that the text boxes of a handwriting note link to, from the HTML of each box. */
+function findHandwritingLinks(content: string, foundLinks: FoundLink[]) {
+    let texts: unknown;
+    try {
+        ({ texts } = JSON.parse(content) ?? {});
+    } catch {
+        return;
+    }
+    if (!Array.isArray(texts)) return;
+    for (const text of texts) {
+        if (typeof text?.html === "string") findInternalLinks(text.html, foundLinks);
+    }
+}
+
 export function findMindMapLinks(content: string, foundLinks: FoundLink[]) {
     try {
         collectMindMapLinks(JSON.parse(content), foundLinks);
@@ -1239,6 +1253,7 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
         // for orphans (inserted-then-removed images) so they get scheduled for erasure.
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.isHandwriting() && typeof content === "string") {
+        findHandwritingLinks(content, foundLinks);
         // The images of a handwriting note are attachments referenced by URL from its JSON; scan for
         // orphans (inserted-then-removed images) so they get scheduled for erasure, and for the
         // images of the note it was duplicated from, which it takes copies of.
