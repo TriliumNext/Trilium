@@ -134,7 +134,10 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    const { sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n } = await import("@triliumnext/core");
+    const {
+        sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n,
+        notifications
+    } = await import("@triliumnext/core");
     sync.startSyncTimer();
 
     // What the setup wizard asks for besides the password, where this instance has one. Registered
@@ -158,6 +161,7 @@ export default async function buildApp() {
 
     consistency_checks.startConsistencyChecks();
     scheduler.startScheduler();
+    void becca_loader.beccaLoaded.then(() => notifications.getNotificationService().start());
 
     erase.startScheduledCleanup();
 

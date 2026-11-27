@@ -29,6 +29,7 @@ export {
     TOTP_STEP_MS
 } from "./services/backup";
 export * as device_records from "./services/device_records";
+export * as notifications from "./services/notifications/index";
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
 export { default as sql_init } from "./services/sql_init";

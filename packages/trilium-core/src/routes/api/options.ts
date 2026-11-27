@@ -165,6 +165,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "splitEditorOrientation",
     "seenCallToActions",
     "experimentalFeatures",
+    "notificationDisabledCategories",
     // LLM options
     "aiEnabled",
     "llmProviders",

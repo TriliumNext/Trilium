@@ -48,7 +48,8 @@ async function processEntityChanges(changes: EntityChange[]) {
                 throw new Error(`Unknown entityName '${ec.entityName}'`);
             }
         } catch (e: any) {
-            throw new Error(`Can't process entity ${JSON.stringify(ec)} with error ${e.message} ${e.stack}`);
+            const loggable = JSON.stringify(getLoggableEntityChange(ec));
+            throw new Error(`Can't process entity ${loggable} with error ${e.message} ${e.stack}`);
         }
     }
 
@@ -384,6 +385,16 @@ const NOTIFICATION_ENTITY_NAMES = new Set<EntityType>([
     "notifications", "notification_marks", "notification_private_texts",
     "notification_channel_records"
 ]);
+
+/**
+ * A change as the console and error messages show it. A change of notifications shows its entity,
+ * its ID and its number only, since its row can hold private text.
+ */
+export function getLoggableEntityChange(ec: EntityChange) {
+    return NOTIFICATION_ENTITY_NAMES.has(ec.entityName)
+        ? { entityName: ec.entityName, entityId: ec.entityId, id: ec.id }
+        : ec;
+}
 
 export default {
     processEntityChanges

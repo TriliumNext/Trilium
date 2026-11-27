@@ -230,4 +230,11 @@ export type WebSocketMessage = AllTaskDefinitions | {
 } | {
     type: "resource-download";
     download: ResourceDownloadProgress;
+} | {
+    /** A pending notification of level `medium` or `high` that came in within 10 minutes. */
+    type: "notification-alert";
+    notificationId: string;
+} | {
+    /** A generation or an erasure dated ahead came within the hour, so the view changed. */
+    type: "notifications-due";
 }

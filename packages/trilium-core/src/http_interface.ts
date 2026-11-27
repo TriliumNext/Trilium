@@ -35,6 +35,8 @@ export interface Request<P = Record<string, string | string[]>, Q = QueryString>
     originalUrl: string;
     /** The parsed multipart upload — multer on the server, `BrowserRouter` in standalone. */
     file?: File;
+    /** The ID of the session on the server. Standalone has no sessions. */
+    sessionID?: string;
     get(name: string): string | undefined;
 }
 

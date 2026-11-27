@@ -1,4 +1,5 @@
 import optionsApiRoute from "./api/options";
+import notificationsApiRoute from "./api/notifications";
 import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
@@ -121,6 +122,12 @@ export function buildSharedApiRoutes({
     asyncApiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
     apiRoute(GET, "/api/options/user-fonts", optionsApiRoute.getUserFonts);
+
+    apiRoute(GET, "/api/notifications", notificationsApiRoute.getNotifications);
+    apiRoute(PST, "/api/notifications", notificationsApiRoute.createNotification);
+    apiRoute(PST, "/api/notifications/state", notificationsApiRoute.setNotificationState);
+    apiRoute(PST, "/api/notifications/dismiss", notificationsApiRoute.dismissNotifications);
+    apiRoute(PATCH, "/api/notifications/:id", notificationsApiRoute.updateNotification);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);

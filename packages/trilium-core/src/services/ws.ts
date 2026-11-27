@@ -3,6 +3,8 @@ import { type EntityChange, type SyncPullProgress, WebSocketMessage } from "@tri
 import becca from "../becca/becca.js";
 import * as cls from "./context.js";
 import { getLog } from "./log.js";
+import { getNotificationService } from "./notifications/index.js";
+import { isNotificationEntityName, NotificationError } from "./notifications/model.js";
 import protectedSessionService from "./protected_session.js";
 import syncMutexService from "./sync_mutex.js";
 import { getSql } from "./sql/index.js";
@@ -94,6 +96,8 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM options WHERE name = ?`, [entityChange.entityId]);
         }
+    } else if (isNotificationEntityName(entityChange.entityName)) {
+        fillInNotificationEntity(entityChange);
     } else if (entityChange.entityName === "attachments") {
         entityChange.entity = becca.getAttachment(entityChange.entityId);
 
@@ -114,6 +118,24 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
 
     if (entityChange.entity instanceof AbstractBeccaEntity) {
         entityChange.entity = entityChange.entity.getPojo();
+    }
+}
+
+/**
+ * Attaches a row of the four tables of notifications only once it is complete, so that the error
+ * line of `buildFrontendUpdateMessage()` has no row to print. A failure is logged by its code.
+ */
+function fillInNotificationEntity(entityChange: EntityChange) {
+    try {
+        const entity = getNotificationService()
+            .getClientEntity(entityChange.entityName, entityChange.entityId);
+        if (entity) {
+            entityChange.entity = entity;
+        }
+    } catch (e) {
+        const code = e instanceof NotificationError ? e.code : "internal";
+        getLog().error(`Could not attach ${entityChange.entityName} `
+            + `${JSON.stringify(entityChange.entityId.substring(0, 40))} for clients: ${code}.`);
     }
 }
 

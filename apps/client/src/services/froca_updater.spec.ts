@@ -6,7 +6,7 @@ import FAttribute from "../entities/fattribute.js";
 import FBranch from "../entities/fbranch.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
-import frocaUpdater from "./froca_updater.js";
+import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { getNoteImageSourceToLoad } from "./image_urls.js";
 import type LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
@@ -64,6 +64,15 @@ describe("froca_updater - empty / no-op handling", () => {
         ] as const;
         await process(entityNames.map((entityName) => ec({ entityName, entityId: "n" })));
         expect(triggerSpy).not.toHaveBeenCalled();
+    });
+
+    it("names a change of notifications by its entity, ID and number in messages", () => {
+        const change = ec({ id: 7, entityName: "notification_private_texts", entityId: "n",
+            entity: { protectedTitle: "Private" } as never });
+        expect(getLoggableEntityChange(change))
+            .toEqual({ entityName: "notification_private_texts", entityId: "n", id: 7 });
+        const note = ec({ entityName: "notes", entityId: "x" });
+        expect(getLoggableEntityChange(note)).toBe(note);
     });
 
     it("throws a wrapped error for an unknown entityName", async () => {

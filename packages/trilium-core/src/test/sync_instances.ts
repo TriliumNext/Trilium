@@ -31,6 +31,8 @@ export interface TransferOptions {
     maxBatches?: number;
 }
 
+export type FakedTimers = NonNullable<Parameters<typeof vi.useFakeTimers>[0]>["toFake"];
+
 /** The most rounds of `settle()`. A spec then finds the instances apart. */
 const MAX_ROUNDS = 10;
 
@@ -42,9 +44,13 @@ export default class SyncInstances {
     private active: SyncInstance | null = null;
     private timeMs: number;
 
-    /** Starts the fake clock at `startMs` and makes the sync server. */
-    constructor(startMs: number) {
-        vi.useFakeTimers({ toFake: [ "Date" ] });
+    /**
+     * Starts the fake clock at `startMs` and makes the sync server.
+     *
+     * @param toFake what the fake clock replaces; timers run only when a spec advances them.
+     */
+    constructor(startMs: number, toFake: FakedTimers = [ "Date" ]) {
+        vi.useFakeTimers({ toFake });
         this.timeMs = startMs;
         this.original = getSql().serialize();
         this.originalMaxId = getMaxEntityChangeId();

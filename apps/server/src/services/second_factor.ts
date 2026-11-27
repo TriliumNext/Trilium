@@ -6,7 +6,14 @@
  * without a right code. All of them are device options, which sync refuses.
  */
 import type { WrongCodeCount } from "@triliumnext/commons";
-import { cls, date_utils as dateUtils, device_records, getLog, options } from "@triliumnext/core";
+import {
+    cls,
+    date_utils as dateUtils,
+    device_records,
+    getLog,
+    notifications,
+    options
+} from "@triliumnext/core";
 
 import recoveryCodeService from "./encryption/recovery_codes.js";
 import totpEncryptionService from "./encryption/totp_encryption.js";
@@ -186,10 +193,16 @@ export function getWaitUntil(count: WrongCodeCount, now = Date.now()): number | 
     return until > now ? until : null;
 }
 
-/** Counts a wrong code after a right password, for the whole server and across restarts. */
+/**
+ * Counts a wrong code after a right password, for the whole server and across restarts. From the
+ * fifth in a row on, a notice names them, at most once an hour.
+ */
 export function countWrongCode(now = Date.now()) {
-    const { count } = readWrongCodes(now);
-    writeWrongCodes({ count: count + 1, lastAt: dateUtils.utcDateTimeStr(new Date(now)) });
+    const count = readWrongCodes(now).count + 1;
+    writeWrongCodes({ count, lastAt: dateUtils.utcDateTimeStr(new Date(now)) });
+    if (count >= WRONG_CODES_BEFORE_WAIT) {
+        notifications.raiseWrongCodeNotice(count);
+    }
 }
 
 export type SignInAttempt = "no-code" | "wrong-code" | "wrong-recovery-code";

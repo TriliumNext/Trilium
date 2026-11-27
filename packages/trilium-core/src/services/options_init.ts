@@ -411,6 +411,7 @@ const defaultOptions: DefaultOption[] = [
         isSynced: true
     },
     { name: "experimentalFeatures", value: "[]", isSynced: true },
+    { name: "notificationDisabledCategories", value: "[]", isSynced: true },
 
     // AI / LLM
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.

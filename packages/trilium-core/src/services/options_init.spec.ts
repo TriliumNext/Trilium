@@ -18,6 +18,7 @@ import * as cls from "./context.js";
 import { OPENED_DATABASE_SIGNS } from "./database_validation.js";
 import entityChangesService from "./entity_changes.js";
 import notes from "./notes.js";
+import { getNotificationService } from "./notifications/index.js";
 import optionService from "./options.js";
 import {
     getDefaultOptionSyncedFlag,
@@ -290,6 +291,14 @@ describe("the start step", () => {
         expect(recordedNames()).toEqual(expect.arrayContaining(
             [ "mfaMethod", "syncServerHost", "lastSyncedPull", "documentSecret",
                 "totpLastUsedStep", "syncIncomplete" ]));
+
+        const notices = getNotificationService().getPage().notifications
+            .filter(({ id }) => id === "trilium:security:startup-repair");
+        expect(notices).toHaveLength(1);
+        expect(notices[0]).toMatchObject({ attentionLevel: "high", producer: "trilium:security" });
+        for (const name of recordedNames()) {
+            expect(notices[0].description).toContain(name);
+        }
     });
 
     it("writes the value of each rule into a planted row", () => {

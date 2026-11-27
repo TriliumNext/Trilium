@@ -1,4 +1,11 @@
-import { cls, data_encryption, device_records, getLog, options } from "@triliumnext/core";
+import {
+    cls,
+    data_encryption,
+    device_records,
+    getLog,
+    notifications,
+    options
+} from "@triliumnext/core";
 import crypto from "crypto";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -225,5 +232,26 @@ describe("the second factor of the server", () => {
 
         expect(device_records.readDeviceRecord("signInAttemptRecord").map(({ name }) => name))
             .toEqual([ "no-code" ]);
+    });
+
+    it("raises a notice from the fifth wrong code on, and keeps the count after it", () => {
+        const now = Date.now();
+        const notice = () => cls.init(() =>
+            notifications.getNotificationService().getById("trilium:security:wrong-codes"));
+        cls.init(() => {
+            for (let index = 0; index < 4; index++) {
+                countWrongCode(now);
+            }
+        });
+        expect(notice()).toBeNull();
+
+        cls.init(() => countWrongCode(now));
+        expect(notice()).toMatchObject({ attentionLevel: "high", producer: "trilium:security" });
+
+        cls.init(() => notifications.getNotificationService().dismissById(
+            "trilium:security:wrong-codes"));
+        cls.init(() => countWrongCode(now));
+        expect(notice()).toBeNull();
+        expect(readWrongCodes(now).count).toBe(6);
     });
 });

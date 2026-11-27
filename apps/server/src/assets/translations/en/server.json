@@ -633,5 +633,14 @@
     "refused-unreadable": "The second factor cannot be checked. Restart the server with TRILIUM_RESET_SECOND_FACTOR to remove it.",
     "refused-removed": "The second factor was removed. Restart the server with TRILIUM_RESET_SECOND_FACTOR and send its words as the code.",
     "download-refused": "Until the second factor is set up again, a download asks for the password and a current code."
+  },
+  "notifications": {
+    "budget-toast": "Notifications were dropped because a script or a client raised too many in a short time.",
+    "full-toast": "No new notifications can be raised while this device holds this many. Dismiss some to make room.",
+    "startup-repair-title": "Settings of this device were put back",
+    "startup-repair-description": "A sync peer had changed settings that stay on this device, and they were put back: {{- names}}. The sign-in settings keep the record.",
+    "wrong-codes-title": "Wrong codes for the second factor",
+    "wrong-codes-description_one": "{{count}} wrong code was entered after the right password. If it wasn't you, change the password.",
+    "wrong-codes-description_other": "{{count}} wrong codes in a row were entered after the right password, so codes now wait before they are checked. If it wasn't you, change the password."
   }
 }

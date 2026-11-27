@@ -3,7 +3,7 @@ import { WebSocketMessage } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
-import frocaUpdater from "./froca_updater.js";
+import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
@@ -147,7 +147,8 @@ function logRows(entityChanges: EntityChange[]) {
     const filteredRows = entityChanges.filter((row) => !processedEntityChangeIds.has(row.id) && (row.entityName !== "options" || row.entityId !== "openNoteContexts"));
 
     if (filteredRows.length > 0) {
-        console.debug(utils.now(), "Frontend update data: ", filteredRows);
+        console.debug(utils.now(), "Frontend update data: ",
+            filteredRows.map(getLoggableEntityChange));
     }
 }
 
@@ -285,7 +286,8 @@ async function consumeFrontendUpdateData() {
                 // if there's an error in updating the frontend, then the easy option to recover is to reload the frontend completely
                 utils.reloadFrontendApp(`processing entity changes failed: ${e.message}`);
             } else {
-                console.log("nonProcessedEntityChanges causing the timeout", nonProcessedEntityChanges);
+                console.log("nonProcessedEntityChanges causing the timeout",
+                    nonProcessedEntityChanges.map(getLoggableEntityChange));
 
                 toastService.showError(t("ws.encountered-error", { message: e.message }));
             }

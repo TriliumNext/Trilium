@@ -5,16 +5,21 @@
  * view, the history, and the checks that every row passes, written locally or brought by sync.
  */
 import {
+    BUILT_IN_NOTIFICATION_PREFIX,
     getNotificationState,
     NOTIFICATION_ATTENTION_LEVELS,
     NOTIFICATION_CATEGORIES,
     NOTIFICATION_CHANNEL_RECORD_KINDS,
     NOTIFICATION_MARK_KINDS,
+    NOTIFICATION_MAX_REFS,
     NOTIFICATION_TYPES,
     type NotificationAction,
     type NotificationAttentionLevel,
+    type NotificationCategory,
     type NotificationContent,
+    type NotificationErrorCode,
     type NotificationMarkKind,
+    type NotificationPatch,
     type NotificationPrivateContent,
     type NotificationState,
     type NotificationType
@@ -29,6 +34,8 @@ export const AHEAD_TOLERANCE_MS = 60 * 60 * 1000;
 /** The number of standard notifications kept in the history. */
 export const HISTORY_LIMIT = 200;
 export const CONTENT_MAX_BYTES = 8 * 1024;
+/** The limit of a private text written out as plain JSON, before it is sealed. */
+export const PLAIN_PRIVATE_TEXT_MAX_BYTES = 8 * 1024;
 export const PRIVATE_CONTENT_MAX_BYTES = 11 * 1024;
 export const CHANNEL_RECORD_MAX_BYTES = 32 * 1024;
 export const MAX_ACTIONS = 5;
@@ -70,18 +77,6 @@ const PRIVATE_TEXT_COLUMNS = [ "notificationId", "content", "utcDateCreated", "u
 const CHANNEL_RECORD_COLUMNS = [
     "recordId", "channelId", "kind", "content", "utcDateCreated", "utcDateModified"
 ];
-
-export type NotificationErrorCode =
-    /** A column has the wrong type, value, length or charset, or the row has other columns. */
-    | "invalid-row"
-    /** The key of the row is not the one computed from its columns or named by its change. */
-    | "invalid-key"
-    | "invalid-content"
-    /** A synced change of a row arrived without the row. */
-    | "missing-row"
-    /** An erasure of a mark or a private text, which are deleted with their notification. */
-    | "erasure-refused"
-    | "raised-ahead";
 
 /** An error of notification code. Its message is the code alone, never input or row text. */
 export class NotificationError extends Error {
@@ -220,6 +215,9 @@ export function classifyRaise(facts: RaiseFacts): RaiseOutcome {
 export interface ViewRow {
     notificationId: string;
     id: string;
+    noteId: string | null;
+    isSensitive: boolean;
+    content: string;
 }
 
 export interface ViewContext {
@@ -227,25 +225,39 @@ export interface ViewContext {
     getMarkKinds(notificationId: string): Iterable<NotificationMarkKind>;
     /** Whether a newer generation of the ID is erased, by an erasure that is not dated ahead. */
     isCovered(notificationId: string): boolean;
+    /** Whether the note is protected, or not held by this instance. */
+    isNoteSensitive(noteId: string): boolean;
 }
 
 export interface ViewEntry<T extends ViewRow> {
     row: T;
     state: NotificationState;
+    /** Whether this instance takes the notification as sensitive. */
+    isSensitive: boolean;
+    /** What a reader can have of the content: no text of a version that meets the fact. */
+    content: NotificationContent;
 }
 
 /**
  * The notifications that an instance shows: of each ID the newest generation that is neither dated
- * ahead nor covered by an erasure, with its state, newest first.
+ * ahead nor covered by an erasure, newest first, each as `describeRow()` gives it.
  */
 export function resolveView<T extends ViewRow>(rows: T[], context: ViewContext): ViewEntry<T>[] {
+    return selectCurrentRows(rows, context).map((row) => describeRow(row, context));
+}
+
+/** Of each ID the newest generation that is neither dated ahead nor covered, newest first. */
+export function selectCurrentRows<T extends Pick<ViewRow, "notificationId" | "id">>(
+    rows: T[],
+    context: Pick<ViewContext, "nowMs" | "isCovered">
+): T[] {
     const newestById = new Map<string, { row: T; timeMs: number }>();
     for (const row of rows) {
-        const timeMs = getTimeOfNotificationId(row.notificationId);
-        if (isDatedAhead(timeMs, context.nowMs) || context.isCovered(row.notificationId)) {
+        if (!isShownRow(row, context)) {
             continue;
         }
 
+        const timeMs = getTimeOfNotificationId(row.notificationId);
         const newest = newestById.get(row.id);
         if (!newest || timeMs > newest.timeMs) {
             newestById.set(row.id, { row, timeMs });
@@ -255,10 +267,272 @@ export function resolveView<T extends ViewRow>(rows: T[], context: ViewContext):
     return [ ...newestById.values() ]
         .sort((a, b) => b.timeMs - a.timeMs
             || compareText(b.row.notificationId, a.row.notificationId))
-        .map(({ row }) => ({
-            row,
-            state: getNotificationState(context.getMarkKinds(row.notificationId))
-        }));
+        .map(({ row }) => row);
+}
+
+/** Whether a generation counts for the view: it is neither dated ahead nor covered. */
+export function isShownRow(
+    row: Pick<ViewRow, "notificationId">,
+    context: Pick<ViewContext, "nowMs" | "isCovered">
+) {
+    const timeMs = getTimeOfNotificationId(row.notificationId);
+    return !isDatedAhead(timeMs, context.nowMs) && !context.isCovered(row.notificationId);
+}
+
+/**
+ * The state of a generation, whether the instance takes it as sensitive, and its content. The text
+ * of a version without the flag is left out once the notification is sensitive.
+ */
+export function describeRow<T extends ViewRow>(row: T, context: ViewContext): ViewEntry<T> {
+    const markKinds = [ ...context.getMarkKinds(row.notificationId) ];
+    const isSensitive = row.isSensitive || markKinds.includes("sensitive")
+        || isAboutSensitiveNote(row, context.isNoteSensitive);
+    const content = parseContent(row.content) ?? { v: 1 };
+    return {
+        row,
+        state: getNotificationState(markKinds),
+        isSensitive,
+        content: isSensitive && !row.isSensitive ? makeTextPrivate(content).content : content
+    };
+}
+
+/** Whether `isNoteSensitive()` takes the note that the notification refers to as sensitive. */
+function isAboutSensitiveNote(
+    row: Pick<ViewRow, "noteId" | "content">,
+    isNoteSensitive: (noteId: string) => boolean
+) {
+    const noteId = getReferencedNoteId(row.noteId, row.content);
+    return noteId !== null && isNoteSensitive(noteId);
+}
+
+/** The title and the description that a write moves to the private text, or `""` to clear one. */
+export interface PrivateText {
+    title?: string;
+    description?: string;
+}
+
+/**
+ * Takes the text out of a content: the title and the description, which a write can move to the
+ * private text, the progress label and the captions of the actions. A link keeps its note path,
+ * since its parameters can hold text that the user wrote.
+ */
+export function makeTextPrivate(
+    content: NotificationContent
+): { content: NotificationContent; text: PrivateText } {
+    const { link, actions } = content;
+    const publicContent = compactContent({
+        v: 1,
+        icon: content.icon,
+        progress: content.progress,
+        handler: content.handler,
+        link: link === undefined ? undefined : getLinkPath(link),
+        actions: actions?.map(({ id, icon }) =>
+            (icon === undefined ? { id, caption: "" } : { id, caption: "", icon }))
+    });
+    const text = toPrivateText(content.title, content.description) ?? {};
+    return { content: publicContent, text };
+}
+
+/** A link hash without its parameters: `#` and the note path. */
+export function getLinkPath(link: string) {
+    return splitOnce(link, "?")[0];
+}
+
+/** Whether a name is one of those that only built-in producers use. */
+export function isReservedName(name: string | undefined | null) {
+    return typeof name === "string" && name.startsWith(BUILT_IN_NOTIFICATION_PREFIX);
+}
+
+/** A raise as `checkInput()` returns it, with the defaults filled in. */
+export interface CheckedInput {
+    /** `undefined` when the caller passed none, and the service generates one. */
+    id: string | undefined;
+    raisedAtMs: number | undefined;
+    tag: string | null;
+    noteId: string | null;
+    category: NotificationCategory;
+    type: NotificationType;
+    attentionLevel: NotificationAttentionLevel;
+    /** The content as the caller gave it, its root text included. */
+    content: NotificationContent;
+    /** The private text that the caller passed, or `null`. */
+    privateText: PrivateText | null;
+    /** Whether the caller names it sensitive, by `sensitive: true` or by passing private text. */
+    isNamedSensitive: boolean;
+}
+
+/**
+ * Checks what a caller passes to `create()`. An empty text counts as absent.
+ *
+ * @param isBuiltIn whether the producer is built in: only such a producer uses reserved names.
+ * @throws NotificationError with the code of the first check that fails.
+ */
+export function checkInput(input: unknown, isBuiltIn: boolean, nowMs: number): CheckedInput {
+    if (!isPlainObject(input)) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const { id, title, description, protectedTitle, protectedDescription, icon, noteId, link } =
+        input;
+    const { tag, progress, progressLabel, actions, handler, raisedAt, sensitive } = input;
+    const { category = "general", type = "standard", attentionLevel = "medium" } = input;
+    if (!isOptional(id, isToken) || !isOptional(title, isLineText)
+        || !isOptional(description, isText) || !isOptional(protectedTitle, isLineText)
+        || !isOptional(protectedDescription, isText) || !isOptional(icon, isIcon)
+        || !isOptional(noteId, isNoteId) || !isOptional(link, isLink) || !isOptional(tag, isToken)
+        || !isOneOf(NOTIFICATION_CATEGORIES, category) || !isOneOf(NOTIFICATION_TYPES, type)
+        || !isOneOf(NOTIFICATION_ATTENTION_LEVELS, attentionLevel)
+        || !isOptional(progress, isProgress) || !isOptional(progressLabel, isLineText)
+        || !isOptional(actions, isActionList) || !isOptional(handler, isToken)
+        || !isOptional(raisedAt, isString) || !isOptional(sensitive, isBoolean)) {
+        throw new NotificationError("invalid-input");
+    }
+    if (!isBuiltIn && [ id, tag, handler ].some(isReservedName)) {
+        throw new NotificationError("reserved-name");
+    }
+
+    const raisedAtMs = raisedAt === undefined ? undefined : parseUtcDateTime(raisedAt);
+    if (raisedAtMs === null) {
+        throw new NotificationError("invalid-input");
+    }
+    if (raisedAtMs !== undefined && isDatedAhead(raisedAtMs, nowMs)) {
+        throw new NotificationError("raised-ahead");
+    }
+    // A link and a note ID that are given together refer to the same note.
+    if (noteId !== undefined && link !== undefined && getLinkNoteId(link) !== noteId) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const privateText = toPrivateText(protectedTitle, protectedDescription);
+    const isNamedSensitive = sensitive === true || privateText !== null;
+    if (!title && noteId === undefined && link === undefined && !isNamedSensitive) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const content = compactContent({
+        v: 1, title, description, icon, link, progress, progressLabel, handler,
+        actions: actions?.map(copyAction)
+    });
+    checkContentSize(content);
+    if (privateText) {
+        checkPlainPrivateTextSize(privateText);
+    }
+
+    return {
+        id,
+        raisedAtMs,
+        tag: tag ?? null,
+        noteId: noteId ?? null,
+        category,
+        type,
+        attentionLevel,
+        content,
+        privateText,
+        isNamedSensitive
+    };
+}
+
+/**
+ * Checks what a caller passes to `update()`. An empty text clears its field.
+ *
+ * @throws NotificationError with the code of the first check that fails.
+ */
+export function checkPatch(patch: unknown): NotificationPatch {
+    if (!isPlainObject(patch)) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const { title, description, protectedTitle, protectedDescription, icon, progress } = patch;
+    const { progressLabel, actions, sensitive } = patch;
+    if (!isOptional(title, isLineText) || !isOptional(description, isText)
+        || !isOptional(protectedTitle, isLineText) || !isOptional(protectedDescription, isText)
+        || !isOptional(icon, isIcon) || !isOptional(progress, isProgress)
+        || !isOptional(progressLabel, isLineText) || !isOptional(actions, isActionList)
+        || !isOptional(sensitive, isBoolean)) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const checked: NotificationPatch = {
+        title, description, protectedTitle, protectedDescription, icon, progress, progressLabel,
+        sensitive, actions: actions?.map(copyAction)
+    };
+    for (const key of Object.keys(checked) as (keyof NotificationPatch)[]) {
+        if (checked[key] === undefined) {
+            delete checked[key];
+        }
+    }
+    return checked;
+}
+
+/** A generation that a request names, with its time. */
+export interface CheckedRef {
+    id: string;
+    raisedAtMs: number;
+}
+
+/**
+ * Checks the refs of a request: at most 500, each an ID and a time.
+ *
+ * @throws NotificationError `invalid-input` for anything else.
+ */
+export function checkRefs(refs: unknown): CheckedRef[] {
+    if (!Array.isArray(refs) || refs.length > NOTIFICATION_MAX_REFS) {
+        throw new NotificationError("invalid-input");
+    }
+
+    return refs.map((ref: unknown) => {
+        const raisedAtMs = isPlainObject(ref) ? parseUtcDateTime(ref.raisedAt) : null;
+        if (!isPlainObject(ref) || !isToken(ref.id) || raisedAtMs === null) {
+            throw new NotificationError("invalid-input");
+        }
+        return { id: ref.id, raisedAtMs };
+    });
+}
+
+/** Drops the fields of a content that are absent or empty text. */
+export function compactContent(content: NotificationContent): NotificationContent {
+    const compact: Record<string, unknown> = {};
+    for (const [ key, value ] of Object.entries(content)) {
+        if (value !== undefined && value !== "") {
+            compact[key] = value;
+        }
+    }
+    return compact as unknown as NotificationContent;
+}
+
+/** @throws NotificationError `too-large` for a content over 8 KiB as stored. */
+export function checkContentSize(content: NotificationContent) {
+    if (encodeUtf8(JSON.stringify(content)).byteLength > CONTENT_MAX_BYTES) {
+        throw new NotificationError("too-large");
+    }
+}
+
+/** @throws NotificationError `too-large` for a private text over 8 KiB as plain JSON. */
+export function checkPlainPrivateTextSize(text: PrivateText) {
+    const plain = JSON.stringify({ v: 1, title: text.title, description: text.description });
+    if (encodeUtf8(plain).byteLength > PLAIN_PRIVATE_TEXT_MAX_BYTES) {
+        throw new NotificationError("too-large");
+    }
+}
+
+/** The non-empty text of the two fields, or `null` when both are empty. */
+function toPrivateText(title: string | undefined, description: string | undefined) {
+    if (!title && !description) {
+        return null;
+    }
+
+    const text: PrivateText = {};
+    if (title) {
+        text.title = title;
+    }
+    if (description) {
+        text.description = description;
+    }
+    return text;
+}
+
+function copyAction({ id, caption, icon }: NotificationAction): NotificationAction {
+    return icon === undefined ? { id, caption } : { id, caption, icon };
 }
 
 export interface HistoryEntry {
@@ -526,8 +800,17 @@ function isNullOr<T>(value: unknown, check: (value: unknown) => value is T): val
     return value === null || check(value);
 }
 
-function isToken(value: unknown): value is string {
+/** Whether a value has the charset and length of an ID, a tag, a handler or a producer. */
+export function isToken(value: unknown): value is string {
     return typeof value === "string" && TOKEN.test(value);
+}
+
+function isString(value: unknown): value is string {
+    return typeof value === "string";
+}
+
+function isBoolean(value: unknown): value is boolean {
+    return typeof value === "boolean";
 }
 
 function isNoteId(value: unknown): value is string {

@@ -35,10 +35,18 @@ interface UpdateContext {
     updated: Record<string, string[]>;
 }
 
+/** When this instance last applied a batch of sync, pushed to it or pulled by it. */
+let lastSyncedBatchTime = 0;
+
+export function getLastSyncedBatchTime() {
+    return lastSyncedBatchTime;
+}
+
 function updateEntities(entityChanges: EntityChangeRecord[], instanceId: string) {
     if (entityChanges.length === 0) {
         return;
     }
+    lastSyncedBatchTime = Date.now();
 
     let atLeastOnePullApplied = false;
     const updateContext = {

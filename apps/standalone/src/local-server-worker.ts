@@ -423,6 +423,9 @@ async function initialize(): Promise<void> {
 
             coreModule.sync.startSyncTimer();
             coreModule.scheduler.startScheduler();
+            const { becca_loader, notifications } = coreModule;
+            void becca_loader.beccaLoaded
+                .then(() => notifications.getNotificationService().start());
 
             logService.info("[Worker] Initialization complete");
             // Past this point an escaped error is one background task's problem

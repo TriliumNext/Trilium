@@ -6,7 +6,9 @@
  * that it writes passes the checks that a receiver applies to the row when sync brings it.
  */
 import {
+    getNotificationState,
     NOTIFICATION_MARK_KINDS,
+    type NotificationErrorCode,
     type NotificationMarkKind,
     type NotificationPrivateTextRow,
     type NotificationRow
@@ -18,10 +20,13 @@ import BNotificationMark from "../../becca/entities/bnotification_mark.js";
 import BNotificationPrivateText from "../../becca/entities/bnotification_private_text.js";
 import entityChangesService from "../entity_changes.js";
 import { getSql } from "../sql/index.js";
+import { hash } from "../utils/index.js";
 import {
+    AHEAD_TOLERANCE_MS,
     checkNotificationRow,
     checkPrivateTextRow,
     classifyRaise,
+    formatTimeKey,
     formatUtcDateTime,
     getDefaultRaisedAtMs,
     getKeyRange,
@@ -34,11 +39,12 @@ import {
     getTimeOfNotificationId,
     isDatedAhead,
     NotificationError,
-    type NotificationErrorCode,
     parseUtcDateTime,
     pickTrimmed,
     type RaiseOutcome,
     resolveView,
+    selectCurrentRows,
+    type ViewContext,
     type ViewEntry
 } from "./model.js";
 
@@ -82,25 +88,121 @@ export function raise(input: GenerationInput, options: RaiseOptions = {}): Raise
     throwIfInvalid(checkNotificationRow(toStoredRow(row)));
 
     return getSql().transactional(() => {
-        const generations = getGenerations(input.id);
-        const outcome = classifyRaise({
-            isCategoryOff,
-            raisedAtMs,
-            nowMs,
-            storedTimes: generations.map(getTime),
-            erasedTimes: getErasedTimes(input.id)
-        });
+        const outcome = isCategoryOff ? "categoryOff" : classify(input.id, raisedAtMs, nowMs);
         if (outcome !== "new") {
             const stored = outcome === "stored" ? becca.getNotification(row.notificationId) : null;
             return { outcome, notification: stored };
         }
 
         const notification = new BNotification(row).save();
-        const older = generations.filter((generation) => getTime(generation) < raisedAtMs);
+        const older = getGenerations(input.id)
+            .filter((generation) => getTime(generation) < raisedAtMs);
         eraseNotifications(older.map(({ notificationId }) => notificationId), nowMs);
         trimHistory(nowMs);
         return { outcome, notification };
     });
+}
+
+/** The outcome of a raise of the generation by the rules of a raise, its category left out. */
+export function classify(id: string, raisedAtMs: number, nowMs = Date.now()): RaiseOutcome {
+    return classifyRaise({
+        isCategoryOff: false,
+        raisedAtMs,
+        nowMs,
+        storedTimes: getGenerations(id).map(getTime),
+        erasedTimes: getErasedTimes(id)
+    });
+}
+
+/** The newest time of a stored or erased generation of the ID that is not dated ahead. */
+export function getNewestKnownTime(id: string, nowMs = Date.now()): number | null {
+    const times = [ ...getGenerations(id).map(getTime), ...getErasedTimes(id) ]
+        .filter((timeMs) => !isDatedAhead(timeMs, nowMs));
+    return times.length === 0 ? null : Math.max(...times);
+}
+
+/** Whether the note is held and plain, held and protected, or not held by this instance. */
+export function getNoteProtection(noteId: string): "plain" | "protected" | "missing" {
+    const note = becca.getNote(noteId);
+    if (!note) {
+        return "missing";
+    }
+    return note.isProtected ? "protected" : "plain";
+}
+
+export function getViewContext(nowMs = Date.now()): ViewContext {
+    return {
+        nowMs,
+        getMarkKinds,
+        isCovered: (notificationId) => isCovered(notificationId, nowMs),
+        isNoteSensitive: (noteId) => getNoteProtection(noteId) !== "plain"
+    };
+}
+
+export function getNotification(notificationId: string) {
+    return becca.getNotification(notificationId);
+}
+
+export function getPrivateText(notificationId: string) {
+    return becca.getNotificationPrivateText(notificationId);
+}
+
+export function getMark(markId: string) {
+    return becca.getNotificationMark(markId);
+}
+
+export function hasMark(notificationId: string, kind: NotificationMarkKind) {
+    return !!becca.getNotificationMark(getMarkId(notificationId, kind));
+}
+
+/** Every stored generation, whatever the view shows. */
+export function getStoredNotifications() {
+    return Object.values(becca.notifications);
+}
+
+/** The stored generations that refer to the note, by `noteId` or by their link. */
+export function getNotificationsAbout(noteId: string) {
+    return getStoredNotifications().filter((notification) =>
+        getReferencedNoteId(notification.noteId, notification.content) === noteId);
+}
+
+/**
+ * An opaque token of the stored row and its sealed private text, without the dates. It is never
+ * computed over opened text, since every client receives it.
+ */
+export function getRevision(notification: BNotification) {
+    const { notificationId, id, raisedAt, tag, noteId, category, type, attentionLevel } =
+        notification;
+    const { isSensitive, producer, content } = notification;
+    const privateContent = becca.getNotificationPrivateText(notificationId)?.content ?? null;
+    return hash(JSON.stringify([
+        notificationId, id, raisedAt, tag, noteId, category, type, attentionLevel, isSensitive,
+        producer, content, privateContent
+    ]));
+}
+
+/**
+ * The earliest time of a stored or erased generation that is dated ahead at `nowMs`, or `null`.
+ * The time keys are nine base-36 digits, so they sort as their times do.
+ */
+export function getEarliestTimeAhead(nowMs = Date.now()): number | null {
+    const storedTimes = getStoredNotifications().map(getTime)
+        .filter((timeMs) => isDatedAhead(timeMs, nowMs));
+    const erasedKey = getSql().getValue<string | null>(/*sql*/`
+        SELECT MIN(substr(entityId, 13)) FROM entity_changes
+        WHERE entityName = 'notifications' AND isErased = 1 AND substr(entityId, 13) > ?`,
+    [ formatTimeKey(nowMs + AHEAD_TOLERANCE_MS) ]);
+    const times = erasedKey ? [ ...storedTimes, parseInt(erasedKey, 36) ] : storedTimes;
+    return times.length === 0 ? null : Math.min(...times);
+}
+
+export function transactional<T>(fn: () => T): T {
+    return getSql().transactional(fn);
+}
+
+/** The newest entity change of this database. */
+export function getMaxEntityChangeId() {
+    return entityChangesService.getMaxEntityChangeId();
 }
 
 /** The `raisedAt` of a raise of `id` that has none: see `getDefaultRaisedAtMs()`. */
@@ -262,11 +364,7 @@ export function getGenerations(id: string) {
 
 /** The notifications that this instance shows, newest first: see `resolveView()`. */
 export function getView(nowMs = Date.now()): ViewEntry<BNotification>[] {
-    return resolveView(Object.values(becca.notifications), {
-        nowMs,
-        getMarkKinds,
-        isCovered: (notificationId) => isCovered(notificationId, nowMs)
-    });
+    return resolveView(getStoredNotifications(), getViewContext(nowMs));
 }
 
 /**
@@ -276,15 +374,13 @@ export function getView(nowMs = Date.now()): ViewEntry<BNotification>[] {
  */
 export function runHousekeeping(nowMs = Date.now()) {
     getSql().transactional(() => {
-        const view = getView(nowMs);
-        const shownIds = new Set(view.map(({ row }) => row.notificationId));
-        const covered = Object.values(becca.notifications)
+        const current = selectCurrentRows(getStoredNotifications(), getViewContext(nowMs));
+        const shownIds = new Set(current.map(({ notificationId }) => notificationId));
+        const covered = getStoredNotifications()
             .filter((notification) => !shownIds.has(notification.notificationId)
                 && !isDatedAhead(getTime(notification), nowMs));
-        const aboutDeletedNotes = view
-            .map(({ row }) => row)
-            .filter((notification) =>
-                isNoteDeleted(getReferencedNoteId(notification.noteId, notification.content)));
+        const aboutDeletedNotes = current.filter((notification) =>
+            isNoteDeleted(getReferencedNoteId(notification.noteId, notification.content)));
         eraseNotifications([ ...covered, ...aboutDeletedNotes ]
             .map(({ notificationId }) => notificationId), nowMs);
 
@@ -295,13 +391,14 @@ export function runHousekeeping(nowMs = Date.now()) {
 
 /** Erases the surplus of the history: see `pickTrimmed()`. */
 function trimHistory(nowMs: number) {
-    const entries = getView(nowMs).map(({ row, state }) => ({
-        notificationId: row.notificationId,
-        type: row.type,
-        attentionLevel: row.attentionLevel,
-        raisedAtMs: getTime(row),
-        state
-    }));
+    const entries = selectCurrentRows(getStoredNotifications(), getViewContext(nowMs))
+        .map((row) => ({
+            notificationId: row.notificationId,
+            type: row.type,
+            attentionLevel: row.attentionLevel,
+            raisedAtMs: getTime(row),
+            state: getNotificationState(getMarkKinds(row.notificationId))
+        }));
     eraseNotifications(pickTrimmed(entries, nowMs), nowMs);
 }
 

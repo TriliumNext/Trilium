@@ -425,6 +425,9 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
+    /** JSON array of the notification categories that are turned off. */
+    notificationDisabledCategories: string;
+
     // AI / LLM
     /** Whether the AI/LLM features (chat sidebar, LLM chat notes) are enabled. */
     aiEnabled: boolean;

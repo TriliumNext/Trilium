@@ -1,15 +1,20 @@
+import type { NotificationMarkKind } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { hashedBlobId } from "../utils/index.js";
 import {
     AHEAD_TOLERANCE_MS,
     checkChannelRecordRow,
+    checkInput,
     checkMarkRow,
     checkNotificationRow,
+    checkPatch,
     checkPrivateTextRow,
+    checkRefs,
     checkSyncedChange,
     classifyRaise,
     CONTENT_MAX_BYTES,
+    describeRow,
     formatTimeKey,
     formatUtcDateTime,
     getDefaultRaisedAtMs,
@@ -27,13 +32,15 @@ import {
     isDatedAhead,
     isNotificationEntityName,
     isNotificationId,
+    makeTextPrivate,
     NotificationError,
     parseContent,
     parsePrivateContent,
     parseUtcDateTime,
     pickTrimmed,
     PRIVATE_CONTENT_MAX_BYTES,
-    resolveView
+    resolveView,
+    type ViewRow
 } from "./model.js";
 
 const NOW = Date.UTC(2026, 10, 27, 12, 0, 0, 0);
@@ -161,7 +168,10 @@ describe("classifyRaise", () => {
 
 describe("resolveView", () => {
     const key = (id: string, timeMs: number) => getNotificationId(id, timeMs);
-    const row = (id: string, timeMs: number) => ({ notificationId: key(id, timeMs), id });
+    const row = (id: string, timeMs: number) => ({
+        notificationId: key(id, timeMs), id, noteId: null, isSensitive: false,
+        content: JSON.stringify({ v: 1, title: "Plain" })
+    });
 
     it("shows the newest generation of each ID that is neither ahead nor covered", () => {
         const rows = [
@@ -176,7 +186,8 @@ describe("resolveView", () => {
         const view = resolveView(rows, {
             nowMs: NOW,
             getMarkKinds: (notificationId) => marks.get(notificationId) ?? [],
-            isCovered: (notificationId) => covered.has(notificationId)
+            isCovered: (notificationId) => covered.has(notificationId),
+            isNoteSensitive: () => false
         });
 
         // `b` and `d` share a time, so the order falls to their keys.
@@ -492,5 +503,170 @@ describe("NotificationError", () => {
         expect(error.name).toBe("NotificationError");
         expect(error.code).toBe("raised-ahead");
         expect(error.message).toBe("raised-ahead");
+    });
+});
+
+describe("checkInput", () => {
+    const check = (input: unknown, isBuiltIn = false) => checkInput(input, isBuiltIn, NOW);
+    const codeOf = (input: unknown, isBuiltIn = false) => {
+        try {
+            check(input, isBuiltIn);
+            return null;
+        } catch (e) {
+            return e instanceof NotificationError ? e.code : "thrown";
+        }
+    };
+
+    it("fills in the defaults and leaves empty text out", () => {
+        expect(check({ title: "Title", description: "", progressLabel: "" })).toEqual({
+            id: undefined,
+            raisedAtMs: undefined,
+            tag: null,
+            noteId: null,
+            category: "general",
+            type: "standard",
+            attentionLevel: "medium",
+            content: { v: 1, title: "Title" },
+            privateText: null,
+            isNamedSensitive: false
+        });
+        expect(check({
+            id: "spec:a", raisedAt: AT, noteId: "abcd1234", link: "#root/abcd1234?block=x1",
+            tag: "spec:tag", category: "reminder", type: "persistent", attentionLevel: "high",
+            protectedTitle: "Private", sensitive: false,
+            actions: [ { id: "done", caption: "Done", icon: "bx bx-check", extra: 1 } ]
+        })).toMatchObject({
+            id: "spec:a", raisedAtMs: NOW, noteId: "abcd1234", tag: "spec:tag",
+            category: "reminder", type: "persistent", attentionLevel: "high",
+            content: {
+                v: 1, link: "#root/abcd1234?block=x1",
+                actions: [ { id: "done", caption: "Done", icon: "bx bx-check" } ]
+            },
+            privateText: { title: "Private" },
+            isNamedSensitive: true
+        });
+        expect(check({ noteId: "abcd1234", sensitive: true }).isNamedSensitive).toBe(true);
+    });
+
+    it.each([
+        [ "no object", "title", "invalid-input" ],
+        [ "no title, note, link or private text", {}, "invalid-input" ],
+        [ "a bell in a title", { title: `a${BELL}b` }, "invalid-input" ],
+        [ "a line feed in a title", { title: "a\nb" }, "invalid-input" ],
+        [ "a bell in a description", { title: "t", description: `a${BELL}b` }, "invalid-input" ],
+        [ "a tab in a private description", { title: "t", protectedDescription: "a\tb" },
+            "invalid-input" ],
+        [ "an ID with a space", { title: "t", id: "a b" }, "invalid-input" ],
+        [ "an ID of 101 characters", { title: "t", id: "a".repeat(101) }, "invalid-input" ],
+        [ "an unknown category", { title: "t", category: "other" }, "invalid-input" ],
+        [ "an icon with a quote", { title: "t", icon: "bx\"" }, "invalid-input" ],
+        [ "an address as link", { title: "t", link: "https://example.com" }, "invalid-input" ],
+        [ "a link with an unknown parameter", { title: "t", link: "#root?x=1" },
+            "invalid-input" ],
+        [ "a link into another note", { noteId: "abcd1234", link: "#root/efgh5678" },
+            "invalid-input" ],
+        [ "a progress over 1", { title: "t", progress: 1.5 }, "invalid-input" ],
+        [ "six actions", { title: "t", actions: Array(6).fill({ id: "a", caption: "A" }) },
+            "invalid-input" ],
+        [ "a sensitive flag that is no boolean", { title: "t", sensitive: "yes" },
+            "invalid-input" ],
+        [ "a time in another form", { title: "t", raisedAt: "2026-11-27T12:00:00Z" },
+            "invalid-input" ],
+        [ "a time more than an hour ahead", { title: "t",
+            raisedAt: formatUtcDateTime(NOW + AHEAD_TOLERANCE_MS + 1) }, "raised-ahead" ],
+        [ "a built-in ID", { title: "t", id: "trilium:x" }, "reserved-name" ],
+        [ "a built-in tag", { title: "t", tag: "trilium:x" }, "reserved-name" ],
+        [ "a built-in handler", { title: "t", handler: "trilium:x" }, "reserved-name" ],
+        [ "a content over 8 KiB", { title: "t", description: "d".repeat(CONTENT_MAX_BYTES) },
+            "too-large" ],
+        [ "a private text over 8 KiB", { protectedDescription: "d".repeat(CONTENT_MAX_BYTES) },
+            "too-large" ]
+    ] as const)("refuses %s", (_label, input, code) => {
+        expect(codeOf(input)).toBe(code);
+    });
+
+    it("takes the reserved names from a built-in producer", () => {
+        expect(codeOf({ title: "t", id: "trilium:x", tag: "trilium:y", handler: "trilium:z" },
+            true)).toBeNull();
+    });
+});
+
+describe("checkPatch", () => {
+    it("keeps the fields of a patch, an empty text included", () => {
+        expect(checkPatch({ title: "", description: "New", sensitive: true, other: 1 }))
+            .toEqual({ title: "", description: "New", sensitive: true });
+        for (const patch of [ null, [], { title: "a\nb" }, { icon: "" }, { progress: 2 },
+            { sensitive: 1 }, { actions: [ { caption: "No ID" } ] } ]) {
+            expect(() => checkPatch(patch), JSON.stringify(patch)).toThrow(NotificationError);
+        }
+    });
+});
+
+describe("checkRefs", () => {
+    it("takes at most 500 refs, each an ID and a time", () => {
+        expect(checkRefs([ { id: "spec:a", raisedAt: AT } ]))
+            .toEqual([ { id: "spec:a", raisedAtMs: NOW } ]);
+        expect(checkRefs(Array(500).fill({ id: "a", raisedAt: AT }))).toHaveLength(500);
+        for (const refs of [ null, {}, Array(501).fill({ id: "a", raisedAt: AT }),
+            [ { id: "a b", raisedAt: AT } ], [ { id: "a", raisedAt: NOW } ], [ "a" ] ]) {
+            expect(() => checkRefs(refs)).toThrow(NotificationError);
+        }
+    });
+});
+
+describe("makeTextPrivate", () => {
+    it("takes out the title, the description, the progress label and the captions", () => {
+        expect(makeTextPrivate({
+            v: 1, title: "Title", description: "Description", icon: "bx bx-bell",
+            link: "#root/abcd1234?searchTerms=private", progress: 0.5, progressLabel: "Half",
+            actions: [
+                { id: "a", caption: "Caption", icon: "bx bx-x" }, { id: "b", caption: "B" }
+            ],
+            handler: "spec:handler"
+        })).toEqual({
+            content: {
+                v: 1, icon: "bx bx-bell", progress: 0.5, handler: "spec:handler",
+                link: "#root/abcd1234",
+                actions: [ { id: "a", caption: "", icon: "bx bx-x" }, { id: "b", caption: "" } ]
+            },
+            text: { title: "Title", description: "Description" }
+        });
+        expect(makeTextPrivate({ v: 1 })).toEqual({ content: { v: 1 }, text: {} });
+    });
+});
+
+describe("describeRow", () => {
+    const content = JSON.stringify({ v: 1, title: "Title", link: "#root/abcd1234?block=b1" });
+    const row = (overrides: Partial<ViewRow> = {}): ViewRow => ({
+        notificationId: KEY, id: "spec:id", noteId: null, isSensitive: false, content,
+        ...overrides
+    });
+    const context = (markKinds: NotificationMarkKind[], sensitiveNotes: string[] = []) => ({
+        nowMs: NOW,
+        getMarkKinds: () => markKinds,
+        isCovered: () => false,
+        isNoteSensitive: (noteId: string) => sensitiveNotes.includes(noteId)
+    });
+
+    it("gives the text of a version while nothing makes it sensitive, or when flagged", () => {
+        const plain = describeRow(row(), context([ "seen" ]));
+        expect(plain).toMatchObject({ state: "seen", isSensitive: false });
+        expect(plain.content.title).toBe("Title");
+
+        for (const [ fact, markKinds, sensitiveNotes ] of [
+            [ "the mark", [ "sensitive" ], [] ],
+            [ "a protected note of the link", [], [ "abcd1234" ] ]
+        ] as const) {
+            const entry = describeRow(row(), context([ ...markKinds ], [ ...sensitiveNotes ]));
+            expect(entry.isSensitive, fact).toBe(true);
+            expect(entry.content, fact).toEqual({ v: 1, link: "#root/abcd1234" });
+        }
+
+        const flagged = describeRow(row({ isSensitive: true }), context([]));
+        expect(flagged.isSensitive).toBe(true);
+        expect(flagged.content.title).toBe("Title");
+        expect(describeRow(row({ noteId: "efgh5678", content: JSON.stringify({ v: 1 }) }),
+            context([], [ "efgh5678" ])).isSensitive).toBe(true);
+        expect(describeRow(row({ content: "{" }), context([])).content).toEqual({ v: 1 });
     });
 });
