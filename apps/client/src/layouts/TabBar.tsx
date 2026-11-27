@@ -6,19 +6,26 @@ import appContext from "../components/app_context.js";
 import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
 import { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
+import NotificationBell from "../widgets/notifications/NotificationBell.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
 
-/**
- * The tabs with the history buttons before them, and the full screen and right pane toggles after.
- * The desktop layout shows it, and so does a tablet's mobile layout, which has no right pane.
- */
-export default function TabBar({ fullWidth, leftPaneToggle, rightPaneToggle = true }: {
+interface TabBarProps {
     fullWidth: boolean;
     leftPaneToggle: boolean;
     rightPaneToggle?: boolean;
-}) {
+    notificationBell?: boolean;
+}
+
+/**
+ * The tabs with the history buttons before them, and the full screen button, the notification bell
+ * and the right pane toggle after. The desktop layout shows it, and so does a tablet's mobile
+ * layout, without the bell and the right pane toggle.
+ */
+export default function TabBar({
+    fullWidth, leftPaneToggle, rightPaneToggle = true, notificationBell = true
+}: TabBarProps) {
     const [ tabRow, tabRowWidget ] = useLegacyWidget(() => {
         const widget = new TabRowWidget();
         return fullWidth ? widget.class("full-width") : widget;
@@ -37,6 +44,7 @@ export default function TabBar({ fullWidth, leftPaneToggle, rightPaneToggle = tr
             <TabHistoryNavigationButtons />
             {tabRow}
             <LeaveFullScreenButton />
+            {notificationBell && <NotificationBell />}
             {rightPaneToggle && <RightPaneToggle />}
         </div>
     );

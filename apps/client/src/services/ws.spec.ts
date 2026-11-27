@@ -536,6 +536,28 @@ describe("WebSocket transport", () => {
         expect(lastSocket).not.toBe(first);
     });
 
+    it("tells the reconnect listeners when a connection is admitted after another", async () => {
+        const ws = await loadWsFresh();
+        const listener = vi.fn();
+        ws.subscribeToReconnect(listener);
+        vi.advanceTimersByTime(0);
+        const ping = { data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>;
+
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).not.toHaveBeenCalled();
+
+        const first = lastSocket;
+        first.readyState = FakeSocket.CLOSED;
+        vi.advanceTimersByTime(1000);
+        expect(lastSocket).not.toBe(first);
+        // The backend sends nothing before it admits a connection.
+        expect(listener).not.toHaveBeenCalled();
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
     it("sends the page's CSRF token as the first message of a connection", async () => {
         (window as any).glob = { ...baseGlob, dbInitialized: true, csrfToken: "page-token" };
         await loadWsFresh();

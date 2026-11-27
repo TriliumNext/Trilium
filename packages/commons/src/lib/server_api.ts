@@ -1517,6 +1517,11 @@ export type BootstrapDefinition = {
     hasBackgroundEffects: boolean;
     maxEntityChangeIdAtLoad?: number;
     maxEntityChangeSyncIdAtLoad?: number;
+    /**
+     * A hash of the document ID, which names the channel that the tabs of one database use to
+     * share out the alerts of notifications. Absent before the database is initialized.
+     */
+    documentIdHash?: string;
     instanceName: string | null;
     appCssNoteIds: string[];
     isDev: boolean;

@@ -19,6 +19,7 @@ import {
     type NotificationMarkRow,
     type NotificationPatch,
     type NotificationPrivateContent,
+    type NotificationPrivateTextUpdate,
     type NotificationRow,
     type NoteRow,
     type TriliumNotification,
@@ -458,11 +459,12 @@ export default class NotificationService {
         if (entityName !== "notification_private_texts") {
             return null;
         }
-        return {
+        const update: NotificationPrivateTextUpdate = {
             notificationId: entityId,
             revision: this.store.getRevision(notification),
             ...this.openPrivateFields(entityId, getNotificationKeys())
         };
+        return update;
     }
 
     /**

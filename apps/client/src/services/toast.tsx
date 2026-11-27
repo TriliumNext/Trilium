@@ -43,6 +43,13 @@ export interface ToastOptions {
      * user. Useful for resetting state that accumulated while the toast was live (see {@link notes}).
      */
     onRemove?: () => void;
+    /**
+     * Makes the toast clickable: a click on it outside its buttons and links runs this, as the
+     * default action of what it shows.
+     */
+    onClick?: (api: { dismissToast: () => void }) => void;
+    /** Invoked when the user closes the toast with its close button, before {@link onRemove}. */
+    onDismiss?: () => void;
     buttons?: {
         text: string;
         onClick: (api: { dismissToast: () => void }) => void;

@@ -9,6 +9,16 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // A device option added in this version. Earlier versions stored a peer's row under any name,
+    // so a row with this name can come from a peer: it starts empty.
+    {
+        version: 246,
+        sql: /*sql*/`
+            DELETE FROM options WHERE name = 'notificationsSilent';
+            DELETE FROM entity_changes WHERE entityName = 'options'
+                AND entityId = 'notificationsSilent';
+        `
+    },
     // The tables of notifications: four that sync and the local one of deliveries. The statements
     // are those of schema.sql.
     {

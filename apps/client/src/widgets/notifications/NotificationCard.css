@@ -1,0 +1,157 @@
+:where(:root) {
+    --notification-card-hover-background-color: var(--hover-item-background-color);
+    --notification-card-muted-text-color: var(--muted-text-color);
+    --notification-card-unread-dot-color: var(--admonition-note-accent-color, #0d6efd);
+    --notification-card-high-icon-color: var(--admonition-caution-accent-color, #ff2e2e);
+    --notification-card-progress-color: var(--main-text-color);
+}
+
+@keyframes notification-progress-sweep {
+    from {
+        translate: -100% 0;
+    }
+
+    to {
+        translate: 340% 0;
+    }
+}
+
+.notification-card {
+    display: flex;
+    align-items: flex-start;
+    border-radius: 6px;
+
+    &:hover {
+        background-color: var(--notification-card-hover-background-color);
+    }
+
+    &.attention-high .notification-card-icon {
+        color: var(--notification-card-high-icon-color);
+    }
+
+    &.is-read .notification-card-title {
+        font-weight: normal;
+    }
+
+    .notification-card-main {
+        display: flex;
+        flex-grow: 1;
+        gap: 10px;
+        padding: 8px 0 8px 10px;
+        min-width: 0;
+
+        &.is-clickable {
+            cursor: pointer;
+        }
+    }
+
+    .notification-card-icon {
+        flex-shrink: 0;
+        font-size: 1.3em;
+        line-height: 1.3;
+    }
+
+    .notification-card-body {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .notification-card-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .notification-card-title {
+        flex-grow: 1;
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+        unicode-bidi: plaintext;
+    }
+
+    .notification-card-time {
+        flex-shrink: 0;
+        color: var(--notification-card-muted-text-color);
+        font-size: 0.8em;
+        white-space: nowrap;
+    }
+
+    .notification-card-description {
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+        unicode-bidi: plaintext;
+    }
+
+    .notification-card-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-block-start: 4px;
+        color: var(--notification-card-muted-text-color);
+        font-size: 0.85em;
+
+        .tn-progress-bar {
+            flex-grow: 1;
+
+            &::after {
+                background-color: var(--notification-card-progress-color);
+            }
+
+            &.is-indeterminate::after {
+                width: 30%;
+                animation: notification-progress-sweep 1.4s ease-in-out infinite;
+            }
+        }
+    }
+
+    .notification-card-source {
+        color: var(--notification-card-muted-text-color);
+        font-size: 0.8em;
+    }
+
+    .notification-read-dot,
+    .notification-read-dot-slot {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+    }
+
+    .notification-read-dot {
+        --icon-button-size: 44px;
+        --icon-button-icon-ratio: 0.45;
+        --icon-button-hover-background: transparent;
+
+        position: relative;
+        border: 0;
+        background: transparent;
+
+        &::before {
+            opacity: 0;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            background-color: var(--notification-card-unread-dot-color);
+        }
+
+        &:is(:hover, :focus-visible, :active) {
+            &::before {
+                opacity: 1;
+            }
+
+            &::after {
+                opacity: 0;
+            }
+        }
+    }
+}

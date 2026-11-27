@@ -225,6 +225,17 @@ export interface NotificationListResponse {
     counts?: NotificationCounts;
 }
 
+/**
+ * What a `frontend-update` attaches to a change of a private text: the revision of its notification
+ * and, while a protected session is open, its text.
+ */
+export interface NotificationPrivateTextUpdate {
+    notificationId: string;
+    revision: string;
+    protectedTitle?: string;
+    protectedDescription?: string;
+}
+
 /** `POST /api/notifications`. `null` when none is stored, for the reasons of a raise. */
 export interface NotificationCreateResponse {
     notification: TriliumNotification | null;

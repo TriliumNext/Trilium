@@ -125,8 +125,15 @@ async function put<T>(
     return await call<T>("PUT", url, componentId, { data, ...silence });
 }
 
-async function patch<T>(url: string, data: unknown, componentId?: string) {
-    return await call<T>("PATCH", url, componentId, { data });
+/**
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that shows the
+ * failure itself.
+ */
+async function patch<T>(
+    url: string, data: unknown, componentId?: string,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
+) {
+    return await call<T>("PATCH", url, componentId, { data, ...silence });
 }
 
 async function remove<T>(url: string, componentId?: string) {

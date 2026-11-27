@@ -5552,5 +5552,29 @@
   },
   "scroll_rail": {
     "show_highlights": "Highlights"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell-label-pending_one": "Notifications: {{count}} new",
+    "bell-label-pending_other": "Notifications: {{count}} new",
+    "mark-all-read": "Mark all as read",
+    "clear-all": "Clear all",
+    "silent": "Silent",
+    "silent-on-tooltip": "Show no toasts and play no sound for notifications on this device",
+    "silent-off-tooltip": "Show toasts and play the sound for notifications on this device again",
+    "empty": "No notifications",
+    "show-more": "Show more",
+    "mark-read": "Mark as read",
+    "limit-reached": "This device holds as many notifications as it can and takes no new ones. Clear some to make room.",
+    "daily-budget-script": "The script <script /> reached its daily limit of notifications, so its new ones are dropped for now.",
+    "daily-budget-client": "A frontend script reached its daily limit of notifications, so its new ones are dropped for now.",
+    "source-script": "From the script <script />",
+    "source-client": "From a frontend script",
+    "enter-protected-session": "Enter the protected session to see the details.",
+    "category-title": {
+      "general": "Notification",
+      "reminder": "Reminder",
+      "softwareUpdate": "Software update"
+    }
   }
 }

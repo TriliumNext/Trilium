@@ -10,6 +10,7 @@ import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { getNoteImageSourceToLoad } from "./image_urls.js";
 import type LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
+import notificationStore from "./notifications.js";
 import options from "./options.js";
 import utils from "./utils.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -57,13 +58,19 @@ describe("froca_updater - empty / no-op handling", () => {
         expect(invalidateSpy).not.toHaveBeenCalled();
     });
 
-    it("takes the changes of the four tables of notifications without an event", async () => {
+    it("hands the changes of notifications to their store, without an event", async () => {
+        const applySpy = vi.spyOn(notificationStore, "applyEntityChanges")
+            .mockImplementation(() => {});
         const entityNames = [
             "notifications", "notification_marks", "notification_private_texts",
             "notification_channel_records"
         ] as const;
-        await process(entityNames.map((entityName) => ec({ entityName, entityId: "n" })));
+        const changes = entityNames.map((entityName) => ec({ entityName, entityId: "n" }));
+        await process([ ...changes, ec({ entityName: "blobs", entityId: "blob1" }) ]);
+
         expect(triggerSpy).not.toHaveBeenCalled();
+        expect(applySpy).toHaveBeenCalledWith(changes);
+        applySpy.mockRestore();
     });
 
     it("names a change of notifications by its entity, ID and number in messages", () => {

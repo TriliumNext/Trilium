@@ -105,7 +105,10 @@ const loadLeftPaneToggle = () => import("../widgets/buttons/left_pane_toggle.js"
 function LazyTabBar({ fullWidth }: { fullWidth: boolean }) {
     const tabBar = useLazyModule(loadTabBar);
     return tabBar && (
-        <tabBar.default fullWidth={fullWidth} leftPaneToggle={false} rightPaneToggle={false} />
+        <tabBar.default
+            fullWidth={fullWidth} leftPaneToggle={false} rightPaneToggle={false}
+            notificationBell={false}
+        />
     );
 }
 

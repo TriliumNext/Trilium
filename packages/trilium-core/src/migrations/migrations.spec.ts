@@ -45,4 +45,24 @@ describe("migrations", () => {
                 .toBe(1);
         }
     });
+
+    it("deletes every row of the device option that version 246 adds", () => {
+        const migration = MIGRATIONS.find(({ version }) => version === 246);
+        expect(migration && "sql" in migration).toBe(true);
+        const sql = getSql();
+        // A row and its entity change as a peer of an earlier version planted them.
+        sql.execute(`INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified)
+            VALUES ('notificationsSilent', 'true', 1, '2026-01-01 00:00:00.000Z')`);
+        sql.execute(`INSERT OR REPLACE INTO entity_changes (entityName, entityId, hash, isErased,
+            changeId, componentId, instanceId, isSynced, utcDateChanged)
+            VALUES ('options', 'notificationsSilent', 'x', 0, 'planted', 'c', 'peer', 0,
+            '2026-01-01 00:00:00.000Z')`);
+
+        sql.executeScript(migration && "sql" in migration ? migration.sql : "");
+
+        expect(sql.getValue("SELECT COUNT(*) FROM options WHERE name = 'notificationsSilent'"))
+            .toBe(0);
+        expect(sql.getValue(`SELECT COUNT(*) FROM entity_changes
+            WHERE entityName = 'options' AND entityId = 'notificationsSilent'`)).toBe(0);
+    });
 });

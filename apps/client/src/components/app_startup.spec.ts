@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     loadTabs: vi.fn(async () => {}),
@@ -53,6 +53,7 @@ vi.mock("../services/keyboard_actions.js", async (importOriginal) => ({
     }
 }));
 
+import notificationStore from "../services/notifications.js";
 import server from "../services/server.js";
 import appContext from "./app_context.js";
 import { startAppAroundLayout } from "./app_startup.js";
@@ -63,6 +64,10 @@ import TabManager from "./tab_manager.js";
 import zoomComponent from "./zoom.js";
 
 describe("startAppAroundLayout", () => {
+    beforeEach(() => {
+        vi.spyOn(notificationStore, "start").mockImplementation(() => {});
+    });
+
     afterEach(() => {
         if (appContext.children.includes(zoomComponent)) {
             appContext.removeChild(zoomComponent);
@@ -80,9 +85,11 @@ describe("startAppAroundLayout", () => {
         expect(mocks.setupClipboardImageEmbed).toHaveBeenCalled();
         expect(mocks.setupLinkHandlers).toHaveBeenCalled();
         expect(mocks.preloadCommonNoteTypes).not.toHaveBeenCalled();
+        expect(notificationStore.start).not.toHaveBeenCalled();
 
         expect(await started).toBe(true);
         expect(mocks.preloadCommonNoteTypes).toHaveBeenCalled();
+        expect(notificationStore.start).toHaveBeenCalledOnce();
         expect(mocks.showPersistent).not.toHaveBeenCalled();
     });
 
@@ -97,6 +104,7 @@ describe("startAppAroundLayout", () => {
             message: expect.stringContaining("no tree")
         }));
         expect(mocks.preloadCommonNoteTypes).not.toHaveBeenCalled();
+        expect(notificationStore.start).not.toHaveBeenCalled();
 
         mocks.loadTabs.mockRejectedValueOnce("offline");
         await startAppAroundLayout(document.createElement("div"));

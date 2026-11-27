@@ -16,7 +16,10 @@ export default function ToastContainer() {
     );
 }
 
-function Toast({ id, title, timeout, progress, message, messageMonospace, icon, buttons, dismissible, wide, notes, notesHeading }: ToastOptionsWithRequiredId) {
+function Toast({
+    id, title, timeout, progress, message, messageMonospace, icon, buttons, dismissible, wide,
+    notes, notesHeading, onClick, onDismiss
+}: ToastOptionsWithRequiredId) {
     // Autohide. The countdown restarts whenever the message changes, so a persistent toast reused for a
     // repeating event (the same id showing a newer error) stays up for its full duration from the latest
     // update rather than expiring on the first one's deadline. Progress toasts are unaffected: they carry
@@ -36,16 +39,32 @@ function Toast({ id, title, timeout, progress, message, messageMonospace, icon, 
     const closeButton = dismissible === false ? null : (
         <button
             type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"
-            onClick={dismissToast}
+            onClick={() => {
+                onDismiss?.();
+                dismissToast();
+            }}
         />
     );
     const toastIcon = <Icon icon={icon.startsWith("bx ") ? icon : `bx bx-${icon}`} />;
 
+    function runClick(e: Event) {
+        if (!onClick || (e.target as Element | null)?.closest("button, a")) return;
+        onClick({ dismissToast });
+    }
+
     return (
         <div
-            class={clsx("toast", !title && "no-title", dismissible === false && "not-dismissible", wide && "wide")}
+            class={clsx(
+                "toast", !title && "no-title", dismissible === false && "not-dismissible",
+                wide && "wide", onClick && "clickable"
+            )}
             role="alert" aria-live="assertive" aria-atomic="true"
             id={`toast-${id}`}
+            tabIndex={onClick ? 0 : undefined}
+            onClick={onClick ? runClick : undefined}
+            onKeyDown={onClick ? (e) => {
+                if (e.key === "Enter") runClick(e);
+            } : undefined}
         >
             {title ? (
                 <>

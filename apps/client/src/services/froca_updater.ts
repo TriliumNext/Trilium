@@ -10,6 +10,7 @@ import froca from "./froca.js";
 import { invalidateNoteImages } from "./image_urls.js";
 import LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
+import notificationStore from "./notifications.js";
 import options from "./options.js";
 
 async function processEntityChanges(changes: EntityChange[]) {
@@ -41,7 +42,7 @@ async function processEntityChanges(changes: EntityChange[]) {
             } else if (ec.entityName === "blobs") {
                 // NOOP - these entities are handled at the backend level and don't require frontend processing
             } else if (NOTIFICATION_ENTITY_NAMES.has(ec.entityName)) {
-                // NOOP - notifications are not part of froca
+                // Not part of froca: the notification store takes them below.
             } else if (ec.entityName === "etapi_tokens") {
                 loadResults.hasEtapiTokenChanges = true;
             } else {
@@ -52,6 +53,9 @@ async function processEntityChanges(changes: EntityChange[]) {
             throw new Error(`Can't process entity ${loggable} with error ${e.message} ${e.stack}`);
         }
     }
+
+    notificationStore.applyEntityChanges(
+        entityChanges.filter(({ entityName }) => NOTIFICATION_ENTITY_NAMES.has(entityName)));
 
     // froca is supposed to contain all notes currently being visible to the users in the tree / otherwise being processed
     // and their complete "ancestor relationship", so it's always possible to go up in the hierarchy towards the root.

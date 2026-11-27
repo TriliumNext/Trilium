@@ -166,6 +166,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "seenCallToActions",
     "experimentalFeatures",
     "notificationDisabledCategories",
+    "notificationsSilent",
     // LLM options
     "aiEnabled",
     "llmProviders",

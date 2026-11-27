@@ -12,6 +12,8 @@ import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
+/** The listeners of {@link subscribeToReconnect}. */
+const reconnectListeners: (() => void)[] = [];
 
 let ws: WebSocket;
 // In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
@@ -33,6 +35,10 @@ let isCsrfTokenRenewed = false;
 let isRenewingCsrfToken = false;
 /** Whether the renewed token was refused too, after which the socket stays closed. */
 let areLiveUpdatesRefused = false;
+/** Whether the backend has admitted the current connection, which its first message tells. */
+let isConnectionAdmitted = false;
+/** Whether the backend has admitted a connection since the page loaded. */
+let wasConnectionAdmitted = false;
 
 function sendOutgoing(message: object): boolean {
     if (ipcWs) {
@@ -74,6 +80,14 @@ export function subscribeToMessages(messageHandler: MessageHandler) {
 
 export function unsubscribeToMessage(messageHandler: MessageHandler) {
     messageHandlers = messageHandlers.filter(handler => handler !== messageHandler);
+}
+
+/**
+ * Calls `listener` each time the backend admits a connection after an earlier one. The messages
+ * sent in between are lost, so a listener loads what it shows again.
+ */
+export function subscribeToReconnect(listener: () => void) {
+    reconnectListeners.push(listener);
 }
 
 /**
@@ -226,6 +240,15 @@ async function runInUpdateQueue(task: () => Promise<void>) {
 async function handleWebSocketMessage(event: MessageEvent<string>) {
     // Messages arrive only over a connection that the backend admitted.
     isCsrfTokenRenewed = false;
+    if (!isConnectionAdmitted) {
+        isConnectionAdmitted = true;
+        if (wasConnectionAdmitted) {
+            for (const listener of reconnectListeners) {
+                listener();
+            }
+        }
+        wasConnectionAdmitted = true;
+    }
     const message = JSON.parse(event.data) as WebSocketMessage;
     await dispatchMessage(message);
 }
@@ -316,6 +339,7 @@ function connectWebSocket() {
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
+    isConnectionAdmitted = false;
     ws.onopen = () => {
         // The backend admits a connection only when its first message is the page's CSRF token.
         ws.send(JSON.stringify({ type: "csrf-token", token: glob.csrfToken }));

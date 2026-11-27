@@ -37,6 +37,10 @@
     --bs-toast-max-width: min(500px, 90vw);
 }
 
+.toast.clickable {
+    cursor: pointer;
+}
+
 .toast-header {
     background-color: var(--more-accented-background-color) !important;
     color: var(--main-text-color) !important;
