@@ -18,6 +18,7 @@ import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.js";
 import NoteActions from "../widgets/layout/NoteActions.js";
 import StatusBar from "../widgets/layout/StatusBar.js";
+import VerticalTabs from "../widgets/layout/VerticalTabs.js";
 import { placeCustomWidgets, useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
@@ -26,6 +27,9 @@ import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
 import { LazyDialog, Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
+
+/** Shows the tabs in the left pane, above the note tree, instead of in a row above the note. */
+const VERTICAL_TABS = true;
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
@@ -67,7 +71,11 @@ export default function DesktopLayout() {
             >
                 {!isHorizontal && launcherPane}
                 <LeftPanePeekButton />
-                <LeftPane pane={leftPane} between={(gap, builtInCount) => <CustomWidgets parent="left-pane" slot={paneSlots.leftPane} gap={gap} builtInCount={builtInCount} />} />
+                <LeftPane
+                    pane={leftPane}
+                    between={(gap, builtInCount) => <CustomWidgets parent="left-pane" slot={paneSlots.leftPane} gap={gap} builtInCount={builtInCount} />}
+                    tabs={VERTICAL_TABS && <VerticalTabs />}
+                />
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
                     <FixedFormattingToolbar />
@@ -101,8 +109,24 @@ const NOTE_SPLIT_PARTS: NoteSplitParts = {
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
 const loadPasswordNotSetDialog = () => import("../widgets/dialogs/password_not_set.js");
 
-/** The tabs with the history buttons before them, and the full screen and right pane toggles after. */
+/**
+ * The tabs with the history buttons before them, and the full screen and right pane toggles after.
+ * With `VERTICAL_TABS`, an empty title bar takes the place of the tabs.
+ */
 function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneToggle: boolean }) {
+    return (
+        <div className={`tab-row-container ${fullWidth ? "full-width" : ""}`}>
+            {fullWidth && <div id="tab-row-left-spacer" />}
+            {leftPaneToggle && <LeftPaneToggle isHorizontalLayout={true} />}
+            <TabHistoryNavigationButtons />
+            {VERTICAL_TABS ? <div className="title-bar-filler" /> : <TabRow fullWidth={fullWidth} />}
+            <LeaveFullScreenButton />
+            <RightPaneToggle />
+        </div>
+    );
+}
+
+function TabRow({ fullWidth }: { fullWidth: boolean }) {
     const [ tabRow, tabRowWidget ] = useLegacyWidget(() => {
         const widget = new TabRowWidget();
         return fullWidth ? widget.class("full-width") : widget;
@@ -114,16 +138,7 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
         }
     }, [ tabRowWidget ]);
 
-    return (
-        <div className={`tab-row-container ${fullWidth ? "full-width" : ""}`}>
-            {fullWidth && <div id="tab-row-left-spacer" />}
-            {leftPaneToggle && <LeftPaneToggle isHorizontalLayout={true} />}
-            <TabHistoryNavigationButtons />
-            {tabRow}
-            <LeaveFullScreenButton />
-            <RightPaneToggle />
-        </div>
-    );
+    return tabRow;
 }
 
 

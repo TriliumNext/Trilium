@@ -1,0 +1,184 @@
+.vertical-tabs {
+    --vertical-tab-height: 32px;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 40%;
+
+    &.sized {
+        flex: none;
+        height: var(--vertical-tabs-height);
+        max-height: none;
+    }
+
+    .vertical-tabs-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 0;
+        padding: 6px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .vertical-tabs-resizer {
+        flex-shrink: 0;
+        position: relative;
+        height: 9px;
+        cursor: row-resize;
+        touch-action: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-inline: 10px;
+            top: 4px;
+            height: 1px;
+            background: var(--main-border-color);
+            transition: background-color 75ms ease-in;
+        }
+
+        &:hover::before,
+        &.dragging::before {
+            height: 3px;
+            top: 3px;
+            border-radius: 3px;
+            background: var(--main-text-color);
+            opacity: 0.4;
+        }
+    }
+
+    .vertical-tabs-pinned {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 4px;
+        padding-bottom: 8px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .vertical-tab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: var(--vertical-tab-height);
+        padding-inline: 10px 4px;
+        border-radius: 6px;
+        color: var(--inactive-tab-text-color, var(--left-pane-text-color));
+        cursor: default;
+        user-select: none;
+        transition: background-color 75ms ease-in;
+
+        &:hover {
+            background: var(--left-pane-item-hover-background, var(--inactive-tab-hover-background-color));
+            transition: none;
+        }
+
+        &.active {
+            background: var(--left-pane-item-selected-background, var(--active-tab-background-color));
+            box-shadow: var(--left-pane-item-selected-shadow, var(--active-tab-shadow));
+            color: var(--left-pane-item-selected-color, var(--active-tab-text-color));
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 6px;
+            inset-inline-start: 0;
+            width: 3px;
+            border-radius: 3px;
+            background-color: var(--workspace-tab-background-color, transparent);
+        }
+
+        &.pinned {
+            justify-content: center;
+            padding: 0;
+            height: 36px;
+
+            &::before {
+                inset-block: auto 0;
+                inset-inline: 10px;
+                width: auto;
+                height: 3px;
+            }
+        }
+
+        &.drop-before::after,
+        &.drop-after::after {
+            content: "";
+            position: absolute;
+            inset-inline: 4px;
+            height: 2px;
+            border-radius: 2px;
+            background: var(--main-text-color);
+        }
+
+        &.drop-before::after {
+            top: -2px;
+        }
+
+        &.drop-after::after {
+            bottom: -2px;
+        }
+
+        &.pinned.drop-before::after,
+        &.pinned.drop-after::after {
+            inset-inline: auto;
+            inset-block: 4px;
+            width: 2px;
+            height: auto;
+        }
+
+        &.pinned.drop-before::after {
+            inset-inline-start: -3px;
+        }
+
+        &.pinned.drop-after::after {
+            inset-inline-end: -3px;
+        }
+    }
+
+    .vertical-tab-icon {
+        flex-shrink: 0;
+        font-size: 1.15em;
+    }
+
+    .vertical-tab.active .vertical-tab-icon {
+        color: var(--active-tab-icon-color, inherit);
+    }
+
+    .vertical-tab-title {
+        flex-grow: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .vertical-tab-segment.active {
+        font-weight: 600;
+    }
+
+    .vertical-tab-close {
+        flex-shrink: 0;
+        visibility: hidden;
+    }
+
+    .vertical-tab:hover .vertical-tab-close,
+    .vertical-tab.active .vertical-tab-close {
+        visibility: visible;
+    }
+
+    .vertical-tabs-new-tab {
+        justify-content: flex-start;
+        gap: 8px;
+        height: var(--vertical-tab-height);
+        padding-inline: 10px;
+        border-radius: 6px;
+        color: var(--inactive-tab-text-color, var(--left-pane-text-color));
+    }
+}

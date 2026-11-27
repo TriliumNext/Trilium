@@ -44,6 +44,12 @@
         }
     }
 
+    .title-bar-filler {
+        flex-grow: 1;
+        align-self: stretch;
+        -webkit-app-region: drag;
+    }
+
     .tab-row-host {
         display: flex;
         flex-grow: 1;

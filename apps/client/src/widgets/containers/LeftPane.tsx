@@ -97,13 +97,15 @@ export function useLeftPane(isHorizontalLayout: boolean): LeftPaneController {
 }
 
 /**
- * The note tree, with the quick search above it in the vertical layout. `between` gives what goes in
- * each gap around these built-in children, from the one before the first to the one after the last.
+ * The note tree, with the quick search above it in the vertical layout and `tabs`, if given, between
+ * the two. `between` gives what goes in each gap around these built-in children, from the one before
+ * the first to the one after the last; `tabs` is not one of them.
  * The tree is loaded once the pane is first shown, and stays mounted while it is closed again.
  */
-export default function LeftPane({ pane, between }: {
+export default function LeftPane({ pane, between, tabs }: {
     pane: LeftPaneController;
     between?: (gap: number, builtInCount: number) => ComponentChildren;
+    tabs?: ComponentChildren;
 }) {
     const { mode, visible, isHorizontalLayout } = pane;
     const builtInCount = isHorizontalLayout ? 2 : 3;
@@ -128,6 +130,7 @@ export default function LeftPane({ pane, between }: {
                 {between?.(0, builtInCount)}
                 {!isHorizontalLayout && <LazyQuickSearch />}
                 {!isHorizontalLayout && between?.(1, builtInCount)}
+                {tabs}
                 <ShowAllNotesButton />
                 {between?.(builtInCount - 1, builtInCount)}
                 {wasShown.current && <NoteTree />}

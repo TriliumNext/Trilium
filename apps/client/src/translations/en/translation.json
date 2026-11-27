@@ -2997,7 +2997,8 @@
     "leave_full_screen": "Leave full screen",
     "add_new_tab_hint": "Right click or hold for more options.",
     "show_all_recent_changes": "All recent changes",
-    "recently_changed_notes": "Recently changed notes"
+    "recently_changed_notes": "Recently changed notes",
+    "tabs": "Tabs"
   },
   "toc": {
     "table_of_contents": "Table of Contents",
