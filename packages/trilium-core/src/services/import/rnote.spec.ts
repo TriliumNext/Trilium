@@ -74,6 +74,10 @@ describe("convertRnote", () => {
         expect(document.strokes.map(({ w, k }: { w: number, k: number }) => [ w, k ]))
             .toEqual([ [ 5.2, 0 ], [ 3, 0 ], [ 2, 0 ], [ 3, 100 ] ]);
         expect(document.strokes[3].p).toEqual([ 0, 0, 128, 50, 0, 127 ]);
+
+        // A stroke of more points than a function takes arguments.
+        const long = Array.from({ length: 300_000 }, (_, i) => [ i, i % 2, 0.5 ]);
+        expect(convert(rnote([ brush(long) ])).document.strokes[0].w).toBe(3);
     });
 
     it("maps black ink to the text color and translucent ink to the highlighter", () => {

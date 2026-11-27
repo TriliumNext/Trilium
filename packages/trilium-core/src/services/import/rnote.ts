@@ -124,7 +124,9 @@ function convertBrushStroke(stroke: JsonRecord): SerializedStroke | undefined {
     // The highlighter has one width, and so has a stroke drawn at one pressure.
     if (look.t || widths.every((share) => share === widths[0])) {
         const points = positions.flatMap(([ x, y ]) => [ x, y, EVEN_PRESSURE ]);
-        return buildStroke(look, width * Math.max(...widths), 0, points);
+        let widest = 0;
+        for (const share of widths) widest = Math.max(widest, share);
+        return buildStroke(look, width * widest, 0, points);
     }
     // At a sensitivity of 100, a stroke is as wide as twice its size times the pressure.
     const points = positions.flatMap(([ x, y ], index) => [ x, y, widths[index] ]);
