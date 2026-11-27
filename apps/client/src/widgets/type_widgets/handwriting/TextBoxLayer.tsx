@@ -193,7 +193,7 @@ function TextBox({
                     </Suspense>
                 </div>
             )}
-            {!(isEditing && isEditorReady) && <TextPreview html={box.html} />}
+            {!(isEditing && isEditorReady) && <TextPreview html={box.html} isOpening={isEditing} />}
             {isSelected && (
                 <div className="handwriting-text-box-resize" onPointerDown={(e) => startResize(e, box)} />
             )}
@@ -201,10 +201,17 @@ function TextBox({
     );
 }
 
-/** The text of a box as it is shown while it is not edited, or a hint for a box without text. */
-function TextPreview({ html }: { html: string }) {
+/**
+ * The text of a box as it is shown while it is not edited, or a hint for a box without text. A
+ * box without text whose editor `isOpening` shows an empty line, as the editor will.
+ */
+function TextPreview({ html, isOpening }: { html: string, isOpening: boolean }) {
     if (isHtmlEmpty(html)) {
-        return <div className="handwriting-text-preview empty">{t("handwriting.text_box_empty")}</div>;
+        return (
+            <div className="handwriting-text-preview empty">
+                {isOpening ? "\u00a0" : t("handwriting.text_box_empty")}
+            </div>
+        );
     }
     // The HTML comes from the saved note, which a sync or an import can have written.
     return (
