@@ -13,6 +13,7 @@ import {
     NOTIFICATION_MARK_KINDS,
     NOTIFICATION_MAX_REFS,
     NOTIFICATION_TYPES,
+    TRANSIENT_NOTIFICATION_MAX_BYTES,
     type NotificationAction,
     type NotificationAttentionLevel,
     type NotificationCategory,
@@ -462,6 +463,59 @@ export function checkPatch(patch: unknown): NotificationPatch {
         }
     }
     return checked;
+}
+
+/** A transient notification as `checkTransientInput()` returns it. */
+export interface CheckedTransientInput {
+    noteId: string | null;
+    /** The public fields as the caller gave them, the root text included. */
+    content: NotificationContent;
+    /** The private text that the caller passed, or `null`. */
+    privateText: PrivateText | null;
+    /** Whether the caller names it sensitive, by `sensitive: true` or by passing private text. */
+    isNamedSensitive: boolean;
+}
+
+/**
+ * Checks what a caller passes for a transient notification: the fields of a raise that it takes,
+ * at most 2 KiB as JSON. An empty text counts as absent.
+ *
+ * @throws NotificationError with the code of the first check that fails.
+ */
+export function checkTransientInput(input: unknown, isBuiltIn: boolean): CheckedTransientInput {
+    if (!isPlainObject(input)) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const { title, description, protectedTitle, protectedDescription, icon, noteId } = input;
+    const { progress, progressLabel, actions, handler, sensitive } = input;
+    if (!isOptional(title, isLineText) || !isOptional(description, isText)
+        || !isOptional(protectedTitle, isLineText) || !isOptional(protectedDescription, isText)
+        || !isOptional(icon, isIcon) || !isOptional(noteId, isNoteId)
+        || !isOptional(progress, isProgress) || !isOptional(progressLabel, isLineText)
+        || !isOptional(actions, isActionList) || !isOptional(handler, isToken)
+        || !isOptional(sensitive, isBoolean)) {
+        throw new NotificationError("invalid-input");
+    }
+    if (!isBuiltIn && isReservedName(handler)) {
+        throw new NotificationError("reserved-name");
+    }
+
+    const privateText = toPrivateText(protectedTitle, protectedDescription);
+    const isNamedSensitive = sensitive === true || privateText !== null;
+    if (!title && noteId === undefined && !isNamedSensitive) {
+        throw new NotificationError("invalid-input");
+    }
+
+    const content = compactContent({
+        v: 1, title, description, icon, progress, progressLabel, handler,
+        actions: actions?.map(copyAction)
+    });
+    const written = JSON.stringify({ content, noteId, privateText });
+    if (encodeUtf8(written).byteLength > TRANSIENT_NOTIFICATION_MAX_BYTES) {
+        throw new NotificationError("too-large");
+    }
+    return { noteId: noteId ?? null, content, privateText, isNamedSensitive };
 }
 
 /** A generation that a request names, with its time. */

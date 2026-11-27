@@ -2,6 +2,7 @@ import type {
     NotificationCreateResponse,
     NotificationErrorBody,
     NotificationListResponse,
+    TransientNotificationPutResponse,
     TriliumNotification
 } from "@triliumnext/commons";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -173,6 +174,40 @@ describe("notification routes", () => {
         });
     });
 
+    it("keep a transient notification to the client that holds its token", async () => {
+        const path = "/api/notifications/transient/spec-transient";
+        const created = await api.put<TransientNotificationPutResponse>(path,
+            { body: { notification: { title: "Import", progress: 0.2 } } });
+        expect(created.status).toBe(200);
+        const { token } = created.body;
+        const first = (await list()).body;
+        expect(first).toMatchObject({
+            transients: [ { id: "spec-transient", type: "transient", producer: "client",
+                title: "Import", progress: 0.2 } ],
+            transientSeq: 0
+        });
+        expect(JSON.stringify(first)).not.toContain(token);
+
+        const wrongToken = "x".repeat(32);
+        for (const response of [
+            await api.put(path, { body: { notification: { title: MARKER } } }),
+            await api.put(path, { body: { notification: { title: MARKER }, token: wrongToken } }),
+            await api.delete(path, { body: { token: wrongToken } })
+        ]) {
+            expect(response).toMatchObject({ status: 409, body: { code: "not-owner" } });
+        }
+        expect(await api.delete(path, { body: {} }))
+            .toMatchObject({ status: 400, body: { code: "invalid-input" } });
+        expect(JSON.stringify((await list()).body)).not.toContain(MARKER);
+
+        const kept = await api.put(path,
+            { body: { notification: { title: "Import", progress: 0.6 }, token } });
+        expect(kept).toMatchObject({ status: 200, body: { token } });
+        expect((await list()).body.transients?.[0].progress).toBe(0.6);
+        expect((await api.delete(path, { body: { token } })).status).toBe(204);
+        expect((await list()).body.transients).toEqual([]);
+    });
+
     it("refuse every route on a database that has not opened", async () => {
         vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
         for (const response of [
@@ -180,7 +215,10 @@ describe("notification routes", () => {
             await api.post("/api/notifications", { body: { title: "Title" } }),
             await api.patch("/api/notifications/spec:x", { body: { patch: {} } }),
             await api.post("/api/notifications/state", { body: { refs: [], state: "seen" } }),
-            await api.post("/api/notifications/dismiss", { body: { refs: [], reason: "user" } })
+            await api.post("/api/notifications/dismiss", { body: { refs: [], reason: "user" } }),
+            await api.put("/api/notifications/transient/spec-x",
+                { body: { notification: { title: "Title" } } }),
+            await api.delete("/api/notifications/transient/spec-x", { body: { token: "x" } })
         ]) {
             expect(response).toMatchObject({ status: 409, body: { code: "not-initialized" } });
         }

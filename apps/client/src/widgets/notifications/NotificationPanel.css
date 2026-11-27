@@ -1,6 +1,7 @@
 :where(:root) {
     --notification-panel-width: 380px;
     --notification-panel-list-max-height: min(70vh, 640px);
+    --notification-panel-transients-max-height: min(30vh, 240px);
     --notification-panel-border-color: var(--main-border-color);
 }
 
@@ -36,6 +37,16 @@
             padding: 6px 10px;
             font-size: 0.9em;
         }
+    }
+
+    .notification-panel-transients {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        border-block-end: 1px solid var(--notification-panel-border-color);
+        padding: 6px;
+        max-height: var(--notification-panel-transients-max-height);
+        overflow-y: auto;
     }
 
     .notification-panel-list {

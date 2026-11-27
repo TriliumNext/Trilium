@@ -6,7 +6,7 @@ import { useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { Badge } from "../react/Badge";
 import { type DropdownHandle, DropdownPanel } from "../react/Dropdown";
-import { useNotificationCount } from "../react/hooks/notifications";
+import { useNotificationCount, useTransientNotifications } from "../react/hooks/notifications";
 import { useTriliumOptionBool } from "../react/hooks/options";
 import { preloadLazyModule } from "../react/LazyComponent";
 
@@ -17,11 +17,13 @@ const PRELOAD_PANEL_PROPS = { onPointerEnter: preloadPanel, onFocus: preloadPane
 const MAX_SHOWN_COUNT = 99;
 
 /**
- * The bell of the tab bar. Its badge counts the pending notifications, and a dot without a number
- * shows that unread ones remain. The panel loads when it first opens.
+ * The bell of the tab bar. Its badge counts the pending notifications, a dot without a number shows
+ * that unread ones remain, and a turning ring that operations with transient notifications run.
+ * The panel loads when it first opens.
  */
 export default function NotificationBell() {
     const { pending, unread } = useNotificationCount();
+    const isActive = useTransientNotifications().length > 0;
     const [ isSilent ] = useTriliumOptionBool("notificationsSilent");
     const dropdownRef = useRef<DropdownHandle>(null);
     const [ panel, setPanel ] = useState<Awaited<ReturnType<typeof loadPanel>>>();
@@ -34,7 +36,8 @@ export default function NotificationBell() {
             className="notification-bell"
             buttonClassName={clsx(
                 "toggle-button notification-bell-button bx",
-                isSilent ? "bx-bell-off" : "bx-bell"
+                isSilent ? "bx-bell-off" : "bx-bell",
+                isActive && "is-active"
             )}
             dropdownContainerClassName="notification-panel"
             iconAction
@@ -43,7 +46,11 @@ export default function NotificationBell() {
             title={label}
             placement="bottom-end"
             autoClose="outside"
-            text={<BellMark pending={pending} unread={unread} />}
+            keepOpenSelector="#context-menu-container"
+            text={<>
+                <BellMark pending={pending} unread={unread} />
+                {isActive && <span className="notification-bell-activity" />}
+            </>}
             onShown={() => void loadPanel().then(setPanel)}
             ready={!!panel}
             dropdownRef={dropdownRef}

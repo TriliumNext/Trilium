@@ -10,8 +10,8 @@ import type { TriliumNotification } from "@triliumnext/commons";
 import soundUrl from "../assets/notification-sound.mp3?url";
 import froca from "./froca.js";
 import {
-    getNotificationIcon, getNotificationText, getReferencedNoteId, hasPlaceToOpen, markBidiControls,
-    openNotification
+    getActionCaption, getNotificationIcon, getNotificationText, getReferencedNoteId,
+    getShownActions, isClickable, markBidiControls, runNotificationAction
 } from "./notification_display.js";
 import notificationStore from "./notifications.js";
 import options from "./options.js";
@@ -120,7 +120,7 @@ async function showToast(notification: TriliumNotification) {
     const note = noteId ? await froca.getNote(noteId, true) : null;
     const { title, description } = getNotificationText(notification, note?.title);
     const toastId = toastIdOf(notification.notificationId);
-    const canOpen = hasPlaceToOpen(notification);
+    const actions = getShownActions(notification);
 
     toastService.showPersistent({
         id: toastId,
@@ -128,10 +128,17 @@ async function showToast(notification: TriliumNotification) {
         title: description ? markBidiControls(title) : undefined,
         message: markBidiControls(description ?? title),
         timeout: notification.attentionLevel === "high" ? undefined : MEDIUM_TOAST_TIMEOUT_MS,
-        onClick: canOpen ? ({ dismissToast }) => {
+        onClick: isClickable(notification) ? ({ dismissToast }) => {
             dismissToast();
-            void openNotification(notification);
+            void runNotificationAction(notification, null);
         } : undefined,
+        buttons: actions.length > 0 ? actions.map((action, index) => ({
+            text: markBidiControls(getActionCaption(action, index)),
+            onClick: ({ dismissToast }) => {
+                dismissToast();
+                void runNotificationAction(notification, action);
+            }
+        })) : undefined,
         onDismiss: () => notificationStore.markSeen([ notification ]),
         onRemove: () => {
             const index = shownToasts.indexOf(toastId);

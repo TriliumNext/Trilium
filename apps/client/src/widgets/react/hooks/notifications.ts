@@ -22,3 +22,14 @@ export function useNotificationCount() {
         unread: notificationStore.unreadCount.value
     };
 }
+
+/** The transient notifications of the backend, oldest first. */
+export function useTransientNotifications() {
+    return notificationStore.transients.value;
+}
+
+/** The handler registered under a name, which a startup script can register at any time. */
+export function useNotificationActionHandler(name: string | undefined) {
+    const handlers = notificationStore.actionHandlers.value;
+    return name === undefined ? undefined : handlers.get(name);
+}

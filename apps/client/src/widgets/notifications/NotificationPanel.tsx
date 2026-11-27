@@ -13,12 +13,12 @@ import Alert from "../react/Alert";
 import Button from "../react/Button";
 import type { DropdownHandle } from "../react/Dropdown";
 import FormToggle from "../react/FormToggle";
-import { useNotifications } from "../react/hooks/notifications";
+import { useNotifications, useTransientNotifications } from "../react/hooks/notifications";
 import { useTriliumOptionBool } from "../react/hooks/options";
 import LoadingSpinner from "../react/LoadingSpinner";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
-import NotificationCard from "./NotificationCard";
+import NotificationCard, { TransientNotificationCard } from "./NotificationCard";
 
 /** The cards drawn at first, and added by each click on "Show more". */
 const CARDS_PER_STEP = 50;
@@ -37,10 +37,11 @@ interface NotificationPanelProps {
 
 /**
  * The panel of the bell: "Mark all as read", "Clear all" and "Silent", the notices of the limits,
- * and the cards, newest first, 50 at a time.
+ * the transient notifications pinned above the list, and the cards, newest first, 50 at a time.
  */
 export default function NotificationPanel({ dropdownRef }: NotificationPanelProps) {
     const { notifications, counts, isLoaded } = useNotifications();
+    const transients = useTransientNotifications();
     const [ shownCount, setShownCount ] = useState(CARDS_PER_STEP);
     const listRef = useRef<HTMLDivElement>(null);
     useTimeTick(TIME_TICK_MS);
@@ -53,6 +54,13 @@ export default function NotificationPanel({ dropdownRef }: NotificationPanelProp
         <div className="notification-panel-content">
             <PanelHeader notifications={notifications} />
             {counts && <PanelNotices counts={counts} />}
+            {transients.length > 0 && (
+                <div className="notification-panel-transients">
+                    {transients.map((transient) => (
+                        <TransientNotificationCard key={transient.id} notification={transient} />
+                    ))}
+                </div>
+            )}
             <div ref={listRef} className="notification-panel-list">
                 {notifications.slice(0, shownCount).map((notification) => (
                     <NotificationCard
@@ -69,9 +77,12 @@ export default function NotificationPanel({ dropdownRef }: NotificationPanelProp
                         onClick={() => setShownCount((count) => count + CARDS_PER_STEP)}
                     />
                 )}
-                {notifications.length === 0 && (isLoaded
-                    ? <NoItems icon="bx bx-bell" text={t("notifications.empty")} size="small" />
-                    : <div className="notification-panel-loading"><LoadingSpinner /></div>)}
+                {notifications.length === 0 && !isLoaded && (
+                    <div className="notification-panel-loading"><LoadingSpinner /></div>
+                )}
+                {notifications.length === 0 && isLoaded && transients.length === 0 && (
+                    <NoItems icon="bx bx-bell" text={t("notifications.empty")} size="small" />
+                )}
             </div>
         </div>
     );

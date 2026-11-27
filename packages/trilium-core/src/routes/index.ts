@@ -128,6 +128,10 @@ export function buildSharedApiRoutes({
     apiRoute(PST, "/api/notifications/state", notificationsApiRoute.setNotificationState);
     apiRoute(PST, "/api/notifications/dismiss", notificationsApiRoute.dismissNotifications);
     apiRoute(PATCH, "/api/notifications/:id", notificationsApiRoute.updateNotification);
+    apiRoute(PUT, "/api/notifications/transient/:id",
+        notificationsApiRoute.putTransientNotification);
+    apiRoute(DEL, "/api/notifications/transient/:id",
+        notificationsApiRoute.dismissTransientNotification);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);

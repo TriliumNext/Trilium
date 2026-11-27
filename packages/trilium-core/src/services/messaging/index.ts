@@ -51,7 +51,7 @@ export function sendMessageToAllClients(message: WebSocketMessage): void {
  */
 const UNLOGGED_MESSAGE_TYPES = new Set<WebSocketMessage["type"]>([
     "frontend-update", "ping", "sync-failed", "api-log-messages", "resource-download",
-    "notification-alert", "notifications-due"
+    "notification-alert", "notifications-due", "transient-notifications"
 ]);
 
 /**

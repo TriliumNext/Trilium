@@ -12,6 +12,7 @@ import froca from "./froca.js";
 import linkService from "./link.js";
 import noteCreateService from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import notificationStore from "./notifications.js";
 import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
@@ -635,5 +636,52 @@ describe("log", () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+});
+
+describe("notifications", () => {
+    afterEach(() => {
+        notificationStore.actionHandlers.value = new Map();
+    });
+
+    it("passes the API on to the notification store", async () => {
+        const api = makeApi();
+        const created = { id: "spec" } as never;
+        const handle = { id: "handle" } as never;
+        const create = vi.spyOn(notificationStore, "create").mockResolvedValue(created);
+        const update = vi.spyOn(notificationStore, "update").mockResolvedValue(null);
+        const dismiss = vi.spyOn(notificationStore, "dismiss").mockResolvedValue();
+        const getById = vi.spyOn(notificationStore, "getById").mockResolvedValue(null);
+        const getByTag = vi.spyOn(notificationStore, "getByTag").mockResolvedValue([]);
+        const createTransient = vi.spyOn(notificationStore, "createTransientNotification")
+            .mockReturnValue(handle);
+
+        expect(await api.notifications.create({ title: "T" })).toBe(created);
+        expect(create).toHaveBeenCalledWith({ title: "T" });
+        expect(await api.notifications.update("spec", { title: "U" })).toBeNull();
+        expect(update).toHaveBeenCalledWith("spec", { title: "U" });
+        await api.notifications.dismiss({ id: "spec", raisedAt: "2026-11-27 10:00:00.000Z" });
+        expect(dismiss).toHaveBeenCalledWith({ id: "spec", raisedAt: "2026-11-27 10:00:00.000Z" });
+        await api.notifications.getById("spec");
+        await api.notifications.getByTag("tag");
+        expect(getById).toHaveBeenCalledWith("spec");
+        expect(getByTag).toHaveBeenCalledWith("tag");
+        expect(api.notifications.createTransientNotification({ title: "Run" })).toBe(handle);
+        expect(createTransient).toHaveBeenCalledWith({ title: "Run" });
+    });
+
+    it("registers handlers, but none under a built-in name or one no notification can give", () => {
+        const api = makeApi();
+        const handler = vi.fn();
+        api.notifications.registerActionHandler("myscript:demo", handler);
+        expect(api.notifications.getActionHandler("myscript:demo")).toBe(handler);
+
+        expect(() => api.notifications.registerActionHandler("trilium:update", handler))
+            .toThrow("reserved-name");
+        expect(() => api.notifications.registerActionHandler("has spaces", handler))
+            .toThrow("invalid-input");
+        expect(() => api.notifications.registerActionHandler("myscript:x", "no" as never))
+            .toThrow("invalid-input");
+        expect(api.notifications.getActionHandler("trilium:update")).toBeUndefined();
     });
 });

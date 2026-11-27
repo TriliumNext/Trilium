@@ -204,6 +204,53 @@ describe("sensitive notifications across instances", () => {
     });
 });
 
+describe("updates while apart and the results of handlers", () => {
+    it("end with one text everywhere, and drop a result computed against the other text", () => {
+        const a = instances.create("a");
+        const b = instances.create("b");
+        const id = "spec:apart";
+        raise(instances.server, { id, title: "Report", description: "Draft" });
+        instances.settle([ a, b ]);
+        const givenToHandler = instances.run(a, () => service.getById(id));
+
+        instances.advance(MINUTE);
+        instances.run(a, () => service.update(id, { description: "Version of a" }, CLIENT));
+        instances.advance(MINUTE);
+        instances.run(b, () => service.update(id, { description: "Version of b" }, CLIENT));
+        instances.settle([ a, b ]);
+
+        for (const instance of [ instances.server, a, b ]) {
+            expect(listOf(instance)[0].description, instance.name).toBe("Version of b");
+        }
+        expect(instances.run(a, () => codeOf(() => service.update(id, { title: "Done" }, CLIENT,
+            givenToHandler?.revision)))).toBe("stale-revision");
+    });
+
+    it("drop the result of a handler that began before an edit of the private text alone", () => {
+        const a = instances.create("a");
+        const b = instances.create("b");
+        const id = "spec:private-edit";
+        inSession(a, () => service.create({
+            id, title: "A reminder is due", protectedDescription: "First plan"
+        }, CLIENT));
+        instances.settle([ a, b ]);
+        const givenToHandler = inSession(b, () => service.getById(id));
+        expect(givenToHandler?.protectedDescription).toBe("First plan");
+
+        instances.advance(MINUTE);
+        inSession(a, () => service.update(id, { protectedDescription: "Second plan" }, CLIENT));
+        instances.settle([ a, b ]);
+
+        expect(inSession(b, () => codeOf(() => service.update(id,
+            { protectedDescription: "From the handler" }, CLIENT, givenToHandler?.revision))))
+            .toBe("stale-revision");
+        for (const instance of [ instances.server, a, b ]) {
+            expect(listOf(instance, true)[0].protectedDescription, instance.name)
+                .toBe("Second plan");
+        }
+    });
+});
+
 describe("the limit on what an instance admits, across instances", () => {
     function raisePersistent(instance: SyncInstance, prefix: string, count: number) {
         instances.run(instance, () => getSql().transactional(() => {

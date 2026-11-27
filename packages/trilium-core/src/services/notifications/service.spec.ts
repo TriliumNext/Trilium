@@ -336,6 +336,74 @@ describe("state and dismissal", () => {
     });
 });
 
+describe("what the result of a handler applies to", () => {
+    it("leaves a generation raised again, and drops an update once the content changed", () => {
+        const given = createStored({ id: "spec:handler" });
+        vi.advanceTimersByTime(MINUTE);
+        const again = createStored({ id: "spec:handler" });
+        expect(again.notificationId).not.toBe(given.notificationId);
+
+        // The dismissal of the generation that the handler was given leaves the newer one.
+        cls.init(() => service.dismiss([ given ], "handler"));
+        expect(getById("spec:handler")?.notificationId).toBe(again.notificationId);
+
+        update("spec:handler", { description: "Edited elsewhere" });
+        expect(codeOf(() => update("spec:handler", { description: "From the handler" },
+            again.revision))).toBe("stale-revision");
+        expect(getById("spec:handler")?.description).toBe("Edited elsewhere");
+    });
+
+    it("drops an update once the private text alone changed, and keeps the newer one", () => {
+        protectedSessionService.setDataKey(DATA_KEY);
+        const given = createStored({ id: "spec:handler:private", title: "A reminder is due",
+            protectedDescription: "First plan" });
+        const contentBefore = storedRow(given.notificationId)?.content;
+        vi.advanceTimersByTime(SECOND);
+
+        update("spec:handler:private", { protectedDescription: "Second plan" });
+        expect(storedRow(given.notificationId)?.content).toBe(contentBefore);
+        expect(codeOf(() => update("spec:handler:private",
+            { protectedDescription: "From the handler" }, given.revision))).toBe("stale-revision");
+        expect(getById("spec:handler:private")?.protectedDescription).toBe("Second plan");
+    });
+});
+
+describe("transient notifications", () => {
+    it("are on the first page with their counter, and a client's end after a minute", () => {
+        const token = service.putTransient("spec-client", { title: "Import" }, CLIENT);
+        service.putTransient("spec-script", { title: "Script" }, SCRIPT);
+        expect(service.putTransient("spec-client", { title: "Import", progress: 0.5 }, CLIENT,
+            token)).toBe(token);
+
+        const first = service.getPage();
+        expect(first.transients?.map(({ id, producer }) => [ id, producer ])).toEqual([
+            [ "spec-client", "client" ], [ "spec-script", "script:spec0script" ]
+        ]);
+        expect(first.transientSeq).toBe(0);
+        vi.advanceTimersByTime(300);
+        expect(service.getPage().transientSeq).toBe(1);
+        expect(countOf("transient-notifications")).toBe(1);
+
+        vi.advanceTimersByTime(MINUTE);
+        expect(service.getPage().transients?.map(({ id }) => id)).toEqual([ "spec-script" ]);
+        expect(codeOf(() => service.dismissTransient("spec-script", token))).toBe("not-owner");
+    });
+
+    it("count the limit of 10 per session of a client", () => {
+        const other: NotificationProducer = { kind: "client", sessionId: "session-b" };
+        for (let index = 0; index < 10; index++) {
+            service.putTransient(`spec-a-${index}`, { title: "A" }, CLIENT);
+        }
+        expect(codeOf(() => service.putTransient("spec-a-10", { title: "A" }, CLIENT)))
+            .toBe("transient-limit");
+        expect(codeOf(() => service.putTransient("spec-b", { title: "B" }, other))).toBeNull();
+        expect(codeOf(() => service.putTransient("trilium:spec", { title: "B" }, other)))
+            .toBe("reserved-name");
+        expect(codeOf(() => service.putTransient("trilium:spec", { title: "B" }, BUILT_IN)))
+            .toBeNull();
+    });
+});
+
 describe("the list in pages", () => {
     it("pages the view newest first, with the counts on the first page", () => {
         cls.init(() => getSql().transactional(() => {

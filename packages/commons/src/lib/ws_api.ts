@@ -1,4 +1,5 @@
 import type { LlmStreamChunk } from "./llm_api.js";
+import type { TransientNotification } from "./notifications.js";
 import type { ResourceDownloadProgress } from "./resources.js";
 
 export interface EntityChange {
@@ -237,4 +238,13 @@ export type WebSocketMessage = AllTaskDefinitions | {
 } | {
     /** A generation or an erasure dated ahead came within the hour, so the view changed. */
     type: "notifications-due";
+} | {
+    /**
+     * The transient notifications that changed or ended since the last such message. `seq` counts
+     * the messages, so a client that misses one loads the list.
+     */
+    type: "transient-notifications";
+    seq: number;
+    changed: TransientNotification[];
+    removed: string[];
 }

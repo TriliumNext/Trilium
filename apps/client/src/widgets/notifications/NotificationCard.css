@@ -108,6 +108,21 @@
         }
     }
 
+    .notification-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-block-start: 6px;
+    }
+
+    .notification-card-confirmation {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9em;
+    }
+
     .notification-card-source {
         color: var(--notification-card-muted-text-color);
         font-size: 0.8em;

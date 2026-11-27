@@ -98,6 +98,8 @@ beforeEach(() => {
 
 afterEach(() => {
     setStore([], false, counts());
+    notificationStore.transients.value = [];
+    notificationStore.actionHandlers.value = new Map();
     vi.useRealTimers();
     vi.restoreAllMocks();
 });
@@ -117,6 +119,50 @@ describe("NotificationPanel", () => {
         expect(showMore()).toBeNull();
         // Opening the panel tries a load that failed again.
         expect(notificationStore.whenLoaded).toHaveBeenCalled();
+    });
+
+    it("resolves the oldest of 101 persistent notifications through its action", async () => {
+        const action = { id: "resolve", caption: "Resolve" };
+        const persistent = makeNotifications(101,
+            { type: "persistent", handler: "spec:resolve", actions: [ action ] });
+        setStore(persistent);
+        const dismiss = vi.spyOn(notificationStore, "dismiss").mockResolvedValue();
+        notificationStore.registerActionHandler("spec:resolve", () => ({ dismiss: true }));
+        const panel = await renderPanel();
+        for (let click = 0; click < 2; click++) {
+            await act(async () => panel.querySelector<HTMLButtonElement>(
+                ".notification-panel-more")?.click());
+        }
+
+        const oldest = persistent[100];
+        const card = panel.querySelector(`[data-notification-id="${oldest.notificationId}"]`);
+        const button = card?.querySelector<HTMLButtonElement>(".notification-card-actions button");
+        expect(button?.textContent?.trim()).toBe("Resolve");
+        await act(async () => button?.click());
+        await vi.waitFor(() => expect(dismiss)
+            .toHaveBeenCalledExactlyOnceWith({ id: oldest.id, raisedAt: oldest.raisedAt }));
+    });
+
+    it("pins the transient notifications above the cards", async () => {
+        notificationStore.transients.value = [ {
+            id: "spec-transient", type: "transient", producer: "trilium:test",
+            createdAt: "2026-11-27 10:00:00.000Z", title: "Importing", progress: 0.5
+        } ];
+        setStore(makeNotifications(1));
+        const panel = await renderPanel();
+        const pinned = panel.querySelector(".notification-panel-transients");
+        const list = panel.querySelector(".notification-panel-list");
+        expect(pinned?.querySelector(".notification-card.is-transient .notification-card-title")
+            ?.textContent).toBe("Importing");
+        expect(list?.querySelector(".is-transient")).toBeNull();
+        expect(list && pinned?.compareDocumentPosition(list))
+            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+        // An operation alone is no empty panel.
+        setStore([]);
+        const alone = await renderPanel();
+        expect(alone.querySelector(".notification-panel-transients")).not.toBeNull();
+        expect(alone.querySelector(".no-items")).toBeNull();
     });
 
     it("says that it holds none once loaded, and shows a spinner until then", async () => {

@@ -21,7 +21,9 @@ const STATUS_OF_CODE: Partial<Record<NotificationErrorCode, number>> = {
     "daily-budget": 409,
     "full": 409,
     "category-off": 409,
-    "not-initialized": 409
+    "not-initialized": 409,
+    "transient-limit": 409,
+    "not-owner": 409
 };
 
 /** `?after=<notificationId>`: one page of the view. */
@@ -56,6 +58,22 @@ function setNotificationState(req: Request) {
 /** `{ refs, reason }`. */
 function dismissNotifications(req: Request) {
     return answer(() => getNotificationService().dismiss(req.body?.refs, req.body?.reason));
+}
+
+/** `{ notification, token? }`: creates, replaces or keeps alive a transient notification. */
+function putTransientNotification(req: Request<{ id: string }>) {
+    return answer(() => ({
+        token: getNotificationService().putTransient(req.params.id, req.body?.notification,
+            getClientProducer(req), req.body?.token)
+    }));
+}
+
+/** `{ token }`: ends a transient notification. */
+function dismissTransientNotification(req: Request<{ id: string }>) {
+    return answer(() => {
+        getNotificationService().dismissTransient(req.params.id, req.body?.token);
+        return undefined;
+    });
 }
 
 /** All clients are one producer, and each session has a budget of its own. */
@@ -99,5 +117,7 @@ export default {
     createNotification,
     updateNotification,
     setNotificationState,
-    dismissNotifications
+    dismissNotifications,
+    putTransientNotification,
+    dismissTransientNotification
 };

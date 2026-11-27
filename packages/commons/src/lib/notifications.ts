@@ -123,6 +123,36 @@ export type NotificationPatch = Partial<Pick<NotificationInput,
     "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "progress"
     | "progressLabel" | "actions" | "sensitive">>;
 
+/** A notification of an ongoing operation. Its backend holds it in memory and never stores it. */
+export type TransientNotificationInput = Pick<NotificationInput,
+    "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "noteId"
+    | "progress" | "progressLabel" | "actions" | "handler" | "sensitive">;
+
+/** A transient notification as its backend gives it to its clients. */
+export interface TransientNotification extends TransientNotificationInput {
+    id: string;
+    /** Tells a transient notification apart from a stored one, whose type is never this. */
+    type: "transient";
+    /** The name of a built-in producer, `script:<noteId>` or `client`. */
+    producer: string;
+    /** When it was created, in UTC. */
+    createdAt: string;
+}
+
+/** Changes a transient notification. Each setter replaces its field; an empty text clears it. */
+export interface TransientNotificationHandle {
+    readonly id: string;
+    setTitle(title: string): void;
+    setDescription(description: string): void;
+    setProtectedTitle(title: string): void;
+    setProtectedDescription(description: string): void;
+    setIcon(icon: string): void;
+    setProgress(progress: number): void;
+    setProgressLabel(label: string): void;
+    setActions(actions: NotificationAction[]): void;
+    dismiss(): void;
+}
+
 /** Implemented by the client service and by the core service. */
 export interface NotificationApi {
     /** Raises a notification. Resolves to `null` when none is stored. */
@@ -139,6 +169,30 @@ export interface NotificationApi {
     getById(id: string): Promise<TriliumNotification | null>;
     /** Every notification with the tag, newest first. */
     getByTag(tag: string): Promise<TriliumNotification[]>;
+    createTransientNotification(input: TransientNotificationInput): TransientNotificationHandle;
+}
+
+/**
+ * What an action handler asks for: nothing, the dismissal of the generation that it was given, or
+ * an update of it, which is dropped when its content or its private text changed in between.
+ */
+export type NotificationActionResult = void | { dismiss: true } | { update: NotificationPatch };
+
+export interface NotificationActionContext {
+    /** The pressed action, or `null` for the default action: a click on the card or the toast. */
+    action: NotificationAction | null;
+    notification: TriliumNotification | TransientNotification;
+}
+
+/** Runs in the frontend when an action of a notification that names it is pressed. */
+export type NotificationActionHandler = (
+    context: NotificationActionContext
+) => NotificationActionResult | Promise<NotificationActionResult>;
+
+/** `api.notifications` of frontend scripts: the API and the handlers of actions. */
+export interface FrontendNotificationApi extends NotificationApi {
+    registerActionHandler(name: string, handler: NotificationActionHandler): void;
+    getActionHandler(name: string): NotificationActionHandler | undefined;
 }
 
 /** The prefix of the IDs, handlers, tags and producers that only built-in producers use. */
@@ -151,6 +205,16 @@ export const NOTIFICATION_MAX_REFS = 500;
 export const NOTIFICATION_LIVE_LIMIT = 1000;
 /** A script or a client raises nothing new while the instance stores this many. */
 export const NOTIFICATION_LIVE_LIMIT_FOR_OTHERS = 800;
+/** The transient notifications that a backend holds at most. */
+export const TRANSIENT_NOTIFICATION_LIMIT = 20;
+/** The transient notifications of one producer that a backend holds at most. */
+export const TRANSIENT_NOTIFICATION_PRODUCER_LIMIT = 10;
+/** The size of a transient notification, written out as JSON, at most. */
+export const TRANSIENT_NOTIFICATION_MAX_BYTES = 2 * 1024;
+/** A transient notification of a client ends this long after its last update. */
+export const TRANSIENT_NOTIFICATION_EXPIRY_MS = 60_000;
+/** A client sends its transient notification again this often, so that it does not expire. */
+export const TRANSIENT_NOTIFICATION_REFRESH_MS = 20_000;
 
 /** Why a generation is dismissed. A persistent notification is refused for `user`. */
 export const NOTIFICATION_DISMISS_REASONS = [ "user", "handler", "force" ] as const;
@@ -181,6 +245,10 @@ export const NOTIFICATION_ERROR_CODES = [
     "stale-revision",
     /** The ID has no current generation. */
     "not-found",
+    /** The backend holds 20 transient notifications, or the producer 10. */
+    "transient-limit",
+    /** The owner token of a transient notification is missing or wrong. */
+    "not-owner",
     /** The database has not opened yet. */
     "not-initialized",
     /** A stored or synced row has the wrong type, value, length or charset, or other columns. */
@@ -223,6 +291,29 @@ export interface NotificationListResponse {
     changeId: number;
     /** On the first page only. */
     counts?: NotificationCounts;
+    /** The transient notifications of the backend, on the first page only. */
+    transients?: TransientNotification[];
+    /** The counter of the last `transient-notifications` message, on the first page only. */
+    transientSeq?: number;
+}
+
+/**
+ * `PUT /api/notifications/transient/:id`: creates, replaces or keeps alive a transient notification
+ * of a client. Changing one that exists needs the token that its creation answered.
+ */
+export interface TransientNotificationPutRequest {
+    notification: TransientNotificationInput;
+    token?: string;
+}
+
+export interface TransientNotificationPutResponse {
+    /** The owner token, which no broadcast carries. */
+    token: string;
+}
+
+/** `DELETE /api/notifications/transient/:id`. */
+export interface TransientNotificationDeleteRequest {
+    token: string;
 }
 
 /**

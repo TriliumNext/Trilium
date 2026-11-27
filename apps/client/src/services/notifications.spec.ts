@@ -1,5 +1,6 @@
 import type {
-    NotificationCounts, NotificationListResponse, TriliumNotification, WebSocketMessage
+    NotificationCounts, NotificationListResponse, TransientNotification, TriliumNotification,
+    WebSocketMessage
 } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -563,5 +564,152 @@ describe("NotificationStore", () => {
         expect(store.notifications.value.map(({ id }) => id)).toEqual([ "shown" ]);
         expect(ws.logError).toHaveBeenCalledWith(
             "A notification request failed: load, not-initialized.");
+    });
+});
+
+describe("transient notifications and handlers", () => {
+    function transientOf(id: string, title: string): TransientNotification {
+        return {
+            id, type: "transient", producer: "client", createdAt: "2026-11-27 10:00:00.000Z", title
+        };
+    }
+
+    function message(
+        seq: number,
+        changed: TransientNotification[],
+        removed: string[] = []
+    ): WebSocketMessage {
+        return { type: "transient-notifications", seq, changed, removed };
+    }
+
+    function idsOf(store: NotificationStore) {
+        return store.transients.value.map(({ id }) => id);
+    }
+
+    it("take the list of the first page, then the messages in order, and the list after a gap",
+        async () => {
+            let list = { transients: [ transientOf("a", "A") ], transientSeq: 4 };
+            const get = vi.fn(async () => ({
+                notifications: [], changeId: 1, counts: countsOf([]), ...list
+            }));
+            server.getWithSilentErrors = get as typeof server.getWithSilentErrors;
+            const store = new NotificationStore();
+            store.start();
+            const send = (sent: WebSocketMessage) => ws.messageHandlers[0](sent);
+            // A message that comes before the list waits for it.
+            send(message(5, [ transientOf("b", "B") ]));
+            await vi.waitFor(() => expect(store.isLoaded.value).toBe(true));
+            expect(idsOf(store)).toEqual([ "a", "b" ]);
+
+            send(message(5, [ transientOf("b", "Older") ]));
+            send(message(6, [ transientOf("a", "Changed") ], [ "b" ]));
+            expect(store.transients.value.map(({ title }) => title)).toEqual([ "Changed" ]);
+
+            // Message 9 after 6: the list loads, and the message waits for it.
+            list = { transients: [ transientOf("c", "C") ], transientSeq: 8 };
+            get.mockClear();
+            send(message(9, [ transientOf("d", "D") ]));
+            expect(get).toHaveBeenCalledWith("notifications");
+            await vi.waitFor(() => expect(idsOf(store)).toEqual([ "c", "d" ]));
+
+            // A backend that restarted counts from zero again, which a reconnect takes.
+            list = { transients: [], transientSeq: 0 };
+            ws.reconnectListeners[0]();
+            await vi.waitFor(() => expect(idsOf(store)).toEqual([]));
+            send(message(1, [ transientOf("e", "E") ]));
+            expect(idsOf(store)).toEqual([ "e" ]);
+        });
+
+    it("send the changes of a handle merged, four a second at most, and keep it alive",
+        async () => {
+            vi.useFakeTimers();
+            const put = vi.fn(async () => ({ token: "token-1" }));
+            const remove = vi.fn(async () => undefined);
+            server.put = put as typeof server.put;
+            server.remove = remove as typeof server.remove;
+            const store = new NotificationStore();
+
+            const handle = store.createTransientNotification({ title: "Import", progress: 0 });
+            const path = `notifications/transient/${handle.id}`;
+            expect(handle.id).toMatch(/^[A-Za-z0-9]{16}$/);
+            expect(store.getOwnTransient(handle.id)).toBe(handle);
+            await vi.advanceTimersByTimeAsync(0);
+            expect(put).toHaveBeenCalledExactlyOnceWith(path,
+                { notification: { title: "Import", progress: 0 } }, undefined, expect.anything());
+
+            for (let step = 1; step <= 10; step++) {
+                handle.setProgress(step / 10);
+                await vi.advanceTimersByTimeAsync(50);
+            }
+            expect(put).toHaveBeenCalledTimes(3);
+            expect(put).toHaveBeenLastCalledWith(path,
+                { notification: { title: "Import", progress: 1 }, token: "token-1" },
+                undefined, expect.anything());
+
+            await vi.advanceTimersByTimeAsync(19_999);
+            expect(put).toHaveBeenCalledTimes(3);
+            // The fake clock runs a zero delay set inside a timer only on a later tick.
+            await vi.advanceTimersByTimeAsync(2);
+            expect(put).toHaveBeenCalledTimes(4);
+
+            // A dismissal goes out at once, and drops the change that waits.
+            handle.setTitle("Changed");
+            handle.dismiss();
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(put).toHaveBeenCalledTimes(4);
+            expect(remove).toHaveBeenCalledExactlyOnceWith(path, undefined, { token: "token-1" },
+                expect.anything());
+            expect(store.getOwnTransient(handle.id)).toBeUndefined();
+
+            const early = store.createTransientNotification({ title: "Short" });
+            early.dismiss();
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(put).toHaveBeenCalledTimes(4);
+            expect(remove).toHaveBeenCalledOnce();
+        });
+
+    it("log a refused request of a handle by its code, and try again with the next change",
+        async () => {
+            vi.useFakeTimers();
+            const put = vi.fn(async () => {
+                throw JSON.stringify({ code: "transient-limit" });
+            });
+            server.put = put as typeof server.put;
+            const handle = new NotificationStore().createTransientNotification({ title: "Full" });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(ws.logError).toHaveBeenCalledWith(
+                "A notification request failed: transient, transient-limit.");
+
+            // Without a token there is nothing to keep alive.
+            await vi.advanceTimersByTimeAsync(60_000);
+            expect(put).toHaveBeenCalledOnce();
+            handle.setTitle("Again");
+            await vi.advanceTimersByTimeAsync(250);
+            expect(put).toHaveBeenCalledTimes(2);
+        });
+
+    it("register handlers, and dismiss a notification for the user or anyway", async () => {
+        const store = new NotificationStore();
+        const handler = vi.fn();
+        store.registerActionHandler("spec:handler", handler);
+        expect(store.getActionHandler("spec:handler")).toBe(handler);
+        expect(store.actionHandlers.value.get("spec:handler")).toBe(handler);
+
+        const standard = makeNotification("standard", 2);
+        const persistent = makeNotification("persistent", 1, { type: "persistent" });
+        servePages(newestFirst([ standard, persistent ]), 5);
+        await store.reload();
+        const post = vi.fn(async () => ({ refused: 0 }));
+        server.postWithSilentErrors = post as typeof server.postWithSilentErrors;
+
+        await store.remove(standard);
+        expect(post).toHaveBeenCalledWith("notifications/dismiss",
+            { refs: [ { id: "standard", raisedAt: standard.raisedAt } ], reason: "user" });
+        expect(store.notifications.value).toEqual([ persistent ]);
+
+        await store.dismissAnyway(persistent);
+        expect(post).toHaveBeenLastCalledWith("notifications/dismiss",
+            { refs: [ { id: "persistent", raisedAt: persistent.raisedAt } ], reason: "force" });
+        expect(store.notifications.value).toEqual([]);
     });
 });

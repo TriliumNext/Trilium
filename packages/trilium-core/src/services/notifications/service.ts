@@ -31,6 +31,7 @@ import type BNotification from "../../becca/entities/bnotification.js";
 import * as cls from "../context.js";
 import events from "../events.js";
 import { getLog } from "../log.js";
+import { isProtectedSessionAvailable } from "../protected_session.js";
 import { randomString } from "../utils/index.js";
 import {
     AHEAD_TOLERANCE_MS,
@@ -68,6 +69,7 @@ import {
     sealField
 } from "./protected_text.js";
 import type * as storeModule from "./store.js";
+import TransientNotifications from "./transients.js";
 
 export type NotificationStore = typeof storeModule;
 
@@ -131,6 +133,7 @@ export default class NotificationService {
     private readonly settings: NotificationSettings;
     private readonly getLastSyncedBatchTime: () => number;
     private readonly budgets = new RaiseBudgets();
+    private readonly transients: TransientNotifications;
     /** Raises of built-in producers over their budget, oldest first. */
     private readonly queuedRaises: { input: unknown; producer: NotificationProducer }[] = [];
     /** The generations that this backend alerted for, with their times. */
@@ -158,6 +161,11 @@ export default class NotificationService {
         this.transport = dependencies.transport;
         this.settings = dependencies.settings;
         this.getLastSyncedBatchTime = dependencies.getLastSyncedBatchTime;
+        this.transients = new TransientNotifications({
+            transport: this.transport,
+            isNoteSensitive: (noteId) => this.isNoteSensitive(noteId),
+            isProtectedSessionOpen: () => isProtectedSessionAvailable()
+        });
     }
 
     /**
@@ -381,6 +389,28 @@ export default class NotificationService {
         });
     }
 
+    /**
+     * Creates a transient notification, or replaces one with its owner token. One of a client ends
+     * a minute after its last change, and one of backend code with the process.
+     *
+     * @returns the owner token.
+     * @throws NotificationError for input that fails a check, a missing or wrong token for an ID
+     *         that exists, and a create beyond the limits.
+     */
+    putTransient(id: unknown, input: unknown, producer: NotificationProducer, token?: unknown) {
+        return this.transients.put(id, input, {
+            name: getProducerName(producer),
+            key: getBudgetKey(producer),
+            isBuiltIn: producer.kind === "built-in",
+            expires: producer.kind === "client"
+        }, token);
+    }
+
+    /** Ends a transient notification. @throws NotificationError for a missing or wrong token. */
+    dismissTransient(id: unknown, token: unknown) {
+        this.transients.dismiss(id, token);
+    }
+
     getById(id: unknown): TriliumNotification | null {
         if (!isToken(id)) {
             throw new NotificationError("invalid-input");
@@ -430,6 +460,8 @@ export default class NotificationService {
         }
         if (after === undefined) {
             response.counts = this.getCounts(view, nowMs);
+            response.transients = this.transients.list();
+            response.transientSeq = this.transients.getSeq();
         }
         return response;
     }
@@ -530,7 +562,10 @@ export default class NotificationService {
         this.armDueTimer();
     }
 
-    /** Stops the timers and the listeners, and forgets the budgets, the queue and the alerts. */
+    /**
+     * Stops the timers and the listeners, and forgets the budgets, the queue, the alerts and the
+     * transient notifications.
+     */
     stop() {
         this.isStarted = false;
         for (const timer of [ this.settleTimer, this.queueTimer, this.alertTimer, this.dueTimer ]) {
@@ -552,6 +587,7 @@ export default class NotificationService {
         this.queuedRaises.length = 0;
         this.budgets.clear();
         this.lastReports.clear();
+        this.transients.stop();
     }
 
     private subscribe() {

@@ -18,13 +18,13 @@ const toasts = vi.hoisted(() => {
         })
     };
 });
-const opened = vi.hoisted(() => ({ openNotification: vi.fn(async () => true) }));
+const actions = vi.hoisted(() => ({ runNotificationAction: vi.fn(async () => true) }));
 
 vi.mock("./toast.js", () => ({ default: toasts }));
 vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("./notification_display.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("./notification_display.js")>(),
-    openNotification: opened.openNotification
+    runNotificationAction: actions.runNotificationAction
 }));
 
 import { buildNote } from "../test/easy-froca.js";
@@ -106,13 +106,14 @@ beforeEach(() => {
     vi.spyOn(options, "is").mockReturnValue(false);
     toasts.showPersistent.mockClear();
     toasts.closePersistent.mockClear();
-    opened.openNotification.mockClear();
+    actions.runNotificationAction.mockClear();
 });
 
 afterEach(() => {
     for (const id of [ ...toasts.shown.keys() ]) {
         toasts.closePersistent(id);
     }
+    notificationStore.actionHandlers.value = new Map();
     vi.useRealTimers();
     vi.restoreAllMocks();
 });
@@ -215,7 +216,7 @@ describe("showAlert", () => {
         const dismissToast = vi.fn();
         toast?.onClick?.({ dismissToast });
         expect(dismissToast).toHaveBeenCalled();
-        expect(opened.openNotification).toHaveBeenCalledWith(notification);
+        expect(actions.runNotificationAction).toHaveBeenCalledWith(notification, null);
 
         toast?.onDismiss?.();
         expect(markSeen).toHaveBeenCalledWith([ notification ]);
@@ -226,6 +227,28 @@ describe("showAlert", () => {
             title: undefined, message: "Backup finished", icon: "bx bx-alarm", timeout: 10_000
         });
         expect(lastToast()?.onClick).toBeUndefined();
+    });
+
+    it("shows the buttons of the actions that a handler on this client runs", async () => {
+        const buttons = [ { id: "snooze", caption: "Snooze" }, { id: "done", caption: "" } ];
+        const withActions = makeNotification({ actions: buttons, handler: "spec:handler" });
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        await alertOf(withActions);
+        expect(lastToast()?.buttons).toBeUndefined();
+        // Without a place, a click on the toast has nothing to run either.
+        expect(lastToast()?.onClick).toBeUndefined();
+
+        notificationStore.registerActionHandler("spec:handler", () => {});
+        await alertOf(withActions);
+        const toast = lastToast();
+        expect(toast?.buttons?.map(({ text }) => text))
+            .toEqual([ "Snooze", "notifications.action-generic" ]);
+        const dismissToast = vi.fn();
+        toast?.buttons?.[1].onClick({ dismissToast });
+        expect(dismissToast).toHaveBeenCalled();
+        expect(actions.runNotificationAction).toHaveBeenCalledWith(withActions, buttons[1]);
+        toast?.onClick?.({ dismissToast });
+        expect(actions.runNotificationAction).toHaveBeenLastCalledWith(withActions, null);
     });
 
     it("shows nothing for a notification no longer pending, or on a silent device", async () => {

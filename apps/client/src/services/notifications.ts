@@ -7,23 +7,35 @@
  */
 import { computed, signal } from "@preact/signals";
 import type {
-    NotificationApi, NotificationCounts, NotificationCreateResponse,
-    NotificationDismissReason, NotificationErrorCode, NotificationInput, NotificationListResponse,
-    NotificationMarkKind, NotificationMarkRow, NotificationMarkState, NotificationPatch,
-    NotificationPrivateTextUpdate, NotificationRef, NotificationState, TriliumNotification
+    NotificationAction, NotificationActionHandler, NotificationApi, NotificationCounts,
+    NotificationCreateResponse, NotificationDismissReason, NotificationErrorCode,
+    NotificationInput, NotificationListResponse, NotificationMarkKind, NotificationMarkRow,
+    NotificationMarkState, NotificationPatch, NotificationPrivateTextUpdate, NotificationRef,
+    NotificationState, TransientNotification, TransientNotificationHandle,
+    TransientNotificationInput, TransientNotificationPutRequest, TransientNotificationPutResponse,
+    TriliumNotification, WebSocketMessage
 } from "@triliumnext/commons";
 import {
-    NOTIFICATION_ERROR_CODES, NOTIFICATION_PAGE_SIZE
+    NOTIFICATION_ERROR_CODES, NOTIFICATION_PAGE_SIZE, TRANSIENT_NOTIFICATION_REFRESH_MS
 } from "@triliumnext/commons/src/lib/notifications.js";
 
 import type { EntityChange } from "../server_types.js";
 import options from "./options.js";
 import server from "./server.js";
+import { randomString } from "./utils.js";
 import ws, { logError, subscribeToMessages, subscribeToReconnect } from "./ws.js";
 
 /** Seen and read marks wait this long, so that the marks of one look go in one request. */
 const STATE_FLUSH_DELAY_MS = 500;
 const STATE_RANK: Record<NotificationState, number> = { pending: 0, seen: 1, read: 2 };
+/** The transient messages held while their list loads, at most; a gap loads the list again. */
+const MAX_HELD_TRANSIENT_MESSAGES = 100;
+/** A transient notification of this client sends at most four requests a second. */
+const TRANSIENT_SEND_INTERVAL_MS = 250;
+const TRANSIENT_ID_LENGTH = 16;
+const SILENT = { silentBadRequest: true, silentNotFound: true, silentConflict: true };
+
+type TransientNotificationsMessage = Extract<WebSocketMessage, { type: "transient-notifications" }>;
 
 /** A refusal of a notification route, by its code. */
 export class NotificationRequestError extends Error {
@@ -51,6 +63,10 @@ export class NotificationStore implements NotificationApi {
     readonly unreadCount = computed(() => (this.isLoaded.value
         ? this.countNotifications((state) => state !== "read")
         : this.counts.value?.unread ?? 0));
+    /** The transient notifications of the backend, oldest first. */
+    readonly transients = signal<readonly TransientNotification[]>([]);
+    /** The handlers of actions by their names, which a component reads to show its buttons. */
+    readonly actionHandlers = signal<ReadonlyMap<string, NotificationActionHandler>>(new Map());
 
     private view = new NotificationView();
     private load: ActiveLoad | null = null;
@@ -62,6 +78,14 @@ export class NotificationStore implements NotificationApi {
     ]);
     private flushTimer: ReturnType<typeof setTimeout> | null = null;
     private readonly waiters = new Map<string, Set<(notification: TriliumNotification) => void>>();
+    private transientById = new Map<string, TransientNotification>();
+    /** The counter of the last transient message applied, `null` until a list is taken. */
+    private transientSeq: number | null = null;
+    /** Transient messages that wait for a list to be taken. */
+    private readonly heldTransientMessages: TransientNotificationsMessage[] = [];
+    private isFetchingTransients = false;
+    /** The transient notifications that this client created, by their IDs. */
+    private readonly ownTransients = new Map<string, ClientTransientHandle>();
 
     /** Subscribes to the messages of the backend and loads the view. */
     start() {
@@ -73,12 +97,18 @@ export class NotificationStore implements NotificationApi {
         subscribeToMessages((message) => {
             if (message.type === "notification-alert") {
                 this.onAlert(message.notificationId);
+            } else if (message.type === "transient-notifications") {
+                this.onTransientMessage(message);
             } else if (message.type === "notifications-due"
                 || message.type === "protectedSessionLogin") {
                 void this.reload();
             }
         });
-        subscribeToReconnect(() => void this.reload());
+        subscribeToReconnect(() => {
+            // A backend that restarted counts its transient messages from zero again.
+            this.transientSeq = null;
+            void this.reload();
+        });
         void this.reload();
     }
 
@@ -227,6 +257,39 @@ export class NotificationStore implements NotificationApi {
         return this.notifications.value.filter((notification) => notification.tag === tag);
     }
 
+    /** Shows a transient notification of this client, and returns its handle at once. */
+    createTransientNotification(input: TransientNotificationInput): TransientNotificationHandle {
+        const handle = new ClientTransientHandle(input, (id) => this.ownTransients.delete(id));
+        this.ownTransients.set(handle.id, handle);
+        return handle;
+    }
+
+    /** The handle of a transient notification that this client created and has not dismissed. */
+    getOwnTransient(id: string): TransientNotificationHandle | undefined {
+        return this.ownTransients.get(id);
+    }
+
+    /** Registers the handler of the notifications that name it. */
+    registerActionHandler(name: string, handler: NotificationActionHandler) {
+        const handlers = new Map(this.actionHandlers.value);
+        handlers.set(name, handler);
+        this.actionHandlers.value = handlers;
+    }
+
+    getActionHandler(name: string) {
+        return this.actionHandlers.value.get(name);
+    }
+
+    /** Dismisses a standard notification for the user: "Remove" on its card. */
+    remove(notification: TriliumNotification) {
+        return this.dismissShown([ notification ], "user");
+    }
+
+    /** Dismisses a persistent notification without its handler: "Dismiss anyway". */
+    dismissAnyway(notification: TriliumNotification) {
+        return this.dismissShown([ notification ], "force");
+    }
+
     /** Sends the queued seen and read marks now. */
     async flushStates() {
         if (this.flushTimer !== null) {
@@ -270,6 +333,9 @@ export class NotificationStore implements NotificationApi {
                 }
 
                 mergePage(load, page);
+                if (!after) {
+                    this.takeTransients(page);
+                }
                 counts ??= page.counts ?? null;
                 if (isProgressive) {
                     this.view = load.next;
@@ -315,6 +381,101 @@ export class NotificationStore implements NotificationApi {
             this.publish();
             this.flushTimer ??= setTimeout(() => void this.flushStates(), STATE_FLUSH_DELAY_MS);
         }
+    }
+
+    /** Takes the notifications out of the view, and loads it again when the backend refuses. */
+    private async dismissShown(
+        notifications: TriliumNotification[],
+        reason: NotificationDismissReason
+    ) {
+        for (const { notificationId } of notifications) {
+            this.view.delete(notificationId);
+            this.load?.next.delete(notificationId);
+        }
+        this.publish();
+        try {
+            await this.sendDismissal(notifications.map(toRef), reason);
+        } catch (e) {
+            reportFailure("dismiss", e);
+            await this.reload();
+        }
+    }
+
+    private onTransientMessage(message: TransientNotificationsMessage) {
+        if (this.transientSeq === null || this.isFetchingTransients) {
+            this.holdTransientMessage(message);
+        } else {
+            this.applyTransientMessage(message);
+        }
+    }
+
+    private holdTransientMessage(message: TransientNotificationsMessage) {
+        this.heldTransientMessages.push(message);
+        if (this.heldTransientMessages.length > MAX_HELD_TRANSIENT_MESSAGES) {
+            this.heldTransientMessages.shift();
+        }
+    }
+
+    private applyTransientMessage(message: TransientNotificationsMessage) {
+        const seq = this.transientSeq;
+        if (seq === null || message.seq <= seq) {
+            return;
+        }
+        if (message.seq > seq + 1) {
+            // A message was missed: the list loads again, and the newer messages wait for it.
+            this.holdTransientMessage(message);
+            void this.fetchTransients();
+            return;
+        }
+
+        for (const id of message.removed) {
+            this.transientById.delete(id);
+        }
+        for (const transient of message.changed) {
+            this.transientById.set(transient.id, transient);
+        }
+        this.transientSeq = message.seq;
+        this.publishTransients();
+    }
+
+    /** Takes the list of a first page, unless this client has applied newer messages. */
+    private takeTransients(page: NotificationListResponse) {
+        const { transients, transientSeq } = page;
+        if (!transients || transientSeq === undefined
+            || (this.transientSeq !== null && transientSeq < this.transientSeq)) {
+            return;
+        }
+
+        this.transientById = new Map(transients.map((transient) => [ transient.id, transient ]));
+        this.transientSeq = transientSeq;
+        this.publishTransients();
+        const held = this.heldTransientMessages.splice(0).sort((a, b) => a.seq - b.seq);
+        for (const message of held) {
+            this.applyTransientMessage(message);
+        }
+    }
+
+    /** Loads the transient notifications from the first page of the view. */
+    private async fetchTransients() {
+        if (this.isFetchingTransients) {
+            return;
+        }
+
+        this.isFetchingTransients = true;
+        try {
+            const page = await server.getWithSilentErrors<NotificationListResponse>(
+                "notifications");
+            this.isFetchingTransients = false;
+            this.takeTransients(page);
+        } catch (e) {
+            this.isFetchingTransients = false;
+            reportFailure("transients", e);
+        }
+    }
+
+    private publishTransients() {
+        this.transients.value = [ ...this.transientById.values() ].sort((a, b) =>
+            compareText(a.createdAt, b.createdAt) || compareText(a.id, b.id));
     }
 
     private async sendDismissal(refs: NotificationRef[], reason: NotificationDismissReason) {
@@ -481,6 +642,160 @@ export class NotificationView {
 
 }
 
+/**
+ * A transient notification of this client. It merges the changes of its setters and sends them in
+ * order, at most four requests a second, and sends itself again every 20 seconds, since the backend
+ * ends it a minute after its last change. A request that fails is logged by its code, and the next
+ * change tries again.
+ */
+class ClientTransientHandle implements TransientNotificationHandle {
+
+    readonly id = randomString(TRANSIENT_ID_LENGTH);
+    private input: TransientNotificationInput;
+    private token: string | undefined;
+    private hasChanges = true;
+    private isDismissed = false;
+    private sending: Promise<void> | null = null;
+    private sendTimer: ReturnType<typeof setTimeout> | null = null;
+    private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    private lastSendMs = -Infinity;
+
+    constructor(input: TransientNotificationInput, private readonly onEnd: (id: string) => void) {
+        this.input = { ...input };
+        this.scheduleSend();
+    }
+
+    setTitle(title: string) {
+        this.change({ title });
+    }
+
+    setDescription(description: string) {
+        this.change({ description });
+    }
+
+    setProtectedTitle(protectedTitle: string) {
+        this.change({ protectedTitle });
+    }
+
+    setProtectedDescription(protectedDescription: string) {
+        this.change({ protectedDescription });
+    }
+
+    setIcon(icon: string) {
+        this.change({ icon });
+    }
+
+    setProgress(progress: number) {
+        this.change({ progress });
+    }
+
+    setProgressLabel(progressLabel: string) {
+        this.change({ progressLabel });
+    }
+
+    setActions(actions: NotificationAction[]) {
+        this.change({ actions });
+    }
+
+    /** Ends the notification at once: the changes that wait are dropped. */
+    dismiss() {
+        if (this.isDismissed) {
+            return;
+        }
+
+        this.isDismissed = true;
+        for (const timer of [ this.sendTimer, this.refreshTimer ]) {
+            if (timer !== null) {
+                clearTimeout(timer);
+            }
+        }
+        this.sendTimer = this.refreshTimer = null;
+        this.onEnd(this.id);
+        void this.end();
+    }
+
+    private change(patch: TransientNotificationInput) {
+        if (this.isDismissed) {
+            return;
+        }
+
+        this.input = { ...this.input, ...patch };
+        this.hasChanges = true;
+        this.scheduleSend();
+    }
+
+    /** Sends the changes once the request in flight is done and a quarter second has passed. */
+    private scheduleSend() {
+        if (this.sendTimer !== null || this.sending !== null) {
+            return;
+        }
+
+        const delayMs = Math.max(0, this.lastSendMs + TRANSIENT_SEND_INTERVAL_MS - Date.now());
+        this.sendTimer = setTimeout(() => {
+            this.sendTimer = null;
+            void this.send();
+        }, delayMs);
+    }
+
+    private async send() {
+        if (this.refreshTimer !== null) {
+            clearTimeout(this.refreshTimer);
+            this.refreshTimer = null;
+        }
+        this.hasChanges = false;
+        this.lastSendMs = Date.now();
+        const request: TransientNotificationPutRequest = { notification: this.input };
+        if (this.token !== undefined) {
+            request.token = this.token;
+        }
+
+        this.sending = this.put(request);
+        await this.sending;
+        this.sending = null;
+        if (this.isDismissed) {
+            return;
+        }
+        if (this.hasChanges) {
+            this.scheduleSend();
+        } else if (this.token !== undefined) {
+            this.refreshTimer = setTimeout(() => {
+                this.refreshTimer = null;
+                this.hasChanges = true;
+                this.scheduleSend();
+            }, TRANSIENT_NOTIFICATION_REFRESH_MS);
+        }
+    }
+
+    private async put(request: TransientNotificationPutRequest) {
+        try {
+            const { token } = await server.put<TransientNotificationPutResponse>(
+                `notifications/transient/${encodeURIComponent(this.id)}`, request, undefined,
+                SILENT);
+            this.token = token;
+        } catch (e) {
+            reportFailure("transient", e);
+        }
+    }
+
+    /** Ends the notification on the backend once the request in flight is done. */
+    private async end() {
+        if (this.sending) {
+            await this.sending;
+        }
+        if (this.token === undefined) {
+            return;
+        }
+
+        try {
+            await server.remove(`notifications/transient/${encodeURIComponent(this.id)}`, undefined,
+                { token: this.token }, SILENT);
+        } catch (e) {
+            reportFailure("transient", e);
+        }
+    }
+
+}
+
 /** What a load builds: the next view, and the changes that arrived since it started. */
 interface ActiveLoad {
     readonly next: NotificationView;
@@ -542,6 +857,13 @@ function withoutPublicText(notification: TriliumNotification): TriliumNotificati
 
 function toRef({ id, raisedAt }: TriliumNotification): NotificationRef {
     return { id, raisedAt };
+}
+
+function compareText(a: string, b: string) {
+    if (a === b) {
+        return 0;
+    }
+    return a < b ? -1 : 1;
 }
 
 /** The code of a refused request: the body of every refusal of a notification route is its code. */

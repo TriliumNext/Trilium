@@ -5575,6 +5575,12 @@
       "general": "Notification",
       "reminder": "Reminder",
       "softwareUpdate": "Software update"
-    }
+    },
+    "remove": "Remove",
+    "dismiss-anyway": "Dismiss anyway",
+    "dismiss-anyway-confirm": "This notification waits for an action of the script that raised it. Dismiss it anyway?",
+    "dismiss": "Dismiss",
+    "action-generic": "Action {{number}}",
+    "handler-failed": "The action of the notification failed. The browser console has the details."
   }
 }

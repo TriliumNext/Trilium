@@ -118,9 +118,13 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
     return await call<T>("POST", url, componentId, { data, timeoutMs, ...silence });
 }
 
-/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+/**
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that
+ * handles the failure itself.
+ */
 async function put<T>(
-    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+    url: string, data?: unknown, componentId?: string,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
 ) {
     return await call<T>("PUT", url, componentId, { data, ...silence });
 }
@@ -136,8 +140,16 @@ async function patch<T>(
     return await call<T>("PATCH", url, componentId, { data, ...silence });
 }
 
-async function remove<T>(url: string, componentId?: string) {
-    return await call<T>("DELETE", url, componentId);
+/**
+ * @param data a body, for a route that needs one, such as a token.
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that
+ * handles the failure itself.
+ */
+async function remove<T>(
+    url: string, componentId?: string, data?: unknown,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
+) {
+    return await call<T>("DELETE", url, componentId, { data, ...silence });
 }
 
 async function upload(url: string, fileToUpload: File, componentId?: string, method = "PUT") {

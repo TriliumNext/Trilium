@@ -1,6 +1,10 @@
-import type { ToMarkdownResponse } from "@triliumnext/commons";
+import type { FrontendNotificationApi, ToMarkdownResponse } from "@triliumnext/commons";
+import { BUILT_IN_NOTIFICATION_PREFIX } from "@triliumnext/commons/src/lib/notifications.js";
+import type {
+    FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote,
+    ScriptFrontendNotificationApi, ScriptLinkOptions
+} from "@triliumnext/commons/src/lib/script_api.js";
 import { formatLogMessage } from "@triliumnext/commons/src/lib/utils.js";
-import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote, ScriptLinkOptions } from "@triliumnext/commons/src/lib/script_api.js";
 import DOMPurify from "dompurify";
 
 import appContext from "../components/app_context.js";
@@ -21,6 +25,7 @@ import { t } from "./i18n.js";
 import linkService from "./link.js";
 import noteCreateService, { type CreateNoteOpts } from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import notificationStore, { NotificationRequestError } from "./notifications.js";
 import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
@@ -215,6 +220,8 @@ export interface Api {
     log(...args: unknown[]): void;
 
     preact: typeof preactAPI;
+
+    notifications: FrontendNotificationApi;
 }
 
 /**
@@ -498,10 +505,37 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     };
 
     this.preact = preactAPI;
+    this.notifications = scriptNotifications;
 }
 
 export default FrontendScriptApi as any as {
     new(startNote: FNote, currentNote: FNote, originEntity: Entity | null, $container: JQuery<HTMLElement> | null): Api;
+};
+
+/** The names that a notification can give as its handler. */
+const HANDLER_NAME = /^[A-Za-z0-9_.:-]{1,100}$/;
+
+/**
+ * `api.notifications`: the notification store, which refuses to register a handler under a name
+ * that a notification cannot give or that belongs to built-in features.
+ */
+const scriptNotifications: FrontendNotificationApi = {
+    create: (input) => notificationStore.create(input),
+    update: (target, patch) => notificationStore.update(target, patch),
+    dismiss: (target) => notificationStore.dismiss(target),
+    getById: (id) => notificationStore.getById(id),
+    getByTag: (tag) => notificationStore.getByTag(tag),
+    createTransientNotification: (input) => notificationStore.createTransientNotification(input),
+    registerActionHandler: (name, handler) => {
+        if (typeof name !== "string" || !HANDLER_NAME.test(name) || typeof handler !== "function") {
+            throw new NotificationRequestError("invalid-input");
+        }
+        if (name.startsWith(BUILT_IN_NOTIFICATION_PREFIX)) {
+            throw new NotificationRequestError("reserved-name");
+        }
+        notificationStore.registerActionHandler(name, handler);
+    },
+    getActionHandler: (name) => notificationStore.getActionHandler(name)
 };
 
 // --- Drift guards -----------------------------------------------------------
@@ -524,3 +558,10 @@ const _undeclaredApiGuard: [_UndeclaredApiMembers] extends [never] ? true : _Und
 const _fnoteDriftGuard: [_MissingFNoteMembers] extends [never] ? true : _MissingFNoteMembers = true;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _linkOptionsDriftGuard: [_MissingLinkOptions] extends [never] ? true : _MissingLinkOptions = true;
+type _NotificationApiDrift =
+    | Exclude<keyof ScriptFrontendNotificationApi, keyof FrontendNotificationApi>
+    | Exclude<keyof FrontendNotificationApi, keyof ScriptFrontendNotificationApi>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _notificationApiDriftGuard: [_NotificationApiDrift] extends [never]
+    ? true
+    : _NotificationApiDrift = true;

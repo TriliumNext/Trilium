@@ -44,6 +44,7 @@ async function renderBell() {
 
 afterEach(() => {
     notificationStore.notifications.value = [];
+    notificationStore.transients.value = [];
     notificationStore.isLoaded.value = false;
     notificationStore.counts.value = null;
     options.set("notificationsSilent", "false");
@@ -100,5 +101,52 @@ describe("NotificationBell", () => {
             document.querySelector(".notification-panel .notification-panel-content")
         ).not.toBeNull());
         expect(bell.getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it("turns a ring while an operation with a transient notification runs", async () => {
+        const bell = await renderBell();
+        expect(bell.querySelector(".notification-bell-activity")).toBeNull();
+
+        await act(async () => {
+            notificationStore.transients.value = [ {
+                id: "spec-transient", type: "transient", producer: "client",
+                createdAt: "2026-11-27 10:00:00.000Z", title: "Importing"
+            } ];
+        });
+        expect(bell.classList).toContain("is-active");
+        expect(bell.querySelector(".notification-bell-activity")).not.toBeNull();
+    });
+
+    it("stays open while the context menu of a card is used", async () => {
+        const bell = await renderBell();
+        await act(async () => bell.click());
+        await vi.waitFor(() => expect(
+            document.querySelector(".notification-panel .notification-panel-content")
+        ).not.toBeNull());
+        const menu = document.createElement("div");
+        menu.id = "context-menu-container";
+        document.body.append(menu);
+        try {
+            await act(async () => {
+                menu.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            });
+            expect(bell.getAttribute("aria-expanded")).toBe("true");
+
+            // The menu takes Escape first, and the panel stays.
+            document.body.classList.add("context-menu-shown");
+            await act(async () => {
+                menu.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+            });
+            expect(bell.getAttribute("aria-expanded")).toBe("true");
+            document.body.classList.remove("context-menu-shown");
+
+            await act(async () => {
+                document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            });
+            expect(bell.getAttribute("aria-expanded")).toBe("false");
+        } finally {
+            menu.remove();
+            document.body.classList.remove("context-menu-shown");
+        }
     });
 });
