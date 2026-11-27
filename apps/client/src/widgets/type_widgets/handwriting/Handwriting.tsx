@@ -9,7 +9,8 @@ import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { isIOS } from "../../../services/utils";
-import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
+import FormTextBox from "../../react/FormTextBox";
 import { useFullscreen } from "../../react/hooks/dom";
 import { type SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useTriliumEvent } from "../../react/hooks/events";
@@ -18,7 +19,6 @@ import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
-import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
 import {
     AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTool, type InkView,
@@ -84,6 +84,14 @@ const DEFAULT_INK_SETTINGS: Record<InkTool, InkSettings> = {
 const MIN_SIZE = 1;
 const MAX_SIZE = 12;
 const SIZE_STEP = 0.5;
+/** The pressure sensitivities offered in the toolbar's menu, from none to the most. */
+const PRESSURE_PRESETS = [
+    { name: "off", value: 0 },
+    { name: "low", value: 30 },
+    { name: "normal", value: DEFAULT_PRESSURE_SENSITIVITY },
+    { name: "high", value: 80 },
+    { name: "maximum", value: 100 }
+] as const;
 
 /** Whether the device has a touch screen, the only one on which fingers can draw. */
 const HAS_TOUCH = navigator.maxTouchPoints > 0;
@@ -347,6 +355,21 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                     </FormListItem>
                                 ))}
                             </FormDropdownSubmenu>
+                            <FormDropdownSubmenu icon="bx bx-tachometer" title={t("handwriting.pressure_sensitivity")}>
+                                {PRESSURE_PRESETS.map(({ name, value }) => (
+                                    <FormListItem
+                                        key={name}
+                                        checkable
+                                        checked={sensitivity === value}
+                                        trailingText={String(value)}
+                                        onClick={() => setSensitivity(value)}
+                                    >
+                                        {t(`handwriting.pressure_${name}`)}
+                                    </FormListItem>
+                                ))}
+                                <FormDropdownDivider />
+                                <CustomPressureItem value={sensitivity} onChange={setSensitivity} />
+                            </FormDropdownSubmenu>
                             {HAS_TOUCH && (
                                 <FormListItem
                                     icon="bx bxs-hand-up"
@@ -363,10 +386,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             )}
 
             {!isReadOnly && inkTool && (
-                <InkRail
-                    tool={inkTool} color={color} size={size} onChange={updateInk}
-                    sensitivity={sensitivity} onSensitivityChange={setSensitivity}
-                />
+                <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
             )}
 
             {state.layout === "pages" && (
@@ -409,21 +429,60 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     );
 }
 
+interface CustomPressureItemProps {
+    value: number;
+    onChange(value: number): void;
+}
+
+/**
+ * The last row of the pressure sensitivity submenu, for a value between the presets: a number from 0
+ * to 100 typed into the row, checked while the value is none of the presets. The typed value is held
+ * as a draft and saved once the box commits: on leaving it, on Enter or on a spinner step.
+ */
+function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
+    const [ draft, setDraft ] = useState(String(value));
+    useEffect(() => setDraft(String(value)), [ value ]);
+
+    function commit(typed: string) {
+        const parsed = parseInt(typed, 10);
+        if (!Number.isFinite(parsed)) {
+            setDraft(String(value));
+            return;
+        }
+        const next = Math.min(100, Math.max(0, parsed));
+        setDraft(String(next));
+        if (next !== value) onChange(next);
+    }
+
+    return (
+        <FormListItem
+            checkable
+            checked={!PRESSURE_PRESETS.some((preset) => preset.value === value)}
+            onClick={(e) => e.stopPropagation()}
+        >
+            {t("handwriting.pressure_custom")}
+            <FormTextBox
+                className="handwriting-pressure-input"
+                type="number"
+                min={0} max={100} step={5}
+                currentValue={draft} onChange={setDraft} onBlur={commit}
+            />
+        </FormListItem>
+    );
+}
+
 interface InkRailProps {
     tool: InkTool;
     color: string;
     size: number;
     onChange(changes: Partial<InkSettings>): void;
-    sensitivity: number;
-    onSensitivityChange(sensitivity: number): void;
 }
 
 /**
  * The color and the thickness of the pen or the highlighter, on a rail down the side of the note:
- * steps and the value of the thickness, its three presets, the pressure sensitivity of the pen,
- * then the colors.
+ * steps and the value of the thickness, its three presets, then the colors.
  */
-function InkRail({ tool, color, size, onChange, sensitivity, onSensitivityChange }: InkRailProps) {
+function InkRail({ tool, color, size, onChange }: InkRailProps) {
     const customInputRef = useRef<HTMLInputElement>(null);
     const presets = INK_PRESETS[tool];
     const isCustomColor = !presets.colors.some((preset) => preset.color === color);
@@ -464,25 +523,6 @@ function InkRail({ tool, color, size, onChange, sensitivity, onSensitivityChange
                     />
                 ))}
             </OverlayControlGroup>
-
-            {tool === "pen" && (
-                <OverlayControlGroup vertical titlePosition="right">
-                    <OverlayControlDropdown panel title={t("handwriting.pressure_sensitivity")} icon="bx-tachometer">
-                        <div className="handwriting-pressure">
-                            <div className="handwriting-pressure-value">
-                                {t("handwriting.pressure_sensitivity_value", { value: sensitivity })}
-                            </div>
-                            <Slider
-                                min={0} max={100} step={5}
-                                value={sensitivity}
-                                title={t("handwriting.pressure_sensitivity")}
-                                onChange={onSensitivityChange}
-                            />
-                            <p className="handwriting-pressure-hint">{t("handwriting.pressure_sensitivity_hint")}</p>
-                        </div>
-                    </OverlayControlDropdown>
-                </OverlayControlGroup>
-            )}
 
             <OverlayControlGroup vertical titlePosition="right">
                 {presets.colors.map((preset) => (
