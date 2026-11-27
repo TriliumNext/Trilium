@@ -28,6 +28,7 @@ vi.mock("./notification_display.js", async (importOriginal) => ({
 }));
 
 import { buildNote } from "../test/easy-froca.js";
+import froca from "./froca.js";
 import { AlertClaims, type ClaimChannel, showAlert, type TabState } from "./notification_alerts.js";
 import notificationStore from "./notifications.js";
 import options from "./options.js";
@@ -89,8 +90,16 @@ function makeNotification(overrides: Partial<TriliumNotification> = {}): Trilium
     };
 }
 
-/** Shows the alert of `notification` in a focused tab, with the store returning it. */
+/** The copy of a notification that the store holds once sync makes it sensitive. */
+function asSensitive({ title: _title, description: _description, ...rest }: TriliumNotification) {
+    return { ...rest, sensitive: true };
+}
+
+/** Shows the alert of `notification` in a focused tab, with the store holding it. */
 async function alertOf(notification: TriliumNotification) {
+    const others = notificationStore.notifications.value
+        .filter(({ notificationId }) => notificationId !== notification.notificationId);
+    notificationStore.notifications.value = [ notification, ...others ];
     vi.spyOn(notificationStore, "waitFor").mockResolvedValue(notification);
     await showAlert(notification.notificationId);
 }
@@ -113,6 +122,7 @@ afterEach(() => {
     for (const id of [ ...toasts.shown.keys() ]) {
         toasts.closePersistent(id);
     }
+    notificationStore.notifications.value = [];
     notificationStore.actionHandlers.value = new Map();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -277,6 +287,33 @@ describe("showAlert", () => {
         expect([ ...toasts.shown.keys() ]).toEqual([
             `notification-${shown[2].notificationId}`, `notification-${shown[3].notificationId}`
         ]);
-        notificationStore.notifications.value = [];
+    });
+
+    it("shows only the public text once the notification turns sensitive", async () => {
+        const notification = makeNotification({
+            description: "Call the bank", attentionLevel: "high"
+        });
+        await alertOf(notification);
+        expect(lastToast()).toMatchObject({ title: "Backup finished", message: "Call the bank" });
+
+        notificationStore.notifications.value = [ asSensitive(notification) ];
+        expect(lastToast()).toMatchObject({
+            id: `notification-${notification.notificationId}`,
+            title: "notifications.category-title.general",
+            message: "notifications.enter-protected-session"
+        });
+    });
+
+    it("builds the toast from the copy that the store holds after the note lookup", async () => {
+        const notification = makeNotification({ description: "Call the bank", noteId: "noteAbc2" });
+        vi.spyOn(froca, "getNote").mockImplementation(async () => {
+            notificationStore.notifications.value = [ asSensitive(notification) ];
+            return null;
+        });
+        await alertOf(notification);
+
+        const messages = toasts.showPersistent.mock.calls
+            .map(([ toast ]) => (toast as ToastOptionsWithRequiredId).message);
+        expect(messages).toEqual([ "notifications.enter-protected-session" ]);
     });
 });

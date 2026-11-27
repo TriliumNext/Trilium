@@ -97,19 +97,23 @@ export class AlertClaims {
 }
 
 let claims: AlertClaims | null = null;
-/** The IDs of the toasts shown, oldest first. */
-const shownToasts: string[] = [];
+/** The copy of each notification that its toast shows, by `notificationId`, oldest first. */
+const shownToasts = new Map<string, TriliumNotification>();
 let audio: HTMLAudioElement | null = null;
 let lastSoundMs = -Infinity;
 
-// Closes the toast of a notification once it is read or dismissed, here or elsewhere.
+// Updates the toast of a notification that changed, and closes it once the notification is read
+// or dismissed, here or elsewhere.
 effect(() => {
-    const unread = new Set(notificationStore.notifications.value
+    const unread = new Map(notificationStore.notifications.value
         .filter(({ state }) => state !== "read")
-        .map(({ notificationId }) => toastIdOf(notificationId)));
-    for (const toastId of [ ...shownToasts ]) {
-        if (!unread.has(toastId)) {
-            toastService.closePersistent(toastId);
+        .map((notification) => [ notification.notificationId, notification ]));
+    for (const [ notificationId, shown ] of [ ...shownToasts ]) {
+        const current = unread.get(notificationId);
+        if (!current) {
+            toastService.closePersistent(toastIdOf(notificationId));
+        } else if (current !== shown) {
+            renderToast(current);
         }
     }
 });
@@ -117,13 +121,35 @@ unlockSoundOnFirstGesture();
 
 async function showToast(notification: TriliumNotification) {
     const noteId = getReferencedNoteId(notification);
-    const note = noteId ? await froca.getNote(noteId, true) : null;
-    const { title, description } = getNotificationText(notification, note?.title);
-    const toastId = toastIdOf(notification.notificationId);
+    if (noteId) {
+        // Loads the note into froca, where `renderToast()` reads its title.
+        await froca.getNote(noteId, true);
+    }
+    // The store's copy can change during the lookup.
+    const current = notificationStore.notifications.value
+        .find(({ notificationId }) => notificationId === notification.notificationId);
+    if (current?.state !== "pending") {
+        return;
+    }
+
+    renderToast(current);
+    const excess = Math.max(0, shownToasts.size - TOAST_LIMIT);
+    for (const oldest of [ ...shownToasts.keys() ].slice(0, excess)) {
+        toastService.closePersistent(toastIdOf(oldest));
+    }
+}
+
+/** Shows the toast of a notification, or updates the one shown, from this copy of it. */
+function renderToast(notification: TriliumNotification) {
+    const { notificationId } = notification;
+    const noteId = getReferencedNoteId(notification);
+    const noteTitle = noteId ? froca.getNoteFromCache(noteId)?.title : undefined;
+    const { title, description } = getNotificationText(notification, noteTitle);
     const actions = getShownActions(notification);
 
+    shownToasts.set(notificationId, notification);
     toastService.showPersistent({
-        id: toastId,
+        id: toastIdOf(notificationId),
         icon: getNotificationIcon(notification),
         title: description ? markBidiControls(title) : undefined,
         message: markBidiControls(description ?? title),
@@ -140,20 +166,8 @@ async function showToast(notification: TriliumNotification) {
             }
         })) : undefined,
         onDismiss: () => notificationStore.markSeen([ notification ]),
-        onRemove: () => {
-            const index = shownToasts.indexOf(toastId);
-            if (index !== -1) {
-                shownToasts.splice(index, 1);
-            }
-        }
+        onRemove: () => shownToasts.delete(notificationId)
     });
-
-    if (!shownToasts.includes(toastId)) {
-        shownToasts.push(toastId);
-    }
-    for (const oldest of shownToasts.splice(0, Math.max(0, shownToasts.length - TOAST_LIMIT))) {
-        toastService.closePersistent(oldest);
-    }
 }
 
 function playSound() {
