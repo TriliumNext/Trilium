@@ -27,7 +27,9 @@
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;
     --tn-modal-max-height: 90svh;
+}
 
+:where(:root) {
     --tree-item-light-theme-max-color-lightness: 50;
     --tree-item-dark-theme-min-color-lightness: 75;
 }
@@ -77,6 +79,8 @@ html {
     /* Chrome on Android sizes `vh` without its toolbar, which leaves the page that much to scroll. */
     height: 100dvh;
     overscroll-behavior: none;
+    /* On the root, so that `rem` units follow the interface font size too. */
+    font-size: var(--main-font-size);
 }
 
 /* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
@@ -97,7 +101,6 @@ body {
     background-color: var(--main-background-color);
     color: var(--main-text-color);
     font-family: var(--main-font-family);
-    font-size: var(--main-font-size);
 
     --native-titlebar-foreground: var(--main-text-color);
     --native-titlebar-darwin-x-offset: 10;
@@ -163,7 +166,24 @@ body.desktop {
         #left-pane,
         #rest-pane {
             padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+        }
+
+        #launcher-pane,
+        #left-pane:has(> .custom-widgets:last-child),
+        #rest-pane {
             padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        }
+
+        #left-pane:not(:has(> .custom-widgets:last-child)) {
+            .tree::after {
+                content: "";
+                display: block;
+                height: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+            }
+
+            .tree-actions {
+                bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+            }
         }
     }
 
@@ -445,7 +465,7 @@ samp {
 /*
  * Programming ligatures: the bundled JetBrains Mono renders `!=` as `≠`, `->` as `→` and so on,
  * which reads as the characters having been silently replaced (see #2851). The `monospaceLigatures-
- * Enabled` option gates this; the class is applied by RootContainer.
+ * Enabled` option gates this; the class is applied by `applyAppearance()`.
  *
  * Scoped to the monospace surfaces rather than set on `body`: `font-variant-ligatures` is inherited,
  * so a blanket rule would also disable `fi`/`fl` in prose, which is a typographic regression in note
@@ -1296,31 +1316,33 @@ svg.ck-icon.note-icon {
     min-height: 0;
 }
 
-body.mobile .modal-content-with-sidebar {
-    flex-direction: column !important;
-}
+/* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+    body.mobile .modal-content-with-sidebar {
+        flex-direction: column !important;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--main-border-color);
-    height: 30vh;
-    flex-shrink: 0;
-    overflow: hidden;
-    order: 1;
-}
+    body.mobile .modal-content-with-sidebar > .modal-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--main-border-color);
+        height: 30vh;
+        flex-shrink: 0;
+        overflow: hidden;
+        order: 1;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-main {
-    order: 0;
-}
+    body.mobile .modal-content-with-sidebar > .modal-main {
+        order: 0;
+    }
 
-body.mobile .modal-content-with-sidebar .modal-sidebar-header {
-    display: none;
-}
+    body.mobile .modal-content-with-sidebar .modal-sidebar-header {
+        display: none;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
-    visibility: visible;
-    width: auto;
-}
+    body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
+        visibility: visible;
+        width: auto;
+    }}
 
 .side-checkbox {
     display: flex;
@@ -1575,6 +1597,11 @@ figure.captioned-content-embed {
 .include-note,
 .link-embed:where([data-embed-type="youtube"]) {
     clear: both;
+}
+
+.include-note.extended-code-block:not([data-position^="wrap-"]) {
+    clear: none;
+    min-width: min(100%, 200px);
 }
 
 .include-note[data-box-size="resizable"],
@@ -1935,6 +1962,29 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     }
 }
 
+:root pre.code-preview.code-block-preview {
+    padding: 0;
+
+    > .code-preview-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-end: calc(var(--copy-button-width) + var(--copy-button-margin-size) * 2);
+    }
+
+    &.code-preview-no-line-numbers > .code-preview-content {
+        padding-inline-start: var(--padding-size, 1em);
+    }
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-light"],
+body:not(.dark-theme) pre.code-block-preview[data-code-theme-l="vs-code-light"] {
+    --code-preview-background: #f6f6f6;
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-dark"],
+body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
+    --code-preview-background: #1c1b1b;
+}
+
 /* Takes the wheel and the touch gestures for the page until the content has the focus. */
 .include-note-backdrop {
     position: absolute;
@@ -2020,7 +2070,11 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     height: 100%;
 }
 
-.include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > * {
+.include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > *,
+.include-note-content.type-markdown:fullscreen > .rendered-content:not(.full-content-width)
+    > .markdown-embed > .markdown-embed-content > .note-detail-split
+    > .note-detail-split-preview-col > .note-detail-split-preview
+    > .editable-embed-preview > .markdown-preview > * {
     max-width: var(--preferred-max-content-width);
     margin-inline: auto;
 }
@@ -2076,7 +2130,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 
 /* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
 @supports (content-visibility: hidden) {
-    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+    #center-pane > .note-splits-host > .split-note-container-widget > .note-split.hidden-ext {
         display: flex !important;
         flex: 0 0 100% !important;
         margin-inline: -100% 0;
@@ -2331,7 +2385,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 }
 
 #launcher-pane .launcher-button {
-    font-size: 150%;
+    font-size: 24px;
     /* Matches the `line-height: 1` boxicons gives an icon-only launcher, so an icon in a child
        span, as in a dropdown launcher, centers the same way. */
     line-height: 1;
@@ -2374,236 +2428,13 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     background-color: var(--left-pane-background-color);
 }
 
-/* Mobile, phone mode */
-
-#detail-container {
-    max-height: 100%;
-    position: relative;
-}
-
 @media (max-width: 991px) {
-    /* The launcher bar's menus stand in the page's body, in a wrapper with their dropdown's class,
-       outside the bar whose `--launcher-pane-size` the theme sets, so its horizontal size is read
-       where the theme defines it. */
-    body.mobile .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu.show,
-    body.mobile .dropdown-menu.mobile-bottom-menu.show {
-        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-horiz-size, var(--launcher-pane-size)));
-        position: fixed !important;
-        bottom: var(--dropdown-bottom) !important;
-        top: unset !important;
-        inset-inline-start: 0 !important;
-        inset-inline-end: 0 !important;
-        transform: unset !important;
-        overflow-y: auto;
-        max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
-    }
-
-    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.show {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-
-    body.mobile .dropdown-menu.mobile-bottom-menu.show {
-        --dropdown-bottom: 0px;
-        padding-bottom: calc(max(var(--menu-padding-size), var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))) !important;
-    }
-
-    #mobile-rest-container {
-        overflow: clip;
-        position: relative;
-    }
-
-    #mobile-rest-container > #mobile-sidebar-wrapper {
-        position: absolute;
-        top: 0;
-        inset-inline-start: 0;
-        height: 100%;
-        width: 100%;
-        transition: transform 250ms ease-in-out;
-        background: var(--main-background-color);
-
-        &:not(.show, .dragging) {
-            visibility: hidden;
-            transition: transform 250ms ease-in-out, visibility 0s 250ms;
-        }
-    }
-
-    #detail-container {
-        position: relative;
-        width: 100%;
-        background: var(--main-background-color);
-        transition: transform 250ms ease-in-out;
-
-        &::before {
-            content: "";
-            position: absolute;
-            inset-block: 0;
-            inset-inline-end: 100%;
-            width: 24px;
-            background: linear-gradient(to left, rgba(0, 0, 0, 0.12), transparent);
-            pointer-events: none;
-            transition: opacity 250ms ease-in-out;
-        }
-    }
-
-    body.mobile-sidebar-open #detail-container::before {
-        opacity: 0;
-    }
-
-    #mobile-rest-container.instant-screen-change {
-        > #mobile-sidebar-wrapper,
-        > #detail-container,
-        > #detail-container::before {
-            transition: none !important;
-        }
-    }
-
-    body[dir="rtl"] #detail-container::before {
-        background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
-    }
-
     .note-split.empty-note {
         --max-content-width: var(--preferred-max-content-width);
     }
 
     .note-detail-empty {
         margin: 15px;
-    }
-
-    body.mobile #launcher-container {
-        justify-content: space-evenly;
-    }
-
-    body.mobile .modal.show {
-        background-color: var(--mobile-modal-backdrop-color);
-    }
-
-    body.mobile .modal-backdrop {
-        background-color: transparent !important;
-    }
-
-    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
-    body.mobile .tn-popover-backdrop {
-        background-color: var(--mobile-backdrop-color);
-        opacity: 1;
-    }
-
-    body.mobile .modal-dialog {
-        position: fixed;
-        bottom: 0;
-        inset-inline-start: 0;
-        inset-inline-end: 0;
-        margin: 0 !important;
-        max-height: 85vh;
-        display: flex;
-    }
-
-    body.mobile .modal-dialog.modal-dialog-full-page-on-mobile {
-        width: 100%;
-        height: 100%;
-        max-height: unset;
-        max-width: unset;
-
-        .modal-header {
-            margin-top: var(--safe-area-inset-top, env(safe-area-inset-top));
-        }
-
-        .modal-content {
-            border-radius: 0;
-            border: 0;
-
-            .modal-body {
-                overflow: scroll;
-            }
-        }
-    }
-
-    body.mobile .modal-content {
-        overflow-y: auto;
-        border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
-    }
-
-    body.mobile .modal:not(.options-dialog) .modal-content {
-        padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
-        padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
-    }
-
-    body.mobile .modal-footer {
-        padding-top: 12px;
-        padding-bottom: calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
-    }
-
-    body.mobile .help-dialog kbd {
-        display: inline !important;
-    }
-
-    body.mobile .options-section-card table {
-        word-break: break-all;
-    }
-
-    body.mobile .modal-dialog .dropdown-menu {
-        position: static !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        font-size: 1rem !important;
-    }
-
-    body.mobile .modal-dialog.modal-dialog-scrollable {
-        height: unset;
-    }
-}
-
-/* Mobile, tablet mode */
-@media (min-width: 992px) {
-    body.mobile #root-widget {
-        flex-direction: column-reverse !important;
-        background-color: var(--launcher-pane-background-color);
-    }
-
-    /* `column-reverse` puts `#mobile-bottom-bar` at the top, so the panes clear the navigation bar
-       instead. The open keyboard covers the navigation bar, as in phone mode. */
-    body.mobile #mobile-bottom-bar {
-        padding-bottom: 0;
-    }
-
-    body.mobile #root-widget:not(.virtual-keyboard-opened) {
-        #mobile-rest-container > #mobile-sidebar-wrapper,
-        #detail-container {
-            padding-bottom: var(--mobile-bottom-offset);
-        }
-    }
-
-    #mobile-sidebar-wrapper {
-        --navigator-backdrop: var(--left-pane-background-color);
-        transform: none !important;
-        background-color: var(--navigator-backdrop) !important;
-    }
-
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
-        display: none !important;
-    }
-
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #detail-container {
-        width: 100%;
-    }
-
-    #mobile-rest-container {
-        background-color: var(--root-background);
-    }
-
-    #detail-container {
-        background: var(--main-background-color);
-    }
-
-    body.mobile {
-        .modal-dialog {
-            margin: var(--bs-modal-margin);
-            max-width: 80%;
-        }
-
-        .modal-content {
-            height: 100%;
-        }
     }
 }
 

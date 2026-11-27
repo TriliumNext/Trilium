@@ -1,6 +1,8 @@
 import { SpaceUsageSizes } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
+import becca from "../becca/becca.js";
+
 import {
     buildCanonicalForest,
     buildNotePath,
@@ -8,6 +10,7 @@ import {
     computeSubtreeTotals,
     DEFAULT_OVERVIEW_LIMIT,
     getContentCounts,
+    getNoteUsage,
     getOverview
 } from "./space_usage.js";
 import { getSql } from "./sql/index.js";
@@ -203,5 +206,28 @@ describe("getContentCounts", () => {
             getSql().execute(
                 "DELETE FROM attachments WHERE attachmentId IN ('spec_att_note', 'spec_att_hidden', 'spec_att_revision')");
         }
+    });
+});
+
+describe("content figures", () => {
+    it("reports zero for a kind of content the database does not hold", () => {
+        let revisionsSize: number | undefined;
+        expect(() => getSql().transactional(() => {
+            getSql().execute("DELETE FROM revisions");
+            revisionsSize = getOverview({ includeRevisions: true, limit: DEFAULT_OVERVIEW_LIMIT }).content.revisionsSize;
+            throw new Error("rollback");
+        })).toThrow("rollback");
+
+        expect(revisionsSize).toBe(0);
+    });
+
+    it("reports zero content for a virtual note, which has no blob", () => {
+        const virtualNote = Object.values(becca.notes).find((note) => note.isVirtual && !note.hasChildren());
+        expect(virtualNote).toBeDefined();
+        if (!virtualNote) return;
+
+        const usage = getNoteUsage(virtualNote.noteId);
+        expect(usage.noteContentSize).toBe(0);
+        expect(usage.subtreeContentSize).toBe(0);
     });
 });

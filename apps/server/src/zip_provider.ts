@@ -46,6 +46,8 @@ class NodejsZipArchive implements ZipArchive {
 
         // Fires as each queued entry finishes being written to the output.
         this.#archive.on("entry", () => {
+            /* v8 ignore next -- archiver emits one "entry" per append() and only append() queues
+               entries here, so a size is always pending; `?? 0` only satisfies the type. */
             this.#queuedBytes -= this.#pendingSizes.shift() ?? 0;
             if (this.#capacityWaiter && this.#queuedBytes < NodejsZipArchive.#HIGH_WATER_MARK) {
                 const waiter = this.#capacityWaiter;

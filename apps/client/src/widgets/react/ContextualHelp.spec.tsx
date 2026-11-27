@@ -10,8 +10,8 @@ const mocks = vi.hoisted(() => ({
     isMobile: vi.fn(() => false)
 }));
 
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip: mocks.useStaticTooltip
 }));
 

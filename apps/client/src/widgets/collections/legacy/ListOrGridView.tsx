@@ -2,30 +2,30 @@ import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
-import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
-import attribute_renderer from "../../../services/attribute_renderer";
-import content_renderer from "../../../services/content_renderer";
+import { getNormalAttributes } from "../../../services/attribute_renderer";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { isShare } from "../../../services/utils";
+import { attributeKindIcon } from "../../attribute_widgets/attribute_types";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks";
+import { AttributeBadge } from "../../react/Badge";
+import { useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks/note";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
-import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { Pager, usePagination, PaginationContext } from "../Pagination";
 import ListExpandControls from "./ListExpandControls";
+import { NoteContent } from "./NoteContent";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
 import { JSX } from "preact/jsx-runtime";
 import { clsx } from "clsx";
 import ActionButton from "../../react/ActionButton";
 import linkContextMenuService from "../../../menus/link_context_menu";
 import { ComponentChildren, TargetedMouseEvent } from "preact";
-
-const contentSizeObserver = new ResizeObserver(onContentResized);
 
 /**
  * Opt-in adjustments for callers that reuse the list outside a collection note. Every field is
@@ -181,6 +181,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
             {showsPreview && (
                 <CardSection className="note-content-preview">
                     <NoteContent note={note}
+                                 trim
                                  highlightedTokens={highlightedTokens}
                                  noChildrenList
                                  includeArchivedNotes={includeArchived}
@@ -280,99 +281,47 @@ function GridNoteCard(props: GridNoteCardProps) {
 }
 
 export function NoteAttributes({ note }: { note: FNote }) {
-    const ref = useRef<HTMLSpanElement>(null);
-    useEffect(() => {
-        attribute_renderer.renderNormalAttributes(note).then(({$renderedAttributes}) => {
-            ref.current?.replaceChildren(...$renderedAttributes);
-        });
-    }, [ note ]);
-
-    return <span className="note-list-attributes" ref={ref} />;
-}
-
-export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes, showTextRepresentation, interactive, onReady }: {
-    note: FNote;
-    trim?: boolean;
-    noChildrenList?: boolean;
-    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
-    includeArchivedNotes: boolean;
-    showTextRepresentation?: boolean;
-    /** Render live interactive type widgets (e.g. web views) instead of static previews. */
-    interactive?: boolean;
-    onReady?: () => void;
-}) {
-    const contentRef = useRef<HTMLDivElement>(null);
-    const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
-    const parentComponent = useContext(ParentComponent);
-
-    const [ready, setReady] = useState(false);
-    const [noteType, setNoteType] = useState<string>("none");
-    const onReadyRef = useRef(onReady);
-    onReadyRef.current = onReady;
-
-    useEffect(() => {
-        const contentElement = contentRef.current;
-        if (!contentElement) return;
-
-        contentSizeObserver.observe(contentElement);
-
-        return () => {
-            contentSizeObserver.unobserve(contentElement);
-        }
-    }, []);
-
+    const [ badges, setBadges ] = useState<AttributeBadgeData[]>([]);
     useEffect(() => {
         let cancelled = false;
-        // Tracks the rendered content so the cleanup can unmount any interactive widget it carries
-        // (collections, web views) — otherwise their standalone Preact roots leak when the note
-        // changes or the card unmounts.
-        let rendered: JQuery<HTMLElement> | undefined;
-        setReady(false);
-        content_renderer.getRenderedContent(note, {
-            trim,
-            noChildrenList,
-            // The note list is a lightweight preview: don't render embedded notes at all.
-            noContentEmbeds: true,
-            includeArchivedNotes,
-            showTextRepresentation,
-            interactive,
-            parentComponent: parentComponent ?? undefined
-        })
-            .then(({ $renderedContent, type }) => {
-                if (cancelled || !contentRef.current) {
-                    // Superseded by a newer render or unmounted while rendering — tear down what was
-                    // just mounted instead of letting it leak (and don't clobber newer content).
-                    content_renderer.disposeInteractiveContent($renderedContent);
-                    return;
-                }
-                rendered = $renderedContent;
-                if ($renderedContent[0].innerHTML) {
-                    contentRef.current.replaceChildren(...$renderedContent);
-                } else {
-                    contentRef.current.replaceChildren();
-                }
-                highlightSearch(contentRef.current);
-                setNoteType(type);
-                setReady(true);
-                onReadyRef.current?.();
-            })
-            .catch(e => {
-                if (cancelled) return;
-                console.warn(`Caught error while rendering note '${note.noteId}' of type '${note.type}'`);
-                console.error(e);
-                contentRef.current?.replaceChildren(t("collections.rendering_error"));
-                setReady(true);
-                onReadyRef.current?.();
-            });
+        getAttributeBadges(note).then((result) => {
+            if (!cancelled) setBadges(result);
+        });
         return () => {
             cancelled = true;
-            if (rendered) {
-                content_renderer.disposeInteractiveContent(rendered);
-            }
         };
-    }, [ note, highlightedTokens ]);
+    }, [ note ]);
 
-    return <div ref={contentRef} className={clsx("note-book-content", `type-${noteType}`, {"note-book-content-ready": ready})} />;
+    return (
+        <span className="note-list-attributes">
+            {badges.map(({ attributeId, icon, name, value }) => (
+                <AttributeBadge key={attributeId} icon={icon} name={name} value={value} />
+            ))}
+        </span>
+    );
+}
+
+interface AttributeBadgeData {
+    attributeId: string;
+    icon: string;
+    name: string;
+    value: string | undefined;
+}
+
+/** The note's {@link getNormalAttributes}, a relation's value being the title of its target. */
+async function getAttributeBadges(note: FNote): Promise<AttributeBadgeData[]> {
+    const attributes = getNormalAttributes(note);
+    const targetIds = attributes.filter((attr) => attr.type === "relation").map((attr) => attr.value);
+    const targets = targetIds.length ? await froca.getNotes(targetIds, true) : [];
+
+    return attributes.map((attr) => ({
+        attributeId: attr.attributeId,
+        icon: attributeKindIcon(attr.type, attr.name, attr.value),
+        name: attr.name,
+        value: attr.type === "relation"
+            ? targets.find((target) => target.noteId === attr.value)?.title
+            : attr.value || undefined
+    }));
 }
 
 function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expandDepth, includeArchived, searchResultsLayout, resolveChildren, showPreview, showNotePath, renderItemActions, renderItemMenu }: {
@@ -458,11 +407,4 @@ function useExpansionDepth(note: FNote) {
     }
     return parseInt(expandDepth, 10);
 
-}
-
-function onContentResized(entries: ResizeObserverEntry[], observer: ResizeObserver): void {
-    for (const contentElement of entries) {
-        const isOverflowing = ((contentElement.target.scrollHeight > contentElement.target.clientHeight))
-        contentElement.target.classList.toggle("note-book-content-overflowing", isOverflowing);
-    }
 }

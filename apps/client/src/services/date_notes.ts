@@ -1,12 +1,13 @@
-import { dayjs, type InboxTargetResponse } from "@triliumnext/commons";
+import type { InboxTargetResponse } from "@triliumnext/commons";
 
 import type { FNoteRow } from "../entities/fnote.js";
 import froca from "./froca.js";
 import server from "./server.js";
+import utils from "./utils.js";
 import ws from "./ws.js";
 
 async function getInboxNote() {
-    const note = await server.get<FNoteRow>(`special-notes/inbox/${dayjs().format("YYYY-MM-DD")}`, "date-note");
+    const note = await server.get<FNoteRow>(`special-notes/inbox/${utils.formatDateISO(new Date())}`, "date-note");
 
     return await froca.getNote(note.noteId);
 }
@@ -27,7 +28,7 @@ async function getInboxTarget() {
 }
 
 async function getTodayNote() {
-    return await getDayNote(dayjs().format("YYYY-MM-DD"));
+    return await getDayNote(utils.formatDateISO(new Date()));
 }
 
 async function getDayNote(date: string, calendarRootId?: string) {

@@ -78,9 +78,10 @@ const RANGE_PATTERN = /^bytes=(\d*)-(\d*)$/;
  * element ever asks for.
  *
  * A header that cannot be parsed is ignored rather than rejected (RFC 9110 §14.2), so an odd client
- * still gets its content; only a well-formed range that falls outside the content is unsatisfiable.
+ * still gets its content; only a well-formed range that falls outside the content is unsatisfiable,
+ * and throws.
  */
-function parseRangeHeader(rangeHeader: string | undefined, totalSize: number, maxOpenRangeLength = Infinity): ByteRange | null {
+export function parseRangeHeader(rangeHeader: string | undefined, totalSize: number, maxOpenRangeLength = Infinity): ByteRange | null {
     const match = rangeHeader ? RANGE_PATTERN.exec(rangeHeader.trim()) : null;
     if (!match || totalSize === 0) {
         return null;

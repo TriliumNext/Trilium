@@ -2,7 +2,7 @@ import { t } from "../../../services/i18n";
 import utils, { isElectron } from "../../../services/utils";
 import { Card, OptionCardSection } from "../../react/Card";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOptionBool } from "../../react/hooks/options";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 

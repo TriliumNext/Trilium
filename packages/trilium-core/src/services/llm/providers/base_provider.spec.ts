@@ -6,11 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TOOL_CALL_DECLINED_REASON, ToolApprovals } from "../tool_approval.js";
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
 
-const { streamTextMock, generateTextMock, noteMetaMock, errorLogMock, beccaStub } = vi.hoisted(() => ({
+const { streamTextMock, generateTextMock, noteMetaMock, errorLogMock, infoLogMock, beccaStub } = vi.hoisted(() => ({
     streamTextMock: vi.fn((..._args: any[]) => ({}) as any),
     generateTextMock: vi.fn(async (..._args: any[]) => ({ text: "  Generated Title  " })),
     noteMetaMock: vi.fn(() => ({ noteId: "ctx", contentPreview: "PREVIEW" })),
     errorLogMock: vi.fn(),
+    infoLogMock: vi.fn(),
     // becca is accessed directly during message-part resolution and note-hint
     // building. Stub just these while keeping the rest of core intact.
     beccaStub: {
@@ -32,7 +33,7 @@ vi.mock("../../../becca/becca.js", async (importOriginal) => {
 vi.mock("../../../services/log.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../services/log.js")>();
     // Spreading the real logger loses prototype methods (e.g. info), so stub it too.
-    return { ...actual, getLog: () => ({ ...actual.getLog(), error: errorLogMock, info: vi.fn() }) };
+    return { ...actual, getLog: () => ({ ...actual.getLog(), error: errorLogMock, info: infoLogMock }) };
 });
 
 vi.mock("../tools/helpers.js", async (importOriginal) => {
@@ -318,6 +319,14 @@ describe("fetchRemoteModels / fetchJson (base defaults and errors)", () => {
         vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 403 })));
         await expect(new TestProvider("key", "https://proxy.example").callFetchJson("https://proxy.example/models", {}))
             .rejects.toThrow(/check the API key and base URL\./);
+    });
+
+    it("fetchJson names the endpoint and the network error when it cannot connect", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => {
+            throw new TypeError("fetch failed", { cause: new Error("connect ECONNREFUSED 10.0.0.2:443") });
+        }));
+        await expect(new TestProvider().callFetchJson("https://api.example/models", {}))
+            .rejects.toThrow("Could not reach https://api.example/models: connect ECONNREFUSED 10.0.0.2:443");
     });
 
     it("fetchJson returns the parsed JSON on success", async () => {
@@ -690,6 +699,12 @@ describe("BaseProvider chat / pricing / models / title", () => {
 
         expect(await new TestProvider().generateTitle("hi")).toBe("");
         expect(generateTextMock).toHaveBeenCalledOnce();
+        expect(infoLogMock).toHaveBeenLastCalledWith(expect.stringContaining("after 1 output tokens, 0 of them reasoning"));
+
+        // A provider that reports no usage leaves the counts unknown rather than failing the log line.
+        generateTextMock.mockResolvedValueOnce({ text: "", finishReason: "stop", usage: {} } as any);
+        expect(await new TestProvider().generateTitle("hi")).toBe("");
+        expect(infoLogMock).toHaveBeenLastCalledWith(expect.stringContaining("after ? output tokens, 0 of them reasoning"));
     });
 });
 

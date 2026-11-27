@@ -1,7 +1,7 @@
 import { NoteType } from "@triliumnext/commons";
 import { describe, expect,it } from "vitest";
 
-import preprocessContent from "./note_content_fulltext_preprocessor";
+import preprocessContent, { readIconClasses } from "./note_content_fulltext_preprocessor";
 
 describe("Mind map preprocessing", () => {
     const type: NoteType = "mindMap";
@@ -173,6 +173,12 @@ describe("Inline icon searchability", () => {
             + `<span class='tn-icon bx bx-bulb'></span></span></p>`;
 
         expect(preprocessContent(html, type, mime)).toContain("bulb");
+    });
+
+    it("reads no icon classes from a tag without a class, or with an empty one", () => {
+        expect(readIconClasses("<span>")).toEqual([]);
+        expect(readIconClasses(`<span class="">`)).toEqual([]);
+        expect(readIconClasses(`<span class="tn-icon bx bx-star">`)).toEqual([ "bx-star" ]);
     });
 
     it("leaves content carrying no icon as it was", () => {

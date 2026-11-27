@@ -4,7 +4,7 @@
 
 import { isFontMimeType } from "./font_mimes.js";
 import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
-import { isOfficeMimeType } from "./office.js";
+import { isOfficeMimeType, XLSX_MIME } from "./office.js";
 import { NoteType } from "./rows.js";
 
 export const NOTE_TYPE_ICONS = {
@@ -217,7 +217,9 @@ export const MEETING_RECORDING_ICON = "bx bx-conversation";
  * a recorded meeting by {@link MEETING_RECORDING_ICON}, and a calendar event by
  * {@link CALENDAR_EVENT_ICON}.
  * `iconClass` stays an argument rather than being read here because the share tree
- * narrows it to the prefixes an icon pack supplies.
+ * narrows it to the prefixes an icon pack supplies. An `iconClass` or `workspaceIconClass` that is
+ * not a list of {@link CSS_CLASS_NAME_PATTERN} class names is ignored, because callers put the
+ * result into HTML without escaping it.
  */
 export function getNoteIcon({
     noteId, type, mime, iconClass, workspaceIconClass, isFolder, getLabelValue
@@ -231,9 +233,9 @@ export function getNoteIcon({
     /** One of the note's labels, inherited ones included, as every note entity resolves them. */
     getLabelValue: (name: string) => string | null;
 }) {
-    if (iconClass) {
+    if (iconClass && isCssClassList(iconClass)) {
         return iconClass;
-    } else if (workspaceIconClass) {
+    } else if (workspaceIconClass && isCssClassList(workspaceIconClass)) {
         return workspaceIconClass;
     } else if (noteId === "root") {
         return "bx bx-home-alt-2";
@@ -273,6 +275,19 @@ export function getNoteIcon({
     }
 
     return NOTE_TYPE_ICONS[type];
+}
+
+/**
+ * The characters a CSS class name can hold without escaping: letters, digits, `-`, `_` and any
+ * code point at or above U+0080. Icon classes and icon pack prefixes are interpolated into HTML
+ * attributes and CSS selectors, so a value outside this set is rejected rather than escaped.
+ */
+export const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-￿-]+$/;
+
+/** Whether `value` is a whitespace-separated list of {@link CSS_CLASS_NAME_PATTERN} class names. */
+function isCssClassList(value: string) {
+    const classNames = value.split(/\s+/).filter(Boolean);
+    return classNames.length > 0 && classNames.every((name) => CSS_CLASS_NAME_PATTERN.test(name));
 }
 
 /**
@@ -317,12 +332,24 @@ export function isFullWidthNoteType(type: string, mime: string) {
     }
 
     return type === "file"
-        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
+        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/")
+            || mime === XLSX_MIME);
 }
 
 /** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */
 export function isMarkdownMime(mime: string) {
     return MARKDOWN_MIME_TYPES.includes(mime);
+}
+
+/**
+ * The format of the content of a note of `type` and `mime`, which a save checks before it writes:
+ * the type, with Markdown apart from other code. The language of other code is not part of it.
+ */
+export function getContentFormat(type: string, mime: string) {
+    if (type !== "code") {
+        return type;
+    }
+    return isMarkdownMime(mime) ? "markdown" : "code";
 }
 
 /**
@@ -341,12 +368,16 @@ export function getNoteContentType(type: string, mime: string, hasIconPackLabel:
     return getFileContentType(type, mime);
 }
 
-/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
+/**
+ * Narrows a file, or a `viewConfig` or `tocCache` attachment, to the kind of file its media type
+ * names.
+ */
 export function getFileContentType(type: string, mime: string) {
     if (type === "file" && mime === "application/pdf") return "pdf";
     if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
     if (type === "file" && mime === MERMAID_ATTACHMENT_MIME) return "mermaidDiagram";
-    if ((type === "file" || type === "viewConfig") && mime === "application/json") return "code";
+    if ((type === "file" || type === "viewConfig" || type === "tocCache")
+        && mime === "application/json") return "code";
     if (type === "file" && mime.startsWith("audio/")) return "audio";
     if (type === "file" && mime.startsWith("video/")) return "video";
     if (type === "file" && isOfficeMimeType(mime)) return "office";

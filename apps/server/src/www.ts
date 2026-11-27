@@ -7,6 +7,7 @@ import { networkInterfaces } from "os";
 
 import buildApp from "./app.js";
 import { TRILIUM_LOGO } from "./log_provider.js";
+import anonymizationService from "./services/anonymization.js";
 import config from "./services/config.js";
 import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
@@ -17,6 +18,7 @@ import { listListeningUrls } from "./services/network_addresses.js";
 import port from "./services/port.js";
 import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
+import { registerPdfTocGenerator } from "./services/toc/pdf.js";
 import { isElectron } from "./services/utils.js";
 import { publishHealthcheckTarget } from "./services/healthcheck.js";
 import { getDbSize } from "./services/sql_init.js";
@@ -68,6 +70,7 @@ export default async function startTriliumServer(): Promise<Express> {
     }
 
     const app = await buildApp();
+    anonymizationService.removeLeftoverStagingFiles();
     const httpServer = startHttpServer(app);
 
     // Only providers that serve clients over the TCP listener need the HTTP server
@@ -86,6 +89,7 @@ export default async function startTriliumServer(): Promise<Express> {
 
     registerOcrHandlers();
     registerServerLlmExtensions();
+    registerPdfTocGenerator();
 
     // Everything the application needs in order to be usable is now up, so from here on an escaped error
     // is a contained failure rather than a broken startup, and stops being fatal.

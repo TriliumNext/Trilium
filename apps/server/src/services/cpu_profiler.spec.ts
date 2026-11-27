@@ -151,5 +151,10 @@ describe("startCpuProfiler", () => {
         const created = inspectorState.instances[0];
         created.post.mock.calls.find(([method]) => method === "Profiler.enable")?.[1]();
         expect(created.post).toHaveBeenCalledWith("Profiler.start", expect.any(Function));
+
+        // Once the profiler is running, the user is told how to stop it.
+        expect(console.log).not.toHaveBeenCalled();
+        created.post.mock.calls.find(([method]) => method === "Profiler.start")?.[1]();
+        expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Press Enter"));
     });
 });

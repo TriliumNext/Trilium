@@ -1,15 +1,20 @@
 import "./NotePane.css";
 
 import { RefObject } from "preact";
-import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useState } from "preact/hooks";
+import {
+    useCallback, useEffect, useImperativeHandle, useLayoutEffect, useState
+} from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, EmbeddedNoteSurface, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext } from "../../EmbeddedNotePane";
+import {
+    announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, EmbeddedNoteSurface,
+    NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext
+} from "../../EmbeddedNotePane";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useNote } from "../../react/hooks";
+import { useNote } from "../../react/hooks/note";
 import RelationMapApi from "./api";
 import { confirmRemoveFromMap } from "./context_menu";
 

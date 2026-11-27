@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { renderInto } from "../../test/render";
 import {
-    FilterPassthrough, FilterProvider, filterRoleClass, filterText, filterTokens, matchesFilter,
-    useFilterMatch, useFilterState, useIsFiltering
+    filterOutline, FilterPassthrough, FilterProvider, filterRoleClass, filterText, filterTokens,
+    matchesFilter, prepareFilterText, useFilterMatch, useFilterState, useIsFiltering
 } from "./filter";
 
 describe("filterText", () => {
@@ -64,6 +64,51 @@ describe("matchesFilter", () => {
     it("passes anything when there are no terms to match", () => {
         expect(matchesFilter([], "Backup")).toBe(true);
         expect(matchesFilter([], null)).toBe(true);
+    });
+});
+
+describe("prepareFilterText", () => {
+    it("lowercases and strips accents, as the terms are", () => {
+        expect(prepareFilterText("Modèle Français")).toBe("modele francais");
+    });
+});
+
+describe("filterOutline", () => {
+    interface Item { title: string; level?: number; group?: string }
+    const textsOf = (items: Item[]) => items.map((item) => prepareFilterText(item.title));
+
+    it("keeps the items holding every term, in any order, ignoring case and accents", () => {
+        const items: Item[] = [
+            { title: "Café setup" }, { title: "Setup" }, { title: "Usage of the café" }
+        ];
+
+        const results = filterOutline(items, filterTokens("SETUP cafe"), { texts: textsOf(items) });
+
+        expect(results).toStrictEqual([ { item: items[0], index: 0, parents: [] } ]);
+    });
+
+    it("keeps the order of the items and gives each the items it nests under, per group", () => {
+        const items: Item[] = [
+            { title: "Budget", level: 1, group: "heading" },
+            { title: "Anchor", level: 1, group: "anchor" },
+            { title: "Budget lines", level: 2, group: "heading" },
+            { title: "Budget anchor", level: 2, group: "anchor" },
+            { title: "Other", level: 1, group: "heading" }
+        ];
+
+        const results = filterOutline(items, filterTokens("budget"), {
+            texts: textsOf(items),
+            getLevel: (item) => item.level,
+            getGroup: (item) => item.group
+        });
+
+        expect(results.map(({ item, index, parents }) => [
+            item.title, index, parents.map((parent) => parent.title)
+        ])).toStrictEqual([
+            [ "Budget", 0, [] ],
+            [ "Budget lines", 2, [ "Budget" ] ],
+            [ "Budget anchor", 3, [ "Anchor" ] ]
+        ]);
     });
 });
 

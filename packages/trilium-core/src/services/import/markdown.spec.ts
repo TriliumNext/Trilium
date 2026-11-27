@@ -47,6 +47,16 @@ describe("markdown", () => {
         }
     });
 
+    it("keeps a code block that ends in a blank line the same through repeated round trips", () => {
+        const markdown = "```\nfoo\n\n```";
+        const html = markdownService.renderToHtml(markdown, "Title");
+        expect(html).toBe(`<pre><code class="language-text-x-trilium-auto">foo\n</code></pre>`);
+
+        const exported = markdownExportService.toMarkdown(html);
+        expect(exported).toBe(markdown);
+        expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage
@@ -781,6 +791,17 @@ $$`;
             expect(markdownExportService.toMarkdown(roundTrip(original))).toStrictEqual(markdown);
         });
 
+        it("leaves the class name in plain text and stray text inside a layout alone", () => {
+            expect(markdownService.renderToHtml("The trilium-multicolumn-layout class.", "Title"))
+                .toBe("<p>The trilium-multicolumn-layout class.</p>");
+
+            const stray = `<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">` +
+                `stray${column("<p>A</p>")}${column("<p>B</p>")}</div>`;
+            const result = markdownService.renderToHtml(stray, "Title");
+            expect(result).toContain("stray");
+            expect(result).toContain(column("<p>A</p>"));
+        });
+
         it("round-trips a layout inside a tab panel", () => {
             const twoColumns = layout("1-1", "<p>A</p>", "<p>B</p>");
             const panel = `<div class="trilium-tab-panel">${twoColumns}</div>`;
@@ -789,6 +810,36 @@ $$`;
                 `<p class="trilium-tab-title">T</p>${panel}` +
                 "</section></div>";
             expect(roundTrip(original)).toStrictEqual(original);
+        });
+
+        it("round-trips asides, empty ones and those in a column, unchanged", () => {
+            const original =
+                "<p>Before</p>" +
+                "<aside data-position=\"wrap-right\"><p>Side <strong>note</strong></p>" +
+                "<ul><li>One</li><li>Two</li></ul></aside>" +
+                "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\">" +
+                "<p>Red</p></aside>" +
+                "<p>Beside</p>" +
+                "<aside><p>&nbsp;</p></aside>" +
+                layout("1-1",
+                    "<aside data-position=\"left\"><h2>In a column</h2></aside>", "<p>B</p>");
+            const markdown = markdownExportService.toMarkdown(original);
+
+            expect(roundTrip(original)).toStrictEqual(original);
+            expect(markdownExportService.toMarkdown(roundTrip(original))).toStrictEqual(markdown);
+
+            const resized = "<aside style=\"--aside-width:18em;\"><p>A</p></aside>";
+            expect(roundTrip(resized)).toStrictEqual(resized);
+        });
+
+        it("reads a bare aside as a new one, and one of raw text in the flow", () => {
+            expect(markdownService.renderToHtml("<aside>\n\nA *side* note\n\n</aside>", "Title"))
+                .toBe("<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                    "data-position=\"wrap-right\"><p>A <em>side</em> note</p></aside>");
+            expect(markdownService.renderToHtml("<aside>\nA callout\n\n</aside>", "Title"))
+                .toBe("<aside>\nA callout</aside>");
         });
     });
 });

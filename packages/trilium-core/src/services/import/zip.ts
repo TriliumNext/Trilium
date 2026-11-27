@@ -1,7 +1,12 @@
 import {
-    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle, isNoteType,
-    type NoteType
+    CANVAS_ATTACHMENT_MIME, getAttachmentEmbedHref, getDrawingPictureTitle,
+    getImageAttachmentTitle, isMarkdownMime, isNoteType, type NoteType
 } from "@triliumnext/commons";
+import {
+    renderToHtml as renderMarkdownToHtml
+} from "@triliumnext/commons/src/lib/markdown_renderer.js";
+import { parse } from "node-html-parser";
+
 import { basename, dirname } from "../utils/path.js";
 import { getZipProvider, type ZipSource } from "../zip_provider.js";
 
@@ -22,8 +27,9 @@ import type TaskContext from "../task_context.js";
 import treeService from "../tree.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
+import { importedAttributeName } from "./utils.js";
 import { AttachmentMeta, AttributeMeta, NoteMeta } from "../../meta.js";
-import { isMarkdownCodeNote } from "../export/rewrite_links.js";
+import { getArchivedLinkSuffix, getLinkTargetParameters } from "../export/rewrite_links.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { extractFrontmatter, type FrontmatterAttribute } from "./frontmatter.js";
 
@@ -138,6 +144,64 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         return attachmentIdMap[origAttachmentId];
     }
 
+    /** The IDs of the notes and the attachments that the metadata of the archive lists. */
+    let archiveIds: { noteIds: Set<string>; attachmentIds: Set<string> } | undefined;
+
+    function getArchiveIds() {
+        if (!archiveIds) {
+            archiveIds = { noteIds: new Set(), attachmentIds: new Set() };
+            const pending = [ ...(metaFile?.files ?? []) ];
+            for (let noteMeta = pending.pop(); noteMeta; noteMeta = pending.pop()) {
+                if (noteMeta.noteId) {
+                    archiveIds.noteIds.add(noteMeta.noteId);
+                }
+                for (const { attachmentId } of noteMeta.attachments ?? []) {
+                    if (attachmentId) {
+                        archiveIds.attachmentIds.add(attachmentId);
+                    }
+                }
+                pending.push(...(noteMeta.children ?? []));
+            }
+        }
+        return archiveIds;
+    }
+
+    /** The ID that a note of the archive gets here. A note outside the archive keeps its ID. */
+    function mapArchiveNoteId(noteId: string) {
+        return getArchiveIds().noteIds.has(noteId) ? getNewNoteId(noteId) : noteId;
+    }
+
+    /**
+     * Whether a relation can point at this note. A safe import reaches outside the archive only to
+     * system notes (`_` IDs): a `~template` or `~inherit` passes the target's attributes, `#run`
+     * included, to the imported note, and the target's attributes are not checked.
+     */
+    function isRelationTargetAllowed(noteId: string) {
+        return !taskContext.data?.safeImport
+            || getArchiveIds().noteIds.has(noteId)
+            || noteId.startsWith("_");
+    }
+
+    /** The ID that an attachment of the archive gets here. Another attachment keeps its ID. */
+    function mapArchiveAttachmentId(attachmentId: string) {
+        return getArchiveIds().attachmentIds.has(attachmentId)
+            ? getNewAttachmentId(attachmentId)
+            : attachmentId;
+    }
+
+    /** `url`, a note path such as `#root/a/b?block=x`, with the notes of the archive mapped. */
+    function mapNotePath(url: string) {
+        if (!url.startsWith("#root/")) {
+            return url;
+        }
+        const queryStart = url.indexOf("?");
+        const path = queryStart < 0 ? url : url.slice(0, queryStart);
+        const query = queryStart < 0 ? "" : url.slice(queryStart);
+        const segments = path.split("/").map((segment, index) =>
+            (index === 0 ? segment : mapArchiveNoteId(segment)));
+        return segments.join("/") + query;
+    }
+
     /**
      * The title of an imported attachment of a note with `attachments`: the picture of a canvas
      * drawing takes the title that the new ID of its drawing gives it.
@@ -151,8 +215,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             : attachmentMeta.title;
     }
 
-    function getAttachmentMeta(parentNoteMeta: NoteMeta, dataFileName: string) {
-        for (const noteMeta of parentNoteMeta.children || []) {
+    function getAttachmentMeta(parentNoteMeta: NoteMeta, children: NoteMeta[], dataFileName: string) {
+        for (const noteMeta of children) {
             for (const attachmentMeta of noteMeta.attachments || []) {
                 if (attachmentMeta.dataFileName === dataFileName) {
                     return {
@@ -189,12 +253,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             segment = unescapeHtml(segment);
             parent = cursor;
-            if (parent.children) {
-                cursor = parent.children.find((file) => file.dataFileName === segment || file.dirFileName === segment);
-            }
+            const children = cursor.children;
+            cursor = children.find((file) => file.dataFileName === segment || file.dirFileName === segment);
 
             if (!cursor) {
-                return getAttachmentMeta(parent, segment);
+                return getAttachmentMeta(parent, children, segment);
             }
         }
 
@@ -209,6 +272,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         let parentNoteId;
 
         if (parentNoteMeta?.noteId) {
+            /* v8 ignore next -- only the synthetic root of getMeta() is an import root, and it has no noteId */
             parentNoteId = parentNoteMeta.isImportRoot ? importRootNote.noteId : getNewNoteId(parentNoteMeta.noteId);
         } else {
             const parentPath = dirname(filePath);
@@ -293,12 +357,13 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             }
 
             if (attr.type === "relation") {
-                attr.value = getNewNoteId(attr.value);
+                if (!isRelationTargetAllowed(attr.value)) {
+                    continue;
+                }
+                attr.value = mapArchiveNoteId(attr.value);
             }
 
-            if (taskContext.data?.safeImport && attributeService.isAttributeDangerous(attr.type, attr.name)) {
-                attr.name = `disabled:${attr.name}`;
-            }
+            attr.name = importedAttributeName(attr.type, attr.name, taskContext.data?.safeImport);
 
             if (taskContext.data?.safeImport) {
                 attr.name = sanitizeHtml(attr.name);
@@ -327,7 +392,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         const { note } = noteService.createNewNote({
             parentNoteId,
-            title: noteTitle || "",
+            title: noteTitle,
             content: "",
             noteId,
             type: resolveNoteType(noteMeta?.type),
@@ -390,7 +455,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         };
     }
 
-    function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
+    function processTextNoteContent(content: string, noteTitle: string, filePath: string) {
         function isUrlAbsolute(url: string) {
             return /^(?:[a-z]+:)?\/\//i.test(url);
         }
@@ -445,10 +510,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 // was called "New note" imports with correct references that draw nothing. Every other
                 // producer of one of these URLs already encodes the title, the Markdown branch below
                 // included.
+                /* v8 ignore next -- an attachment cannot be saved without a title, so the import of one fails */
                 const title = encodeURIComponent(target.attachmentTitle || basename(url));
 
                 return `${attrName}="api/attachments/${target.attachmentId}/image/${title}"`;
-            } else if (target.noteId && attrName === "src") {
+            } else if (attrName === "src") {
                 return `src="api/images/${target.noteId}/${basename(url)}"`;
             }
 
@@ -456,46 +522,42 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         });
 
-        content = content.replace(/href="([^"]*)"/g, (match, url) => {
-            try {
-                url = decodeURIComponent(url).trim();
-            } catch (e: any) {
-                getLog().error(`Cannot parse link URL '${url}', keeping original. Error: ${e.message}.`);
-                return `href="${url}"`;
+        content = content.replace(/href="([^"]*)"/g, (match, url: string) => {
+            // Already a note path, which can name notes of the archive.
+            if (url.startsWith("#")) {
+                return `href="${mapNotePath(url)}"`;
             }
 
-            if (
-                url.startsWith("#") || // already a note path (probably)
-                isUrlAbsolute(url)
-            ) {
+            // The query and the fragment are not part of the file name.
+            const { path, suffix } = splitLinkTarget(url);
+            let filePathOfLink: string;
+            try {
+                filePathOfLink = decodeURIComponent(path).trim();
+            } catch (e: any) {
+                getLog().error(`Cannot parse link URL '${url}', keeping original. Error: ${e.message}.`);
                 return match;
             }
 
-            const target = getEntityIdFromRelativeUrl(url, filePath);
+            if (isUrlAbsolute(filePathOfLink)) {
+                return match;
+            }
+
+            const target = getEntityIdFromRelativeUrl(filePathOfLink, filePath);
 
             if (target.attachmentId) {
-                return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
-            } else if (target.noteId) {
-                return `href="#root/${target.noteId}"`;
+                return `href="${getAttachmentEmbedHref(target.noteId, target.attachmentId)}`
+                    + `${getLinkTargetParameters(suffix, "attribute")}"`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `href="#root/${target.noteId}${getArchivedLinkSuffix(suffix, "attribute")}"`;
 
         });
 
-        content = content.replace(
-            /data-attachment-id="([a-zA-Z0-9_]+)"/g,
-            (_match, id: string) => `data-attachment-id="${getNewAttachmentId(id)}"`
-        );
-
-        if (noteMeta) {
-            const includeNoteLinks = (noteMeta.attributes || []).filter((attr) => attr.type === "relation" && attr.name === "includeNoteLink");
-
-            for (const link of includeNoteLinks) {
-                // no need to escape the regexp find string since it's a noteId which doesn't contain any special characters
-                content = content.replace(new RegExp(link.value, "g"), getNewNoteId(link.value));
-            }
-        }
+        // An embed of a note or an attachment of the archive gets its new ID; others keep theirs.
+        content = content.replace(/<[a-zA-Z][^<>]*>/g, (tag) => tag.replace(
+            /(\sdata-(note|attachment)-id=")([a-zA-Z0-9_]+)"/g,
+            (_match, before: string, kind: string, id: string) =>
+                `${before}${kind === "note" ? mapArchiveNoteId(id) : mapArchiveAttachmentId(id)}"`
+        ));
 
         content = content.trim();
 
@@ -513,10 +575,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         // malicious `book` note bypasses sanitization and achieves stored XSS/RCE when its
         // content is previewed in a grid/list view.
         if ((type === "text" || type === "book") && typeof content === "string") {
-            content = processTextNoteContent(content, noteTitle, filePath, noteMeta);
+            content = processTextNoteContent(content, noteTitle, filePath);
         }
 
-        if (type === "code" && isMarkdownCodeNote(mime) && typeof content === "string") {
+        if (type === "code" && isMarkdownMime(mime) && typeof content === "string") {
             content = processMarkdownCodeNoteContent(content, filePath);
         }
 
@@ -573,38 +635,38 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const target = getEntityIdFromRelativeUrl(url, filePath);
 
             if (target.attachmentId && !target.isRenderedNoteImage) {
+                /* v8 ignore next -- an attachment cannot be saved without a title, so the import of one fails */
                 return `![${alt}](api/attachments/${target.attachmentId}/image/${encodeURIComponent(target.attachmentTitle || "image")})`;
-            } else if (target.noteId) {
-                return `![${alt}](api/images/${target.noteId}/${basename(url)})`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `![${alt}](api/images/${target.noteId}/${basename(url)})`;
         });
 
         // Non-image links: [text](relative/path)
-        content = content.replace(/(?<!!)\[([^\]]*)\]\(([^)]+)\)/g, (match, text, url) => {
+        content = content.replace(/(?<!!)\[([^\]]*)\]\(([^)]+)\)/g, (match, text, url: string) => {
+            // The query and the fragment are not part of the file name.
+            const { path, suffix } = splitLinkTarget(url.trim());
+            let filePathOfLink: string;
             try {
-                url = decodeURIComponent(url).trim();
+                filePathOfLink = decodeURIComponent(path).trim();
             } catch {
                 return match;
             }
 
-            if (isUrlAbsolute(url) || url.startsWith("#") || url.startsWith("api/")) {
+            if (!filePathOfLink || isUrlAbsolute(filePathOfLink)
+                || filePathOfLink.startsWith("api/")) {
                 return match;
             }
 
-            const target = getEntityIdFromRelativeUrl(url, filePath);
+            const target = getEntityIdFromRelativeUrl(filePathOfLink, filePath);
 
             if (target.attachmentId) {
-                return `[${text}](#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId})`;
-            } else if (target.noteId) {
-                return `[${text}](#root/${target.noteId})`;
+                return `[${text}](${getAttachmentEmbedHref(target.noteId, target.attachmentId)}`
+                    + `${getLinkTargetParameters(suffix, "markdown")})`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `[${text}](#root/${target.noteId}${getArchivedLinkSuffix(suffix, "markdown")})`;
         });
 
-        return content;
+        return mapMarkdownNoteIds(content, mapArchiveNoteId, mapArchiveAttachmentId);
     }
 
     function saveNote(filePath: string, content: string | Uint8Array, mimeOverride?: string) {
@@ -620,6 +682,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const attachment = new BAttachment({
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 ownerId: noteId,
+                /* v8 ignore next -- getAttachmentMeta finds an attachment only in its note's attachments */
                 title: getAttachmentTitle(attachmentMeta, noteMeta?.attachments ?? []),
                 role: attachmentMeta.role,
                 mime: attachmentMeta.mime,
@@ -692,7 +755,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             frontmatterAttributes = parsed.attributes;
         }
 
-        content = processNoteContent(noteMeta, type, mime, content, noteTitle || "", filePath);
+        content = processNoteContent(noteMeta, type, mime, content, noteTitle, filePath);
 
         let note = becca.getNote(noteId);
 
@@ -704,7 +767,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             if (note.type === undefined) {
                 note.type = type;
                 note.mime = mime;
-                note.title = noteTitle || "";
+                note.title = noteTitle;
                 note.isProtected = isProtected;
                 note.save();
             }
@@ -749,7 +812,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             ({ note } = noteService.createNewNote({
                 parentNoteId,
-                title: noteTitle || "",
+                title: noteTitle,
                 content,
                 noteId,
                 type,
@@ -766,7 +829,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             saveAttributes(note, noteMeta);
             for (const attribute of frontmatterAttributes) {
-                note.addLabel(attribute.name, attribute.value);
+                note.addLabel(importedAttributeName("label", attribute.name, taskContext.data?.safeImport), attribute.value);
             }
 
             trackFirstNote(note);
@@ -940,6 +1003,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
     for (const noteId of createdNoteIds) {
         const note = becca.getNote(noteId);
+        /* v8 ignore next -- every note in createdNoteIds was created by this import and is in becca */
         if (!note) continue;
         const postStart = Date.now();
         await noteService.asyncPostProcessContent(note, note.getContent());
@@ -979,6 +1043,132 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     }
 
     return firstNote;
+}
+
+/**
+ * `url`, a link of an archive, split at the start of its query or its fragment. A file name has
+ * its `?` and `#` encoded, so the first one ends the path.
+ */
+function splitLinkTarget(url: string) {
+    const index = url.search(/[?#]/);
+    return index < 0
+        ? { path: url, suffix: "" }
+        : { path: url.slice(0, index), suffix: url.slice(index) };
+}
+
+/**
+ * `source`, a Markdown note, with the note IDs of its Wikilinks and of its HTML (`data-note-id`,
+ * the note path of `href`) changed by `mapNoteId`, and the attachment IDs of `data-attachment-id`
+ * by `mapAttachmentId`. Only an ID that the note renders changes: an example in a code block, a
+ * code span or an HTML comment stays as it is.
+ */
+function mapMarkdownNoteIds(
+    source: string,
+    mapNoteId: (noteId: string) => string,
+    mapAttachmentId: (attachmentId: string) => string
+) {
+    const candidates = findIdCandidates(source);
+    if (!candidates.length) {
+        return source;
+    }
+
+    // Each candidate gets a placeholder; the rendered HTML shows which ones are in an attribute.
+    let marker = "TriliumIdCandidate";
+    while (source.includes(marker)) {
+        marker += "X";
+    }
+    const probe = replaceIdCandidates(source, candidates, (_candidate, index) =>
+        `${marker}${index}${marker}`);
+    const html = renderMarkdownToHtml(probe, "", {
+        sanitize: (dirtyHtml) => dirtyHtml,
+        demoteH1: false,
+        wikiLink: { formatHref: (target) => `#root/${target}` }
+    });
+
+    const rendered = new Set<number>();
+    const placeholder = new RegExp(`${marker}(\\d+)${marker}`, "g");
+    for (const element of parse(html).querySelectorAll("*")) {
+        for (const [ name, value ] of Object.entries(element.attributes)) {
+            for (const [ , index ] of value.matchAll(placeholder)) {
+                if (candidates[Number(index)].attributes.includes(name.toLowerCase())) {
+                    rendered.add(Number(index));
+                }
+            }
+        }
+    }
+
+    return replaceIdCandidates(source, candidates, (candidate, index) => {
+        if (!rendered.has(index)) {
+            return candidate.id;
+        }
+        return candidate.isAttachment ? mapAttachmentId(candidate.id) : mapNoteId(candidate.id);
+    });
+}
+
+/** An ID in the Markdown source, and the attributes it can be in once the source is rendered. */
+interface IdCandidate {
+    from: number;
+    to: number;
+    id: string;
+    isAttachment: boolean;
+    attributes: string[];
+}
+
+/** The note and attachment IDs in the Wikilinks and the tags of `source`, in document order. */
+function findIdCandidates(source: string) {
+    const candidates: IdCandidate[] = [];
+    const add = (from: number, id: string, attributes: string[], isAttachment = false) =>
+        candidates.push({ from, to: from + id.length, id, isAttachment, attributes });
+
+    // A Wikilink renders as a link, and its embed form (`![[…]]`) as an image.
+    for (const match of source.matchAll(/\[\[([a-zA-Z0-9_]+)(?=\?|\]\])/g)) {
+        add(match.index + 2, match[1], [ "href", "src" ]);
+    }
+
+    for (const tag of source.matchAll(/<[a-zA-Z][^<>]*>/g)) {
+        for (const attribute of tag[0].matchAll(ID_ATTRIBUTE)) {
+            const [ match, name, doubleQuoted, singleQuoted, unquoted ] = attribute;
+            const id = doubleQuoted ?? singleQuoted ?? unquoted;
+            // The ID ends the match, or its closing quote does.
+            const quoteLength = unquoted === undefined ? 1 : 0;
+            const from = tag.index + attribute.index + match.length - quoteLength - id.length;
+            const kind = name.toLowerCase();
+            add(from, id, [ `data-${kind}-id` ], kind === "attachment");
+        }
+        for (const link of tag[0].matchAll(ROOT_HREF)) {
+            let from = tag.index + link.index + link[0].length - link[1].length;
+            for (const noteId of link[1].slice(1).split("/")) {
+                add(from + 1, noteId, [ "href" ]);
+                from += noteId.length + 1;
+            }
+        }
+    }
+    return candidates.sort((first, second) => first.from - second.from);
+}
+
+/**
+ * A `data-note-id` or `data-attachment-id` attribute in any spelling that HTML reads. Group 1 is
+ * `note` or `attachment`; group 2, 3 or 4 the ID, in double quotes, in single quotes or bare.
+ */
+const ID_ATTRIBUTE =
+    /\sdata-(note|attachment)-id\s*=\s*(?:"(\w+)"|'(\w+)'|(\w+)(?=[\s/>]))/gi;
+
+/** An `href` that starts with a note path, quoted or not. Group 1 is the path. */
+const ROOT_HREF = /\shref\s*=\s*["']?#root((?:\/\w+)+)/g;
+
+/** `source` with each of `candidates`, sorted by position, replaced by what `getText` returns. */
+function replaceIdCandidates(
+    source: string,
+    candidates: IdCandidate[],
+    getText: (candidate: IdCandidate, index: number) => string
+) {
+    let result = "";
+    let position = 0;
+    for (const [ index, candidate ] of candidates.entries()) {
+        result += source.slice(position, candidate.from) + getText(candidate, index);
+        position = candidate.to;
+    }
+    return result + source.slice(position);
 }
 
 /** Skips macOS resource fork metadata that pollutes ZIP archives created on macOS. */
@@ -1029,6 +1219,7 @@ function resolveNoteType(type: string | undefined): NoteType {
 async function convertSpreadsheetContent(mime: string, content: string | Uint8Array): Promise<string> {
     if (mime === XLSX_MIME) {
         const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+        /* v8 ignore next -- a zip entry is read as bytes, and only a text entry is decoded to a string */
         const buffer = typeof content === "string" ? Buffer.from(content) : content;
         return JSON.stringify(await parseXlsxToWorkbook(buffer));
     }

@@ -109,25 +109,27 @@ describe("i18n helpers", () => {
             expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ lng: "de" }));
         });
 
-        it("falls back to English when the DB is uninitialized", async () => {
+        it("falls back to English without a warning when the DB is uninitialized", async () => {
             const initSpy = stubI18next();
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
-            vi.spyOn(console, "info").mockImplementation(() => {});
+            const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
             await initializeTranslations();
 
             expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ lng: "en" }));
+            expect(infoSpy).not.toHaveBeenCalled();
         });
 
-        it("falls back to English when the locale option is empty", async () => {
+        it("falls back to English with a warning when the locale option is empty", async () => {
             const initSpy = stubI18next();
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
             vi.spyOn(options, "getOptionOrNull").mockReturnValue(null);
-            vi.spyOn(console, "info").mockImplementation(() => {});
+            const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
             await initializeTranslations();
 
             expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ lng: "en" }));
+            expect(infoSpy).toHaveBeenCalledWith("Language option not found, falling back to en.");
         });
     });
 

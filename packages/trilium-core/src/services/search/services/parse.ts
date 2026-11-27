@@ -27,7 +27,10 @@ import OrExp from "../expressions/or.js";
 import { removeDiacritic } from "../../utils/index.js";
 
 function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leadingOperator?: string) {
-    const tokens: string[] = _tokens.map((t) => removeDiacritic(t.token));
+    // An empty quoted token (`""`) asks for nothing, and the content expressions refuse one.
+    const tokens: string[] = _tokens
+        .map((t) => removeDiacritic(t.token))
+        .filter((token) => token.trim().length > 0);
 
     searchContext.highlightedTokens.push(...tokens);
 
@@ -139,11 +142,9 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
         } else if (operand.token === "month") {
             date = dayjs().add(delta, "month");
             format = "YYYY-MM";
-        } else if (operand.token === "year") {
+        } else {
             date = dayjs().add(delta, "year");
             format = "YYYY";
-        } else {
-            throw new Error(`Unrecognized keyword: ${operand.token}`);
         }
 
         return date.format(format);
@@ -310,6 +311,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
 
             const comparator = buildComparator(operator, comparedValue);
 
+            /* v8 ignore next 2 -- every operator isOperator() accepts has a string comparator */
             if (!comparator) {
                 searchContext.addError(`Can't find operator '${operator}' in ${context(i - 1)}`);
             } else {
@@ -387,13 +389,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
     }
 
     function getAggregateExpression() {
-        if (op === null || op === "and") {
-            return AndExp.of(expressions);
-        } else if (op === "or") {
-            return OrExp.of(expressions);
-        }
-        throw new Error(`Unrecognized op=${op}`);
-
+        return op === "or" ? OrExp.of(expressions) : AndExp.of(expressions);
     }
 
     for (i = 0; i < tokens.length; i++) {
@@ -423,11 +419,6 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             }
 
             const exp = parseOrderByAndLimit();
-
-            if (!exp) {
-                continue;
-            }
-
             exp.subExpression = getAggregateExpression();
             return exp;
         } else if (token === "not") {
@@ -508,7 +499,7 @@ function parse({ fulltextTokens, expressionTokens, searchContext, leadingOperato
 
     if (searchContext.limit && !searchContext.orderBy) {
         const filterExp = exp;
-        exp = new OrderByAndLimitExp([], searchContext.limit || undefined);
+        exp = new OrderByAndLimitExp([], searchContext.limit);
         (exp as any).subExpression = filterExp;
     }
 

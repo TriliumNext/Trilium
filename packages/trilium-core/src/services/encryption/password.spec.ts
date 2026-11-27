@@ -88,6 +88,19 @@ describe("password service (real DB)", () => {
             )) as Uint8Array;
             expect(Array.from(dataKeyAfter)).toEqual(Array.from(dataKeyBefore));
         });
+
+        it("leaves the stored data key alone when it cannot be recovered", async () => {
+            vi.spyOn(passwordEncryptionService, "getDataKey").mockResolvedValueOnce(false);
+            const encryptedDataKey = options.getOption("encryptedDataKey");
+
+            const result = await getContext().init(() =>
+                passwordService.changePassword("brandNewPass-123", "thirdPass-789")
+            );
+
+            expect(result.success).toBe(true);
+            expect(options.getOption("encryptedDataKey")).toBe(encryptedDataKey);
+            expect(await passwordEncryptionService.verifyPassword("thirdPass-789")).toBe(true);
+        });
     });
 
     describe("resetPassword", () => {

@@ -1,25 +1,17 @@
 // Content styles shared with the share theme. `stylesheets/` is served as is, so a bare package
-// `@import` there would reach the browser unresolved; Vite bundles these into the entry's CSS,
-// which loads ahead of the stylesheets `loadStylesheets()` appends.
-import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
-import "@triliumnext/ckeditor5/src/theme/admonitions.css";
-import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
-import "@triliumnext/ckeditor5/src/theme/external_links.css";
-import "@triliumnext/ckeditor5/src/theme/footnotes.css";
-import "@triliumnext/ckeditor5/src/theme/headings.css";
-import "@triliumnext/ckeditor5/src/theme/lists.css";
-import "@triliumnext/ckeditor5/src/theme/reference_links.css";
-import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
-import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
-import "@triliumnext/ckeditor5/src/theme/tables.css";
-import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
-import "@triliumnext/commons/src/lib/scroll_fade.css";
+// `@import` there would reach the browser unresolved; Vite bundles `content.css` into the entry's
+// CSS, which loads ahead of the stylesheets `loadStylesheets()` appends.
+import "./content.css";
 
-import { createFontStylesheetLink } from "./services/font";
+import { requestCatalogues } from "./services/catalogue_requests";
+import { loadIconPackGlyphs } from "./services/icon_pack_glyphs";
+import { createFontPreloadLink, createFontStylesheet } from "./services/font";
+import { hideSplash, reportSplashPhase, showStartupFailure } from "./services/splash";
+import { requestStartupData } from "./services/startup_requests";
 import {
-    CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
-} from "./services/splash";
-import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, StylesheetRef } from "./services/theme";
+    buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, rememberRootBackground,
+    StylesheetRef
+} from "./services/theme";
 
 /**
  * How long the tab that owns the SQLite worker waits for it to answer `/bootstrap`. Matches the
@@ -37,26 +29,29 @@ const LOCAL_BOOTSTRAP_TIMEOUT_MS = 270_000;
 const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
 
 async function bootstrap() {
-    // The splash from index.html covers the page until hideSplash(). Standalone reports a longer
-    // sequence of its own before this one, so these phases only take effect on server and desktop.
-    initSplashProgress(CLIENT_STARTUP_PHASES);
-    reportSplashPhase("bootstrap");
     // Only iOS sets `navigator.standalone`, and only for a web app added to the home screen.
     const isIosWebApp = (navigator as Navigator & { standalone?: boolean }).standalone === true;
     document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
     await setupGlob();
+    requestStartupCatalogues();
+    requestStartupApiData();
     await Promise.all([
         initJQuery(),
         loadBootstrapCss()
     ]);
     loadStylesheets();
     initThemeChangeNotifier();
-    loadIcons();
+    const iconPackGlyphs = loadIcons();
     setBodyAttributes();
+    // A printed note keeps the icons it shows, which therefore have to be in place before it renders.
+    if (glob.device === "print") {
+        await iconPackGlyphs;
+    }
     const debugSafeAreaInsets = import.meta.env.VITE_DEBUG_SAFE_AREA_INSETS;
     if (debugSafeAreaInsets) {
         (await import("./services/debug_safe_area")).default(debugSafeAreaInsets);
     }
+    // Standalone's splash covers the page until hideSplash(); server and desktop pages have none.
     reportSplashPhase("application");
     await loadScripts();
     hideSplash();
@@ -100,7 +95,7 @@ async function setupGlob() {
     const startedAt = performance.now();
     const response = localFetch
         ? await withTimeout(localFetch(new Request(url)), LOCAL_BOOTSTRAP_TIMEOUT_MS)
-        : await fetch(url);
+        : await (window.bootstrapRequest ?? fetch(url));
     if (!response.ok) {
         throw new Error(await readErrorMessage(response));
     }
@@ -188,26 +183,31 @@ function loadStylesheets() {
         return;
     }
 
+    for (const href of window.glob.preloadFonts ?? []) {
+        document.head.appendChild(createFontPreloadLink(href));
+    }
+
     const stylesheetsPath = `${assetPath}/stylesheets`;
-    appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` });
-    // Marked so it can be swapped when font options change without reloading. Skipped on the
-    // login / set-password pre-auth screens, where the /api/fonts request 401s (and, under nosniff,
-    // surfaces as a MIME-type console error) — those screens use the theme's fonts (#10589). This is
-    // the inline equivalent of utils.isPreAuthScreen(): index.ts runs before setupGlob() populates
-    // window.glob, and utils.ts reads window.glob at module scope, so index.ts must not import utils.
-    if (glob.loggedIn !== false && glob.passwordSet !== false) {
-        document.head.appendChild(createFontStylesheetLink());
-    }
+    const stylesheets = [ appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` }) ];
+    // `applyFontCss()` replaces its content when a font option changes.
+    document.head.appendChild(createFontStylesheet(window.glob.fontCss ?? ""));
     // The light theme is always loaded as the baseline and acts as the anchor for live theme swapping.
-    appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true });
+    stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true }));
     for (const ref of buildThemeStylesheetRefs(theme, customThemeCssUrl, themeBase)) {
-        appendStylesheet(ref, { theme: true });
+        stylesheets.push(appendStylesheet(ref, { theme: true }));
     }
-    appendStylesheet({ href: `${stylesheetsPath}/style.css` });
+    stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/style.css` }));
+    // The notes labelled `#appCss`, after the stylesheets they override. The setup, password and
+    // login pages have no session to download them with.
+    const hasSession = glob.dbInitialized && glob.passwordSet !== false && glob.loggedIn !== false;
+    for (const noteId of hasSession ? window.glob.appCssNoteIds ?? [] : []) {
+        appendStylesheet({ href: `api/notes/download/${noteId}` });
+    }
+    void rememberRootBackground(stylesheets);
 }
 
 function appendStylesheet(ref: StylesheetRef, opts?: { base?: boolean; theme?: boolean }) {
-    document.head.appendChild(createStylesheetLink(ref, opts));
+    return document.head.appendChild(createStylesheetLink(ref, opts));
 }
 
 function loadIcons() {
@@ -217,6 +217,7 @@ function loadIcons() {
     // scan walks all of them on every keyboard focus, freezing the app for seconds.
     styleEl.textContent = window.glob.iconPackCss;
     document.head.appendChild(styleEl);
+    return loadIconPackGlyphs(window.glob.iconPackGlyphCssUrl);
 }
 
 function setBodyAttributes() {
@@ -244,12 +245,38 @@ function setBodyAttributes() {
 async function loadScripts() {
     const entry = await importEntry();
 
-    // Every entry point renders after its module has finished evaluating: the desktop layout, the
-    // note tree and the locale catalogue are all fetched from there. Waiting for the `ready` it
-    // exports keeps the splash up until the screen is actually populated, instead of handing the
-    // user a blank page for the seconds those fetches take on a slow connection.
-    reportSplashPhase("interface");
+    // The desktop and mobile entries render their layout while they evaluate. The other pages
+    // render after it and export a `ready` that settles once they have.
     await entry.ready;
+}
+
+/**
+ * Starts fetching the catalogues of the page {@link importEntry} loads, in its language, so they
+ * download while its modules do. Printing translates nothing.
+ */
+function requestStartupCatalogues() {
+    const locale = glob.currentLocale?.id ?? "en";
+    if (!glob.dbInitialized) {
+        requestCatalogues("en", "entry");
+    } else if (glob.passwordSet === false || glob.loggedIn === false) {
+        requestCatalogues(locale, "entry");
+    } else if (glob.device !== "print") {
+        requestCatalogues(locale, "app");
+    }
+}
+
+/**
+ * Starts the API requests the desktop and mobile app make as their modules load, so they travel
+ * meanwhile; `server.get()` hands them over. Standalone answers its API in the page itself, and the
+ * other pages make none.
+ */
+function requestStartupApiData() {
+    const hasSession = glob.dbInitialized && glob.passwordSet !== false && glob.loggedIn !== false
+        && !glob.setupAuthRequired;
+    if (!hasSession || glob.isStandalone || window.standaloneApi) return;
+    if (glob.device === "desktop" || glob.device === "mobile") {
+        requestStartupData();
+    }
 }
 
 function importEntry(): Promise<{ ready?: Promise<unknown> }> {
@@ -276,8 +303,4 @@ function importEntry(): Promise<{ ready?: Promise<unknown> }> {
     }
 }
 
-bootstrap().catch((err) => {
-    console.error("Trilium failed to start:", err);
-    const message = err instanceof Error ? err.message : String(err);
-    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
-});
+bootstrap().catch(showStartupFailure);

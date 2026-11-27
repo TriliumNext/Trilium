@@ -1142,14 +1142,6 @@
                                     "dataFileName": "Synchronization_sync-in-progress.png"
                                 },
                                 {
-                                    "attachmentId": "s3fKDqHslToK",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/jpg",
-                                    "position": 10,
-                                    "dataFileName": "Synchronization_image.jpg"
-                                },
-                                {
                                     "attachmentId": "x0t06ATHph6b",
                                     "title": "sync-init.png",
                                     "role": "image",
@@ -1598,12 +1590,12 @@
                                             "dataFileName": "Note Tree_drag-and-drop.gif"
                                         },
                                         {
-                                            "attachmentId": "DYf7wm3Yv6EC",
-                                            "title": "image.png",
+                                            "attachmentId": "HxYbisl34vcN",
+                                            "title": "demo.webp",
                                             "role": "image",
-                                            "mime": "image/jpg",
+                                            "mime": "image/webp",
                                             "position": 10,
-                                            "dataFileName": "Note Tree_image.jpg"
+                                            "dataFileName": "Note Tree_demo.webp"
                                         },
                                         {
                                             "attachmentId": "m0KuVBZvGyzW",
@@ -3466,16 +3458,7 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Note Navigation.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "jDuwVaU8bNtG",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/jpg",
-                                            "position": 10,
-                                            "dataFileName": "Note Navigation_image.jpg"
-                                        }
-                                    ]
+                                    "attachments": []
                                 },
                                 {
                                     "isClone": false,
@@ -4025,12 +4008,12 @@
                             "dataFileName": "Themes.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "0IuNvWkls2sX",
-                                    "title": "dark-theme.png",
+                                    "attachmentId": "42pSiz56vgLW",
+                                    "title": "demo-dark.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Themes_dark-theme.png"
+                                    "dataFileName": "Themes_demo-dark.webp"
                                 },
                                 {
                                     "attachmentId": "HvcI7pb2pZJQ",
@@ -4678,7 +4661,7 @@
                             "dataFileName": "Zen mode.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "HGcQUOEXJ3Sp",
+                                    "attachmentId": "lqQtSNb8loOS",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
@@ -4686,20 +4669,12 @@
                                     "dataFileName": "Zen mode_image.png"
                                 },
                                 {
-                                    "attachmentId": "lqQtSNb8loOS",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "1_Zen mode_image.png"
-                                },
-                                {
                                     "attachmentId": "LX31yc6Jnksw",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "2_Zen mode_image.png"
+                                    "dataFileName": "1_Zen mode_image.png"
                                 }
                             ]
                         },
@@ -4896,28 +4871,12 @@
                             "dataFileName": "Text.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "o9zZbojtCsba",
-                                    "title": "image.png",
+                                    "attachmentId": "iBVyGFDKyyeA",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Text_image.png"
-                                },
-                                {
-                                    "attachmentId": "okPQXpSZC3Ml",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "1_Text_image.png"
-                                },
-                                {
-                                    "attachmentId": "TaEkNs5KA6Pv",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "2_Text_image.png"
+                                    "dataFileName": "Text_demo.webp"
                                 }
                             ],
                             "dirFileName": "Text",
@@ -4959,6 +4918,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "dDYOyeOGdZRS",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "dDYOyeOGdZRS"
+                                    ],
+                                    "title": "Aside blocks",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "aside-blocks",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "cke cke-trilium-aside",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Aside blocks.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "oI7GoyilXXAr",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -4967,7 +4961,7 @@
                                         "oI7GoyilXXAr"
                                     ],
                                     "title": "Automatic replacements",
-                                    "notePosition": 20,
+                                    "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5002,7 +4996,7 @@
                                         "NwBbFdNZ9h7O"
                                     ],
                                     "title": "Block quotes & admonitions",
-                                    "notePosition": 30,
+                                    "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5027,20 +5021,12 @@
                                     "dataFileName": "Block quotes & admonitions.md",
                                     "attachments": [
                                         {
-                                            "attachmentId": "do36b54XpmIC",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Block quotes & admonitions_image.png"
-                                        },
-                                        {
                                             "attachmentId": "hUwfwkRSDeLJ",
                                             "title": "image.png",
                                             "role": "image",
                                             "mime": "image/png",
                                             "position": 10,
-                                            "dataFileName": "1_Block quotes & admonitions_image.png"
+                                            "dataFileName": "Block quotes & admonitions_image.png"
                                         }
                                     ]
                                 },
@@ -5054,7 +5040,7 @@
                                         "klC3ilXa9kUE"
                                     ],
                                     "title": "Block references",
-                                    "notePosition": 40,
+                                    "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5089,7 +5075,7 @@
                                         "4n4oQUVbnOxa"
                                     ],
                                     "title": "Collapsible blocks",
-                                    "notePosition": 50,
+                                    "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5116,6 +5102,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "ExlzCSENCWaF",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "ExlzCSENCWaF"
+                                    ],
+                                    "title": "Collapsible headings",
+                                    "notePosition": 70,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "collapsible-headings",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-collapse-vertical",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Collapsible headings.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "veGu4faJErEM",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -5124,7 +5145,7 @@
                                         "veGu4faJErEM"
                                     ],
                                     "title": "Content language & Right-to-left support",
-                                    "notePosition": 60,
+                                    "notePosition": 80,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5168,7 +5189,7 @@
                                         "EK2ckIZ74tbT"
                                     ],
                                     "title": "Content tabs",
-                                    "notePosition": 70,
+                                    "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5203,7 +5224,7 @@
                                         "2x0ZAX9ePtzV"
                                     ],
                                     "title": "Cut to subnote",
-                                    "notePosition": 80,
+                                    "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5247,7 +5268,7 @@
                                         "UYuUB1ZekNQU"
                                     ],
                                     "title": "Developer-specific formatting",
-                                    "notePosition": 90,
+                                    "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5286,14 +5307,6 @@
                                             "mime": "image/jpg",
                                             "position": 10,
                                             "dataFileName": "1_Developer-specific formatting_image.jpg"
-                                        },
-                                        {
-                                            "attachmentId": "VYcvGUzbobxQ",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Developer-specific formatting_image.png"
                                         }
                                     ],
                                     "dirFileName": "Developer-specific formatting",
@@ -5340,14 +5353,6 @@
                                                     "mime": "image/jpg",
                                                     "position": 10,
                                                     "dataFileName": "Code blocks_image.jpg"
-                                                },
-                                                {
-                                                    "attachmentId": "kE8PPw7iyuu9",
-                                                    "title": "image.png",
-                                                    "role": "image",
-                                                    "mime": "image/png",
-                                                    "position": 10,
-                                                    "dataFileName": "Code blocks_image.png"
                                                 }
                                             ]
                                         }
@@ -5363,7 +5368,7 @@
                                         "AgjCISero73a"
                                     ],
                                     "title": "Footnotes",
-                                    "notePosition": 100,
+                                    "notePosition": 120,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5407,7 +5412,7 @@
                                         "5wZallV2Qo1t"
                                     ],
                                     "title": "Format Painter",
-                                    "notePosition": 110,
+                                    "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5451,7 +5456,7 @@
                                         "nRhnJkTT8cPs"
                                     ],
                                     "title": "Formatting toolbar",
-                                    "notePosition": 120,
+                                    "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5484,14 +5489,6 @@
                                             "dataFileName": "Formatting toolbar_image.png"
                                         },
                                         {
-                                            "attachmentId": "iu9xb3VivIIl",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/jpg",
-                                            "position": 10,
-                                            "dataFileName": "Formatting toolbar_image.jpg"
-                                        },
-                                        {
                                             "attachmentId": "jYEbPqDcUCNQ",
                                             "title": "image.png",
                                             "role": "image",
@@ -5519,7 +5516,7 @@
                                         "Gr6xFaF6ioJ5"
                                     ],
                                     "title": "General formatting",
-                                    "notePosition": 130,
+                                    "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5566,14 +5563,6 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "2_General formatting_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "VRNPOor1LpMY",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "3_General formatting_image.png"
                                         }
                                     ]
                                 },
@@ -5587,7 +5576,7 @@
                                         "AxshuNRegLAv"
                                     ],
                                     "title": "Highlights list",
-                                    "notePosition": 140,
+                                    "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5622,7 +5611,7 @@
                                         "mT0HEkOsz6i1"
                                     ],
                                     "title": "Images",
-                                    "notePosition": 150,
+                                    "notePosition": 170,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5677,14 +5666,6 @@
                                             "mime": "image/jpg",
                                             "position": 10,
                                             "dataFileName": "3_Images_image.jpg"
-                                        },
-                                        {
-                                            "attachmentId": "qJXx7vPPD4JW",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Images_image.png"
                                         }
                                     ],
                                     "dirFileName": "Images",
@@ -5746,7 +5727,7 @@
                                         "VRoP0g1uHHc2"
                                     ],
                                     "title": "In-editor AI assistant",
-                                    "notePosition": 160,
+                                    "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5822,7 +5803,7 @@
                                         "nBAXQFj20hS1"
                                     ],
                                     "title": "Include Note",
-                                    "notePosition": 170,
+                                    "notePosition": 190,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5850,7 +5831,7 @@
                                         "CohkqWQC1iBv"
                                     ],
                                     "title": "Insert buttons",
-                                    "notePosition": 180,
+                                    "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -5891,7 +5872,7 @@
                                             "dataFileName": "Insert buttons_plus.png"
                                         },
                                         {
-                                            "attachmentId": "N1WMDAlCsrdy",
+                                            "attachmentId": "r3blICK1PaXy",
                                             "title": "image.png",
                                             "role": "image",
                                             "mime": "image/png",
@@ -5899,20 +5880,12 @@
                                             "dataFileName": "1_Insert buttons_image.png"
                                         },
                                         {
-                                            "attachmentId": "r3blICK1PaXy",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "2_Insert buttons_image.png"
-                                        },
-                                        {
                                             "attachmentId": "sNeqHszPiist",
                                             "title": "image.png",
                                             "role": "image",
                                             "mime": "image/png",
                                             "position": 10,
-                                            "dataFileName": "3_Insert buttons_image.png"
+                                            "dataFileName": "2_Insert buttons_image.png"
                                         },
                                         {
                                             "attachmentId": "wTs0nELuclAk",
@@ -5973,7 +5946,7 @@
                                         "oiVPnW8QfnvS"
                                     ],
                                     "title": "Keyboard shortcuts",
-                                    "notePosition": 190,
+                                    "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6008,7 +5981,7 @@
                                         "UmgZAfcltxkS"
                                     ],
                                     "title": "Link Previews",
-                                    "notePosition": 200,
+                                    "notePosition": 220,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6068,7 +6041,7 @@
                                         "QEAPj01N5f7w"
                                     ],
                                     "title": "Links",
-                                    "notePosition": 210,
+                                    "notePosition": 230,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6214,7 +6187,7 @@
                                         "S6Xx8QIWTV66"
                                     ],
                                     "title": "Lists",
-                                    "notePosition": 220,
+                                    "notePosition": 240,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6298,7 +6271,7 @@
                                         "QrtTYPmdd1qq"
                                     ],
                                     "title": "Markdown-like formatting",
-                                    "notePosition": 230,
+                                    "notePosition": 250,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6333,7 +6306,7 @@
                                         "YfYAtQBcfo5V"
                                     ],
                                     "title": "Math Equations",
-                                    "notePosition": 240,
+                                    "notePosition": 260,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6377,7 +6350,7 @@
                                         "wYDzQ1fBFgfT"
                                     ],
                                     "title": "Multicolumn layout",
-                                    "notePosition": 250,
+                                    "notePosition": 270,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6412,7 +6385,7 @@
                                         "dEHYtoWWi8ct"
                                     ],
                                     "title": "Other features",
-                                    "notePosition": 260,
+                                    "notePosition": 280,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6443,14 +6416,6 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "Other features_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "x3lcgBCJOVzB",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "1_Other features_image.png"
                                         }
                                     ]
                                 },
@@ -6464,7 +6429,7 @@
                                         "gLt3vA97tMcp"
                                     ],
                                     "title": "Premium features",
-                                    "notePosition": 270,
+                                    "notePosition": 290,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6499,7 +6464,7 @@
                                         "ZlN4nump6EbW"
                                     ],
                                     "title": "Slash Commands",
-                                    "notePosition": 280,
+                                    "notePosition": 300,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6543,7 +6508,7 @@
                                         "0vgWgxQAWj4a"
                                     ],
                                     "title": "Sorting",
-                                    "notePosition": 290,
+                                    "notePosition": 310,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6578,7 +6543,7 @@
                                         "oBo3iHIZnbG2"
                                     ],
                                     "title": "Spell Check",
-                                    "notePosition": 300,
+                                    "notePosition": 320,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6613,7 +6578,7 @@
                                         "BFvAtE74rbP6"
                                     ],
                                     "title": "Table of contents",
-                                    "notePosition": 310,
+                                    "notePosition": 330,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6648,7 +6613,7 @@
                                         "NdowYOC1GFKS"
                                     ],
                                     "title": "Tables",
-                                    "notePosition": 320,
+                                    "notePosition": 340,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6716,7 +6681,7 @@
                                         "pwc194wlRzcH"
                                     ],
                                     "title": "Text Snippets",
-                                    "notePosition": 330,
+                                    "notePosition": 350,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6745,7 +6710,7 @@
                                         "fASfBrYnquKU"
                                     ],
                                     "title": "To-do Lists",
-                                    "notePosition": 340,
+                                    "notePosition": 360,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6776,6 +6741,116 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "To-do Lists_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "enVNpi1Njswq",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "enVNpi1Njswq"
+                                    ],
+                                    "title": "Vim mode",
+                                    "notePosition": 370,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "vim-mode",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-terminal",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Vim mode.md",
+                                    "attachments": [],
+                                    "dirFileName": "Vim mode",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "qxtXjXzFOEn1",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "KSZ04uQ2D1St",
+                                                "iPIMuisry3hd",
+                                                "enVNpi1Njswq",
+                                                "qxtXjXzFOEn1"
+                                            ],
+                                            "title": "Vim beginner guide",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "beginner-guide",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-book-reader",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Vim beginner guide.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "EF1o4L2hif4c",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "KSZ04uQ2D1St",
+                                                "iPIMuisry3hd",
+                                                "enVNpi1Njswq",
+                                                "EF1o4L2hif4c"
+                                            ],
+                                            "title": "Vim full reference",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "reference",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-book-content",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Vim full reference.md",
+                                            "attachments": []
                                         }
                                     ]
                                 }
@@ -6815,12 +6890,12 @@
                             "dataFileName": "Code.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "hajUVeLs3EOM",
-                                    "title": "image.png",
+                                    "attachmentId": "2s3MePoXMChB",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/jpg",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Code_image.jpg"
+                                    "dataFileName": "Code_demo.webp"
                                 }
                             ]
                         },
@@ -7186,12 +7261,12 @@
                             "dataFileName": "Canvas.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "DC9fvvootwwZ",
-                                    "title": "image.png",
+                                    "attachmentId": "STAxNSuVDHhz",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Canvas_image.png"
+                                    "dataFileName": "Canvas_demo.webp"
                                 }
                             ]
                         },
@@ -7263,12 +7338,12 @@
                             "dataFileName": "Mind Map.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "Od9jIuQHijXH",
-                                    "title": "image.png",
+                                    "attachmentId": "FTMDkPGmHWOJ",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Mind Map_image.png"
+                                    "dataFileName": "Mind Map_demo.webp"
                                 }
                             ]
                         },
@@ -7729,12 +7804,12 @@
                                     "dataFileName": "Calendar_image.png"
                                 },
                                 {
-                                    "attachmentId": "fFHaahtywLrl",
-                                    "title": "image.png",
+                                    "attachmentId": "fuj7U6pPgviZ",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "1_Calendar_image.png"
+                                    "dataFileName": "Calendar_demo.webp"
                                 },
                                 {
                                     "attachmentId": "HfBu0m3WXtn2",
@@ -7742,7 +7817,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "2_Calendar_image.png"
+                                    "dataFileName": "1_Calendar_image.png"
                                 },
                                 {
                                     "attachmentId": "ho00OJTNrxVI",
@@ -7750,7 +7825,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "3_Calendar_image.png"
+                                    "dataFileName": "2_Calendar_image.png"
                                 },
                                 {
                                     "attachmentId": "irfNX8n4159U",
@@ -7758,7 +7833,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "4_Calendar_image.png"
+                                    "dataFileName": "3_Calendar_image.png"
                                 },
                                 {
                                     "attachmentId": "KF56rdNuOwWd",
@@ -7766,7 +7841,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "5_Calendar_image.png"
+                                    "dataFileName": "4_Calendar_image.png"
                                 },
                                 {
                                     "attachmentId": "oBWr5GL6cUAZ",
@@ -7774,7 +7849,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "6_Calendar_image.png"
+                                    "dataFileName": "5_Calendar_image.png"
                                 },
                                 {
                                     "attachmentId": "oS6yUoQtfhpg",
@@ -7782,15 +7857,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "7_Calendar_image.png"
-                                },
-                                {
-                                    "attachmentId": "u2c09UpZghff",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "8_Calendar_image.png"
+                                    "dataFileName": "6_Calendar_image.png"
                                 }
                             ]
                         },
@@ -7828,12 +7895,12 @@
                             "dataFileName": "Table.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "vJYUG9fLQ2Pd",
-                                    "title": "image.png",
+                                    "attachmentId": "GEyYXgN6ATS9",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Table_image.png"
+                                    "dataFileName": "Table_demo.webp"
                                 }
                             ]
                         },
@@ -7869,7 +7936,16 @@
                             ],
                             "format": "markdown",
                             "dataFileName": "Kanban Board.md",
-                            "attachments": []
+                            "attachments": [
+                                {
+                                    "attachmentId": "DY2YQge3ZkUM",
+                                    "title": "demo.webp",
+                                    "role": "image",
+                                    "mime": "image/webp",
+                                    "position": 10,
+                                    "dataFileName": "Kanban Board_demo.webp"
+                                }
+                            ]
                         },
                         {
                             "isClone": false,
@@ -8052,12 +8128,12 @@
                             "dataFileName": "Presentation.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "aJa7vIrYknDw",
-                                    "title": "image.png",
+                                    "attachmentId": "9FNPnqxFeMOh",
+                                    "title": "demo.webp",
                                     "role": "image",
-                                    "mime": "image/png",
+                                    "mime": "image/webp",
                                     "position": 10,
-                                    "dataFileName": "Presentation_image.png"
+                                    "dataFileName": "Presentation_demo.webp"
                                 },
                                 {
                                     "attachmentId": "aPooMxP74PeA",
@@ -8065,7 +8141,7 @@
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "1_Presentation_image.png"
+                                    "dataFileName": "Presentation_image.png"
                                 }
                             ]
                         },
@@ -8466,24 +8542,7 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Frontend logs.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "vRup2YTDpWPM",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/jpg",
-                                            "position": 10,
-                                            "dataFileName": "Frontend logs_image.jpg"
-                                        },
-                                        {
-                                            "attachmentId": "Y05WqmS4uMMt",
-                                            "title": "error-logs-firefox-context-men.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Frontend logs_error-logs-firefox-context-men.png"
-                                        }
-                                    ]
+                                    "attachments": []
                                 }
                             ]
                         },
@@ -8632,14 +8691,6 @@
                                     "dataFileName": "Creating a custom theme_3_Creating a custom theme_im.jpg"
                                 },
                                 {
-                                    "attachmentId": "hJc5fBNfSLoY",
-                                    "title": "Creating a custom theme_im.png",
-                                    "role": "image",
-                                    "mime": "image/jpg",
-                                    "position": 10,
-                                    "dataFileName": "Creating a custom theme_Creating a custom theme_im.jpg"
-                                },
-                                {
                                     "attachmentId": "j3OaGihW6eg3",
                                     "title": "1_Creating a custom theme_im.png",
                                     "role": "image",
@@ -8654,14 +8705,6 @@
                                     "mime": "image/jpg",
                                     "position": 10,
                                     "dataFileName": "Creating a custom theme_4_Creating a custom theme_im.jpg"
-                                },
-                                {
-                                    "attachmentId": "mY5EGlN7TO6I",
-                                    "title": "5_Creating a custom theme_im.png",
-                                    "role": "image",
-                                    "mime": "image/jpg",
-                                    "position": 10,
-                                    "dataFileName": "Creating a custom theme_5_Creating a custom theme_im.jpg"
                                 },
                                 {
                                     "attachmentId": "TMHEj1M3XFGO",
@@ -8705,16 +8748,7 @@
                             ],
                             "format": "markdown",
                             "dataFileName": "Customize the Next theme.md",
-                            "attachments": [
-                                {
-                                    "attachmentId": "3fAj97aV2noG",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Customize the Next theme_image.png"
-                                }
-                            ]
+                            "attachments": []
                         },
                         {
                             "isClone": false,
@@ -9114,14 +9148,6 @@
                             "format": "markdown",
                             "dataFileName": "Templates.md",
                             "attachments": [
-                                {
-                                    "attachmentId": "65tzLidJl1uU",
-                                    "title": "template.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Templates_template.png"
-                                },
                                 {
                                     "attachmentId": "72yQHFCV84st",
                                     "title": "template-create-instance-note.png",
@@ -9586,14 +9612,6 @@
                                     "format": "markdown",
                                     "dataFileName": "Day Notes.md",
                                     "attachments": [
-                                        {
-                                            "attachmentId": "9wmaElfXYjWM",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Day Notes_image.png"
-                                        },
                                         {
                                             "attachmentId": "FL40jUEj7xLt",
                                             "title": "image.png",
@@ -10528,28 +10546,12 @@
                             "dataFileName": "Metrics.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "6FcnvEg39b88",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Metrics_image.png"
-                                },
-                                {
                                     "attachmentId": "amOIi8fzVhSM",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "1_Metrics_image.png"
-                                },
-                                {
-                                    "attachmentId": "Ojj9cAXPbxJO",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "2_Metrics_image.png"
+                                    "dataFileName": "Metrics_image.png"
                                 }
                             ],
                             "dirFileName": "Metrics",
@@ -10745,7 +10747,16 @@
                     ],
                     "format": "markdown",
                     "dataFileName": "AI.md",
-                    "attachments": [],
+                    "attachments": [
+                        {
+                            "attachmentId": "FEj2RDlMv45k",
+                            "title": "demo.webp",
+                            "role": "image",
+                            "mime": "image/webp",
+                            "position": 10,
+                            "dataFileName": "AI_demo.webp"
+                        }
+                    ],
                     "dirFileName": "AI",
                     "children": [
                         {

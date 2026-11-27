@@ -11,6 +11,7 @@ import {
     getHoistedNoteId,
     ignoreEntityChangeIds,
     init,
+    initWithoutComponent,
     isEntityEventsDisabled,
     isMigrationRunning,
     putEntityChange,
@@ -53,6 +54,19 @@ describe("context", () => {
 
             // init returns whatever the callback returns.
             expect(returned).toBe(42);
+        });
+
+        it("runs a scope without the component of the request around it, which keeps it", () => {
+            const [ inside, after, hoisted ] = init(() => {
+                set("componentId", "editor");
+                set("hoistedNoteId", "hoisted");
+                const scoped = initWithoutComponent(() => [ getComponentId(), getHoistedNoteId() ]);
+                return [ scoped[0], getComponentId(), scoped[1] ];
+            });
+
+            expect(inside).toBeUndefined();
+            expect(after).toBe("editor");
+            expect(hoisted).toBe("hoisted");
         });
 
         it("isolates state between separate init scopes", () => {
@@ -173,5 +187,18 @@ describe("context", () => {
 
             logSpy.mockRestore();
         });
+    });
+});
+
+describe("context registration", () => {
+    it("refuses to be read before it is initialized, or initialized twice", async () => {
+        vi.resetModules();
+        const fresh = await import("./context.js");
+        const context = getContext();
+
+        expect(() => fresh.getContext()).toThrow("Context not initialized");
+        fresh.initContext(context);
+        expect(fresh.getContext()).toBe(context);
+        expect(() => fresh.initContext(context)).toThrow("Context already initialized");
     });
 });

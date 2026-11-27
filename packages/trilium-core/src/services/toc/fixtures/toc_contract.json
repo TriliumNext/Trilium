@@ -1,0 +1,326 @@
+{
+    "blobId": "tJFI2cynzyLpnKbq4k22",
+    "protectedBlobId": "w6TYAax76yLWYctirn2x",
+    "headings": [
+        {
+            "title": "Chapter 1",
+            "level": 1,
+            "page": 1,
+            "left": 0,
+            "top": 750
+        },
+        {
+            "title": "Section <b>1.1</b> & more",
+            "level": 2,
+            "page": 1
+        },
+        {
+            "title": "Named",
+            "level": 1,
+            "page": 2,
+            "left": 0,
+            "top": 792
+        },
+        {
+            "title": "Missing",
+            "level": 1
+        },
+        {
+            "title": "Spaced out",
+            "level": 1,
+            "page": 2
+        },
+        {
+            "title": "Link",
+            "level": 1
+        },
+        {
+            "title": "Résumé",
+            "level": 1,
+            "page": 2
+        },
+        {
+            "title": "No destination",
+            "level": 2
+        },
+        {
+            "title": "• Bullet – dash",
+            "level": 2,
+            "page": 1
+        },
+        {
+            "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "level": 1,
+            "page": 3
+        },
+        {
+            "title": "Summary",
+            "level": 1,
+            "page": 2
+        },
+        {
+            "title": "Summary",
+            "level": 1,
+            "page": 3
+        },
+        {
+            "title": "Level 1",
+            "level": 1,
+            "page": 1
+        },
+        {
+            "title": "Level 2",
+            "level": 2,
+            "page": 1
+        },
+        {
+            "title": "Level 3",
+            "level": 3,
+            "page": 1
+        },
+        {
+            "title": "Level 4",
+            "level": 4,
+            "page": 1
+        },
+        {
+            "title": "Level 5",
+            "level": 5,
+            "page": 1
+        },
+        {
+            "title": "Level 6",
+            "level": 6,
+            "page": 1
+        },
+        {
+            "title": "Level 7",
+            "level": 7,
+            "page": 1
+        },
+        {
+            "title": "Level 8",
+            "level": 8,
+            "page": 1
+        },
+        {
+            "title": "Level 9",
+            "level": 9,
+            "page": 1
+        },
+        {
+            "title": "Level 10",
+            "level": 10,
+            "page": 1
+        },
+        {
+            "title": "Level 11",
+            "level": 11,
+            "page": 1
+        },
+        {
+            "title": "Level 12",
+            "level": 12,
+            "page": 1
+        },
+        {
+            "title": "Level 13",
+            "level": 13,
+            "page": 1
+        },
+        {
+            "title": "Level 14",
+            "level": 14,
+            "page": 1
+        },
+        {
+            "title": "Level 15",
+            "level": 15,
+            "page": 1
+        },
+        {
+            "title": "Level 16",
+            "level": 16,
+            "page": 1
+        },
+        {
+            "title": "Level 17",
+            "level": 17,
+            "page": 1
+        },
+        {
+            "title": "Level 18",
+            "level": 18,
+            "page": 1
+        },
+        {
+            "title": "Level 19",
+            "level": 19,
+            "page": 1
+        },
+        {
+            "title": "Level 20",
+            "level": 20,
+            "page": 1
+        },
+        {
+            "title": "Level 21",
+            "level": 21,
+            "page": 1
+        },
+        {
+            "title": "Level 22",
+            "level": 22,
+            "page": 1
+        },
+        {
+            "title": "Level 23",
+            "level": 23,
+            "page": 1
+        },
+        {
+            "title": "Level 24",
+            "level": 24,
+            "page": 1
+        },
+        {
+            "title": "Level 25",
+            "level": 25,
+            "page": 1
+        },
+        {
+            "title": "Level 26",
+            "level": 26,
+            "page": 1
+        },
+        {
+            "title": "Level 27",
+            "level": 27,
+            "page": 1
+        },
+        {
+            "title": "Level 28",
+            "level": 28,
+            "page": 1
+        },
+        {
+            "title": "Level 29",
+            "level": 29,
+            "page": 1
+        },
+        {
+            "title": "Level 30",
+            "level": 30,
+            "page": 1
+        },
+        {
+            "title": "Level 31",
+            "level": 31,
+            "page": 1
+        },
+        {
+            "title": "Group without a destination",
+            "level": 32,
+            "page": 3
+        },
+        {
+            "title": "Deep child",
+            "level": 33,
+            "page": 3
+        }
+    ],
+    "ids": [
+        "0lup01g1qh7fok",
+        "1mf53090ysk4nd",
+        "1mjnj6n0rqcf2n",
+        "07d74wy0bu9576",
+        "1o1fbjy0ybajgu",
+        "0370odk08npvqw",
+        "0ljkho30i0fbkz",
+        "1k893bo16krc04",
+        "1hi0lri1a02xy6",
+        "0v4sn9n02pxpyz",
+        "1xvtf1q00sxoke.tJFI2cynzy",
+        "1xlttcr00iy2vf.tJFI2cynzy",
+        "0kvfmm30apm97v",
+        "0owiatn17hqqrf",
+        "0gfa0dg19t0cwk",
+        "1r7w97y09s70ta",
+        "1twigo31ax43gz",
+        "1n4mrtj0cjca6f",
+        "0ldry6c1yxx704",
+        "0gcb2gi1ty5mua",
+        "1tm4o5710vye0b",
+        "1um6qxo0hpkrv0",
+        "0th8c3e01hgilm",
+        "0ummrx908nhk3x",
+        "1rl857j0omopan",
+        "1hf6yks1hb1vi4",
+        "0lne7ce1p9g6u6",
+        "17xutol1qg4nhx",
+        "03glwhf1aiei8z",
+        "0kicsws1sts0ng",
+        "1hbee021fc540i",
+        "139q6441hof9b8",
+        "0u4fe2x1ruvawp",
+        "16r2xqb0ife9tf",
+        "1j8u2eu1cybe5i",
+        "17h04101yy6xxw",
+        "1mgaaxp0twk0ct",
+        "0ymongz1kmgzib",
+        "0muj3sy14j0l2q",
+        "11lphrw14pux4c",
+        "1wd8uvd0y0fyex",
+        "1lwpo640sp370s",
+        "110au8g1w9zs00",
+        "0m7epi80qdsmmo",
+        "0q18fze07h1gwq"
+    ],
+    "protectedIds": [
+        "0lup01g1qh7fok",
+        "1mf53090ysk4nd",
+        "1mjnj6n0rqcf2n",
+        "07d74wy0bu9576",
+        "1o1fbjy0ybajgu",
+        "0370odk08npvqw",
+        "0ljkho30i0fbkz",
+        "1k893bo16krc04",
+        "1hi0lri1a02xy6",
+        "0v4sn9n02pxpyz",
+        "1xvtf1q00sxoke.w6TYAax76y.p",
+        "1xlttcr00iy2vf.w6TYAax76y.p",
+        "0kvfmm30apm97v",
+        "0owiatn17hqqrf",
+        "0gfa0dg19t0cwk",
+        "1r7w97y09s70ta",
+        "1twigo31ax43gz",
+        "1n4mrtj0cjca6f",
+        "0ldry6c1yxx704",
+        "0gcb2gi1ty5mua",
+        "1tm4o5710vye0b",
+        "1um6qxo0hpkrv0",
+        "0th8c3e01hgilm",
+        "0ummrx908nhk3x",
+        "1rl857j0omopan",
+        "1hf6yks1hb1vi4",
+        "0lne7ce1p9g6u6",
+        "17xutol1qg4nhx",
+        "03glwhf1aiei8z",
+        "0kicsws1sts0ng",
+        "1hbee021fc540i",
+        "139q6441hof9b8",
+        "0u4fe2x1ruvawp",
+        "16r2xqb0ife9tf",
+        "1j8u2eu1cybe5i",
+        "17h04101yy6xxw",
+        "1mgaaxp0twk0ct",
+        "0ymongz1kmgzib",
+        "0muj3sy14j0l2q",
+        "11lphrw14pux4c",
+        "1wd8uvd0y0fyex",
+        "1lwpo640sp370s",
+        "110au8g1w9zs00",
+        "0m7epi80qdsmmo",
+        "0q18fze07h1gwq"
+    ]
+}

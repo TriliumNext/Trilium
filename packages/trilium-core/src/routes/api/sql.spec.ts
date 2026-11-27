@@ -105,6 +105,7 @@ describe("SQL API (core)", () => {
                 content: [
                     "-- a leading comment\n-- and another\nDELETE FROM sql_spec_tmp",
                     "   ",
+                    "-- a comment with nothing after it",
                     "WITH x AS (SELECT 1 AS n) SELECT n FROM x"
                 ].join("\n---")
             });
@@ -112,7 +113,7 @@ describe("SQL API (core)", () => {
             const res = await api.post<ExecuteResult>(`/api/sql/execute/${noteId}`);
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            // The blank middle query is skipped, so only two results are returned.
+            // The blank and comment-only queries are skipped, so only two results are returned.
             expect(res.body.results).toHaveLength(2);
 
             getSql().execute("DROP TABLE sql_spec_tmp");

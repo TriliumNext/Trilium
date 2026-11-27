@@ -40,7 +40,12 @@ describe("BetterSqlite3Provider", () => {
         tx();
         expect((provider.prepare("SELECT COUNT(*) AS c FROM t") as any).get()).toEqual({ c: 2 });
 
-        provider.close();
+        expect(provider.isAttached()).toBe(true);
+        provider.detach();
+        expect(provider.isAttached()).toBe(false);
+        expect(() => provider.prepare("SELECT 1")).toThrow("DB not open");
+        provider.detach();
+        expect(provider.isAttached()).toBe(false);
     });
 
     it("loads from a file (WAL mode) and backs up to a destination", async () => {
@@ -62,6 +67,26 @@ describe("BetterSqlite3Provider", () => {
         await vi.waitFor(() => expect(fs.statSync(backupB).size).toBeGreaterThan(5), { timeout: 2000 });
 
         provider.close();
+    });
+
+    it("opens file databases in WAL mode, or DELETE mode for the integration fixture", () => {
+        const journalModeOf = (dbPath: string) => {
+            const provider = new BetterSqlite3Provider();
+            provider.loadFromFile(dbPath, false);
+            const mode = (provider.prepare("PRAGMA journal_mode") as any).get();
+            provider.close();
+            return mode;
+        };
+
+        try {
+            vi.stubEnv("TRILIUM_INTEGRATION_TEST", "");
+            expect(journalModeOf(tmpDbPath())).toEqual({ journal_mode: "wal" });
+
+            vi.stubEnv("TRILIUM_INTEGRATION_TEST", "edit");
+            expect(journalModeOf(tmpDbPath())).toEqual({ journal_mode: "delete" });
+        } finally {
+            vi.unstubAllEnvs();
+        }
     });
 
     it("throws 'DB not open' for prepare/transaction/inTransaction before a DB is loaded", () => {

@@ -72,17 +72,6 @@ describe("splash", () => {
         expect(fillWidth()).toBe("95%");
     });
 
-    it("keeps the sequence the first caller installed", async () => {
-        const { initSplashProgress, reportSplashPhase } = await freshSplash();
-        initSplashProgress(PHASES);
-        // Standalone claims the bar before the client's own, shorter list is offered.
-        initSplashProgress([ { id: "other", weight: 1, status: "Other…" } ]);
-
-        reportSplashPhase("other");
-        expect(document.getElementById("splash-status")?.textContent).toBe("");
-        expect(fillWidth()).toBe("");
-    });
-
     it("never moves backwards, and ignores an unknown phase", async () => {
         const { initSplashProgress, reportSplashPhase } = await freshSplash();
         initSplashProgress(PHASES);
@@ -110,7 +99,7 @@ describe("splash", () => {
         expect(document.getElementById("splash")).toBeNull();
     });
 
-    it("does nothing when the splash is not in the document", async () => {
+    it("reports only an error when the splash is not in the document, on a screen of its own", async () => {
         const {
             initSplashProgress, reportSplashPhase, updateSplashStatus, showSplashError, hideSplash
         } = await freshSplash();
@@ -120,8 +109,28 @@ describe("splash", () => {
             initSplashProgress(PHASES);
             reportSplashPhase("first");
             updateSplashStatus("status");
-            showSplashError("error");
             hideSplash();
         }).not.toThrow();
+        expect(document.body.childElementCount).toBe(0);
+
+        showSplashError("something broke");
+        const alert = document.body.querySelector("#startup-error[role=alert]");
+        expect(alert?.querySelector("img.startup-error-logo")).toBeInstanceOf(HTMLImageElement);
+        expect(alert?.querySelector(".startup-error-title")?.textContent).toBe("Trilium Notes");
+        expect(alert?.querySelector(".startup-error-message")?.textContent).toBe("something broke");
+    });
+
+    it("shows a failure after the splash began to fade on a screen of its own, and logs it", async () => {
+        const { hideSplash, showStartupFailure } = await freshSplash();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        hideSplash();
+        const error = new Error("chunk failed");
+
+        showStartupFailure(error);
+        expect(document.getElementById("splash")?.classList.contains("splash-error")).toBe(false);
+        expect(document.querySelector("#startup-error .startup-error-message")?.textContent)
+            .toBe("Trilium failed to start: chunk failed — reload the page to try again.");
+        expect(consoleError).toHaveBeenCalledWith("Trilium failed to start:", error);
+        consoleError.mockRestore();
     });
 });

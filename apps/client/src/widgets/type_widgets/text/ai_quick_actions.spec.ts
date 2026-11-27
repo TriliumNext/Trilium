@@ -11,7 +11,12 @@ vi.mock("../../../services/options.js", () => ({ default: { getJson: () => null 
 vi.mock("../../../components/app_context.js", () => ({ default: { triggerCommand: vi.fn() } }));
 // The hook is not under test here; importing the module must not drag in the Preact context it
 // needs, nor the editor bundle behind it.
-vi.mock("../../react/hooks.jsx", () => ({ useTriliumEvent: vi.fn(), useTriliumOption: () => [""] }));
+vi.mock("../../react/hooks/events.js", () => ({
+    useTriliumEvent: vi.fn()
+}));
+vi.mock("../../react/hooks/options.js", () => ({
+    useTriliumOption: () => [""]
+}));
 
 import type FNote from "../../../entities/fnote.js";
 import type LoadResults from "../../../services/load_results.js";

@@ -48,6 +48,24 @@ describe("open_id_encryption", () => {
         expect(openIDEncryption.verifySubjectIdentifier("subject-12")).toBe(false);
     });
 
+    it("verifySubjectIdentifier rejects any subject when the stored hash has a different length", () => {
+        openIDEncryption.saveUser("subject-123", "Alice", "alice@example.com");
+        sql.transactional(() => {
+            sql.execute("UPDATE user_data SET userIDVerificationHash = 'c2hvcnQ='");
+        });
+
+        expect(openIDEncryption.verifySubjectIdentifier("subject-123")).toBe(false);
+    });
+
+    it("verifySubjectIdentifier rejects every subject when the enrolled row lacks a hash or salt", () => {
+        openIDEncryption.saveUser("subject-123", "Alice", "alice@example.com");
+        sql.transactional(() => {
+            sql.execute("UPDATE user_data SET salt = ''");
+        });
+
+        expect(openIDEncryption.verifySubjectIdentifier("subject-123")).toBe(false);
+    });
+
     it("setDataKey encrypts the data key so it can be recovered with the derived key", () => {
         const salt = "fixed-salt";
         const plainKey = "0123456789abcdef";

@@ -24,6 +24,20 @@ function setDevice(device: "mobile" | "desktop") {
     (window as unknown as { glob?: { device?: string } }).glob = { device };
 }
 
+/** The items of the Insert group of the classic toolbar, the block toolbar and the mobile one. */
+function getInsertGroups() {
+    const toolbars = [
+        buildClassicToolbar(false, true).toolbar.items,
+        buildFloatingToolbar(true).blockToolbar,
+        buildMobileToolbar(true).toolbar.items
+    ];
+    return toolbars.map((items) => {
+        const group = items.find((item) => typeof item === "object"
+            && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+        return (group as { items: string[] } | undefined)?.items ?? [];
+    });
+}
+
 describe("CKEditor config", () => {
     it("has same toolbar items for fixed and floating", () => {
         function traverseItems(config: ToolbarConfig): string[] {
@@ -42,6 +56,9 @@ describe("CKEditor config", () => {
         // have no natural slot in the floating selection/block toolbar — so exclude them from the
         // fixed-vs-floating parity check.
         const FIXED_ONLY_ITEMS = new Set(["undo", "redo"]);
+        // The selection popup keeps the internal link button beside the link button, whose dialog
+        // also inserts links to notes.
+        const FLOATING_ONLY_ITEMS = new Set(["internallink"]);
 
         const classicToolbarConfig = buildClassicToolbar(false, true);
         const classicToolbarItems = new Set(
@@ -49,7 +66,8 @@ describe("CKEditor config", () => {
         );
 
         const floatingToolbarConfig = buildFloatingToolbar(true);
-        const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar);
+        const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar)
+            .filter((item) => !FLOATING_ONLY_ITEMS.has(item));
         const floatingBlockToolbarItems = traverseItems({ items: floatingToolbarConfig.blockToolbar });
         const floatingToolbarAllItems = new Set([ ...floatingToolbarItems, ...floatingBlockToolbarItems ]);
 
@@ -74,37 +92,36 @@ describe("the Insert group", () => {
             expect(items).not.toContain("drawingCanvas");
         }
     });
+
+    it("offers the aside right above the math equation, in every toolbar", () => {
+        for (const items of getInsertGroups()) {
+            const index = items.indexOf("aside");
+            expect(items.slice(index, index + 2)).toEqual([ "aside", "math" ]);
+        }
+    });
 });
 
 describe("the extended code block", () => {
     afterEach(() => experimentalState.enabled.clear());
 
-    function getInsertGroups() {
-        const toolbars = [
+    it("has no button of its own: the code block button makes one while its feature is on", () => {
+        const getToolbars = () => [
             buildClassicToolbar(false, true).toolbar.items,
-            buildFloatingToolbar(true).blockToolbar,
-            buildMobileToolbar(true).toolbar.items
+            buildFloatingToolbar(true).blockToolbar
         ];
-        return toolbars.map((items) => {
-            const group = items.find((item) => typeof item === "object"
-                && "label" in item && item.label === "text-editor.toolbar-groups.insert");
-            return (group as { items: string[] } | undefined)?.items ?? [];
-        });
-    }
+        const before = JSON.stringify([ getToolbars(), getInsertGroups() ]);
 
-    it("follows the columns in the Insert group of every toolbar, while its feature is on", () => {
         experimentalState.enabled.add("extendedCodeBlocks");
-        for (const items of getInsertGroups()) {
-            const index = items.indexOf("multicolumnLayout");
-            expect(items.slice(index, index + 2))
-                .toEqual([ "multicolumnLayout", "extendedCodeBlock" ]);
+        expect(JSON.stringify([ getToolbars(), getInsertGroups() ])).toBe(before);
+        for (const items of getToolbars()) {
+            expect(items).toContain("codeBlock");
         }
-
-        experimentalState.enabled.clear();
         for (const items of getInsertGroups()) {
             expect(items).toContain("multicolumnLayout");
             expect(items).not.toContain("extendedCodeBlock");
         }
+        // The mobile toolbar offers the code block in its Insert group.
+        expect(getInsertGroups()[2]).toContain("codeBlock");
     });
 });
 
@@ -212,31 +229,34 @@ describe("the insert menus", () => {
         return group?.items ?? [];
     }
 
-    it("list the new child note right above the included note", () => {
+    it("end with the included note and the new child note, in a group of their own", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
-            const insert = insertItems(items);
-            expect(insert).toContain("childNote");
-            expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
+            expect(insertItems(items).slice(-3))
+                .toStrictEqual([ "|", "contentEmbed", "childNote" ]);
         }
     });
 
-    it("list the footnote right below the page break", () => {
+    it("open the group of the date and time with the anchor, then the footnote", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
             const insert = insertItems(items);
-            expect(insert.indexOf("footnote")).toBe(insert.indexOf("pageBreak") + 1);
+            const index = insert.indexOf("bookmark");
+            expect(insert.slice(index - 1, index + 3))
+                .toStrictEqual([ "|", "bookmark", "footnote", "dateTime" ]);
             expect(items).not.toContain("footnote");
         }
     });
 
-    it("leave the link to the bar, right ahead of the attach menu", () => {
+    it("leave links to the link button on the bar, right ahead of the attach menu", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
-            expect(insertItems(items)).not.toContain("link");
+            const insert = insertItems(items);
+            expect(insert).not.toContain("link");
+            expect(insert).not.toContain("internallink");
             expect(items.indexOf("attachMenu")).toBe(items.indexOf("link") + 1);
         }
     });
@@ -259,7 +279,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "horizontalLine", "pageBreak", "footnote",
                 "|",
-                "math", "drawingCanvas", "mermaid", "insertMedia",
+                "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
                 "|",
                 "bookmark", "childNote", "contentEmbed",
                 "|",
@@ -336,7 +356,6 @@ describe("buildMobileToolbar", () => {
         const MOBILE_VARIANTS: Record<string, string> = {
             insertTable: "insertTableMenu",
             link: "addLink",
-            internallink: "addLink",
             heading: "blockType",
             bulletedList: "blockType",
             numberedList: "blockType",

@@ -18,7 +18,7 @@ export interface ContentEmbedMenu {
     title: string;
     /** The text of the button, such as the current setting. */
     text: string;
-    items: MenuItem<unknown>[];
+    items: MenuItem<CommandNames>[];
     /** Offers an input at the top of the menu that filters its items. */
     filterable?: boolean;
 }

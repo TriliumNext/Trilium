@@ -240,9 +240,12 @@ describe("NodeRequestProvider.exec", () => {
             res.emitEnd();
         };
 
-        await provider.exec(baseOpts({ method: "POST", body: "raw-string" }));
+        await provider.exec(baseOpts({ method: "POST", body: "raw-string", auth: { password: "secret" } }));
         expect(state.requests[0].endPayload).toBe("raw-string");
         expect(state.requests[0].opts.headers["Cookie"]).toBe("");
+        // Credentials without a TOTP token send no trilium-totp header.
+        expect(state.requests[0].opts.headers["trilium-cred"]).toBe(Buffer.from("dummy:secret").toString("base64"));
+        expect(state.requests[0].opts.headers).not.toHaveProperty("trilium-totp");
     });
 
     it("rejects on a request error", async () => {
@@ -659,5 +662,22 @@ describe("NodeRequestProvider.fetchResource", () => {
         });
 
         expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, { method: "HEAD", headers });
+    });
+});
+
+describe("NodeRequestProvider.fetchApi", () => {
+    it("allows private addresses only when asked, with no deadline and no redirects", async () => {
+        const response = new Response("{}");
+        safeFetch.mockResolvedValue(response);
+        const init = { method: "POST", body: "{}" };
+
+        const result = await new NodeRequestProvider()
+            .fetchApi("http://localhost:11434/api/chat", init, { allowPrivateNetwork: true });
+        expect(result).toBe(response);
+        expect(safeFetch).toHaveBeenLastCalledWith("http://localhost:11434/api/chat", init, {
+            allowPrivateNetwork: true,
+            timeoutMs: null,
+            maxRedirects: 0
+        });
     });
 });

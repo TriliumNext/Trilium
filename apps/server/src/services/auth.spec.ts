@@ -136,6 +136,22 @@ describe("Auth", () => {
             spy.mockRestore();
         });
 
+        it("checkAuth lets the request through to the set-password screen when no password is set", () => {
+            vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+            const totpSpy = vi.spyOn(totp, "isTotpEnabled");
+            const session = { loggedIn: false };
+            const res = makeRes();
+            const next = vi.fn();
+
+            auth.checkAuth(makeReq({ session }), res as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(res.redirectedTo).toBeUndefined();
+            // Passed through before any session check, and without logging the session in.
+            expect(totpSpy).not.toHaveBeenCalled();
+            expect(session.loggedIn).toBe(false);
+        });
+
         it("checkAuth lets internal electron requests through", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
@@ -288,6 +304,27 @@ describe("Auth", () => {
             // And the stale flag is cleared (and persisted) so subsequent requests take the logged-out path.
             expect(session.loggedIn).toBe(false);
             expect(save).toHaveBeenCalled();
+        });
+
+        it("checkAuth still serves the logged-out SPA when persisting a lapsed SSO session fails", () => {
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
+            vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(true);
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+            const saveError = new Error("store unavailable");
+            const session = {
+                loggedIn: true,
+                lastAuthState: { totpEnabled: false, ssoEnabled: true },
+                save: (cb: (err?: unknown) => void) => cb(saveError)
+            };
+            const res = makeRes();
+            const next = vi.fn();
+
+            auth.checkAuth(makeReq({ session, oidc: { isAuthenticated: () => false } }), res as never, next);
+
+            expect(session.loggedIn).toBe(false);
+            expect(consoleError).toHaveBeenCalledWith("Error saving session after OIDC session lapse:", saveError);
+            expect(next).toHaveBeenCalledOnce();
+            expect(res.redirectedTo).toBeUndefined();
         });
 
         it("checkAuth falls through to next on the normal logged-in path", () => {

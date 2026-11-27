@@ -16,7 +16,7 @@ vi.mock("../../services/server", () => ({
 // A full mock, not a partial one: the real hooks module transitively imports half the app at module
 // scope (app_context, keyboard actions). Any subscription the hook made would land here, which is
 // how the "measures only when asked" test can prove it makes none.
-vi.mock("./hooks", () => ({
+vi.mock("./hooks/events", () => ({
     useTriliumEvent: (_name: string, handler: (data: { loadResults: unknown }) => void) => {
         mocks.entitiesReloadedHandler = handler;
     }

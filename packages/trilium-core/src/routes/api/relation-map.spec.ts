@@ -151,6 +151,31 @@ describe("Relation Map API (core)", () => {
         expect(names).not.toContain("ignored");
     });
 
+    it("shows an automatic link only when the map names it, and skips definitions without an inverse", async () => {
+        const map = await createTextNote(api, { title: "Map" });
+        const source = await createTextNote(api, { title: "Source" });
+        const target = await createTextNote(api, { title: "Target" });
+        await api.put(`/api/notes/${source.noteId}/relations/internalLink/to/${target.noteId}`);
+        await api.post(`/api/notes/${source.noteId}/attributes`, {
+            body: { type: "label", name: "relation:knows", value: "promoted" }
+        });
+
+        const relationNames = async () => {
+            const res = await api.post<RelationMapResponse>("/api/relation-map", {
+                body: { relationMapNoteId: map.noteId, noteIds: [ source.noteId, target.noteId ] }
+            });
+            expect(res.body.inverseRelations.knows).toBeUndefined();
+            return res.body.relations.map((relation) => relation.name);
+        };
+
+        expect(await relationNames()).not.toContain("internalLink");
+
+        await api.post(`/api/notes/${map.noteId}/attributes`, {
+            body: { type: "label", name: "displayRelations", value: "internalLink" }
+        });
+        expect(await relationNames()).toContain("internalLink");
+    });
+
     it("404s when the relation map note does not exist", async () => {
         const { noteId } = await createTextNote(api, { title: "Source" });
 

@@ -55,7 +55,7 @@ jobs:
       - name: Set up Nix
         # The headers hash is a NAR hash of the unpacked tarball, so only Nix can
         # compute it — and the verification step below needs a working builder.
-        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # 31.11.3
+        uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32.0.0
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -75,7 +75,7 @@ jobs:
         run: nix build --no-link '.#electron' '.#electron.headers'
       - name: Open a PR
         if: steps.refresh.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           add-paths: flake.nix
           branch: chore/update-flake-electron

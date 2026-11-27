@@ -7,7 +7,7 @@ import { ValidationError } from "../errors.js";
 import blobService from "./blob.js";
 import { getContext } from "./context.js";
 import { getHelpHiddenSubtreeData, HELP_ASSET_TOKEN, InAppHelpProvider, initInAppHelp } from "./in_app_help.js";
-import { getVirtualNoteAssets, getVirtualNoteProvider } from "./virtual_notes.js";
+import { getVirtualNoteAssets, getVirtualNoteContent, getVirtualNoteProvider } from "./virtual_notes.js";
 
 /** Minimal concrete provider standing in for the platform-specific implementations. */
 class TestHelpProvider extends InAppHelpProvider {
@@ -137,6 +137,10 @@ describe("in_app_help", () => {
 
         await assets[0].getContent();
         expect(provider.readAssets).toEqual([ "User Guide/My pic.png" ]);
+
+        // A page the bundle does not hold has no content and references nothing.
+        expect(getVirtualNoteContent("_helpMissing")).toBe("");
+        expect(getVirtualNoteAssets("_helpMissing")).toEqual([]);
     });
 
     it("makes every help page read-only, with no label the user could remove", () => {

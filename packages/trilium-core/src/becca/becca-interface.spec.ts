@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import becca from "./becca.js";
+import BNote from "./entities/bnote.js";
 import { getContext } from "../services/context.js";
 import noteService from "../services/notes.js";
 
@@ -223,6 +224,36 @@ describe("Becca interface (real DB)", () => {
                 expect(index.notes.length).toBeGreaterThan(0);
             } finally {
                 proc.memoryUsage = original;
+            }
+        });
+    });
+
+    describe("notes that are skeletons or no longer loaded", () => {
+        it("keeps the stale flat text of a dirtied note that has left becca", () => {
+            const { note } = createNote("root");
+            const index = becca.getFlatTextIndex();
+            const idx = index.noteIdToIdx.get(note.noteId) ?? -1;
+            const staleText = index.flatTexts[idx];
+
+            delete becca.notes[note.noteId];
+            try {
+                becca.dirtyNoteFlatText(note.noteId);
+                expect(becca.getFlatTextIndex().flatTexts[idx]).toBe(staleText);
+            } finally {
+                becca.notes[note.noteId] = note;
+            }
+        });
+
+        it("leaves skeleton notes out of the set of all notes", () => {
+            becca.addNote("biSkeletonNote", new BNote({ noteId: "biSkeletonNote" }));
+
+            try {
+                const allNoteIds = becca.getAllNoteSet().notes.map((n) => n.noteId);
+                expect(allNoteIds).not.toContain("biSkeletonNote");
+                expect(allNoteIds).toContain("root");
+            } finally {
+                delete becca.notes.biSkeletonNote;
+                becca.dirtyNoteSetCache();
             }
         });
     });

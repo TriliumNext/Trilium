@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
-import { join, posix } from "node:path";
+import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Node loads these without a bundler, so neither imports another source file.
@@ -16,6 +16,7 @@ import {
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
+import { bundleAsync, Features, transform } from "lightningcss";
 import {
     build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
     type ResolvedConfig, type Rollup, type ViteDevServer
@@ -26,9 +27,11 @@ import {
  * `shaping()` hyphenates only a paragraph whose section sets `autoHyphenation`, which
  * the spreadsheet note type never turns on, so none of it can run:
  *
- * - The 77 TeX pattern tables, 4.4 MB of lazy chunks (Hungarian alone 747 kB). The
- *   entry makes exactly 77 relative imports and every one is a table, so resolving
- *   them all to one empty module collapses them into a single stub chunk.
+ * - The 77 TeX pattern tables, 4.4 MB of lazy chunks (Hungarian alone 747 kB). They
+ *   are loaded by `doc-skeleton-<hash>.js`, the chunk both the package's entry and its
+ *   `./worker` export import. That chunk makes exactly 77 relative imports and every
+ *   one is a table, so resolving them all to one empty module collapses them into a
+ *   single stub chunk.
  * - `franc-min`, whose 102 kB trigram model backs the `LanguageDetector` call that
  *   `shaping()` makes ahead of the hyphenation check, on every paragraph it lays out.
  *
@@ -46,11 +49,11 @@ export function stripUniverHyphenation(): Plugin {
 }
 
 /**
- * Returns the stub for a hyphenation import made by `@univerjs/engine-render`'s entry,
- * and `null` for everything else so other resolvers keep their turn.
+ * Returns the stub for a hyphenation import made by `@univerjs/engine-render`'s shared
+ * `doc-skeleton` chunk, and `null` for everything else so other resolvers keep their turn.
  */
 export function resolveUniverHyphenationStub(source: string, importer: string | undefined): string | null {
-    if (!importer?.replace(/\\/g, "/").endsWith(ENGINE_RENDER_ENTRY)) {
+    if (!importer || !ENGINE_RENDER_CHUNK.test(importer.replace(/\\/g, "/"))) {
         return null;
     }
 
@@ -62,6 +65,7 @@ export function resolveUniverHyphenationStub(source: string, importer: string | 
 }
 
 export const ENGINE_RENDER_ENTRY = "@univerjs/engine-render/lib/es/index.js";
+export const ENGINE_RENDER_CHUNK = /@univerjs\/engine-render\/lib\/es\/doc-skeleton-[^/]+\.js$/;
 export const LANGUAGE_DETECTOR_PACKAGE = "franc-min";
 
 function stubPath(name: string): string {
@@ -106,8 +110,8 @@ export function stripUniverEmojiSource(code: string, id: string): string | null 
 
 export const UI_ENTRY = "@univerjs/ui/lib/es/index.js";
 export const UI_LOCALE = /@univerjs\/ui\/lib\/es\/locale\/[^/]+\.js$/;
-export const EMOJI_TABLE = /(\/\/#region src\/views\/emoji-picker\/emojis\.generated\.ts\n)const emojis = (\{[\s\S]*?\n\});\n/;
-export const EMOJI_LOCALE = /(\/\/#region src\/locale\/emoji-locale\/[^\n]+\.generated\.ts\n)const emojiLocale = \{[\s\S]*?\n\};\n/;
+export const EMOJI_TABLE = /(\/\/ src\/views\/emoji-picker\/emojis\.generated\.ts\n)const emojis = (\{[\s\S]*?\n\});\n/;
+export const EMOJI_LOCALE = /(\/\/ src\/locale\/emoji-locale\/[^\n]+\.generated\.ts\n)const emojiLocale = \{[\s\S]*?\n\};\n/;
 
 function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ...groups: string[]) => string): string {
     if (!pattern.test(code)) {
@@ -130,6 +134,75 @@ export function narrowThirdPartySelectors(): Plugin {
         enforce: "pre",
         transform: (code, id) => narrowSelectorsSource(code, id)
     };
+}
+
+/**
+ * Flattens CSS nesting in a stylesheet copied by `viteStaticCopy`, for the browsers without
+ * nesting support. Only stylesheets that a module imports go through Vite's lightningcss
+ * transformer; `style.css` and the theme stylesheets are linked at runtime and copied as-is.
+ * Returns files other than `.css` unchanged.
+ */
+export function flattenCssNesting(content: string, filename: string): string {
+    if (!filename.endsWith(".css")) {
+        return content;
+    }
+
+    const { code } = transform({
+        filename,
+        code: Buffer.from(content),
+        include: Features.Nesting,
+        errorRecovery: true
+    });
+    return code.toString();
+}
+
+/**
+ * Inlines the `@import`s of a stylesheet copied by `viteStaticCopy` and flattens its nesting, so a
+ * theme the client links at runtime arrives as one file rather than a chain of requests. Each
+ * imported file's relative URLs are pointed from the stylesheet's own folder, which lightningcss
+ * leaves to the caller. The imported files are still copied, for custom themes that import them.
+ * Returns files other than `.css` unchanged.
+ */
+export async function bundleStylesheet(content: string, filename: string): Promise<string> {
+    if (!filename.endsWith(".css")) {
+        return content;
+    }
+    if (!content.includes("@import")) {
+        return flattenCssNesting(content, filename);
+    }
+
+    const entryDir = dirname(filename);
+    const { code } = await bundleAsync({
+        filename,
+        include: Features.Nesting,
+        errorRecovery: true,
+        resolver: {
+            read: async (filePath) => {
+                const source = await readFile(filePath, "utf8");
+                return filePath === filename ? source : rebaseUrls(source, dirname(filePath), entryDir);
+            }
+        }
+    });
+    return code.toString();
+}
+
+/**
+ * Rewrites the relative `url()`s of `css`, found in `fromDir`, to be relative to `toDir`. Leaves
+ * `@import` lines alone, as lightningcss resolves those against the file that holds them.
+ */
+function rebaseUrls(css: string, fromDir: string, toDir: string) {
+    return css.split("\n").map((line) => {
+        if (line.trimStart().startsWith("@import")) {
+            return line;
+        }
+        return line.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (match, quote: string, url: string) => {
+            if (/^(?:[a-z][\w+.-]*:|\/|#)/i.test(url)) {
+                return match;
+            }
+            const rebased = relative(toDir, resolve(fromDir, url)).split("\\").join("/");
+            return `url(${quote}${rebased}${quote})`;
+        });
+    }).join("\n");
 }
 
 /**
@@ -219,14 +292,16 @@ const CKEDITOR_REWRITES: SelectorRewrite[] = [
     // A blurred editor shows its selection in the same color as a focused one.
     {
         from: "&.ck-blurred ::selection {\n"
-            + "    background: var(--ck-color-editable-blur-selection, #d9d9d9);\n  }",
+            + "    background: var(--ck-color-editable-blur-selection, "
+            + "var(--ck-editor-editable-blurred-selection-background));\n  }",
         to: "",
         count: 1
     },
     // The icon's `svg *` rule reads its stroke from this variable.
     {
-        from: "& svg * {\n    stroke: var(--ck-color-widget-blurred-border);\n  }",
-        to: "--ck-color-widget-type-around-button-icon: var(--ck-color-widget-blurred-border);",
+        from: "& svg * {\n    stroke: var(--ck-widget-type-around-button-blurred-icon-color);\n  }",
+        to: "--ck-color-widget-type-around-button-icon: "
+            + "var(--ck-widget-type-around-button-blurred-icon-color);",
         count: 1
     }
 ];
@@ -300,6 +375,9 @@ const LAZY_IMPORTERS: Record<string, string[]> = {
     scripting: [ join(CLIENT_SRC, "services/script_context.ts") ],
     app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
 };
+
+/** The modules of the share theme whose `import()` expressions load the app's views. */
+export const SHARE_THEME_APP_LOADERS = LAZY_IMPORTERS.app;
 
 /**
  * The tables of loaders by which the app picks the view of a collection or the widget of a note

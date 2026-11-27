@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>App Store preview</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        :root {
+            color-scheme: light dark;
+            --page: #fff;
+            --text: #1d1d1f;
+            --muted: #6e6e73;
+            --accent: #0071e3;
+            --on-accent: #fff;
+            --separator: #d2d2d7;
+            --segment: #e8e8ed;
+            --segment-active: #fff;
+            --shadow: rgb(0 0 0 / 16%);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page: #000;
+                --text: #f5f5f7;
+                --muted: #a1a1a6;
+                --accent: #2997ff;
+                --on-accent: #fff;
+                --separator: #424245;
+                --segment: #1d1d1f;
+                --segment-active: #3a3a3c;
+                --shadow: rgb(0 0 0 / 60%);
+            }
+        }
+
+        body {
+            background: var(--page);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 40px 64px;
+        }
+
+        section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--separator);
+
+            h2 {
+                margin: 0 0 16px;
+                font-size: 24px;
+                font-weight: 600;
+            }
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+
+            .icon {
+                width: clamp(96px, 20vw, 220px);
+                height: clamp(96px, 20vw, 220px);
+                flex: none;
+                border-radius: 22.5%;
+                border: 1px solid var(--separator);
+            }
+
+            h1 {
+                margin: 0 0 4px;
+                font-size: clamp(28px, 4vw, 40px);
+                font-weight: 600;
+                line-height: 1.1;
+            }
+
+            .subtitle {
+                color: var(--muted);
+                font-size: 20px;
+            }
+
+            .get {
+                display: inline-block;
+                margin-top: 20px;
+                padding: 6px 22px;
+                border-radius: 999px;
+                background: var(--accent);
+                color: var(--on-accent);
+                font-size: 15px;
+                font-weight: 600;
+            }
+        }
+
+        .facts {
+            display: flex;
+            gap: 40px;
+            margin-top: 32px;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+
+            strong {
+                display: block;
+                margin-top: 4px;
+                color: var(--text);
+                font-size: 17px;
+                text-transform: none;
+            }
+        }
+
+        .screenshots-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            h2 {
+                margin: 0;
+            }
+        }
+
+        .devices {
+            display: flex;
+            padding: 2px;
+            border-radius: 9px;
+            background: var(--segment);
+
+            button {
+                padding: 4px 16px;
+                border: none;
+                border-radius: 7px;
+                background: none;
+                color: var(--text);
+                font: inherit;
+                font-size: 13px;
+                cursor: pointer;
+
+                &[aria-pressed="true"] {
+                    background: var(--segment-active);
+                    box-shadow: 0 1px 3px var(--shadow);
+                }
+            }
+        }
+
+        .strip {
+            --shot-height: 540px;
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: thin;
+
+            &.ipad {
+                --shot-height: 400px;
+            }
+
+            img {
+                height: var(--shot-height);
+                flex: none;
+                border-radius: 16px;
+                border: 1px solid var(--separator);
+                scroll-snap-align: start;
+                display: block;
+            }
+        }
+
+        .description {
+            line-height: 1.5;
+
+            .body {
+                position: relative;
+            }
+
+            p {
+                margin: 0 0 16px;
+                white-space: pre-wrap;
+            }
+
+            &.collapsed {
+                #description {
+                    display: -webkit-box;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 3;
+                    overflow: hidden;
+                }
+
+                .more {
+                    display: block;
+                }
+            }
+
+            .more {
+                display: none;
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                padding: 0 0 0 48px;
+                border: none;
+                background: linear-gradient(to right, transparent, var(--page) 40px);
+                color: var(--accent);
+                font: inherit;
+                line-height: 1.5;
+                cursor: pointer;
+            }
+        }
+
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 8px;
+            padding: 0;
+            list-style: none;
+
+            li {
+                padding: 4px 12px;
+                border-radius: 999px;
+                background: var(--segment);
+                font-size: 14px;
+            }
+        }
+
+        .note {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header class="app-header">
+            <img class="icon" src="appstore/icon.png" alt="">
+            <div>
+                <h1 id="name"></h1>
+                <div class="subtitle" id="subtitle"></div>
+                <span class="get">Get</span>
+            </div>
+        </header>
+
+        <div class="facts">
+            <div>Category<strong id="category"></strong></div>
+            <div>Developer<strong id="developer"></strong></div>
+            <div>Price<strong>Free</strong></div>
+        </div>
+
+        <section>
+            <div class="screenshots-header">
+                <h2>Screenshots</h2>
+                <div class="devices" role="group" aria-label="Device">
+                    <button type="button" data-device="iphone" aria-pressed="true">iPhone</button>
+                    <button type="button" data-device="ipad" aria-pressed="false">iPad</button>
+                </div>
+            </div>
+            <div class="strip"></div>
+        </section>
+
+        <section>
+            <div class="description collapsed">
+                <p id="promotional"></p>
+                <div class="body">
+                    <p id="description"></p>
+                    <button class="more" type="button">more</button>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Keywords</h2>
+            <p class="note">Not on the product page: App Store search matches them.</p>
+            <ul class="keywords"></ul>
+        </section>
+    </main>
+    <script src="appstore-data.js"></script>
+    <script>
+        const { listing, screenshots } = window.LISTING;
+        document.getElementById("name").textContent = listing.name;
+        document.getElementById("subtitle").textContent = listing.subtitle;
+        document.getElementById("category").textContent = listing.category;
+        document.getElementById("developer").textContent = listing.developer;
+        document.getElementById("promotional").textContent = listing.promotionalText;
+        document.getElementById("description").textContent = listing.description;
+        document.querySelector(".keywords").replaceChildren(...listing.keywords.split(",")
+            .map((keyword) => {
+                const item = document.createElement("li");
+                item.textContent = keyword;
+                return item;
+            }));
+
+        const description = document.querySelector(".description");
+        description.querySelector(".more").addEventListener("click", () => {
+            description.classList.remove("collapsed");
+        });
+
+        const strip = document.querySelector(".strip");
+        const segments = document.querySelectorAll(".devices button");
+        const showDevice = (device) => {
+            strip.classList.toggle("ipad", device === "ipad");
+            strip.replaceChildren(...screenshots
+                .filter((shot) => shot.device === device)
+                .map((shot) => {
+                    const img = document.createElement("img");
+                    img.src = shot.file;
+                    img.alt = "";
+                    return img;
+                }));
+            strip.scrollLeft = 0;
+            for (const segment of segments) {
+                segment.setAttribute("aria-pressed", String(segment.dataset.device === device));
+            }
+        };
+        for (const segment of segments) {
+            segment.addEventListener("click", () => showDevice(segment.dataset.device));
+        }
+        showDevice("iphone");
+    </script>
+</body>
+</html>

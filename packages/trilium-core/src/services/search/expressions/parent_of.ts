@@ -17,7 +17,7 @@ class ParentOfExp extends Expression {
         const subInputNoteSet = new NoteSet();
 
         for (const note of inputNoteSet.notes) {
-            subInputNoteSet.addAll(note.children);
+            subInputNoteSet.addAll(searchContext.readable(note.children));
         }
 
         const subResNoteSet = this.subExpression.execute(subInputNoteSet, executionContext, searchContext);

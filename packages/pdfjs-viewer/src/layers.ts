@@ -21,16 +21,16 @@ async function extractAndSendLayers() {
     try {
         // Get the config from the viewer if available (has updated state), otherwise from document
         const pdfViewer = app.pdfViewer;
-        const optionalContentConfig = pdfViewer?.optionalContentConfigPromise
-            ? await pdfViewer.optionalContentConfigPromise
-            : await app.pdfDocument.getOptionalContentConfig();
+        const optionalContentConfig = await (pdfViewer?.optionalContentConfigPromise
+            ?? app.pdfDocument.getOptionalContentConfig());
 
         if (!optionalContentConfig) {
             window.parent.postMessage({
                 type: "pdfjs-viewer-layers",
                 layers: [],
                 ntxId: window.TRILIUM_NTX_ID,
-                noteId: window.TRILIUM_NOTE_ID
+                noteId: window.TRILIUM_NOTE_ID,
+                loadToken: window.TRILIUM_LOAD_TOKEN
             } satisfies PdfViewerLayersMessage, window.location.origin);
             return;
         }
@@ -42,7 +42,8 @@ async function extractAndSendLayers() {
                 type: "pdfjs-viewer-layers",
                 layers: [],
                 ntxId: window.TRILIUM_NTX_ID,
-                noteId: window.TRILIUM_NOTE_ID
+                noteId: window.TRILIUM_NOTE_ID,
+                loadToken: window.TRILIUM_LOAD_TOKEN
             } satisfies PdfViewerLayersMessage, window.location.origin);
             return;
         }
@@ -85,7 +86,8 @@ async function extractAndSendLayers() {
             type: "pdfjs-viewer-layers",
             layers,
             ntxId: window.TRILIUM_NTX_ID,
-            noteId: window.TRILIUM_NOTE_ID
+            noteId: window.TRILIUM_NOTE_ID,
+            loadToken: window.TRILIUM_LOAD_TOKEN
         } satisfies PdfViewerLayersMessage, window.location.origin);
     } catch (error) {
         console.error("Error extracting layers:", error);
@@ -93,7 +95,8 @@ async function extractAndSendLayers() {
             type: "pdfjs-viewer-layers",
             layers: [],
             ntxId: window.TRILIUM_NTX_ID,
-            noteId: window.TRILIUM_NOTE_ID
+            noteId: window.TRILIUM_NOTE_ID,
+            loadToken: window.TRILIUM_LOAD_TOKEN
         } satisfies PdfViewerLayersMessage, window.location.origin);
     }
 }

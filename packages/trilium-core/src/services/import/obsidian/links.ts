@@ -111,7 +111,7 @@ function isUnsupportedEmbed(target: string): boolean {
 function removeEmbed(img: HTMLElement): void {
     const parent = img.parentNode;
     img.remove();
-    if (parent instanceof HTMLElement && parent.tagName?.toLowerCase() === "p" && (parent.textContent ?? "").trim() === "" && parent.querySelectorAll("img").length === 0) {
+    if (parent instanceof HTMLElement && parent.tagName?.toLowerCase() === "p" && parent.textContent.trim() === "" && parent.querySelectorAll("img").length === 0) {
         parent.remove();
     }
 }

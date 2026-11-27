@@ -1,4 +1,4 @@
-import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons";
+import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker.js";

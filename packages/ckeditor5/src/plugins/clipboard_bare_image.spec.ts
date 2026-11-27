@@ -1,4 +1,4 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { ClassicEditor, Essentials, FileRepository, Image, ImageBlock, ImageInline, ImageUpload, Paragraph } from "ckeditor5";
 import type { ViewRange } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";

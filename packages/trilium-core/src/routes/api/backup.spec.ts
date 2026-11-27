@@ -90,5 +90,14 @@ describe("Backup API (core)", () => {
             expect(res.headers["Content-Type"]).toBe("application/x-sqlite3");
             expect(res.headers["Content-Disposition"]).toBe('attachment; filename="backup-now.db"');
         });
+
+        it("falls back on a generic file name for a path that ends in a separator", async () => {
+            vi.spyOn(getBackup(), "getBackupContent").mockResolvedValue(Buffer.from("SQLite format 3 ") as never);
+
+            const res = await api.get(`/api/database/backup/download`, {
+                query: { filePath: "C:\\backups\\" }
+            });
+            expect(res.headers["Content-Disposition"]).toBe('attachment; filename="backup.db"');
+        });
     });
 });

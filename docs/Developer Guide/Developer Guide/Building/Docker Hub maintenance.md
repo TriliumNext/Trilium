@@ -26,7 +26,7 @@ Two older Docker Hub repositories still receive many pulls from installations th
 | `triliumnext/notes` | TriliumNext's image before the rename, last own build v0.95.0 | ~29,600 |
 | `zadam/trilium` | the original Trilium image, last own build 0.63.7 | ~24,000 |
 
-`.github/workflows/mirror-legacy-docker.yml` copies `ghcr.io/triliumnext/trilium:stable` to `triliumnext/notes:stable`, `triliumnext/notes:latest` and `zadam/trilium:latest` after every stable release; `main-docker.yml` calls it from its `mirror_legacy` job. The version tags and `0.63-latest` on `zadam/trilium` are left unchanged, so installations that pin a version keep it. To run the mirror by hand, start the workflow from the _Actions_ tab; an empty _tags_ field writes each repository's release tags.
+`.github/workflows/mirror-legacy-docker.yml` copies `ghcr.io/triliumnext/trilium:stable` to `triliumnext/notes:stable`, `triliumnext/notes:latest` and `zadam/trilium:latest` after every stable release; `docker-publish.yml` calls it from its `mirror_legacy` job, which runs during a release only once every desktop, server and Docker build has passed. The version tags and `0.63-latest` on `zadam/trilium` are left unchanged, so installations that pin a version keep it. To run the mirror by hand, start the workflow from the _Actions_ tab; an empty _tags_ field writes each repository's release tags.
 
 Each repository has its own credentials:
 

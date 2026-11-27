@@ -1,5 +1,6 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
-import { deferred, type DeferredPromise } from "@triliumnext/commons";
+import type { DeferredPromise } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -14,8 +15,9 @@ import {
 import {
     EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, EmbedPreview,
     NestedEmbedContext, useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors,
-    useEmbedPreview, useNestedEditor
+    useEmbedPreview
 } from "./editable_embed";
+import { useNestedEditor } from "./nested_editor";
 
 const figures: HTMLElement[] = [];
 
@@ -93,6 +95,25 @@ describe("useEditableEmbed", () => {
 
         box?.focus();
         expect(document.activeElement).toBe(target);
+    });
+
+    it("names its target and passes it the focus once content rendered apart joins the box", async () => {
+        const { figure, root, container } = await mountProbe({
+            editor: buildEditor(),
+            note: null,
+            focusTarget: ".target"
+        }, { isDetached: true });
+        expect(root?.dataset.embedFocusTarget).toBe(".target");
+
+        const box = figure.querySelector<HTMLElement>(".include-note-content");
+        const target = document.createElement("div");
+        target.className = "target";
+        target.tabIndex = -1;
+        root?.append(target);
+        box?.append(container);
+        box?.focus();
+        await vi.waitFor(() => expect(document.activeElement).toBe(target));
+        act(() => render(null, container));
     });
 });
 
@@ -308,6 +329,72 @@ describe("useEmbedCaretNavigation", () => {
         outside.unmount();
     });
 
+    it("starts a paragraph beside the embed on Enter past blank lines, when it leaves on Enter",
+        () => {
+            const editor = {
+                ...buildCaretEditor(null),
+                getEdgeLeftByEnter: vi.fn((_event: KeyboardEvent): EmbedEdge | null => "end"),
+                removeBlankLinesAt: vi.fn(),
+                hasSharedHistory: true
+            };
+            const { figure, insertParagraphBeside, pressKey, unmount } =
+                mountCaretProbe(editor, { hasCodeBlockKeys: true });
+
+            expect(pressKey("Enter")).toBe(true);
+            expect(editor.removeBlankLinesAt).toHaveBeenCalledExactlyOnceWith("end");
+            expect(insertParagraphBeside).toHaveBeenCalledExactlyOnceWith(
+                figure.querySelector(".caret-content"), "end", true
+            );
+            expect(editor.removeBlankLinesAt.mock.invocationCallOrder[0])
+                .toBeLessThan(insertParagraphBeside.mock.invocationCallOrder[0]);
+
+            editor.getEdgeLeftByEnter.mockReturnValue(null);
+            expect(pressKey("Enter")).toBe(false);
+            expect(insertParagraphBeside).toHaveBeenCalledOnce();
+            unmount();
+
+            const withoutOption = mountCaretProbe(editor);
+            editor.getEdgeLeftByEnter.mockReturnValue("end");
+            expect(withoutOption.pressKey("Enter")).toBe(false);
+            expect(withoutOption.insertParagraphBeside).not.toHaveBeenCalled();
+            withoutOption.unmount();
+
+            const outside = mountCaretProbe(editor, { hasCodeBlockKeys: true, hasHost: false });
+            expect(outside.pressKey("Enter")).toBe(false);
+            expect(editor.removeBlankLinesAt).toHaveBeenCalledOnce();
+            outside.unmount();
+        });
+
+    it("turns the embed into a paragraph on Backspace in empty content, as a code block", () => {
+        const editor = {
+            ...buildCaretEditor(null),
+            isBackspaceOnEmpty: vi.fn((_event: KeyboardEvent) => true)
+        };
+        const { figure, replaceWithParagraph, pressKey, unmount } =
+            mountCaretProbe(editor, { hasCodeBlockKeys: true });
+
+        expect(pressKey("Backspace")).toBe(true);
+        expect(replaceWithParagraph)
+            .toHaveBeenCalledExactlyOnceWith(figure.querySelector(".caret-content"));
+        expect(editor.prepareToLeave.mock.invocationCallOrder[0])
+            .toBeLessThan(replaceWithParagraph.mock.invocationCallOrder[0]);
+
+        editor.isBackspaceOnEmpty.mockReturnValue(false);
+        expect(pressKey("Backspace")).toBe(false);
+        expect(replaceWithParagraph).toHaveBeenCalledOnce();
+        unmount();
+
+        editor.isBackspaceOnEmpty.mockReturnValue(true);
+        const withoutOption = mountCaretProbe(editor);
+        expect(withoutOption.pressKey("Backspace")).toBe(false);
+        expect(withoutOption.replaceWithParagraph).not.toHaveBeenCalled();
+        withoutOption.unmount();
+
+        const outside = mountCaretProbe(editor, { hasCodeBlockKeys: true, hasHost: false });
+        expect(outside.pressKey("Backspace")).toBe(false);
+        outside.unmount();
+    });
+
     it("does nothing in an embed without caret navigation", () => {
         const editor = buildCaretEditor("end");
         const { figure, pressKey, unmount } =
@@ -329,6 +416,7 @@ interface CaretProbeOptions {
     hasCaretNavigation?: boolean;
     /** Whether a text editor with the `ContentEmbedCaret` plugin is around the embed. */
     hasHost?: boolean;
+    hasCodeBlockKeys?: boolean;
 }
 
 /**
@@ -337,11 +425,17 @@ interface CaretProbeOptions {
  */
 function mountCaretProbe(
     editor: EmbeddedCaretEditor | null,
-    { hasCaretNavigation = true, hasHost = true }: CaretProbeOptions = {}
+    { hasCaretNavigation = true, hasHost = true, hasCodeBlockKeys = false }: CaretProbeOptions = {}
 ) {
     const leaveEmbed = vi.fn((_element: HTMLElement, _edge: string) => true);
+    const insertParagraphBeside =
+        vi.fn((_element: HTMLElement, _edge: string, _joinsLatestStep: boolean) => true);
+    const replaceWithParagraph = vi.fn((_element: HTMLElement) => true);
+    const plugin = { leaveEmbed, insertParagraphBeside, replaceWithParagraph };
     const host = buildEditable({
-        editor: { plugins: { has: () => hasHost, get: () => ({ leaveEmbed }) } }
+        editor: {
+            plugins: { has: () => hasHost, get: () => plugin }
+        }
     });
     const figure = document.createElement("figure");
     figure.className = "include-note";
@@ -349,7 +443,7 @@ function mountCaretProbe(
     document.body.append(host);
 
     function Probe() {
-        useEmbedCaretNavigation(() => editor);
+        useEmbedCaretNavigation(() => editor, hasCodeBlockKeys);
         return <div className="caret-editor" tabIndex={-1} />;
     }
     act(() => render(
@@ -368,11 +462,11 @@ function mountCaretProbe(
     return {
         figure,
         leaveEmbed,
-        /** Presses an arrow key in the editor, and returns whether a listener prevented it. */
-        pressKey() {
-            const event = new KeyboardEvent("keydown", {
-                key: "ArrowDown", bubbles: true, cancelable: true
-            });
+        insertParagraphBeside,
+        replaceWithParagraph,
+        /** Presses `key` in the editor, and returns whether a listener prevented it. */
+        pressKey(key = "ArrowDown") {
+            const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
             figure.querySelector(".caret-editor")?.dispatchEvent(event);
             return event.defaultPrevented;
         },
@@ -394,7 +488,7 @@ function buildCaretEditor(edge: EmbedEdge | null) {
 /** Renders a component that uses `useEditableEmbed()`, in the markup of an embed. */
 async function mountProbe(
     embedOptions: EditableEmbedOptions,
-    { isEditable = false }: { isEditable?: boolean } = {}
+    { isEditable = false, isDetached = false }: { isEditable?: boolean; isDetached?: boolean } = {}
 ) {
     const figure = document.createElement("figure");
     figure.className = "include-note";
@@ -411,7 +505,8 @@ async function mountProbe(
     const probe = {
         state: { canEdit: false, isEditing: false } as ProbeState,
         figure,
-        root: null as HTMLElement | null
+        root: null as HTMLElement | null,
+        container: box
     };
     function Probe() {
         const rootRef = useRef<HTMLDivElement>(null);
@@ -419,8 +514,11 @@ async function mountProbe(
         return <div ref={rootRef} className="probe" />;
     }
 
-    await act(async () => render(<Probe />, box));
-    probe.root = box.querySelector(".probe");
+    // Inline source renders into a container that its embed box takes in afterwards.
+    probe.container = isDetached ? document.createElement("div") : box;
+    const container = probe.container;
+    await act(async () => render(<Probe />, container));
+    probe.root = container.querySelector(".probe");
     return probe;
 }
 

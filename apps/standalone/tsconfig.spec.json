@@ -3,27 +3,26 @@
   "compilerOptions": {
     "module": "esnext",
     "moduleResolution": "bundler",
-    "outDir": "./out-tsc/vitest",
-    "lib": [
-      "ES2022",
-      "dom",
-      "dom.iterable"
-    ],
-    "types": [
-      "vitest/globals",
-      "happy-dom",
-      "vite/client"
-    ]
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vitest/globals", "vite/client"],
+    "rootDir": "../..",
+    "outDir": "out-tsc/spec",
+    "tsBuildInfoFile": "out-tsc/spec.tsbuildinfo"
   },
   "include": [
     "vite.config.mts",
-    "src/**/*.spec.ts",
-    "src/**/*.test.ts",
-    "src/**/*.d.ts"
+    "src/*.spec.ts",
+    "src/services/capacitor_*.spec.ts",
+    "src/stubs/*.spec.ts",
+    "src/test_environment_worker.ts",
+    "src/globals.d.ts"
   ],
+  "exclude": ["src/local-server-worker.spec.ts"],
   "references": [
-    {
-      "path": "./tsconfig.app.json"
-    }
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.worker.json" },
+    { "path": "./tsconfig.sw.json" },
+    { "path": "../client/tsconfig.app.json" },
+    { "path": "../client/tsconfig.spec.json" }
   ]
 }

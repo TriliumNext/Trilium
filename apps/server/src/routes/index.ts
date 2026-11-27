@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init } from "@triliumnext/core";
+import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, routes, sql_init } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -10,8 +10,9 @@ import { getLog } from "@triliumnext/core";
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import port from "../services/port.js";
 import openID from "../services/open_id.js";
-import { isDev, isMac, supportsBackgroundMaterial } from "../services/utils.js";
+import { isDev, isElectron, isMac, supportsBackgroundMaterial } from "../services/utils.js";
 import totp from "../services/totp.js";
+import { getKnownCpuArchMismatch } from "./api/system_info.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
 type View = "desktop" | "mobile" | "print";
@@ -99,6 +100,9 @@ export function bootstrap(req: Request, res: Response) {
         res.send({
             ...commonItems,
             passwordSet: false,
+            setPasswordInDesktopApp: isElectron,
+            // The font options belong to the user, who has not signed in yet.
+            fontCss: undefined,
             hasNativeTitleBar: false,
             hasBackgroundEffects: false,
             isMainWindow: true
@@ -129,6 +133,7 @@ export function bootstrap(req: Request, res: Response) {
         res.send({
             ...commonItems,
             loggedIn: false,
+            fontCss: undefined,
             login: {
                 ssoEnabled: openID.isOpenIDEnabled(),
                 ssoIssuerName: openID.getSSOIssuerName(),
@@ -176,6 +181,9 @@ export function bootstrap(req: Request, res: Response) {
         csrfToken,
         oauthJustEnrolled,
         oauthConnectionFailed,
+        // What the client would otherwise ask for as it starts, `/api/options` and `/api/system-checks`.
+        options: routes.getClientOptions(),
+        isCpuArchMismatch: getKnownCpuArchMismatch(),
         hasNativeTitleBar: isElectronRenderer && nativeTitleBarVisible,
         hasBackgroundEffects: options.backgroundEffects === "true"
             && isElectronRenderer

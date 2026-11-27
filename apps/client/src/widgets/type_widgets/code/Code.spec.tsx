@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import VanillaCodeMirror from "@triliumnext/codemirror";
-import { render } from "preact";
+import { createRef, render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,6 +9,7 @@ import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import options from "../../../services/options";
 import search from "../../../services/search";
+import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { ParentComponent } from "../../react/react_utils";
@@ -31,6 +32,13 @@ vi.mock("./CodeMirror", async (importOriginal) => {
 
 // The `/` list of a Markdown editor loads the task states from the `_taskStates` subtree.
 vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: async () => [] }));
+
+// A script note starts a TypeScript language service build that no test awaits, and its lazy
+// imports would otherwise still be loading when the test environment is torn down.
+vi.mock("@triliumnext/codemirror/src/type_completion/index.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/codemirror/src/type_completion/index.js")>(),
+    buildTypeCompletion: async () => ({ extensions: [], complete: null })
+}));
 
 // jsdom has no `checkVisibility()`, and lays nothing out, so an editor counts as hidden unless a
 // test says otherwise.
@@ -134,6 +142,43 @@ describe("EditableCode", () => {
         contextData.set("codeEditor", replacement);
         await act(async () => { if (container) render(showIn(false), container); });
         expect(contextData.get("codeEditor")).toBe(replacement);
+    });
+
+    it("saves the text of the editor, and reports each read of it before the save", async () => {
+        const handlers = new Map<string, (data: unknown) => unknown>();
+        const savingParent = {
+            registerHandler(name: string, handler: (data: unknown) => unknown) {
+                handlers.set(name, handler);
+            },
+            removeHandler() {},
+            componentId: "c"
+        } as any;
+        const put = vi.spyOn(server, "put").mockResolvedValue({ blobId: "saved", attachments: [] });
+        const onDataTaken = vi.fn();
+        const editorRef = createRef<VanillaCodeMirror>();
+        await act(async () => {
+            renderInto(
+                <ParentComponent.Provider value={savingParent}>
+                    <EditableCode
+                        note={noteA} ntxId="ntx" parentComponent={savingParent}
+                        noteContext={undefined} viewScope={undefined} editorRef={editorRef}
+                        onDataTaken={onDataTaken}
+                    />
+                </ParentComponent.Provider>
+            );
+        });
+        await vi.waitFor(() => expect(editorRef.current?.getText()).toBe("# Note A"));
+
+        act(() => editorRef.current?.dispatch({ changes: { from: 0, insert: "Edited\n" } }));
+        await act(async () => {
+            await handlers.get("saveNoteChanges")?.({ noteId: noteA.noteId });
+        });
+        expect(put).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/data`,
+            expect.objectContaining({ content: "Edited\n# Note A" }), "c",
+            { silentConflict: true });
+        expect(onDataTaken).toHaveBeenCalledOnce();
+        expect(onDataTaken.mock.invocationCallOrder[0])
+            .toBeLessThan(put.mock.invocationCallOrder[0]);
     });
 });
 

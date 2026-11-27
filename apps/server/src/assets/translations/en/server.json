@@ -306,7 +306,7 @@
     "protected-session-title": "Protected Session",
     "sync-status-title": "Sync Status",
     "color-scheme-switcher-title": "Color Scheme Switcher",
-    "settings-title": "Settings",
+    "settings-title": "Options",
     "options-title": "Options",
     "appearance-title": "Appearance",
     "shortcuts-title": "Shortcuts",
@@ -349,6 +349,7 @@
   "backend_log": {
     "log-does-not-exist": "The backend log file '{{ fileName }}' does not exist (yet).",
     "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed.",
+    "earlier-entries-omitted": "This log is too long to show in full, so its first {{size}} MiB are left out. The whole log is in the file {{fileName}}.",
     "log-file-unavailable": "The log file could not be opened, so only the most recent entries kept in memory are shown. Trilium keeps trying to open it and writes these entries to it once it can."
   },
   "content_renderer": {
@@ -547,6 +548,13 @@
     "clear-detail": "Backups already written keep the password they were made with, and can still be restored with it.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
     "clear-confirm": "Forget password"
   },
+  "open-executable-dialog": {
+    "title": "Open program",
+    "message": "Open \"{{- name}}\"?",
+    "detail": "{{- path}}\n\nThis file can run a program on your computer. Open it only if you created this link yourself and trust the file.",
+    "cancel": "Cancel",
+    "open": "Open"
+  },
   "security-dialog": {
     "enable-title": "Enable {{settingLabel}}",
     "enable-message": "Are you sure you want to enable {{settingLabel}}?",
@@ -611,5 +619,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium runs as a Flatpak, so it cannot start programs installed outside its sandbox, such as {{- cli}}. To use {{- cli}}:\n\n1. Install it on this computer and sign in to it from a terminal.\n2. Allow Trilium to start programs outside its sandbox by running this in a terminal:\n\n{{- grantCommand}}\n\n3. Restart Trilium.\n\nThis gives Trilium the same access to your computer as an installation outside Flatpak. To take it back, run:\n\n{{- revokeCommand}}"
+  },
+  "revisions": {
+    "draft_description": "Unsaved changes",
+    "fragment_description": "Unsaved changes to an excerpt"
   }
 }

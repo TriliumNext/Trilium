@@ -134,7 +134,11 @@
         "unlock-refused": "Questi dati non sono stati accettati. Si prega di riprovare.",
         "keep-existing": "Torna all'app",
         "keep-existing-description": "Continua a utilizzare la tua base di conoscenze esistente e torna all'app.",
-        "backup-saved-to": "Il backup è stato salvato in {{- location}}. Premere \"Fine\" per tornare all'applicazione."
+        "backup-saved-to": "Il backup è stato salvato in {{- location}}. Premere \"Fine\" per tornare all'applicazione.",
+        "sync-from-server-failed": "Sincronizzazione non riuscita",
+        "server-totp-token": "Password monouso o codice di recupero (facoltativo)",
+        "totp-required": "Questo server richiede una password monouso o un codice di recupero.",
+        "wrong-totp": "Password monouso o codice di recupero errato. Riprova."
     },
     "login": {
         "password": "Password",
@@ -159,6 +163,7 @@
         "password-confirmation": "Conferma della password",
         "button": "Imposta password",
         "password-too-short": "La password deve essere lunga almeno {{length}} caratteri.",
-        "passwords-dont-match": "Le password inserite non corrispondono."
+        "passwords-dont-match": "Le password inserite non corrispondono.",
+        "desktop-description": "Questa app desktop Trilium non ha ancora una password, quindi non è possibile aprirla da un browser. Nell'app desktop, vai su Opzioni → Password e autenticazione e imposta una password, quindi ricarica questa pagina per effettuare l'accesso."
     }
 }

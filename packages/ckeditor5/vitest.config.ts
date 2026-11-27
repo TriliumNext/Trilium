@@ -31,14 +31,11 @@ export default defineConfig({
         watch: false,
         reporters: ["default", ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]],
         coverage: {
-            // 99.5 rather than 100: the suite is effectively fully covered, and the small
-            // remainder is unreachable defensive code that is cheaper to leave uncovered than to
-            // keep annotating. Raise it back if that residue is ever closed.
             thresholds: {
-                lines: 99.5,
-                functions: 99.5,
-                branches: 99.5,
-                statements: 99.5
+                lines: 100,
+                functions: 100,
+                branches: 100,
+                statements: 100
             },
             provider: "v8",
             reportsDirectory: "./test-output/vitest/coverage",

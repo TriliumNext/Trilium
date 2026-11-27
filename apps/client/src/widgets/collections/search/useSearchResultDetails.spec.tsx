@@ -4,7 +4,8 @@
  * the stale-response guard (an older in-flight response must not clobber a newer one), and the
  * re-execution refetch triggered by `searchRefreshed` for the matching ntxId.
  */
-import { deferred, type SearchResultDetailsResponse } from "@triliumnext/commons";
+import type { SearchResultDetailsResponse } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

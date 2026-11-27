@@ -7,9 +7,12 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { CodeMirrorFindTarget } from "../../find_in_code";
-import { useNoteLabelOptionalBool, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteLabelOptionalBool } from "../../react/hooks/note";
+import { useTriliumOptionBool } from "../../react/hooks/options";
 import { registerEmbedFindTarget } from "../text/content_embed_tools";
-import { CaretNavigationContext, useEmbedCaretNavigation } from "../text/editable_embed";
+import {
+    CaretNavigationContext, useEmbedCaretNavigation, useTextNoteVimMode
+} from "../text/editable_embed";
 import type { ContentHistory } from "../text/embed_history";
 import { CodeEditor } from "./Code";
 
@@ -43,6 +46,12 @@ export interface CodeEmbedEditorProps {
     onChange?: (content: string) => void;
     /** Called with CodeMirror once it mounts, for extensions such as a linter. */
     onReady?: (view: VanillaCodeMirror) => void;
+    /**
+     * Whether Enter and Backspace act as in a code block: Enter past blank lines at the start or
+     * the end of the content starts a paragraph beside the embed, and Backspace in empty content
+     * turns the embed into a paragraph.
+     */
+    hasCodeBlockKeys?: boolean;
 }
 
 /**
@@ -51,16 +60,19 @@ export interface CodeEmbedEditorProps {
  */
 export default function CodeEmbedEditor({
     note, ownerNote, editor, history, content, mime, tabWidth, useTabs, wrapLines, hasLineNumbers,
-    languageLabel, viewRef, isShown = true, onClose, onChange, onReady
+    languageLabel, viewRef, isShown = true, onClose, onChange, onReady, hasCodeBlockKeys
 }: CodeEmbedEditorProps) {
     const isLoadingRef = useRef(false);
+    const containerRef = useRef<HTMLPreElement>(null);
+    // In a text note, the Vim mode of the note replaces the option of code notes.
+    const textNoteVimMode = useTextNoteVimMode(containerRef);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
     const lineWrapping = wrapLines ?? noteWrapLines;
     // The effects below wait for this state rather than read `viewRef`: a render of this component
     // before the effects flush runs them ahead of the effect of `CodeMirror` that creates the view.
     const [ view, setView ] = useState<VanillaCodeMirror | null>(null);
-    useEmbedCaretNavigation(() => viewRef.current);
+    useEmbedCaretNavigation(() => viewRef.current, hasCodeBlockKeys);
 
     useEffect(() => {
         if (view) {
@@ -133,10 +145,11 @@ export default function CodeEmbedEditor({
         <CodeEditor
             ntxId={null}
             editorRef={viewRef}
+            containerRef={containerRef}
             className={clsx("code-embed-editor", !editor && "read-only")}
             mime={mime}
             completions={editor && { note, ownerNote }}
-            vimKeybindings={vimKeymapEnabled}
+            vimKeybindings={textNoteVimMode ?? vimKeymapEnabled}
             readOnly={!editor}
             lineNumbers={hasLineNumbers}
             languageLabel={languageLabel}

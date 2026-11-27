@@ -18,9 +18,10 @@ pnpm --filter <pkg> test <pattern>      # e.g. pnpm --filter server test spec/et
 pnpm --filter <pkg> coverage             # per-package coverage (client, server, standalone)
 pnpm typecheck                           # all projects, native compiler, a few seconds
 pnpm dev:format-check | dev:format-fix   # stylistic formatting
+pnpm dev:check-startup [--update]        # client startup requests vs the allowlists, ~30 s
 ```
 
-- **Never run ESLint** (`dev:linter-check`, `dev:linter-fix`, `npx eslint`) — it dies with an out-of-memory error, so a run tells you nothing. CI does not lint either — there is no `eslint`/`linter-check` step anywhere in `.github/workflows/`, so lint findings never block a merge; the gates are `pnpm typecheck` and the per-package `test --coverage` runs. (`packages/*` is ignored by the ESLint config anyway.)
+- **Never run ESLint** (`dev:linter-check`, `dev:linter-fix`, `npx eslint`) — it dies with an out-of-memory error, so a run tells you nothing. CI does not lint either — there is no `eslint`/`linter-check` step anywhere in `.github/workflows/`, so lint findings never block a merge; the gates are `pnpm typecheck`, the per-package `test --coverage` runs and `pnpm dev:check-startup` (`startup.yml`), which fails when the client's startup makes a request its allowlist lacks: a module made eager by a change to the client shows up there (see the `measure-startup-requests` skill). (`packages/*` is ignored by the ESLint config anyway.)
 - **Never run `pnpm test:all`, `test:parallel`, `test:sequential`, or a whole-package `coverage`** during development — CI runs them on every push. Run the **narrowest** suite that covers what you touched: `pnpm --filter <pkg> test <pattern>` (Vitest treats the trailing argument as a substring filter over spec paths). Core specs need **two** runs, server and standalone (see Testing). Only reach for a full suite if the user asks or wants a final check.
 - **Typecheck with `pnpm typecheck`, not a raw `tsc`** — it resolves the project references a hand-written `tsc -p …` gets wrong, and is far cheaper than a test suite. Still, run it **once, after a piece of work is finished** — not after every edit: it builds the project references, and repeating it is a common way to lose minutes across a session. Two ways its output misleads: the incremental build does not recheck the files that use an ambient `.d.ts` (`types-lib.d.ts`) after it changes — delete `apps/client/dist/*.tsbuildinfo` (gitignored) before trusting the result; and a dependent project (`tsconfig.spec.json`, `apps/build-docs`) is checked only once the app project compiles, so its errors appear only after the app's are fixed, and some vanish with them.
 - **Two TypeScript versions, on purpose**: root `package.json` has `typescript` 6.x (the JS compiler API that TypeDoc, typescript-eslint and the browser-bundled language service in `packages/codemirror` load) and `@typescript/native` (7, drives `pnpm typecheck` and owns the `tsc` bin). Do **not** bump `typescript` to 7, dedupe them, or switch to the `@typescript/typescript6` shim (no `lib.*.d.ts` → client build breaks). Reasoning: `docs/Developer Guide/Developer Guide/Environment Setup.md`, "TypeScript".
@@ -64,6 +65,7 @@ apps/
   desktop/              # Electron: server + client in one process (see developing-electron-desktop skill)
   standalone/           # whole stack in the browser: core in a Web Worker on SQLite WASM + OPFS, no Node (see developing-standalone skill)
   mobile/               # Capacitor shell around standalone (see developing-capacitor-mobile skill)
+  showcase/             # Play Store and Flathub listings, website hero and screenshots, from a demo document (building-showcase-assets skill)
   web-clipper/, website/, db-compare/, dump-db/, edit-docs/, build-docs/, icon-pack-builder/, script-deployer/
 packages/
   trilium-core/         # entities, services, SQL, sync, most API routes — shared by server, desktop, standalone
@@ -130,6 +132,7 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 - **Per-component CSS files**: each component should have a matching `.css` file (e.g. `my_dialog.tsx` → `my_dialog.css`), imported at the top of the component file.
 - **CSS nesting for scoping**: since CSS modules are not available, scope styles using a root class and native CSS nesting. For example, a dialog with `className="my-dialog"` should have its styles nested under `.modal.my-dialog { … }`.
 - **Reuse existing components** instead of building custom markup — prefer `FormTextBox`, `FormTextBoxWithUnit`, `FormSelect`, `Slider`, `Button`, etc. over hand-rolled `<input>`, `<select>`, or `<button>` elements.
+- **Mobile layout CSS goes by screen size, not into `style.css`** (which every layout loads). The shell of the mobile layout (`#mobile-rest-container`, `#detail-container`, `#mobile-sidebar-wrapper`, the launch bar, mobile modals and bottom sheets) is styled in `apps/client/src/layouts/`: `MobileLayout.css` for both sizes, `MobileLayout.phone.css` for `@media (max-width: 991px)` and `MobileLayout.tablet.css` for `@media (min-width: 992px)`, all imported by `MobileLayout.tsx`. A component's own phone or tablet variant stays in its component CSS under the same media query. The breakpoint must match `NARROW_LAYOUT` (`apps/client/src/services/utils.ts`), which code reads through `useMediaQuery(NARROW_LAYOUT)` or `isNarrowLayout()`. The note tree has a breakpoint of its own, as a tablet in portrait docks it while keeping the bottom launch bar: whether it lies under the note or docks beside it is `STACKED_TREE_LAYOUT` (`isTreeStacked()`: under 744px wide, or a screen under 600px on its shorter side, which an open keyboard does not change), and its rules live in `MobileSidebar.css` and `MobileNoteNavigator.css`. Dialogs follow the same breakpoint, not `NARROW_LAYOUT`: they are bottom sheets (and the master-detail flow of `useMobileMasterDetail()`) only on a phone, and float as on desktop on a tablet in either orientation, so their phone rules sit under `@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px)`.
 - **Safe-area insets** always read `var(--safe-area-inset-top, env(safe-area-inset-top))` (and the `-bottom`/`-left`/`-right` twins), never a bare `env()`. Android's WebView leaves `env(safe-area-inset-*)` at `0`, so `apps/mobile`'s `MainActivity` injects the real values as those custom properties; the `env()` fallback covers iOS and desktop browsers, where nothing is injected. Details in the **`developing-capacitor-mobile` skill**.
 - **Colors in note content** (font, highlight, table and cell colors) are saved with a `--tn-*` variable next to the color and adapted to the theme only in CSS (`packages/ckeditor5/src/theme/adaptive_colors.css`). Load the **`working-with-adaptive-colors` skill** before touching the palette, the `AdaptiveColors` plugin, the `--adaptive-*` limits or a surface that shows note colors.
 
@@ -164,6 +167,12 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 ### PDF viewer
 PDF notes render in Mozilla's PDF.js viewer plus Trilium's code from `packages/pdfjs-viewer`, which every app serves from the built `dist` — **rebuild it (`pnpm --filter @triliumnext/pdfjs-viewer build`) after every viewer change**, since no `*:start` script does; load the **`developing-pdf-viewer` skill** before touching the viewer, `Pdf.tsx` or the PDF sidebar panels.
 
+### Outline (right sidebar)
+The Outline tab (`apps/client/src/widgets/sidebar/TableOfContents.tsx`) picks a provider by note type: text notes read the editor or the rendered content, Markdown and AI chat notes publish `toc` context data, and PDF, DOCX, ODT and EPUB files, as notes or as attachments, go through `CachedToCProvider`, which shows the ToC cache of the document their type widget publishes as `tocDocument`. Load the **`working-with-toc-cache` skill** before touching `CachedToCProvider`, a `tocDocument` publisher (`Pdf.tsx`, `Office.tsx`, `Attachment.tsx`) or the outline of a new file format.
+
+### Vim mode in text notes
+Text notes have an optional Vim mode: the Vim engine of code notes (`@replit/codemirror-vim-core`) drives CKEditor through an adapter in `packages/ckeditor5/src/plugins/vim/`, which reads the note as a list of lines. **A new block, widget or container in the text editor has to work as lines too**, and the engine's quirks are answered by wrappers that look removable and are not. Load the **`developing-vim-mode` skill** before touching the plugin, `text/vim_mode.ts`, `layout/VimStatus.tsx` or the structure of the text editor's model. The skill also holds the tools for testing Vim mode in the running app (`live.mjs`, `simulate.mjs`) and the plan of a simulation round.
+
 ### Database
 
 SQLite (`better-sqlite3` on Node, `@sqlite.org/sqlite-wasm` on OPFS in standalone) behind `packages/trilium-core/src/services/sql/` (`DatabaseProvider`, prepared-statement cache, transactions). Schema: `packages/trilium-core/src/assets/schema.sql`; migrations: integer-versioned entries in the descending `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (inline SQL or a `NNNN__description.ts` module) — load the **`evolving-the-data-model` skill** before adding a column or migration.
@@ -196,6 +205,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 ### Shared Types Policy
 - Types shared between client and server belong in `@triliumnext/commons` (`packages/commons/src/lib/`)
 - Import shared types directly from `@triliumnext/commons` - do not re-export them from app-specific modules
+- **In code the browser loads** (`apps/client`, `packages/ckeditor5`, `packages/codemirror`, `packages/share-theme`), only `import type` comes from the `@triliumnext/commons` index. A value comes from its own file: `import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js"`. The dev server serves modules one by one, so one value import from the index loads all of its ~60 files
 - Keep app-specific types (e.g., `LlmProvider` for server, `StreamCallbacks` for client) in their respective apps
 
 ## Important Patterns
@@ -268,15 +278,39 @@ Two traps this catches:
 ### A user-facing change gets a changelog entry
 
 The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
-feature that reaches users adds its entry in the same commit**: `pnpm changelog:new <slug>`, then fill in
-`type`, `area` (required for a fix or an improvement, checked by `pnpm changelog:lint`), the optional
-`closes`/`credits`, and one line describing what the user sees — the outcome,
-not the mechanism. Format and the skip list: `.changelog/README.md`. Skip it for internal changes, for a
-fix to something introduced since the last release, and for a fix whose closed issue's title already
-reads as the entry (closed issues are listed without one). `closes:` only links: the issue is still
-closed by `(closes #N)` in the commit subject. `pnpm chore:release-notes <version> --unlisted` lists the
-fixes and features that slipped through without one. Entries are public before the release: the nightly
-release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
+feature that reaches users adds its entry in the same commit**. Skip it for internal changes, for a fix to
+something introduced since the last release, and for a fix whose closed issue's title already reads as the
+entry (closed issues are listed without one).
+
+1. `pnpm changelog:new <slug>` prints the path of a new file; replace its whole template, comments
+   included, with only the keys that apply.
+2. `type`: `fix` or `improvement` for most changes. `area` is required for both, one of the names the
+   template lists (`AREAS` in `scripts/release-notes.mts`), e.g. `Text editor`, `Search`, `Tree`.
+3. `closes: [N]` when the commit closes an issue. It only links: the issue is still closed by
+   `(closes #N)` in the commit subject. Leave it out for a discussion or an idea.
+4. `credits` names only an outside contributor whose code is the change. **Never credit the reporter** of
+   the bug or the author of the idea, and leave it out when the maintainers wrote the change.
+5. The body is one short line, past tense for a fix, describing what the user saw, not the code,
+   and naming the symptom once rather than every case or condition that triggers it (no "when the
+   size is not 100%" clause): "Typing `/2`
+   in the slash command menu suggested the column layout before the heading", not "Rank exact alias
+   matches first". A highlight is a few short paragraphs in the same plain register; its numbers are
+   the ones a user feels, never request counts or sizes (`writing-documentation` skill,
+   `references/changelog-entries.md`).
+6. `pnpm changelog:lint`, then commit the entry with the code.
+
+```markdown
+---
+type: fix
+area: Text editor
+---
+
+Typing `/2` to `/4` in the slash command menu suggested the column layout before the heading of that level.
+```
+
+Full format, `notable` and the other types: `.changelog/README.md`. `pnpm chore:release-notes <version>
+--unlisted` lists the fixes and features that slipped through without one. Entries are public before the
+release: the nightly release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
 
 ## Recipes
 

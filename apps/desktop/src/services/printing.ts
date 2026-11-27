@@ -148,6 +148,7 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
 
     // Collections report progress while they render, so only a render that stops advancing times out.
     let stallTimer: ReturnType<typeof setTimeout> | undefined;
+    /* v8 ignore next -- placeholder; the Promise executor below replaces it synchronously */
     let rejectStalled: (err: Error) => void = () => {};
     const stalled = new Promise<never>((_resolve, reject) => {
         rejectStalled = reject;

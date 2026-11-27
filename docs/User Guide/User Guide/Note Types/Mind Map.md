@@ -1,5 +1,5 @@
 # Mind Map
-<figure class="image image-style-align-center"><img style="aspect-ratio:892/675;" src="Mind Map_image.png" width="892" height="675"></figure>
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Mind Map_demo.webp" width="1152" height="720"></figure>
 
 The mindmap allows for easy jotting down of ideas and storing them in a hierarchical fashion.
 

@@ -1,12 +1,15 @@
 import { Modal as BootstrapModal } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import GeoMapProperties, { type GeoMapImageState, isTileUrlTemplate } from "./GeoMapProperties";
+
+beforeAll(() => preloadDropdownPopups());
 
 vi.mock("../../../services/i18n", () => ({
     t: (key: string) => key

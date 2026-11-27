@@ -1,4 +1,4 @@
-body.desktop .print-preview-dialog .modal-content-with-sidebar {
+:is(body.desktop, body.mobile.tablet) .print-preview-dialog .modal-content-with-sidebar {
     height: 80vh;
 }
 

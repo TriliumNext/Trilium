@@ -6,6 +6,19 @@ import type { PrintReport } from "../../print";
 export const allViewTypes = ["list", "searchPreview", "grid", "calendar", "table", "geoMap", "board", "presentation", "dashboard"] as const;
 export type ViewTypeOptions = typeof allViewTypes[number];
 
+/** The icon of each view type, as the collection properties bar and the tab switcher show it. */
+export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
+    grid: "bx bxs-grid",
+    list: "bx bx-list-ul",
+    searchPreview: "bx bx-news",
+    calendar: "bx bx-calendar",
+    table: "bx bx-table",
+    geoMap: "bx bx-map-alt",
+    board: "bx bx-columns",
+    presentation: "bx bx-rectangle",
+    dashboard: "bx bxs-dashboard"
+};
+
 export type ViewModeMedia = "screen" | "print";
 
 /** Whether `value` names a view type this client can draw. */

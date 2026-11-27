@@ -1,0 +1,117 @@
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts. */
+@media (max-width: 991px) {
+    /* The launcher bar's menus stand in the page's body, in a wrapper with their dropdown's class,
+       outside the bar whose `--launcher-pane-size` the theme sets, so its horizontal size is read
+       where the theme defines it. */
+    body.mobile .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu.show,
+    body.mobile .dropdown-menu.mobile-bottom-menu.show {
+        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-horiz-size, var(--launcher-pane-size)));
+        position: fixed !important;
+        bottom: var(--dropdown-bottom) !important;
+        top: unset !important;
+        inset-inline-start: 0 !important;
+        inset-inline-end: 0 !important;
+        transform: unset !important;
+        overflow-y: auto;
+        max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
+    }
+
+    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.show {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    body.mobile .dropdown-menu.mobile-bottom-menu.show {
+        --dropdown-bottom: 0px;
+        padding-bottom: calc(max(var(--menu-padding-size), var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))) !important;
+    }
+
+    #mobile-rest-pane {
+        display: contents;
+    }
+
+    body.mobile #launcher-container {
+        justify-content: space-evenly;
+    }
+
+    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
+    body.mobile .tn-popover-backdrop {
+        background-color: var(--mobile-backdrop-color);
+        opacity: 1;
+    }
+
+    body.mobile .help-dialog kbd {
+        display: inline !important;
+    }
+
+    body.mobile .options-section-card table {
+        word-break: break-all;
+    }
+}
+
+/* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+    body.mobile .modal.show {
+        background-color: var(--mobile-modal-backdrop-color);
+    }
+
+    body.mobile .modal-backdrop {
+        background-color: transparent !important;
+    }
+
+    body.mobile .modal-dialog {
+        position: fixed;
+        bottom: 0;
+        inset-inline-start: 0;
+        inset-inline-end: 0;
+        margin: 0 !important;
+        max-height: 85vh;
+        display: flex;
+    }
+
+    body.mobile .modal-dialog.modal-dialog-full-page-on-mobile {
+        width: 100%;
+        height: 100%;
+        max-height: unset;
+        max-width: unset;
+
+        .modal-header {
+            margin-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+        }
+
+        .modal-content {
+            border-radius: 0;
+            border: 0;
+
+            .modal-body {
+                overflow: scroll;
+            }
+        }
+    }
+
+    body.mobile .modal-content {
+        overflow-y: auto;
+        border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
+    }
+
+    body.mobile .modal:not(.options-dialog) .modal-content {
+        padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+        padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
+    }
+
+    body.mobile .modal-footer {
+        padding-top: 12px;
+        padding-bottom: calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
+    }
+
+    body.mobile .modal-dialog .dropdown-menu {
+        position: static !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        font-size: 1rem !important;
+    }
+
+    body.mobile .modal-dialog.modal-dialog-scrollable {
+        height: unset;
+    }
+}

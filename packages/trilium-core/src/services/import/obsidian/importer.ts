@@ -49,6 +49,7 @@ import { buildPromotedDefinition, toAttributeName } from "../collection_utils.js
 import { type FrontmatterAttribute, parseFrontmatter } from "../frontmatter.js";
 import markdownService from "../markdown.js";
 import mimeService from "../mime.js";
+import { importedAttributeName } from "../utils.js";
 import { applyAttachments, type AttachmentIndex, buildAttachmentIndex, isImageMime, resolveAttachment } from "./attachments.js";
 import { type ExcalidrawDrawing, isExcalidrawPath, parseExcalidraw } from "./excalidraw.js";
 import { buildNoteIndex, resolveLinks } from "./links.js";
@@ -170,7 +171,7 @@ function createNotes(importRootNote: BNote, notes: VaultNote[], attachments: Map
         // cssclasses/publish/permalink dropped, and every other property → a value label plus a per-note
         // promoted definition typed from .obsidian/types.json (see mapObsidianFrontmatter).
         for (const attribute of mapObsidianFrontmatter(data, types)) {
-            note.addLabel(attribute.name, attribute.value);
+            note.addLabel(importedAttributeName("label", attribute.name, taskContext.data?.safeImport), attribute.value);
         }
 
         // Attachments hang off the note, so this runs after creation; it returns the content with embedded

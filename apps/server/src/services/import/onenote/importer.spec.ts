@@ -1,4 +1,5 @@
-import { becca, cls, date_utils, note_service as noteService, ws } from "@triliumnext/core";
+import { becca, cls, date_utils, imageService, note_service as noteService, ws } from "@triliumnext/core";
+import { parse } from "node-html-parser";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import sqlInit from "../../sql_init.js";
@@ -16,16 +17,24 @@ vi.mock("./graph.js", () => ({
         resetThrottleStats: vi.fn(),
         setThrottleListener: vi.fn(),
         isEncryptedSectionError: vi.fn(() => false)
-    }
+    },
+    sanitizeGraphUrl: (url: string) => url
 }));
 
 // Delegates to the real converter, but lets a test force a content-processing failure for pages whose
-// HTML carries the sentinel — the way to exercise "fetched fine, but processing threw".
+// HTML carries a sentinel — the way to exercise "fetched fine, but processing threw" — or hand the
+// importer an exact converted HTML by prefixing it with `<!--RAW-->`.
 vi.mock("./converter.js", async (importActual) => {
     const actual = await importActual<typeof import("./converter.js")>();
     const convertPageHtml = (html: string) => {
         if (html.includes("PROCESSING_BOOM")) {
             throw new Error("content conversion failed");
+        }
+        if (html.includes("PROCESSING_STRING")) {
+            throw "conversion failed without an Error";
+        }
+        if (html.startsWith("<!--RAW-->")) {
+            return html.slice("<!--RAW-->".length);
         }
         return actual.convertPageHtml(html);
     };
@@ -591,3 +600,227 @@ describe("importSelection (real DB)", () => {
         expect(fallback?.utcDateCreated).toBe("2020-10-20 10:00:00.000Z");
     });
 });
+
+describe("importSelection resources, ink, links and failures (real DB)", () => {
+    beforeAll(async () => {
+        sqlInit.initializeDb();
+        await sqlInit.dbReady;
+    });
+
+    it("imports page resources, ink, cross-page links and debug sources, and reports them", async () => {
+        const linkedGuid = "eb2c4f67-8d3f-4fdb-a93b-32d6b3ba780d";
+        const outsideGuid = "11111111-2222-3333-4444-555555555555";
+        graphMock.listPages.mockResolvedValue([
+            { id: "1-rich", title: "Rich Page", level: 0, pageId: "aaaaaaaa-0000-0000-0000-000000000001" },
+            { id: "1-linked", title: "Linked Page", level: 0, pageId: linkedGuid },
+            { id: "1-clean", title: "Clean Image Page", level: 0, createdDateTime: "not a date" }
+        ]);
+        graphMock.getPageContent.mockImplementation(async (_token, pageId) => {
+            if (pageId === "1-rich") {
+                return {
+                    html: `${RAW}<p>Rich`
+                        + `<img src="${RESOURCES}/img1/$value"><img src="${RESOURCES}/img1/$value"><img src="${RESOURCES}/img2/$value">`
+                        + `<img src="${RESOURCES}/broken-img/$value"><img src="https://example.com/picture.png"><img alt="no source">`
+                        + `<a class="onenote-attachment" data-mime="application/pdf" href="${RESOURCES}/file1/$value">report.pdf</a>`
+                        + `<a class="onenote-attachment" href="${RESOURCES}/file2/$value">  </a>`
+                        + `<a class="onenote-attachment">no link</a>`
+                        + `<a class="onenote-attachment" data-mime="text/plain" href="${RESOURCES}/broken-file/$value">gone.txt</a>`
+                        + `<a href="onenote:#Linked&page-id={${linkedGuid}}&end">Linked Page</a>`
+                        + `<a href="onenote:#Elsewhere&page-id={${outsideGuid}}&end">Elsewhere</a></p>`,
+                    inkml: INKML
+                };
+            }
+            if (pageId === "1-clean") {
+                return { html: `${RAW}<p><img src="${RESOURCES}/img3/$value"></p>`, inkml: "" };
+            }
+            return { html: "<p>target</p>", inkml: "" };
+        });
+        graphMock.getResource.mockImplementation(async (_token, url) => {
+            const id = url.slice(RESOURCES.length + 1, url.lastIndexOf("/"));
+            switch (id) {
+                case "img1":
+                case "img3":
+                    return { content: PNG, contentType: "image/png" };
+                case "img2":
+                    // No content type from Graph and none in the page: the image is named as a PNG.
+                    return { content: PNG, contentType: "" };
+                case "file1":
+                    return { content: new TextEncoder().encode("%PDF"), contentType: "application/octet-stream" };
+                case "file2":
+                    return { content: new TextEncoder().encode("DATA"), contentType: "" };
+                case "broken-img":
+                    throw "throttled";
+                default:
+                    throw new Error("HTTP 404");
+            }
+        });
+
+        const parent = createParent("rich parent");
+        const startedUtc = date_utils.utcNowDateTime();
+        await runImport(parent.noteId, [{
+            id: "sec-rich",
+            title: "Rich Section",
+            groupPath: [
+                { id: "grp-1", title: "Group One", createdDateTime: "2020-01-01T00:00:00Z" },
+                { id: "grp-2", title: "Group Two" }
+            ],
+            notebookId: "nb-rich",
+            notebookTitle: "Rich Notebook",
+            notebookCreatedDateTime: "not a date"
+        }], "task-rich", { debug: true });
+
+        // Section groups become nested folders between the notebook and the section.
+        const notebook = parent.getChildNotes()[0]?.getChildNotes()[0];
+        const groupOne = notebook?.getChildNotes()[0];
+        const groupTwo = groupOne?.getChildNotes()[0];
+        expect([notebook?.title, groupOne?.title, groupTwo?.title]).toEqual(["Rich Notebook", "Group One", "Group Two"]);
+        expect(groupOne?.getOwnedLabelValue("iconClass")).toBe("bx bx-folder");
+        expect(groupOne?.utcDateCreated).toBe("2020-01-01 00:00:00.000Z");
+        // An unparseable notebook date is ignored rather than stored.
+        expect((notebook?.utcDateCreated ?? "") >= startedUtc).toBe(true);
+
+        const section = groupTwo?.getChildNotes()[0];
+        const richPage = section?.getChildNotes().find((note) => note.title === "Rich Page");
+        const linkedPage = section?.getChildNotes().find((note) => note.title === "Linked Page");
+        expect(richPage?.hasOwnedLabel("oneNoteImportFailed")).toBe(false);
+        expect(linkedPage).toBeDefined();
+        const content = parse(String(richPage?.getContent()));
+
+        // Downloaded images point at their attachments; failed, foreign and source-less images stay as they were.
+        const imageSources = content.querySelectorAll("p > img").map((img) => img.getAttribute("src") ?? "<none>");
+        expect(imageSources).toHaveLength(6);
+        expect(imageSources.slice(0, 3).every((src) => /^api\/attachments\/\w+\/image\/image\.png$/.test(src))).toBe(true);
+        expect(imageSources.slice(3)).toEqual([`${RESOURCES}/broken-img/$value`, "https://example.com/picture.png", "<none>"]);
+
+        // Downloaded files become reference links to file attachments; the rest are left untouched.
+        const fileAttachments = richPage?.getAttachments().filter((attachment) => attachment.role === "file") ?? [];
+        expect(fileAttachments.map((attachment) => [attachment.title, attachment.mime])).toEqual([
+            ["report.pdf", "application/pdf"],
+            ["attachment", "application/octet-stream"]
+        ]);
+        const referenceHrefs = content.querySelectorAll("a.reference-link").map((a) => a.getAttribute("href"));
+        expect(referenceHrefs).toEqual([
+            ...fileAttachments.map((attachment) => `#root/${richPage?.noteId}?viewMode=attachments&attachmentId=${attachment.attachmentId}`),
+            `#root/${linkedPage?.noteId}`
+        ]);
+        expect(content.querySelectorAll("a[data-mime]").map((a) => a.textContent)).toEqual(["gone.txt"]);
+        expect(content.querySelectorAll("a.onenote-attachment").map((a) => a.getAttribute("href") ?? "<none>"))
+            .toEqual(["<none>", `${RESOURCES}/broken-file/$value`]);
+        // A link to a page outside the selection keeps its onenote: target.
+        expect(content.querySelector("a[href^=\"onenote:\"]")?.textContent).toBe("Elsewhere");
+
+        // The handwriting is appended as an inline SVG image.
+        expect(content.querySelector("figure.image > img")?.getAttribute("src")).toMatch(/^api\/attachments\/\w+\/image\/OneNote%20ink\.svg$/);
+
+        // Debug mode keeps the Graph source next to each page, plus the InkML where there is any.
+        const sourcesOf = (note: typeof richPage) => note?.getAttachments().filter((attachment) => attachment.role === "importSource").map((attachment) => attachment.title);
+        expect(sourcesOf(richPage)).toEqual(["OneNote source.html", "OneNote ink.inkml"]);
+        expect(sourcesOf(linkedPage)).toEqual(["OneNote source.html"]);
+
+        const report = String(parent.getChildNotes()[0]?.getContent());
+        expect(report).toContain(`<tr><th scope="row">Images</th><td>3 (`);
+        expect(report).toContain(`<tr><th scope="row">File attachments</th><td>2 (`);
+        expect(report).toContain(`<tr><th scope="row">Pages with handwriting or drawings</th><td>1</td></tr>`);
+        expect(report).toContain("1 resolved, 1 pointing outside the imported selection");
+        expect(report).toContain(`href="#root/${richPage?.noteId}"`);
+        expect(report).toContain("2 resources could not be downloaded");
+        expect(report).not.toContain("Clean Image Page");
+    });
+
+    it("turns non-Error fetch and processing failures into placeholders, unprotected without a protected session", async () => {
+        graphMock.listPages.mockResolvedValue([
+            { id: "1-ne-fetch", title: "NE Fetch", level: 0 },
+            { id: "1-ne-process", title: "NE Process", level: 0 }
+        ]);
+        graphMock.getPageContent.mockImplementation((_token, pageId) =>
+            pageId === "1-ne-fetch" ? Promise.reject("gateway said no") : Promise.resolve({ html: "<p>PROCESSING_STRING</p>", inkml: "" }));
+
+        const parent = createParent("protected parent");
+        // The target is protected, but no protected session is open, so the imported notes cannot be.
+        parent.isProtected = true;
+        try {
+            await runImport(parent.noteId, [{ id: "sec-ne", title: "NE Section", groupPath: [], notebookId: "nb-ne", notebookTitle: "NE Notebook" }], "task-non-error");
+        } finally {
+            parent.isProtected = false;
+        }
+
+        const fetchFailed = Object.values(becca.notes).find((note) => note.title === "NE Fetch");
+        const processFailed = Object.values(becca.notes).find((note) => note.title === "NE Process");
+        expect(fetchFailed?.getContent()).toContain("gateway said no");
+        expect(processFailed?.getContent()).toContain("conversion failed without an Error");
+        expect([fetchFailed?.isProtected, processFailed?.isProtected, parent.getChildNotes()[0]?.isProtected]).toEqual([false, false, false]);
+    });
+
+    it("leaves images in place and drops the ink figure when an attachment cannot be created", async () => {
+        graphMock.listPages.mockResolvedValue([{ id: "1-noatt", title: "No Attachment Page", level: 0 }]);
+        graphMock.getPageContent.mockResolvedValue({ html: `${RAW}<p><img src="${RESOURCES}/img4/$value"></p>`, inkml: INKML });
+        graphMock.getResource.mockResolvedValue({ content: PNG, contentType: "image/png" });
+        const saveSpy = vi.spyOn(imageService, "saveImageToAttachment").mockReturnValue({ attachmentId: undefined, title: "image.png" });
+
+        let saveCalls = 0;
+        try {
+            await runImport(createParent("no attachment parent").noteId, [{ id: "sec-noatt", title: "NoAtt Section", groupPath: [], notebookId: "nb-noatt", notebookTitle: "NoAtt Notebook" }], "task-no-attachment");
+            saveCalls = saveSpy.mock.calls.length;
+        } finally {
+            saveSpy.mockRestore();
+        }
+
+        const page = Object.values(becca.notes).find((note) => note.title === "No Attachment Page");
+        const content = parse(String(page?.getContent()));
+        // One call for the image, one for the ink.
+        expect(saveCalls).toBe(2);
+        expect(page?.hasOwnedLabel("oneNoteImportFailed")).toBe(false);
+        expect(content.querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img4/$value`);
+        expect(content.querySelector("figure")).toBeNull();
+    });
+
+    it("reports an unexpected failure as a task error, whatever was thrown", async () => {
+        const sent: { type: string; taskId?: string; message?: string }[] = [];
+        const wsSpy = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation((message) => {
+            sent.push(message as (typeof sent)[number]);
+        });
+        graphMock.listPages.mockRejectedValue(new Error("listing failed"));
+        const stackless = new Error("classifier crashed");
+        stackless.stack = undefined;
+        graphMock.isEncryptedSectionError
+            .mockImplementationOnce(() => {
+                throw "classifier unavailable";
+            })
+            .mockImplementationOnce(() => {
+                throw stackless;
+            });
+
+        const parent = createParent("crash parent");
+        const sections = [{ id: "sec-crash", title: "Crash Section", groupPath: [], notebookId: "nb-crash", notebookTitle: "Crash Notebook" }];
+        try {
+            await runImport(parent.noteId, sections, "task-crash-string");
+            await runImport(parent.noteId, sections, "task-crash-stackless");
+        } finally {
+            wsSpy.mockRestore();
+            graphMock.isEncryptedSectionError.mockReset();
+            graphMock.isEncryptedSectionError.mockReturnValue(false);
+        }
+
+        const errors = sent.filter((message) => message.type === "taskError").map((message) => [message.taskId, message.message]);
+        expect(errors).toEqual([
+            ["task-crash-string", "classifier unavailable"],
+            ["task-crash-stackless", "classifier crashed"]
+        ]);
+        expect(parent.getChildNotes()).toHaveLength(0);
+    });
+});
+
+const RAW = "<!--RAW-->";
+const RESOURCES = "https://graph.microsoft.com/v1.0/me/onenote/resources";
+const PNG = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="), (char) => char.charCodeAt(0));
+const INKML = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
+    <inkml:trace>100 100, 200 150, 300 100</inkml:trace>
+</inkml:ink>`;
+
+function createParent(title: string) {
+    return cls.init(() => noteService.createNewNote({ parentNoteId: "root", title, content: "", type: "text", mime: "text/html" }).note);
+}
+
+function runImport(parentNoteId: string, sections: Parameters<typeof importSelection>[0]["sections"], taskId: string, options: { debug?: boolean } = {}) {
+    return cls.init(() => importSelection({ getAccessToken: () => Promise.resolve("token"), parentNoteId, sections, taskId, ...options }));
+}

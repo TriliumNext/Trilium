@@ -10,6 +10,7 @@ interface AttrRow {
     type: string;
     name: string;
     value: string;
+    isInheritable: boolean;
 }
 
 describe("Attributes API (core)", () => {
@@ -130,12 +131,18 @@ describe("Attributes API (core)", () => {
             const del = await api.delete(`/api/notes/${other.noteId}/attributes/${attrId}`);
             expect(del.status).toBe(400);
         });
+
+        it("is a no-op when deleting an attribute that does not exist", async () => {
+            const { noteId } = await createTextNote(api);
+            const del = await api.delete(`/api/notes/${noteId}/attributes/missingAttr123`);
+            expect(del.status).toBe(204);
+        });
     });
 
     describe("updateNoteAttribute", () => {
-        async function addLabel(noteId: string, name: string, value: string) {
+        async function addLabel(noteId: string, name: string, value: string, isInheritable = false) {
             await api.post(`/api/notes/${noteId}/attributes`, {
-                body: { type: "label", name, value }
+                body: { type: "label", name, value, isInheritable }
             });
             const attrs = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
             return attrs.body.find((a) => a.name === name)!.attributeId;
@@ -156,7 +163,7 @@ describe("Attributes API (core)", () => {
         it("creates a relation with a target and updates its value in place", async () => {
             const { noteId } = await createTextNote(api);
             const created = await api.put<{ attributeId: string }>(`/api/notes/${noteId}/attribute`, {
-                body: { type: "relation", name: "rel", value: "root" }
+                body: { type: "relation", name: "rel", value: "root", isInheritable: true }
             });
             expect(created.status).toBe(200);
             expect(created.body.attributeId).toBeTruthy();
@@ -168,6 +175,12 @@ describe("Attributes API (core)", () => {
             });
             expect(changed.status).toBe(200);
             expect(changed.body.attributeId).not.toBe(created.body.attributeId);
+
+            const attrs = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+            expect(attrs.body.find((a) => a.attributeId === changed.body.attributeId)).toMatchObject({
+                value: child.noteId,
+                isInheritable: true
+            });
         });
 
         it("returns {} when creating a relation with no target and no id", async () => {
@@ -181,7 +194,7 @@ describe("Attributes API (core)", () => {
 
         it("clones the attribute when type or name changes", async () => {
             const { noteId } = await createTextNote(api);
-            const attrId = await addLabel(noteId, "rename", "v");
+            const attrId = await addLabel(noteId, "rename", "v", true);
 
             const res = await api.put<{ attributeId: string | null }>(`/api/notes/${noteId}/attribute`, {
                 body: { attributeId: attrId, type: "label", name: "renamed", value: "v" }
@@ -189,6 +202,12 @@ describe("Attributes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.attributeId).toBeTruthy();
             expect(res.body.attributeId).not.toBe(attrId);
+
+            const attrs = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+            expect(attrs.body.find((a) => a.attributeId === res.body.attributeId)).toMatchObject({
+                name: "renamed",
+                isInheritable: true
+            });
         });
 
         it("updates the value when only the value changes", async () => {
@@ -267,6 +286,27 @@ describe("Attributes API (core)", () => {
             expect(byName.change).toBe("updated");
             expect(byName.added).toBe("new");
             expect(attrs.body.some((a) => a.name === "drop")).toBe(false);
+        });
+
+        it("keeps unchanged attributes in place, defaults a missing value, links relations and keeps auto-links", async () => {
+            const { noteId } = await createTextNote(api);
+            const target = await createTextNote(api, { title: "Bulk relation target" });
+            const internalLink = await api.put(`/api/notes/${noteId}/relations/internalLink/to/${target.noteId}`);
+            expect(internalLink.status).toBe(200);
+            const payload = [
+                { type: "label", name: "flag", isInheritable: false },
+                { type: "relation", name: "linked", value: target.noteId, isInheritable: false }
+            ];
+
+            await api.put(`/api/notes/${noteId}/attributes`, { body: payload });
+            const first = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+            await api.put(`/api/notes/${noteId}/attributes`, { body: payload });
+            const second = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+
+            expect(second.body).toEqual(first.body);
+            expect(second.body.map((a) => [ a.name, a.value ])).toEqual(expect.arrayContaining([
+                [ "flag", "" ], [ "linked", target.noteId ], [ "internalLink", target.noteId ]
+            ]));
         });
 
         it("skips relations whose target note does not exist", async () => {

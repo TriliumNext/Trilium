@@ -30,6 +30,10 @@ class AttributeExistsExp extends Expression {
         for (const attr of attrs) {
             const note = attr.note;
 
+            if (!searchContext.canRead(note)) {
+                continue;
+            }
+
             if (attr.isInheritable && !this.isTemplateLabel) {
                 resultNoteSet.addAll(note.getSubtreeNotesIncludingTemplated());
             } else if (note.isInherited() && !this.isTemplateLabel) {

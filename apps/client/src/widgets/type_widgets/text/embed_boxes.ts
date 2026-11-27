@@ -1,15 +1,18 @@
 import {
     EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getEmbedKey,
-    getLinkPreviewPlayer, getMediaEmbedClasses, getNoteEmbedHref, getVideoAspectRatio,
-    INLINE_BOX_SIZES, normalizeEmbedBox, readLinkPreviewData, readMediaEmbedBox,
+    getMediaEmbedClasses, getNoteEmbedHref, INLINE_BOX_SIZES, normalizeEmbedBox
+} from "@triliumnext/commons/src/lib/content_embeds.js";
+import {
+    getLinkPreviewPlayer, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
     VIDEO_ASPECT_RATIO_PROPERTY
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/link_embed_markup.js";
 import clsx from "clsx";
 
 import {
-    applyInlineMermaid, emptyUnknownEmbeds, loadReferenceLink, replaceWithEmbedBox,
-    replaceWithReferenceLink, rewriteMermaidDiagramsInContainer
+    applyInlineMermaid, emptyUnknownEmbeds, getShownCodeLanguage, loadReferenceLink,
+    replaceWithEmbedBox, replaceWithReferenceLink, rewriteMermaidDiagramsInContainer
 } from "../../../services/content_renderer_text";
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
 import {
     getAttachmentHref, loadEmbeddedAttachment, loadEmbeddedNote, loadInlineEmbed, loadMediaEmbed,
@@ -35,7 +38,8 @@ export interface EmbedBoxContext {
  * embeds of a kind that this version does not know and, while {@link hasSourceEmbedBoxes},
  * diagrams, extended code blocks and media. Otherwise diagrams draw in place. An embed of a
  * note or attachment in `context.seenNoteIds` becomes a reference link to it instead. While
- * `isNested`, `container` is the content of another box, out of the page.
+ * `isNested`, `container` is the content of another box, out of the page, and its notes and
+ * attachments show as Compact boxes, a title row without their content.
  *
  * The passes over the rest of the content run before the call, so that they leave the content
  * of the boxes alone.
@@ -86,6 +90,11 @@ function prepareContentEmbeds(
         const { attachmentId, noteId, block } = embed.dataset;
         const id = attachmentId || noteId;
         if (!id) continue;
+        // Each box would render the embeds of its own content, so a few levels of notes that
+        // include the same notes render the same content many times over.
+        if (isNested) {
+            embed.dataset.boxSize = "compact";
+        }
 
         if (seenNoteIds.has(getEmbedKey(id, block))) {
             loads.push(async () => {
@@ -152,16 +161,19 @@ function prepareMediaEmbeds(container: HTMLElement) {
 /**
  * Replaces each code block in `container` that keeps the source of an embed, such as a Mermaid
  * diagram, with the embed box the editor shows it in, and returns the calls that fill the boxes,
- * read-only.
+ * read-only. While the experimental feature `extendedCodeBlocks` is on, every other code block
+ * is an extended code block, as in the editor.
  */
 function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
+    const isCodeBlockExtended = isExperimentalFeatureEnabled("extendedCodeBlocks");
     const loads: (() => Promise<void>)[] = [];
     for (const code of container.querySelectorAll<HTMLElement>("pre > code")) {
         const pre = code.parentElement;
         const codeLanguage = [ ...code.classList ]
             .find((name) => name.startsWith("language-"))?.slice("language-".length);
         const isDiagram = !!codeLanguage && !!getSourceEmbedTypeByLanguage(codeLanguage);
-        const isCodeBlock = !isDiagram && !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS);
+        const isCodeBlock = !isDiagram
+            && (isCodeBlockExtended || !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS));
         if (!pre || (!isDiagram && !isCodeBlock)) continue;
         const language = codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
 
@@ -174,7 +186,6 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
         if (boxSize) {
             figure.dataset.boxSize = boxSize;
         }
-        figure.dataset.language = language;
         const views = {
             displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
         };
@@ -184,7 +195,7 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
             }
         }
         figure.dataset.hideTitle = "true";
-        // Diagrams saved before the embed keep their block ID on the `<code>`.
+        // The block ID is on the `<code>`, or on the `<pre>` in embeds of earlier versions.
         const blockId = pre.dataset.triliumBlockId ?? code.dataset.triliumBlockId;
         if (blockId) {
             figure.dataset.triliumBlockId = blockId;
@@ -200,13 +211,17 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
         pre.replaceWith(figure);
 
         const source = code.textContent;
-        loads.push(() => loadInlineEmbed({
-            language,
-            getSource: () => source,
-            setSource: () => {},
-            subscribe: () => () => {},
-            isReadOnly: () => true
-        }, $(figure), figure.dataset.boxSize, { isFocused: false, isNested }));
+        loads.push(async () => {
+            const shownLanguage = await getShownCodeLanguage(language, source);
+            figure.dataset.language = shownLanguage;
+            await loadInlineEmbed({
+                language: shownLanguage,
+                getSource: () => source,
+                setSource: () => {},
+                subscribe: () => () => {},
+                isReadOnly: () => true
+            }, $(figure), figure.dataset.boxSize, { isFocused: false, isNested });
+        });
     }
     return loads;
 }

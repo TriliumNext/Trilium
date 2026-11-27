@@ -2,7 +2,7 @@ import { cls, options } from "@triliumnext/core";
 import { Application } from "express";
 import supertest from "supertest";
 import { generateConfig, Totp } from "time2fa";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import config from "../../src/services/config.js";
 import recoveryCodeService from "../../src/services/encryption/recovery_codes.js";
@@ -27,6 +27,24 @@ describe("etapi/auth/login", () => {
             .expect(201);
 
         expect(response.body.authToken).toBeTruthy();
+    });
+
+    it("answers 500 and issues no token when the credential check itself fails", async () => {
+        vi.spyOn(totp, "isTotpEnabled").mockImplementation(() => {
+            throw new Error("options unavailable");
+        });
+
+        try {
+            const response = await supertest(app)
+                .post(LOGIN_URL)
+                .send({ password: CORRECT_PASSWORD, tokenName: "test" })
+                .expect(500);
+
+            expect(response.body.message).toBe("options unavailable");
+            expect(response.body.authToken).toBeUndefined();
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 
     // verifyPassword is async; this guards that a wrong password is rejected and the

@@ -144,6 +144,104 @@ describe("media proxy", () => {
         expect(rejections).toEqual([]);
         expect([ res.body, res.isEnded ]).toEqual([ "", true ]);
     });
+
+    it("forgets a token once its lifetime is over", async () => {
+        const token = createToken();
+        const now = Date.now();
+        const clock = vi.spyOn(Date, "now").mockReturnValue(now + 61_000);
+        try {
+            createToken();
+            const res = fakeResponse();
+            await mediaProxy.streamProxy(get(token), res.res);
+            expect(res.status).toBe(404);
+            expect(safeFetch).not.toHaveBeenCalled();
+        } finally {
+            clock.mockRestore();
+        }
+    });
+
+    it("serves an answer without a content type as a generic file, and lets go of a refused one", async () => {
+        safeFetch.mockResolvedValueOnce(new Response(new TextEncoder().encode("data")));
+        const untyped = fakeResponse();
+        await mediaProxy.streamProxy(get(createToken()), untyped.res);
+        expect([ untyped.status, untyped.headers["content-type"], untyped.body ])
+            .toEqual([ 200, "application/octet-stream", "data" ]);
+
+        // A refused answer whose body cannot be cancelled leaves no stray rejection behind.
+        safeFetch.mockResolvedValueOnce(new Response(new ReadableStream({
+            cancel() {
+                throw new Error("cannot cancel");
+            }
+        }), { status: 500 }));
+        const failed = fakeResponse();
+        const rejections = await collectRejections(() => mediaProxy.streamProxy(get(createToken()), failed.res));
+        expect([ failed.status, rejections ]).toEqual([ 502, [] ]);
+    });
+
+    it("waits for the client to take more data, and stops once it goes away", async () => {
+        safeFetch.mockResolvedValueOnce(new Response(streamOf("abc", "def"), {
+            headers: { "content-type": "video/mp4" }
+        }));
+        const drained = fakeResponse({ isBackedUp: true });
+        drained.res.on("newListener", (event: string) => {
+            if (event === "drain") {
+                setTimeout(() => drained.res.emit("drain"));
+            }
+        });
+        await mediaProxy.streamProxy(get(createToken()), drained.res);
+        expect([ drained.body, drained.isEnded ]).toEqual([ "abcdef", true ]);
+        expect([ drained.res.listenerCount("drain"), drained.res.listenerCount("close") ]).toEqual([ 0, 1 ]);
+
+        safeFetch.mockResolvedValueOnce(new Response(streamOf("abc", "def"), {
+            headers: { "content-type": "video/mp4" }
+        }));
+        const closed = fakeResponse({ isBackedUp: true });
+        closed.res.on("newListener", (event: string) => {
+            if (event === "drain") {
+                setTimeout(() => closed.res.emit("close"));
+            }
+        });
+        await mediaProxy.streamProxy(get(createToken()), closed.res);
+        expect([ closed.body, closed.isEnded ]).toEqual([ "abc", true ]);
+    });
+
+    it("ends a response whose file breaks off midway without changing its status", async () => {
+        let pulls = 0;
+        safeFetch.mockResolvedValueOnce(new Response(new ReadableStream<Uint8Array>({
+            pull(controller) {
+                if (pulls++ === 0) {
+                    controller.enqueue(new TextEncoder().encode("abc"));
+                } else {
+                    controller.error(new Error("connection reset"));
+                }
+            }
+        }), { headers: { "content-type": "video/mp4" } }));
+        const res = fakeResponse();
+
+        await mediaProxy.streamProxy(get(createToken()), res.res);
+
+        expect([ res.status, res.body, res.isEnded ]).toEqual([ 200, "abc", true ]);
+    });
+
+    it("gives up on a file that does not arrive within 30 seconds", async () => {
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        try {
+            safeFetch.mockImplementation((_url: string, { signal }: RequestInit) => new Promise((_resolve, reject) => {
+                signal?.addEventListener("abort", () => reject(signal.reason));
+            }));
+            const res = fakeResponse();
+
+            const streaming = mediaProxy.streamProxy(get(createToken()), res.res);
+            await vi.advanceTimersByTimeAsync(29_999);
+            expect(res.isEnded).toBe(false);
+            await vi.advanceTimersByTimeAsync(1);
+            await streaming;
+
+            expect([ res.status, res.isEnded ]).toEqual([ 502, true ]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });
 
 /** The rejections that nothing handles while `run` runs. */
@@ -188,7 +286,7 @@ function streamOf(...chunks: string[]) {
 }
 
 /** An Express response that records what the route writes to it. */
-function fakeResponse() {
+function fakeResponse({ isBackedUp = false } = {}) {
     const emitter = new EventEmitter();
     const state = {
         status: 200,
@@ -198,10 +296,9 @@ function fakeResponse() {
         isEnded: false,
         res: undefined as unknown as express.Response
     };
+    // `Object.assign()` would copy the value of a getter, so `headersSent` is defined on its own.
+    Object.defineProperty(emitter, "headersSent", { get: () => Object.keys(state.headers).length > 0 });
     state.res = Object.assign(emitter, {
-        get headersSent() {
-            return Object.keys(state.headers).length > 0;
-        },
         status(code: number) {
             state.status = code;
             return state.res;
@@ -213,7 +310,7 @@ function fakeResponse() {
         write(chunk: Uint8Array) {
             state.body += new TextDecoder().decode(chunk);
             state.size += chunk.byteLength;
-            return true;
+            return !isBackedUp;
         },
         end() {
             state.isEnded = true;

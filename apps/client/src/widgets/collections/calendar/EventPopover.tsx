@@ -7,12 +7,16 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction, NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
+import {
+    announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction,
+    NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin
+} from "../../EmbeddedNotePane";
 import TitleRow from "../../layout/TitleRow";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useLegacyComponentElement, useNote, useNoteColorClass } from "../../react/hooks";
+import { useNote, useNoteColorClass } from "../../react/hooks/note";
+import { useLegacyComponentElement } from "../../react/hooks/legacy";
 import Modal from "../../react/Modal";
 import Popover from "../../react/Popover";
 import { removeFromCalendar } from "./api";
@@ -165,7 +169,7 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
  *
  * Dressed as the quick editor is, that being the app's own way of showing a whole note over
  * whatever raised it — the note's title row heading the dialog rather than standing inside it, at
- * the height it stands there (see the shared rules in PopupEditor.css). It rises to what a dialog
+ * the height it stands there (see the shared rules in TitleRow.css). It rises to what a dialog
  * may take rather than to the whole page, as the quick editor does: a page-high sheet squares off
  * the corners the app rounds every dialog by, and gains nothing for it.
  *
@@ -204,6 +208,7 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
     return (
         <Modal
             className={clsx("calendar-event-sheet", colorClass)}
+            portal
             size="lg"
             title={<TitleRow />}
             modalRef={modalRef}

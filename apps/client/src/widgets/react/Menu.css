@@ -210,18 +210,20 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     .tn-menu-scroll + & {
         padding: 4px var(--tn-popup-padding) var(--tn-popup-padding);
     }
+}
 
-    .tn-menu-filter-box {
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
-        margin: 0;
-        padding-inline: var(--menu-item-start-padding, 8px);
-        border-radius: 6px;
-        color: var(--muted-text-color);
-        cursor: text;
-    }
+.tn-menu-filter-box.tn-input-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+    padding-inline: var(--menu-item-start-padding, 8px);
+    border-radius: 6px;
+    color: var(--muted-text-color);
+    cursor: text;
+}
 
+.tn-menu-filter-box {
     .tn-menu-filter-clear {
         margin: calc((1em - var(--icon-button-size)) / 2);
     }

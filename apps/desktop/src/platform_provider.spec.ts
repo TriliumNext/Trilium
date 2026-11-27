@@ -1,3 +1,5 @@
+import dataDir from "@triliumnext/server/src/services/data_dir.js";
+import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const showErrorBox = vi.fn();
@@ -81,6 +83,12 @@ describe("DesktopPlatformProvider", () => {
         } finally {
             delete process.env.TRILIUM_PLATFORM_PROVIDER_TEST;
         }
+    });
+
+    it("getDatabasePath resolves the document path from the data dir", () => {
+        const databasePath = new DesktopPlatformProvider().getDatabasePath();
+        expect(databasePath).toBe(path.resolve(dataDir.DOCUMENT_PATH));
+        expect(path.isAbsolute(databasePath)).toBe(true);
     });
 
     describe("shouldIgnoreStartupError", () => {

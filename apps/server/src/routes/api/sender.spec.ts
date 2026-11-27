@@ -1,4 +1,4 @@
-import { cls } from "@triliumnext/core";
+import { becca, cls } from "@triliumnext/core";
 import type { Request } from "express";
 import { describe, expect, it } from "vitest";
 
@@ -46,7 +46,26 @@ describe("Sender API", () => {
             file: { mimetype: "image/png", buffer: PNG },
             headers: { "x-local-date": "2025-01-01", "x-labels": JSON.stringify([{ name: "src", value: "phone" }]) }
         })));
-        expect((result as { noteId: string }).noteId).toBeTruthy();
+        const note = becca.getNoteOrThrow((result as { noteId: string }).noteId);
+        expect(note.type).toBe("image");
+        expect(note.getLabelValue("src")).toBe("phone");
+        expect(note.hasLabel("sentFromSender")).toBe(true);
+    });
+
+    it("uploads an image without custom labels when none are sent", async () => {
+        const headerSets: Record<string, string>[] = [
+            { "x-local-date": "2025-01-01" },
+            { "x-local-date": "2025-01-01", "x-labels": "  " }
+        ];
+        for (const headers of headerSets) {
+            const result = await cls.init(() => senderRoute.uploadImage(imageReq({
+                file: { mimetype: "image/png", buffer: PNG },
+                headers
+            })));
+            const note = becca.getNoteOrThrow((result as { noteId: string }).noteId);
+            const labelNames = note.getOwnedAttributes("label").map(l => l.name).sort();
+            expect(labelNames).toEqual([ "originalFileName", "sentFromSender" ]);
+        }
     });
 
     describe("saveNote", () => {
@@ -61,8 +80,21 @@ describe("Sender API", () => {
                 body: { title: "From phone", content: "<p>hi</p>", labels: [{ name: "src", value: "phone" }] }
             } as unknown as Request;
             const result = await cls.init(() => senderRoute.saveNote(req)) as { noteId: string; branchId: string };
-            expect(result.noteId).toBeTruthy();
-            expect(result.branchId).toBeTruthy();
+            const note = becca.getNoteOrThrow(result.noteId);
+            expect(note.title).toBe("From phone");
+            expect(note.getLabelValue("src")).toBe("phone");
+            expect(becca.getBranchOrThrow(result.branchId).noteId).toBe(result.noteId);
+        });
+
+        it("creates a note without labels when none are sent", async () => {
+            const req = {
+                headers: { "x-local-date": "2025-01-01" },
+                body: { title: "Plain", content: "<p>hi</p>" }
+            } as unknown as Request;
+            const result = await cls.init(() => senderRoute.saveNote(req)) as { noteId: string };
+            const note = becca.getNoteOrThrow(result.noteId);
+            expect(note.title).toBe("Plain");
+            expect(note.getOwnedAttributes("label")).toEqual([]);
         });
     });
 });

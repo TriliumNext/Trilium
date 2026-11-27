@@ -1,24 +1,29 @@
 import "./LauncherContainer.css";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { ComponentProps, RefObject } from "preact";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
-import { isDesktop, isElectron, isMobile } from "../../services/utils";
-import TabSwitcher, { useLaunchBarTabSwipe } from "../mobile_widgets/TabSwitcher";
-import { useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
+import { hasDesktopLaunchBar, isElectron, isMobile, isTablet } from "../../services/utils";
+import { useIsTablet } from "../react/hooks/dom";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabelBoolean } from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useLazyModule, WithLazyModule } from "../react/LazyComponent";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons, { BookmarkFolder, getBookmarkOpenMode } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
 import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import { CustomNoteLauncher } from "./GenericButtons";
 import HistoryNavigationButton from "./HistoryNavigation";
-import { LaunchBarContext } from "./launch_bar_widgets";
-import { CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
-import LauncherDropTarget from "./LauncherDropTarget";
+import { LaunchBarActionButton, LaunchBarContext } from "./launch_bar_widgets";
+import {
+    CommandButton, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher
+} from "./LauncherDefinitions";
+import type LauncherDropTarget from "./LauncherDropTarget";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
-import RecordMeetingButton from "./RecordMeetingButton";
 import SidebarChatButton from "./SidebarChatButton";
 import SpacerWidget from "./SpacerWidget";
 import SyncStatus from "./SyncStatus";
@@ -26,8 +31,11 @@ import SyncStatus from "./SyncStatus";
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
-    const hasTabSwitcher = !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
-    useLaunchBarTabSwipe(containerRef, isHorizontalLayout && hasTabSwitcher);
+    // A swipe across the bottom bar changes tabs where a tab switcher is in it, and on a tablet, which
+    // shows a tab bar instead.
+    const swipesTabs = isTablet()
+        || !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
+    const [ dragEntered, setDragEntered ] = useState(false);
 
     return (
         <div
@@ -38,6 +46,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                 flexGrow: 1,
                 flexDirection: isHorizontalLayout ? "row" : "column"
             }}
+            onDragEnter={dragEntered ? undefined : () => setDragEntered(true)}
             onWheel={isHorizontalLayout ? (e) => {
                 if ((e.target as HTMLElement).closest(".dropdown-menu")) return;
                 onWheelHorizontalScroll(e);
@@ -47,7 +56,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                 isHorizontalLayout
             }}>
                 {childNotes?.map(childNote => {
-                    if (!isDesktop() && childNote.isLabelTruthy("desktopOnly")) {
+                    if (!hasDesktopLaunchBar() && childNote.isLabelTruthy("desktopOnly")) {
                         return false;
                     }
 
@@ -63,11 +72,14 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                     );
                 })}
             </LaunchBarContext.Provider>
-            <LauncherDropTarget
-                containerRef={containerRef}
-                parentNoteId={getVisibleLaunchersRootId()}
-                isHorizontalLayout={isHorizontalLayout}
-            />
+            {isHorizontalLayout && swipesTabs && <LazyTabSwipe containerRef={containerRef} />}
+            {dragEntered && (
+                <LazyLauncherDropTarget
+                    containerRef={containerRef}
+                    parentNoteId={getVisibleLaunchersRootId()}
+                    isHorizontalLayout={isHorizontalLayout}
+                />
+            )}
         </div>
     );
 }
@@ -88,7 +100,7 @@ function Launcher({ note, isHorizontalLayout }: { note: FNote, isHorizontalLayou
         case "script":
             return <ScriptLauncher launcherNote={note} />;
         case "customWidget":
-            return <CustomWidget launcherNote={note} />;
+            return <LazyCustomWidget launcherNote={note} />;
         case "builtinWidget":
             return initBuiltinWidget(note, isHorizontalLayout);
         default:
@@ -140,11 +152,12 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "quickSearch":
             return <QuickSearchLauncherWidget launcherNote={note} />;
         case "mobileTabSwitcher":
-            return <TabSwitcher launcherNote={note} />;
+            return <LazyTabSwitcher launcherNote={note} />;
         case "sidebarChat":
-            return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
+            // The mobile layout has no right pane for the chat to open in.
+            return isExperimentalFeatureEnabled("llm") && !isMobile() ? <SidebarChatButton launcherNote={note} /> : undefined;
         case "recordMeeting":
-            return isElectron() ? <RecordMeetingButton launcherNote={note} /> : undefined;
+            return isElectron() ? <LazyRecordMeetingButton launcherNote={note} /> : undefined;
         case "colorSchemeSwitcher":
             return <ColorSchemeSwitcher launcherNote={note} />;
         default:
@@ -152,14 +165,80 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
     }
 }
 
+// The mobile tab switcher shows only in the mobile launch bar, and the meeting button only in
+// the desktop app, so the other bars never load them. A custom widget loads with the first launcher
+// that uses one, and the drop target with the first drag over the bar.
+const loadTabSwitcher = () => import("../mobile_widgets/TabSwitcher");
+const loadRecordMeetingButton = () => import("./RecordMeetingButton");
+const loadCustomWidget = () => import("./CustomWidget");
+const loadLauncherDropTarget = () => import("./LauncherDropTarget");
+
+/**
+ * The tab switcher, or until its module loads a button that looks like `TabSwitcher`'s, so the bar
+ * spreads its launchers once and they do not move when it arrives.
+ */
+function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
+    const tabSwitcher = useLazyModule(loadTabSwitcher);
+    if (!tabSwitcher) {
+        return <LaunchBarActionButton launcherNote={launcherNote} className="mobile-tab-switcher" icon="bx bx-rectangle" text="Tabs" />;
+    }
+    return <tabSwitcher.default launcherNote={launcherNote} />;
+}
+
+function LazyTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
+    const tabSwitcher = useLazyModule(loadTabSwitcher);
+    return tabSwitcher && <tabSwitcher.LaunchBarTabSwipe containerRef={containerRef} />;
+}
+
+function LazyCustomWidget({ launcherNote }: { launcherNote: FNote }) {
+    const customWidget = useLazyModule(loadCustomWidget);
+    return customWidget && <customWidget.default launcherNote={launcherNote} />;
+}
+
+function LazyLauncherDropTarget(props: ComponentProps<typeof LauncherDropTarget>) {
+    const dropTarget = useLazyModule(loadLauncherDropTarget);
+    return dropTarget && <dropTarget.default {...props} />;
+}
+
+/**
+ * The meeting button, loaded once `transcriptionEnabled` is on, since it is hidden while the switch
+ * is off. A recording outlives the switch, so the button also loads while the main process reports
+ * one, and stays mounted after the switch turns off, to show its stop button.
+ */
+function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
+    const [ isEnabled ] = useTriliumOptionBool("transcriptionEnabled");
+    const [ isRecording, setRecording ] = useState(false);
+    const wasShown = useRef(false);
+    wasShown.current ||= isEnabled || isRecording;
+
+    useEffect(() => {
+        if (wasShown.current) return;
+        let cancelled = false;
+        void window.electronApi?.transcription.getState().then(({ status }) => {
+            if (!cancelled && status !== "idle") setRecording(true);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    return wasShown.current && (
+        <WithLazyModule load={loadRecordMeetingButton}>
+            {({ default: RecordMeetingButton }) => <RecordMeetingButton launcherNote={launcherNote} />}
+        </WithLazyModule>
+    );
+}
+
 export function useLauncherChildNotes() {
     const [ visibleLaunchersRoot, setVisibleLaunchersRoot ] = useState<FNote | undefined | null>();
     const [ childNotes, setChildNotes ] = useState<FNote[]>();
+    // A foldable swaps the desktop's launchers and the mobile ones as it unfolds and folds.
+    const tablet = useIsTablet();
 
     // Load the root note.
     const loadRoot = useCallback(() => {
         froca.getNote(getVisibleLaunchersRootId(), true).then(setVisibleLaunchersRoot);
-    }, []);
+    }, [ tablet ]);
     useLayoutEffect(loadRoot, [ loadRoot ]);
 
     // Load the children.
@@ -187,11 +266,11 @@ export function useLauncherChildNotes() {
 
 /** The note whose children are the launchers shown in this layout's launch bar. */
 function getVisibleLaunchersRootId() {
-    return isMobile() ? "_lbMobileVisibleLaunchers" : "_lbVisibleLaunchers";
+    return hasDesktopLaunchBar() ? "_lbVisibleLaunchers" : "_lbMobileVisibleLaunchers";
 }
 
 // Measures the scrollbar's actual consumed size (which varies by browser and the OS "show scroll
-// bars" setting) and publishes it as `--launcher-scrollbar-size`; shell.css reserves that much on
+// bars" setting) and publishes it as `--launcher-scrollbar-size`; LauncherContainer.css reserves that much on
 // the opposite edge so the bar never shifts the centred buttons. Recomputed on resize and whenever
 // the set of launchers changes; scroll position doesn't affect the measurement.
 // Recomputed on resize and whenever the set of launchers changes (which is what makes the rail

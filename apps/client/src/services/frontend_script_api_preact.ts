@@ -25,7 +25,20 @@ import FormText from "../widgets/react/FormText";
 import FormTextArea from "../widgets/react/FormTextArea";
 import FormTextBox from "../widgets/react/FormTextBox";
 import FormToggle from "../widgets/react/FormToggle";
-import * as triliumHooks from "../widgets/react/hooks";
+import * as hooksContent from "../widgets/react/hooks/content";
+import * as hooksDom from "../widgets/react/hooks/dom";
+import * as hooksDrag from "../widgets/react/hooks/drag";
+import * as hooksEditor from "../widgets/react/hooks/editor";
+import * as hooksEvents from "../widgets/react/hooks/events";
+import * as hooksHighlight from "../widgets/react/hooks/highlight";
+import * as hooksLegacy from "../widgets/react/hooks/legacy";
+import * as hooksNote from "../widgets/react/hooks/note";
+import * as hooksNoteContext from "../widgets/react/hooks/note_context";
+import * as hooksNoteTypes from "../widgets/react/hooks/note_types";
+import * as hooksOptions from "../widgets/react/hooks/options";
+import * as hooksShortcuts from "../widgets/react/hooks/shortcuts";
+import * as hooksTooltip from "../widgets/react/hooks/tooltip";
+import * as hooksTree from "../widgets/react/hooks/tree";
 import Icon from "../widgets/react/Icon";
 import LinkButton from "../widgets/react/LinkButton";
 import LoadingSpinner from "../widgets/react/LoadingSpinner";
@@ -112,7 +125,20 @@ export const preactAPI = Object.freeze({
     RightPanelWidget,
 
     ...hooks,
-    ...triliumHooks
+    ...hooksContent,
+    ...hooksDom,
+    ...hooksDrag,
+    ...hooksEditor,
+    ...hooksEvents,
+    ...hooksHighlight,
+    ...hooksLegacy,
+    ...hooksNote,
+    ...hooksNoteContext,
+    ...hooksNoteTypes,
+    ...hooksOptions,
+    ...hooksShortcuts,
+    ...hooksTooltip,
+    ...hooksTree
 });
 
 // --- Drift guard ------------------------------------------------------------

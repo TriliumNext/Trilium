@@ -110,5 +110,6 @@ function respond(res: http.ServerResponse, message: string) {
 }
 
 function escapeHtml(text: string): string {
+    /* v8 ignore next -- the regex matches only the four mapped characters, so `?? c` never applies */
     return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }

@@ -165,23 +165,6 @@ export interface ElectronWindowApi {
 
     // #endregion
 
-    // #region Background effects
-
-    /**
-     * Sets the Windows 11 backdrop material applied behind the window contents. No-op on other
-     * platforms.
-     * @param material The material, such as `"mica"`, `"acrylic"`, `"tabbed"` or `"none"`.
-     */
-    setBackgroundMaterial(material: string): void;
-
-    /**
-     * Sets the macOS vibrancy effect applied behind the window contents. No-op on other platforms.
-     * @param vibrancy The effect, such as `"sidebar"`, `"under-window"` or `"fullscreen-ui"`.
-     */
-    setVibrancy(vibrancy: string): void;
-
-    // #endregion
-
     // #region App lifecycle
 
     /** Triggers a hard reload of every open Trilium window. */
@@ -201,6 +184,14 @@ export interface ElectronWindowApi {
 
     /** Brings the main window to the foreground, restoring it if minimized. */
     showWindow(): void;
+
+    /**
+     * Lets the window paint for the first time. The main process holds the first paint of a
+     * starting main or extra window, and with it the reveal of the window, until the client has
+     * rendered its interface, so that the window never shows a half-built one. No-op for other
+     * windows and once released.
+     */
+    releaseFirstPaint(): void;
 
     /**
      * Reports a renderer startup milestone to the main process, which records
@@ -296,7 +287,10 @@ export interface ElectronShellApi {
      * (or a descendant). Anything else — absolute paths elsewhere on disk,
      * traversal attempts, UNC paths that don't normalize under those roots —
      * is rejected. Null bytes, empty strings, and non-existent files are also
-     * rejected.
+     * rejected, and so is a file whose extension makes the OS run it as a
+     * program (`.exe`, `.bat`, `.ps1`, `.lnk`, `.hta`, `.app`, `.command`,
+     * `.desktop`, an extension in `PATHEXT`, …): the file was written from a
+     * note, which chose its name and content.
      *
      * @param path A file in the Trilium data or tmp directory.
      * @returns An empty string on success, or an error message on failure.
@@ -341,7 +335,11 @@ export interface ElectronShellApi {
      * `file://` links inside note content, which routinely reference arbitrary
      * locations on disk (`file:///C:/Users/me/Documents/contract.pdf` and
      * similar). Equivalent to a browser following a `file:` link the user
-     * clicked. Treat clicks on attacker-influenced note content accordingly.
+     * clicked. A target that would run as a program — an executable extension
+     * as refused by {@link openPath}, or outside Windows a file with an
+     * execute bit — opens only after the user confirms it in a native dialog
+     * that defaults to Cancel. One such dialog is shown at a time; a cancel
+     * resolves to an empty string.
      *
      * @param fileUrl A `file:` URL with an empty hostname.
      * @returns An empty string on success, or an error message on failure.
@@ -625,6 +623,21 @@ export interface ElectronBackupPassphraseApi {
     clear(): Promise<BackupPassphraseChange>;
 }
 
+/**
+ * The folder that backups are written to. The main process stores it from the folder that the user
+ * accepts in the OS dialog, and the options API does not write it, so a frontend script cannot
+ * choose where backups go or which folder the backup download reads.
+ */
+export interface ElectronBackupLocationApi {
+    /**
+     * Prompts the native folder picker at the current backup folder and, once the user accepts a
+     * folder, writes later backups there.
+     */
+    choose(): Promise<NativeDirectoryPickResult>;
+    /** Writes later backups to the default folder again. */
+    reset(): Promise<void>;
+}
+
 /** Outcome of a {@link ElectronOneNoteApi.login} attempt. */
 export interface OneNoteLoginResult {
     /** True if sign-in completed and a Microsoft Graph token was stored. */
@@ -765,7 +778,9 @@ export interface ElectronRestoreApi {
     pickBackup(): Promise<NativeBackupPickResult>;
 }
 
-/** Outcome of {@link ElectronDialogApi.pickDirectory}. */
+/**
+ * Outcome of {@link ElectronDialogApi.pickDirectory} and {@link ElectronBackupLocationApi.choose}.
+ */
 export interface NativeDirectoryPickResult {
     status: "selected" | "cancelled";
     /** Absolute path of the chosen directory (when `status === "selected"`). */
@@ -919,6 +934,8 @@ export interface ElectronApi {
     security: ElectronSecurityApi;
     /** Write-only access to the backup passphrase, kept in the OS keyring. */
     backupPassphrase: ElectronBackupPassphraseApi;
+    /** The backup folder, which only the main process stores. */
+    backupLocation: ElectronBackupLocationApi;
     /** OneNote importer sign-in via a loopback OAuth redirect (desktop only). */
     onenote: ElectronOneNoteApi;
     /** Desktop-native subtree export that streams a `.zip` straight to a file. */

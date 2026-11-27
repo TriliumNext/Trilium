@@ -272,6 +272,29 @@ describe("Sync API (core)", () => {
             });
         });
 
+        it("keeps the cursor before a change whose entity row is missing", async () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'options', 'missingRowOpt', 'h', 0, 'missingRowChg', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [ maxId + 1 ]
+            );
+            vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            const res = await api.get<{ entityChanges: unknown[]; lastEntityChangeId: number; outstandingPullCount: number }>(
+                "/api/sync/changed",
+                { query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId) } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.entityChanges).toEqual([]);
+            expect(res.body.lastEntityChangeId).toBe(maxId);
+            expect(res.body.outstandingPullCount).toBe(1);
+
+            sql.execute("DELETE FROM entity_changes WHERE id = ?", [ maxId + 1 ]);
+        });
+
         it("stubs blob content larger than maxBlobContentSize while leaving the hash and other rows intact", () => {
             const sql = getSql();
             const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");

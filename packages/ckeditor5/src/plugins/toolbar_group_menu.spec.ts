@@ -1,7 +1,7 @@
 import {
     addListToDropdown, Bold, ButtonView, type ClassicEditor, Collection, createDropdown,
-    DropdownView, type Editor, Essentials, Italic, type ListDropdownItemDefinition, ListItemView,
-    ListView, type Locale, Paragraph, Plugin, SearchTextView, SplitButtonView, type ToolbarView, UIModel,
+    DropdownView, type Editor, Essentials, Italic, type ListDropdownItemDefinition, ListItemGroupView,
+    ListItemView, ListView, type Locale, Paragraph, Plugin, SearchTextView, SplitButtonView, type ToolbarView, UIModel,
     View
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -233,19 +233,29 @@ class SampleDropdown extends Plugin {
             return dropdown;
         });
 
-        // A list built by hand, like the attach menu, with one row that has no button.
+        // A list built by hand, like the attach menu, with one row that has no button and a
+        // group the list hides.
         this.editor.ui.componentFactory.add("handBuilt", (locale: Locale) => {
             const dropdown = createDropdown(locale);
             dropdown.buttonView.set({ label: "Hand built", icon: "<svg />" });
 
-            const button = new ButtonView(locale);
-            button.set({ label: "Row", withText: true });
             const listView = dropdown.listView = new ListView(locale);
-            for (const view of [button, new PlainItemView(locale)]) {
+            const [ visibleRow, hiddenRow ] = [ "Row", "Hidden row" ].map((label) => {
+                const button = new ButtonView(locale);
+                button.set({ label, withText: true });
+                return button;
+            });
+            for (const view of [ visibleRow, new PlainItemView(locale) ]) {
                 const item = new ListItemView(locale);
                 item.children.add(view);
                 listView.items.add(item);
             }
+            const hiddenGroup = new ListItemGroupView(locale);
+            hiddenGroup.set({ label: "Hidden group", isVisible: false });
+            const hiddenItem = new ListItemView(locale);
+            hiddenItem.children.add(hiddenRow);
+            hiddenGroup.items.add(hiddenItem);
+            listView.items.add(hiddenGroup);
             dropdown.panelView.children.add(listView);
 
             return dropdown;
@@ -541,7 +551,7 @@ describe("ToolbarGroupMenu", () => {
         expect(labels(odd)).toStrictEqual(["First", "—", "", "Grouped", "Inside"]);
         expect(odd[3]?.kind).toBe("heading");
         expect(labels(entry(last().items, "").children ?? [])).toStrictEqual(["Row"]);
-        // A row without a button has no entry.
+        // A row without a button has no entry, and neither has a hidden group.
         expect(labels(entry(last().items, "Hand built").children ?? [])).toStrictEqual(["Row"]);
     });
 

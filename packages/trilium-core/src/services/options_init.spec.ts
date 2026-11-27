@@ -1,8 +1,10 @@
-import type { OptionDefinitions, OptionNames } from "@triliumnext/commons";
+import type { OptionDefinitions, OptionMap, OptionNames } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import optionService from "./options.js";
-import { getDefaultOptionSyncedFlag, initNotSyncedOptions, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import { getDefaultOptionSyncedFlag, initNotSyncedOptions, initStartupOptions, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import { getPlatform } from "./platform.js";
+import * as utils from "./utils/index.js";
 
 describe("migrateSyncTimeoutFromMilliseconds", () => {
     it("returns null when no migration is needed (values < 1000 are already in seconds)", () => {
@@ -110,3 +112,67 @@ function captureCreatedOptions(): CreatedOption[] {
 
     return created;
 }
+
+describe("initStartupOptions", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /** Runs the startup defaults against `existing`, returning what they would create and set. */
+    function runWith(existing: Record<string, string>, env: Record<string, string> = {}) {
+        vi.spyOn(optionService, "getOptionMap").mockReturnValue(existing as OptionMap);
+        vi.spyOn(getPlatform(), "getEnv").mockImplementation((key) => env[key]);
+        const created = new Map<string, string>();
+        const set = new Map<string, string>();
+        vi.spyOn(optionService, "createOption").mockImplementation((name, value) => {
+            created.set(name, String(value));
+        });
+        vi.spyOn(optionService, "setOption").mockImplementation((name, value) => {
+            set.set(name, String(value));
+        });
+        initStartupOptions();
+        return { created, set };
+    }
+
+    it("creates only the missing options", () => {
+        const { created } = runWith({ locale: "de" });
+        expect(created.has("locale")).toBe(false);
+        expect(created.get("revisionSnapshotTimeInterval")).toBe("600");
+    });
+
+    it("derives defaults from the options already there", () => {
+        vi.spyOn(utils, "isWindows").mockReturnValueOnce(true).mockReturnValue(false);
+        const fresh = runWith({});
+        expect(fresh.created.get("syncServerTimeoutTimeScale")).toBe("60");
+        expect(fresh.created.get("zoomFactor")).toBe("0.9");
+        expect(fresh.created.get("aiEnabled")).toBe("false");
+        expect(fresh.created.get("codeNoteTheme")).toBe("default:vs-code-dark");
+        expect(fresh.created.get("codeBlockTheme")).toBe("default:stackoverflow-dark");
+        expect(fresh.set.size).toBe(0);
+
+        const legacy = runWith({ syncServerTimeout: "120000", experimentalFeatures: "[\"llm\"]", theme: "light" });
+        expect(legacy.set.get("syncServerTimeout")).toBe("120");
+        expect(legacy.created.get("syncServerTimeoutTimeScale")).toBe("60");
+        expect(legacy.created.get("zoomFactor")).toBe("1.0");
+        expect(legacy.created.get("aiEnabled")).toBe("true");
+        expect(legacy.created.get("codeNoteTheme")).toBe("default:vs-code-light");
+        expect(legacy.created.get("codeBlockTheme")).toBe("default:stackoverflow-light");
+
+        expect(runWith({ syncServerTimeout: "60", experimentalFeatures: "[]" }).created.get("aiEnabled")).toBe("false");
+        for (const [ theme, expected ] of [
+            [ "next-light", "default:vs-code-light" ],
+            [ "dark", "default:vs-code-dark" ],
+            [ "next-dark", "default:vs-code-dark" ]
+        ]) {
+            expect(runWith({ theme }).created.get("codeNoteTheme"), theme).toBe(expected);
+        }
+    });
+
+    it("opens the start note, or the root in safe mode, when the environment asks for it", () => {
+        const startNote = runWith({}, { TRILIUM_START_NOTE_ID: "abc123" }).set.get("openNoteContexts");
+        expect(JSON.parse(startNote ?? "")).toEqual([ { notePath: "abc123", active: true } ]);
+
+        const safeMode = runWith({}, { TRILIUM_SAFE_MODE: "true" }).set.get("openNoteContexts");
+        expect(JSON.parse(safeMode ?? "")).toEqual([ { notePath: "root", active: true } ]);
+    });
+});

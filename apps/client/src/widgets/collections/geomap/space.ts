@@ -8,7 +8,9 @@
  * (see {@link imageSpace}).
  */
 
-import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
+import {
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE
+} from "@triliumnext/commons/src/lib/notes.js";
 import { MercatorCoordinate } from "maplibre-gl";
 import { createContext } from "preact";
 

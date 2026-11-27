@@ -1,10 +1,10 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    attachmentIcon, BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
     CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
     getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
     getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
-    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
+    isMarkdownMime, type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
     normalizeMimeTypeForCKEditor, readDrawingFrame, readLinkPreviewData, readMediaEmbedBox,
     renderLinkEmbedBoxHtml,
     renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
@@ -410,8 +410,13 @@ export function preparePageContent(
     const slugs = utils.slugifyHeadings(unnamed.map((element) => element.innerHTML),
         document.querySelectorAll("[id]").map((element) => element.id));
     let slugIndex = 0;
-    const headings = elements.map((element) => {
+    const headings = elements.flatMap((element) => {
         const slug = element.id || slugs[slugIndex++];
+        // A heading of an Expandable embed starts hidden, so it gets an ID for links but no entry.
+        if (element.closest(`.${EXPANDABLE_EMBED_CLASS}`)) {
+            element.setAttribute("id", slug);
+            return [];
+        }
         const text = element.text.replace(/\s+/g, " ").trim();
         const html = sanitize.sanitizeHtmlCustom(element.innerHTML, HEADING_FORMATTING)
             .replace(/\s+/g, " ").trim();
@@ -526,6 +531,8 @@ export interface ShareRenderOptions {
     embedsAsReferenceLinks?: boolean;
     /** Internal: note IDs already rendered on the current embed path, used as a recursion cycle guard. */
     seenNoteIds?: Set<string>;
+    /** Internal: the content of the notes the page links into, by note ID, read once a page. */
+    linkedContents?: Map<string, HTMLElement | null>;
     /** See {@link CanAccessEmbed}. When omitted, every embedded note is expanded. */
     canAccessEmbed?: CanAccessEmbed;
     /**
@@ -534,8 +541,8 @@ export interface ShareRenderOptions {
      */
     exportHosting?: ExportHosting;
     /**
-     * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
-     * out, and a missing block renders as a broken reference.
+     * The blocks of a text note or a Markdown note to render, a `block` link parameter. The rest of
+     * the note is left out, and a missing block renders as a broken reference.
      */
     block?: string;
     /**
@@ -562,8 +569,8 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
 
     if (note.type === "text") {
         renderText(result, note, options);
-    } else if (note.type === "code" && note.mime === "text/x-markdown") {
-        renderMarkdown(result, note);
+    } else if (note.type === "code" && isMarkdownMime(note.mime)) {
+        renderMarkdown(result, note, options);
     } else if (note.type === "code") {
         renderCode(result, note.mime, note, options.hasCodeLineNumbers);
     } else if (note.type === "mermaid") {
@@ -614,10 +621,19 @@ function renderIndex(result: Result) {
 
 function renderText(result: Result, note: SNote | BNote, options: ShareRenderOptions = {}) {
     if (typeof result.content !== "string") return;
-    const parseOpts: Partial<Options> = {
-        blockTextElements: {}
-    };
-    const document = parse(result.content || "", parseOpts);
+    renderRichContent(result, parse(result.content || "", PARSE_OPTIONS), note, options);
+}
+
+/** Parses the content of `<pre>` too, which holds the `<code>` of a code block. */
+const PARSE_OPTIONS: Partial<Options> = { blockTextElements: {} };
+
+/**
+ * Renders `document`, the parsed content of a text note or a rendered Markdown note, into
+ * `result`: the blocks of `options.block` alone, embeds, link previews, links and highlighted code.
+ */
+function renderRichContent(
+    result: Result, document: HTMLElement, note: SNote | BNote, options: ShareRenderOptions
+) {
     if (options.block !== undefined && !sliceToBlockReference(document, options.block)) {
         const message = utils.escapeHtml(t("content_renderer.broken-block-reference"));
         result.content = `<p class="block-reference-broken">${message}</p>`;
@@ -626,7 +642,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
     // The content of an embed of an unknown kind needs the renderer of its kind.
     for (const embedEl of document.querySelectorAll(`section[${CONTENT_EMBED_KIND_ATTRIBUTE}]`)) {
-        replaceWithUnavailable(embedEl, parseOpts);
+        replaceWithUnavailable(embedEl);
     }
 
     // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
@@ -671,6 +687,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         embedsAsReferenceLinks: options.embedsAsReferenceLinks,
         expandNestedEmbeds: options.expandNestedEmbeds
     };
+    const linkedContents = options.linkedContents ?? new Map<string, HTMLElement | null>();
     // The links of an embedded note, which `getContent()` processed with that note as their host.
     const embeddedLinks = new Set<HTMLElement>();
     for (const embedEl of document.querySelectorAll(".include-note")) {
@@ -681,20 +698,25 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         if (embed.kind === "attachment") {
             const attachment = getAttachment(embed.attachmentId);
             if (!attachment) {
-                replaceWithUnavailable(embedEl, parseOpts);
+                replaceWithUnavailable(embedEl);
             } else if (isEmbedShownAsLink(embed, getEmbedContentType(attachment))) {
-                const link = renderAttachmentLink(embed.attachmentId, attachment);
-                embedEl.replaceWith(...parse(link, parseOpts).childNodes);
+                const link = renderAttachmentLink(embed.attachmentId, attachment,
+                    getBlockIdAttribute(embedEl));
+                embedEl.replaceWith(...parse(link, PARSE_OPTIONS).childNodes);
             } else {
                 const html = renderAttachmentEmbed(embed.attachmentId, attachment, getNote);
-                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes);
+                const title = embed.boxSize === "expandable" ? {
+                    icon: `tn-icon ${attachmentIcon(attachment.role, attachment.mime)}`,
+                    text: attachment.title
+                } : null;
+                replaceEmbedContent(embedEl, parse(html, PARSE_OPTIONS).childNodes, title);
             }
             continue;
         }
 
         const embeddedNote = shaca.getNote(embed.noteId);
         if (!embeddedNote) {
-            replaceWithUnavailable(embedEl, parseOpts);
+            replaceWithUnavailable(embedEl);
             continue;
         }
 
@@ -702,7 +724,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
         // title is withheld too, since an embedded note need not appear in the visible share tree.
         if (options.canAccessEmbed && !options.canAccessEmbed(embeddedNote)) {
-            embedEl.replaceWith(...parse(`<p class="include-note-forbidden">${utils.escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
+            const message = utils.escapeHtml(
+                t("content_renderer.included-note-requires-credentials"));
+            const placeholder = `<p class="include-note-forbidden"${getBlockIdAttribute(embedEl)}>`
+                + `${message}</p>`;
+            embedEl.replaceWith(...parse(placeholder, PARSE_OPTIONS).childNodes);
             continue;
         }
 
@@ -710,8 +736,9 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         if (isEmbedShownAsLink(embed, getEmbedContentType(embeddedNote))) {
             const href = utils.escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
             const title = utils.escapeHtml(embeddedNote.title);
-            const link = `<a class="reference-link" href="${href}">${title}</a>`;
-            embedEl.replaceWith(...parse(link, parseOpts).childNodes);
+            const blockId = getBlockIdAttribute(embedEl);
+            const link = `<a class="reference-link"${blockId} href="${href}">${title}</a>`;
+            embedEl.replaceWith(...parse(link, PARSE_OPTIONS).childNodes);
             continue;
         }
 
@@ -719,20 +746,33 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         const embeddedResult = getContent(embeddedNote, {
             ...getNestedEmbedOptions(embedContext, embed.block),
             canAccessEmbed: options.canAccessEmbed,
-            hasCodeLineNumbers: lineNumbers == null ? undefined : lineNumbers !== "false"
+            hasCodeLineNumbers: lineNumbers == null ? undefined : lineNumbers !== "false",
+            linkedContents
         });
         if (typeof embeddedResult.content !== "string") continue;
 
-        const embeddedContent = parse(embeddedResult.content, parseOpts);
+        const embeddedContent = parse(embeddedResult.content, PARSE_OPTIONS);
         for (const linkEl of embeddedContent.querySelectorAll("a")) {
             embeddedLinks.add(linkEl);
         }
-        replaceEmbedContent(embedEl, embeddedContent.childNodes);
+        const title = embed.boxSize === "expandable"
+            ? { icon: embeddedNote.getIcon(), text: embeddedNote.title }
+            : null;
+        replaceEmbedContent(embedEl, embeddedContent.childNodes, title);
     }
 
-    result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
+    // A block with an ID and no text, such as a rule, is shown: a link or an excerpt points at it.
+    result.isEmpty = document.textContent?.trim().length === 0
+        && document.querySelectorAll(`img, video, audio, [${BLOCK_ID_ATTRIBUTE}]`).length === 0;
 
     if (!result.isEmpty) {
+        const host: ReferenceLinkHost = {
+            noteId: note.noteId,
+            content: document,
+            readLinkedContent: (linkedNote) =>
+                readLinkedContent(linkedNote, linkedContents, options.canAccessEmbed)
+        };
+
         // Process attachment links.
         for (const linkEl of document.querySelectorAll("a")) {
             if (embeddedLinks.has(linkEl)) {
@@ -751,9 +791,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, href ?? "", getNote, {
-                    noteId: note.noteId, content: document
-                });
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote, host);
             }
         }
 
@@ -767,38 +805,69 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             if (codeEl.classList.contains("code-preview-content")) {
                 continue;
             }
+            // A Markdown note leaves a code block without a language plain, as its preview does.
+            if (note.type !== "text" && codeEl.classList.contains(`language-${MIME_TYPE_AUTO}`)) {
+                continue;
+            }
 
             highlightCodeBlock(codeEl);
         }
+    }
 
-        result.content = document.innerHTML;
+    result.content = document.innerHTML;
 
-        if (note.hasLabel("shareIndex")) {
-            renderIndex(result);
-        }
+    if (!result.isEmpty && note.hasLabel("shareIndex")) {
+        renderIndex(result);
     }
 }
 
-/** Puts `content` in an embed, followed by the embed's caption, as the app does. */
-function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
+/**
+ * Puts `content` in an embed, followed by the embed's caption, as the app does. With a `title`,
+ * the content goes in a closed `<details>` that shows the title, the share page's form of an
+ * Expandable embed; the caption after it shows under the title until the content is opened.
+ */
+function replaceEmbedContent(
+    embedEl: HTMLElement, content: ParsedNode[], title: { icon: string; text: string } | null
+) {
     const caption = embedEl.childNodes.find((child) =>
         child instanceof HTMLElement && child.tagName === "FIGCAPTION");
-    embedEl.set_content(caption ? [ ...content, caption ] : content);
+    let shown = content;
+    if (title) {
+        const details = new HTMLElement("details", {}, `class="${EXPANDABLE_EMBED_CLASS}"`);
+        details.set_content([
+            ...parse(`<summary class="include-note-summary">`
+                + `<span class="tn-icon bx bx-chevron-right" aria-hidden="true"></span>`
+                + `<span class="${utils.escapeHtml(title.icon)}" aria-hidden="true"></span>`
+                + `${utils.escapeHtml(title.text)}</summary>`).childNodes,
+            ...content
+        ]);
+        shown = [ details ];
+    }
+    embedEl.set_content(caption ? [ ...shown, caption ] : shown);
 }
+
+/** The class of the `<details>` that holds the content of an Expandable embed. */
+const EXPANDABLE_EMBED_CLASS = "include-note-expandable";
 
 /**
  * Replaces an embed that cannot show its content with a message that tells nothing about it: the
  * page is public, and a note that is not shared counts as missing. The block ID stays, for links
  * to the block.
  */
-function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options>) {
+function replaceWithUnavailable(embedEl: HTMLElement) {
     const message = utils.escapeHtml(t("content_renderer.content-not-available"));
-    const blockId = embedEl.getAttribute(BLOCK_ID_ATTRIBUTE);
-    const blockAttribute = blockId
-        ? ` ${BLOCK_ID_ATTRIBUTE}="${utils.escapeHtml(blockId)}"`
-        : "";
-    const html = `<div class="include-note-unavailable"${blockAttribute}>${message}</div>`;
-    embedEl.replaceWith(...parse(html, parseOpts).childNodes);
+    const html = `<div class="include-note-unavailable"${getBlockIdAttribute(embedEl)}>`
+        + `${message}</div>`;
+    embedEl.replaceWith(...parse(html, PARSE_OPTIONS).childNodes);
+}
+
+/**
+ * The block ID of `element` as an attribute, with a leading space, for the element that replaces
+ * it, or `""`. Links to the block then find the replacement.
+ */
+function getBlockIdAttribute(element: HTMLElement) {
+    const blockId = element.getAttribute(BLOCK_ID_ATTRIBUTE);
+    return blockId ? ` ${BLOCK_ID_ATTRIBUTE}="${utils.escapeHtml(blockId)}"` : "";
 }
 
 /**
@@ -840,16 +909,23 @@ function moveBoxToCaptionedFigure(element: HTMLElement) {
 }
 
 /**
- * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
- * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
- * anything else, or a drawing without a picture, as the attachment link that
- * `handleAttachmentLink` then resolves.
+ * What an embedded attachment shows: a picture as an image, a video or audio file as a player, a
+ * canvas drawing as the picture that its note keeps of it, in a box that the share theme sizes as
+ * the app sizes the drawing, and anything else, or a drawing without a picture, as the attachment
+ * link that `handleAttachmentLink` then resolves.
  */
 function renderAttachmentEmbed(
     attachmentId: string,
     attachment: BAttachment | SAttachment,
     getNote: GetNoteFunction
 ) {
+    const player = attachment.role === "file"
+        ? renderMediaPlayer(`api/attachments/${attachmentId}/download`, attachment)
+        : null;
+    if (player) {
+        return player;
+    }
+
     const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
     const image = isDrawing
         ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
@@ -897,10 +973,16 @@ function getEmbedContentType(entity: SNote | BNote | BAttachment | SAttachment):
     return ("type" in entity ? entity.type : undefined) ?? "file";
 }
 
-/** The reference link to an attachment, which `handleAttachmentLink` then resolves. */
-function renderAttachmentLink(attachmentId: string, attachment: BAttachment | SAttachment) {
+/**
+ * The reference link to an attachment, which `handleAttachmentLink` then resolves, with the
+ * attributes `extraAttributes` written after its class.
+ */
+function renderAttachmentLink(
+    attachmentId: string, attachment: BAttachment | SAttachment, extraAttributes = ""
+) {
     const href = utils.escapeHtml(getAttachmentEmbedHref(attachment.ownerId, attachmentId));
-    return `<a class="reference-link" href="${href}">${utils.escapeHtml(attachment.title)}</a>`;
+    return `<a class="reference-link"${extraAttributes} href="${href}">`
+        + `${utils.escapeHtml(attachment.title)}</a>`;
 }
 
 function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
@@ -925,11 +1007,9 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
-            // A link to blocks keeps them, which the page of the note scrolls to and flashes.
-            const block = new URLSearchParams(href.split("?")[1]).get("block");
-            linkEl.setAttribute("href", block && !link.isExternal
-                ? `${link.href}?block=${encodeBlockParameter(block)}`
-                : link.href);
+            linkEl.setAttribute("href", link.isExternal
+                ? link.href
+                : `${link.href}${getShareLinkSuffix(href)}`);
             if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
@@ -943,6 +1023,19 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
 }
 
 /**
+ * The query and fragment of the share link for `href`, a link to a note: the blocks the link points
+ * at, which the page scrolls to and flashes, and its bookmark as a fragment, which the share theme
+ * reveals.
+ */
+function getShareLinkSuffix(href: string) {
+    const params = new URLSearchParams(href.split("?")[1]);
+    const block = params.get("block");
+    const bookmark = params.get("bookmark");
+    return (block ? `?block=${encodeBlockParameter(block)}` : "")
+        + (bookmark ? `#${encodeURIComponent(bookmark)}` : "");
+}
+
+/**
  * Processes reference links to ensure that they are up to date. More specifically, reference links contain in their HTML source code the note title at the time of the linking. It can be changed in the mean-time or the note can become protected, which leaks information.
  *
  * @param linkEl the <a> element to process.
@@ -952,10 +1045,12 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
 interface ReferenceLinkHost {
     noteId: string;
     content: HTMLElement;
+    /** The content of another note, as {@link readLinkedContent} reads it. */
+    readLinkedContent(note: SNote | BNote): HTMLElement | null;
 }
 
 function cleanUpReferenceLinks(
-    linkEl: HTMLElement, href: string, getNote: GetNoteFunction, host?: ReferenceLinkHost
+    linkEl: HTMLElement, href: string, getNote: GetNoteFunction, host: ReferenceLinkHost
 ) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
 
@@ -967,26 +1062,62 @@ function cleanUpReferenceLinks(
     }
 
     // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
-    let noteId = "";
-    if (linkEl.hasAttribute("href")) {
-        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : href.slice(href.lastIndexOf("/") + 1);
-    }
+    const noteId = linkEl.hasAttribute("href") ? getNoteIdFromLink(href) : "";
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
         // If a note is not found, simply replace it with a text.
         linkEl.replaceWith(new TextNode(linkEl.innerText));
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
-    } else {
+    } else if (note.noteId === host.noteId) {
         // A link to a heading of the note it is in shows the text of the heading, as in the app.
-        const heading = host && note.noteId === host.noteId
-            ? getLinkedHeadingText(host.content, href)
-            : null;
-        const icon = `<span class="${utils.escapeHtml(note.getIcon())}"></span>`;
+        const heading = getLinkedHeadingText(host.content, href);
         linkEl.innerHTML = heading !== null
             ? `<span>${utils.escapeHtml(heading)}</span>`
-            : `<span>${icon}${utils.escapeHtml(note.title)}</span>`;
+            : getNoteLinkLabel(note, null);
+    } else {
+        const content = getLinkedBlock(href) ? host.readLinkedContent(note) : null;
+        linkEl.innerHTML = getNoteLinkLabel(note, content && getLinkedHeadingText(content, href));
     }
+}
+
+/** The label of a reference link to `note`: its icon and its title, followed by `heading`. */
+function getNoteLinkLabel(note: SNote | BNote, heading: string | null) {
+    const icon = `<span class="${utils.escapeHtml(note.getIcon())}"></span>`;
+    const title = heading === null ? note.title : `${note.title} - ${heading}`;
+    return `<span>${icon}${utils.escapeHtml(title)}</span>`;
+}
+
+/**
+ * The content of `note` for the labels of the links into it: the HTML of a text note, or a
+ * Markdown note rendered. `null` for a note of another type, and for a note that `canAccessEmbed`
+ * refuses. `cache` keeps the notes read for the page, by note ID.
+ */
+function readLinkedContent(
+    note: SNote | BNote,
+    cache: Map<string, HTMLElement | null>,
+    canAccessEmbed: CanAccessEmbed | undefined
+) {
+    const cached = cache.get(note.noteId);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    // `canAccessEmbed` is only given with a shaca note, whose links lead to shaca notes too.
+    const content = canAccessEmbed?.(note as SNote) === false ? null : readNoteContent(note);
+    let document: HTMLElement | null = null;
+    if (typeof content === "string" && note.type === "text") {
+        document = parse(content, PARSE_OPTIONS);
+    } else if (typeof content === "string" && note.type === "code" && isMarkdownMime(note.mime)) {
+        document = parse(renderMarkdownHtml(content, note.title), PARSE_OPTIONS);
+    }
+    cache.set(note.noteId, document);
+    return document;
+}
+
+/** The content of `note`, or `undefined` for a shared note whose content is missing. */
+function readNoteContent(note: SNote | BNote) {
+    return note instanceof BNote ? note.getContent() : note.getContent(true);
 }
 
 /**
@@ -995,7 +1126,7 @@ function cleanUpReferenceLinks(
  * in the app.
  */
 function getLinkedHeadingText(content: HTMLElement, href: string) {
-    const block = new URLSearchParams(href.split("?")[1]).get("block");
+    const block = getLinkedBlock(href);
     if (!block) {
         return null;
     }
@@ -1012,41 +1143,48 @@ function getLinkedHeadingText(content: HTMLElement, href: string) {
     return heading.textContent.replace(/\s+/g, " ").trim() || t("content_renderer.untitled-block");
 }
 
-/** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
-function getNoteIdFromLink(href: string) {
-    const [notePath] = href.split("?");
-    const notePathSegments = notePath.split("/");
-    return notePathSegments[notePathSegments.length - 1];
+/** The `block` parameter of `href`, a link to a note, or `null`. */
+function getLinkedBlock(href: string) {
+    return new URLSearchParams(href.split("?")[1]).get("block");
 }
 
 /**
- * Renders a markdown code note by converting the markdown source to HTML
- * using the shared {@link renderMarkdownToHtml} pipeline.
+ * Returns the ID of the note that a link such as `#root/abc/def?viewMode=source` or
+ * `./def?block=x` points to, or `""` for a link to another site.
  */
-function renderMarkdown(result: Result, note: SNote | BNote) {
-    if (typeof result.content !== "string" || !result.content?.trim()) {
+function getNoteIdFromLink(href: string) {
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) {
+        return "";
+    }
+
+    // A note path has `#` only at its start; a relative link can end with a fragment.
+    const [ notePath ] = href.startsWith("#") ? href.split("?") : href.split(/[?#]/);
+    return notePath.slice(notePath.lastIndexOf("/") + 1);
+}
+
+/**
+ * Renders a Markdown note as a text note is rendered: its HTML from the shared
+ * {@link renderMarkdownToHtml} pipeline goes through {@link renderRichContent}.
+ */
+function renderMarkdown(result: Result, note: SNote | BNote, options: ShareRenderOptions) {
+    if (typeof result.content !== "string") {
         result.isEmpty = true;
         return;
     }
 
-    const html = renderMarkdownToHtml(result.content, note.title, {
+    const html = result.content.trim() ? renderMarkdownHtml(result.content, note.title) : "";
+    renderRichContent(result, parse(html, PARSE_OPTIONS), note, options);
+}
+
+/**
+ * The HTML of the Markdown `source` of a note titled `title`. A Wikilink becomes a link to a note
+ * path, which `handleAttachmentLink()` changes to the share link, as in a text note.
+ */
+function renderMarkdownHtml(source: string, title: string) {
+    return renderMarkdownToHtml(source, title, {
         sanitize: sanitize.sanitizeHtml,
-        wikiLink: { formatHref: (id) => `./${id}` }
+        wikiLink: { formatHref: (id) => `#root/${id}` }
     });
-
-    // Apply syntax highlighting to code blocks, same as renderText.
-    const parseOpts: Partial<Options> = { blockTextElements: {} };
-    const document = parse(html, parseOpts);
-    for (const codeEl of document.querySelectorAll("pre code")) {
-        if (codeEl.classList.contains("language-mermaid")
-            || codeEl.classList.contains(`language-${MIME_TYPE_AUTO}`)) {
-            continue;
-        }
-
-        highlightCodeBlock(codeEl);
-    }
-
-    result.content = document.innerHTML;
 }
 
 /**
@@ -1306,12 +1444,38 @@ function renderImage(result: Result, note: SNote | BNote) {
 }
 
 function renderFile(note: SNote | BNote, result: Result) {
+    const player = renderMediaPlayer(`api/notes/${note.noteId}/view`, note);
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
         result.isFullHeight = true;
+    } else if (player) {
+        result.content = player;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
+}
+
+/**
+ * A native player for the video or audio file of `entity` at `src`, or `null` for a file of
+ * another type. Until the visitor presses play, the player reads only the file's metadata.
+ */
+function renderMediaPlayer(src: string, entity: { mime: string; title: string }) {
+    const tag = getMediaTag(entity.mime);
+    if (!tag) {
+        return null;
+    }
+
+    const label = utils.escapeHtml(entity.title);
+    const playsInline = tag === "video" ? " playsinline" : "";
+    return `<${tag} class="media-player" src="${src}" controls preload="metadata"${playsInline}`
+        + ` aria-label="${label}"></${tag}>`;
+}
+
+function getMediaTag(mime: string) {
+    if (mime.startsWith("video/")) {
+        return "video";
+    }
+    return mime.startsWith("audio/") ? "audio" : null;
 }
 
 function renderSpreadsheet(result: Result) {

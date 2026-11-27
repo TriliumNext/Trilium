@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import auth from "./auth.js";
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
 import { isElectron } from "./utils.js";
@@ -41,7 +42,53 @@ export function isLoopbackHost(host: string | undefined): boolean {
     }
     // Strip any :port and IPv6 brackets: "127.0.0.1:37742" → "127.0.0.1", "[::1]:37742" → "::1".
     const hostname = host.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
-    return hostname === "localhost" || hostname === "::1" || hostname.startsWith("127.");
+    return hostname === "localhost" || hostname === "::1" || LOOPBACK_IPV4.test(hostname);
+}
+
+/** A dotted IPv4 address in 127.0.0.0/8, matched whole so `127.0.0.1.attacker.example` fails. */
+const LOOPBACK_IPV4 = /^127(?:\.\d{1,3}){3}$/;
+
+/** URL schemes of the pages a browser extension runs in: Chromium, Firefox and Safari. */
+const EXTENSION_ORIGIN = /^(?:chrome-extension|moz-extension|safari-web-extension):\/\//;
+
+/**
+ * Whether an HTTP `Origin` header can come from the web clipper. The extension calls Trilium
+ * from its background page, which sends its own extension origin or none at all; local
+ * automation such as `curl` sends none. A web page always sends its own origin, or `null`
+ * from a sandboxed frame, on a cross-site POST.
+ */
+export function isBrowserExtensionOrigin(origin: string | undefined): boolean {
+    return origin === undefined || EXTENSION_ORIGIN.test(origin);
+}
+
+/** Whether a socket's remote address is loopback, in IPv4, IPv6 or IPv4-mapped IPv6 form. */
+export function isLoopbackAddress(address: string | undefined): boolean {
+    if (!address) {
+        return false;
+    }
+    const ipv4 = address.startsWith("::ffff:") ? address.slice("::ffff:".length) : address;
+    return address === "::1" || LOOPBACK_IPV4.test(ipv4);
+}
+
+/**
+ * Guards the desktop clipper. It refuses a request that a web page sent: an HTML form reaches
+ * `127.0.0.1` with a genuine loopback `Host`, so only its `Origin` header exposes it. The
+ * extension on this computer needs no token. Any other client needs an ETAPI token, which
+ * matters once network access binds the listener to every interface and
+ * {@link desktopNetworkAccessGate} stops checking the `Host` header.
+ */
+export function desktopClipperAuth(req: Request, res: Response, next: NextFunction): void {
+    if (!isBrowserExtensionOrigin(req.get("origin"))) {
+        res.status(403).type("text/plain").send("The web clipper accepts requests only from the browser extension.");
+        return;
+    }
+
+    if (isLoopbackAddress(req.socket.remoteAddress) && isLoopbackHost(req.get("host"))) {
+        next();
+        return;
+    }
+
+    auth.checkEtapiToken(req, res, next);
 }
 
 /**

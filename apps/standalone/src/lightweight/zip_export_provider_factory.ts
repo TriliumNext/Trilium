@@ -11,6 +11,7 @@ import type {
 } from "@triliumnext/core/src/services/export/zip/share_theme.js";
 
 import admonitionsCss from "@triliumnext/ckeditor5/src/theme/admonitions.css?raw";
+import asideCss from "@triliumnext/ckeditor5/src/theme/aside.css?raw";
 import contentCss from "@triliumnext/ckeditor5/src/theme/ck-content.css?raw";
 import multicolumnCss from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
 
@@ -19,7 +20,7 @@ export async function standaloneZipExportProviderFactory(format: ExportFormat, d
         case "html": {
             const { default: HtmlExportProvider } = await import("@triliumnext/core/src/services/export/zip/html.js");
             return new HtmlExportProvider(data, {
-                contentCss: `${contentCss}\n${admonitionsCss}\n${multicolumnCss}`
+                contentCss: `${contentCss}\n${admonitionsCss}\n${multicolumnCss}\n${asideCss}`
             });
         }
         case "markdown": {
@@ -85,6 +86,7 @@ async function loadShareThemeExportAssets(
 
     const files = new Map<string, string | Uint8Array>([ [ "icon-color.svg", iconColorSvg ] ]);
     for (const [ index, file ] of themeFiles.entries()) {
+        /* v8 ignore next -- `split()` returns at least one element, so `at(-1)` is never undefined */
         files.set(`assets/${file.split("/").at(-1) ?? file}`, themeContents[index]);
     }
     for (const [ index, file ] of translationFiles.entries()) {

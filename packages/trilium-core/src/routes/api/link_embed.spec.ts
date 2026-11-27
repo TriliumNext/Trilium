@@ -463,6 +463,17 @@ describe("link-embed getMetadata", () => {
             expect(await imageOf()).toBeUndefined();
         });
 
+        it("reads an image served without a content type as a picture", async () => {
+            const png = await makePng(64, 32, 0xff0000ff);
+            const html = `<html><head><title>T</title><meta property="og:image" content="/cover"></head></html>`;
+            safeFetch.mockImplementation(async (url: string) => url.endsWith("/cover")
+                ? new Response(new Uint8Array(png))
+                : fakeResponse(html, { contentType: "text/html" }));
+
+            const decoded = await Jimp.read((await imageOf())?.buffer ?? Buffer.alloc(0));
+            expect(decoded.bitmap.width).toBe(64);
+        });
+
         it("does not embed a non-image response served in place of the image", async () => {
             serveImage({ payload: "<html>404</html>", contentType: "text/html" });
             expect(await imageOf()).toBeUndefined();
@@ -1215,6 +1226,8 @@ describe("link-embed storeMediaThumbnail", () => {
             await expect(linkEmbedRoute.storeMediaThumbnail(req(body)))
                 .rejects.toBeInstanceOf(ValidationError);
         }
+        await expect(linkEmbedRoute.storeMediaThumbnail({ body: undefined } as unknown as Request))
+            .rejects.toBeInstanceOf(ValidationError);
         expect(saveImageToAttachment).not.toHaveBeenCalled();
     });
 });

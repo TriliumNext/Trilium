@@ -53,9 +53,7 @@
     "search_note": "البحث عن الملاحظة بالاسم",
     "link_title": "عنوان الرابط",
     "button_add_link": "اضافة رابط",
-    "help_on_links": "مساعدة حول الارتباطات التشعبية",
-    "anchor": "ارتباط (اختياري)",
-    "anchor_none": "لا يوجد (رابط إلى الملاحظة)"
+    "help_on_links": "مساعدة حول الارتباطات التشعبية"
   },
   "branch_prefix": {
     "edit_branch_prefix": "تعديل بادئة الفرع",
@@ -1126,7 +1124,6 @@
   "note_tree": {
     "unhoist": "ارجاع الى الترتيب الطبيعي",
     "tree-settings-title": "اعدادات الشجرة",
-    "toggle-sidebar": "اظهار/اخفاء الشريط الجانبي",
     "collapse-title": "طي شجرة الملاحظة",
     "hide-archived-notes": "اخفاء الملاحظات المؤرشفة",
     "automatically-collapse-notes": "طي الملاحظات تلقائيا",

@@ -17,7 +17,6 @@ vi.mock("./link.js", () => ({
 import appContext from "../components/app_context.js";
 import froca from "./froca.js";
 import glob from "./glob.js";
-import { requireCss } from "./glob.js";
 import linkService from "./link.js";
 import server from "./server.js";
 import utils from "./utils.js";
@@ -84,28 +83,6 @@ describe("setupGlobs", () => {
         expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/def", "Stored");
     });
 
-    it("loads each configured app CSS note that isn't already present", () => {
-        // Pre-seed an existing link so the dedup branch (some => true) is exercised.
-        const existing = document.createElement("link");
-        existing.rel = "stylesheet";
-        existing.href = "/anything/api/notes/download/already";
-        document.head.appendChild(existing);
-
-        window.glob.appCssNoteIds = ["already", "fresh"];
-        glob.setupGlobs();
-
-        const hrefs = Array.from(document.querySelectorAll("head link")).map((l) => (l as HTMLLinkElement).getAttribute("href"));
-        // "already" was present -> not re-added; "fresh" gets appended without asset path prefix.
-        expect(hrefs.filter((h) => h?.endsWith("api/notes/download/already"))).toHaveLength(1);
-        expect(hrefs).toContain("api/notes/download/fresh");
-    });
-
-    it("handles a missing appCssNoteIds list", () => {
-        delete (window.glob as any).appCssNoteIds;
-        glob.setupGlobs();
-        // No css links added from the (absent) list.
-        expect(document.querySelectorAll("head link")).toHaveLength(0);
-    });
 
     it("opens external anchor links in a new window", () => {
         glob.setupGlobs();
@@ -152,6 +129,15 @@ describe("window.onerror handler", () => {
         window.onerror!("Script error.", undefined, undefined, undefined, undefined);
         const msg = (ws as any).logError.mock.calls[0][0] as string;
         expect(msg).toContain("No details available");
+    });
+
+    it("ignores the benign ResizeObserver loop notifications", () => {
+        window.onerror!("ResizeObserver loop completed with undelivered notifications.", "u", 0, 0, undefined);
+        window.onerror!("ResizeObserver loop limit exceeded", "u", 0, 0, undefined);
+        expect((ws as any).logError).not.toHaveBeenCalled();
+
+        window.onerror!("Some failure", "u", 1, 2, undefined);
+        expect((ws as any).logError).toHaveBeenCalledOnce();
     });
 
     it("falls back to toString when the error object cannot be JSON-stringified", () => {
@@ -226,29 +212,5 @@ describe("unhandledrejection handler", () => {
         const msg = (ws as any).logError.mock.calls[0][0] as string;
         expect(msg).toContain("Editor crashed.");
         expect(msg).not.toContain("roots");
-    });
-});
-
-describe("requireCss", () => {
-    beforeEach(() => {
-        (window as any).glob = { assetPath: "/myassets" };
-        resetDom();
-    });
-
-    it("prepends the asset path by default and appends a stylesheet link", async () => {
-        await requireCss("css/theme.css");
-        const link = document.querySelector("head link") as HTMLLinkElement;
-        expect(link.getAttribute("href")).toBe("/myassets/css/theme.css");
-    });
-
-    it("does not append a duplicate when a matching stylesheet already exists", async () => {
-        const existing = document.createElement("link");
-        existing.rel = "stylesheet";
-        existing.href = "http://host/some/path.css";
-        document.head.appendChild(existing);
-
-        await requireCss("some/path.css", true);
-        // Still just the one link; nothing appended because the existing href ends with the url.
-        expect(document.querySelectorAll("head link")).toHaveLength(1);
     });
 });

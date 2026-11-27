@@ -1,4 +1,4 @@
-import { BUILTIN_ATTRIBUTES } from "@triliumnext/commons";
+import BUILTIN_ATTRIBUTES from "@triliumnext/commons/src/lib/builtin_attributes.js";
 import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
@@ -10,8 +10,11 @@ import { BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
 import { openHelpPageFor } from "../react/HelpButton";
-import { useNoteContext, useNoteProperty, useTriliumEvent } from "../react/hooks";
-import { BookProperty, ViewProperty } from "../react/NotePropertyMenu";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteProperty } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
+import { WithLazyModule } from "../react/LazyComponent";
+import type { BookProperty } from "../react/NotePropertyMenu";
 
 const NON_DANGEROUS_ACTIVE_CONTENT = [ "appCss", "appTheme" ];
 const DANGEROUS_ATTRIBUTES = BUILTIN_ATTRIBUTES.filter(a => a.isDangerous || NON_DANGEROUS_ACTIVE_CONTENT.includes(a.name));
@@ -23,14 +26,17 @@ interface ActiveContentInfo {
     canToggleEnabled: boolean;
 }
 
-const executeOption: BookProperty = {
+const loadNotePropertyMenu = () => import("../react/NotePropertyMenu");
+
+const buildExecuteOption = (): BookProperty => ({
     type: "button",
     icon: "bx bx-play",
     label: t("active_content_badges.menu_execute_now"),
     onClick: context => context.triggerCommand("runActiveNote", { ntxId: context.ntxId })
-};
+});
 
-const typeMappings: Record<ActiveContentInfo["type"], {
+/** Built as the badge renders, once the translations its labels take have loaded. */
+const buildTypeMappings = (): Record<ActiveContentInfo["type"], {
     title: string;
     icon: string;
     helpPage: string;
@@ -38,7 +44,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
     electronApiDocsPage?: string;
     isExecutable?: boolean;
     additionalOptions?: BookProperty[];
-}> = {
+}> => ({
     iconPack: {
         title: t("active_content_badges.type_icon_pack"),
         icon: "bx bx-package",
@@ -51,7 +57,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
         apiDocsPage: "MEtfsqa5VwNi",
         isExecutable: true,
         additionalOptions: [
-            executeOption,
+            buildExecuteOption(),
             {
                 type: "combobox",
                 bindToLabel: "run",
@@ -80,7 +86,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
         electronApiDocsPage: "GFXVHyblVN3d",
         isExecutable: true,
         additionalOptions: [
-            executeOption,
+            buildExecuteOption(),
             {
                 type: "combobox",
                 bindToLabel: "run",
@@ -154,7 +160,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
             }
         ]
     }
-};
+});
 
 export function ActiveContentBadges() {
     const { note, ntxId } = useNoteContext();
@@ -169,7 +175,7 @@ export function ActiveContentBadges() {
 }
 
 function ActiveContentBadge({ info, note, ntxId }: { note: FNote, info: ActiveContentInfo, ntxId: string | null | undefined }) {
-    const { title, icon, helpPage, apiDocsPage, electronApiDocsPage, additionalOptions } = typeMappings[info.type];
+    const { title, icon, helpPage, apiDocsPage, electronApiDocsPage, additionalOptions } = buildTypeMappings()[info.type];
     return (
         <BadgeWithDropdown
             className={clsx("active-content-badge", info.canToggleEnabled && !info.isEnabled && "disabled")}
@@ -179,9 +185,11 @@ function ActiveContentBadge({ info, note, ntxId }: { note: FNote, info: ActiveCo
         >
             {additionalOptions?.length && (
                 <>
-                    {additionalOptions?.map((property, i) => (
-                        <ViewProperty key={i} note={note} property={property} />
-                    ))}
+                    <WithLazyModule load={loadNotePropertyMenu}>
+                        {({ ViewProperty }) => additionalOptions.map((property, i) => (
+                            <ViewProperty key={i} note={note} property={property} />
+                        ))}
+                    </WithLazyModule>
                     <FormDropdownDivider />
                 </>
             )}
@@ -205,7 +213,7 @@ function ActiveContentBadge({ info, note, ntxId }: { note: FNote, info: ActiveCo
 }
 
 function ActiveContentToggle({ note, info }: { note: FNote, info: ActiveContentInfo }) {
-    const { title } = typeMappings[info.type];
+    const { title } = buildTypeMappings()[info.type];
 
     return info && <FormToggle
         switchOnName="" switchOffName=""

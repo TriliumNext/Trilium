@@ -342,7 +342,7 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
         for (const [index, page] of section.pages.entries()) {
             const parentIndex = parentIndexByPage[index];
             const { note: pageNote } = noteService.createNewNote({
-                parentNoteId: parentIndex >= 0 ? (pageNoteIds[parentIndex] ?? sectionNote.noteId) : sectionNote.noteId,
+                parentNoteId: parentIndex >= 0 ? pageNoteIds[parentIndex] : sectionNote.noteId,
                 title: page.title,
                 content: page.fetchError === undefined ? page.html : renderFailedPagePlaceholder(page.fetchError),
                 type: "text",
@@ -628,7 +628,7 @@ function rewritePageResources(note: BNote, html: string, resources: DownloadedRe
         if (!resource) {
             continue;
         }
-        const originalName = resource.title.includes(".") ? resource.title : `${resource.title}.${extensionForMime(resource.mime)}`;
+        const originalName = `${resource.title}.${extensionForMime(resource.mime)}`;
         const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, resource.content, originalName, shrinkImages);
         if (attachmentId) {
             img.setAttribute("src", `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`);

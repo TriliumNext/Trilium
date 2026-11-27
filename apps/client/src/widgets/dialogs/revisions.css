@@ -1,8 +1,8 @@
-body.mobile .revisions-dialog {
-    .modal-dialog {
-        height: 95vh;
-    }
+body.mobile:not(.tablet) .revisions-dialog .modal-dialog {
+    height: 95vh;
+}
 
+body.mobile .revisions-dialog {
     .modal-content {
         flex: 1;
         min-height: 0;
@@ -48,7 +48,7 @@ body.mobile .revisions-dialog {
     }
 }
 
-body.desktop .revisions-dialog {
+:is(body.desktop, body.mobile.tablet) .revisions-dialog {
     .revision-list {
         width: 300px;
     }

@@ -3,7 +3,7 @@ import "./NoteContentSwitcher.css";
 import FNote from "../../entities/fnote";
 import server from "../../services/server";
 import { Badge } from "../react/Badge";
-import { useNoteSavedData } from "../react/hooks";
+import { useNoteSavedData } from "../react/hooks/editor";
 
 export interface NoteContentTemplate {
     name: string;

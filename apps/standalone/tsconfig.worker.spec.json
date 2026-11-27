@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "WebWorker", "WebWorker.Iterable"],
+    "types": ["node", "vitest/globals", "vite/client"],
+    "rootDir": "../..",
+    "outDir": "out-tsc/worker-spec",
+    "tsBuildInfoFile": "out-tsc/worker-spec.tsbuildinfo"
+  },
+  "include": [
+    "src/lightweight/**/*.spec.ts",
+    "src/services/image_provider.spec.ts",
+    "src/services/data_encryption.spec.ts",
+    "src/local-server-worker.spec.ts",
+    "src/test_setup.ts",
+    "../server/src/assets/translations/en/server.json"
+  ],
+  "references": [
+    { "path": "./tsconfig.worker.json" },
+    { "path": "../../packages/trilium-core/tsconfig.lib.json" },
+    { "path": "../../packages/commons/tsconfig.lib.json" },
+    { "path": "../../packages/trilium-backup-container/tsconfig.lib.json" }
+  ]
+}

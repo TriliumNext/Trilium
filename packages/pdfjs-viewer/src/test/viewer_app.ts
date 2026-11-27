@@ -14,6 +14,7 @@
  * Keeping the stub this small is the point: a fatter fake would start asserting our own
  * assumptions back at us instead of pdf.js' behaviour.
  */
+import type { PageViewport } from "pdfjs-dist";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { EventBus } from "pdfjs-dist/web/pdf_viewer.mjs";
 import { Mock, vi } from "vitest";
@@ -23,6 +24,20 @@ export interface PageGeometry {
     offsetTop: number;
     /** Rendered height of the page. */
     clientHeight: number;
+    /** Distance of the page from the left of the scroll container, 0 when absent. */
+    offsetLeft?: number;
+    /** The rotation of the view, as pdf.js' `PDFPageView.rotation`. */
+    rotation?: number;
+    /** The page's own rotation, as `PDFPageView.pdfPageRotate`; its `/Rotate` when absent. */
+    pdfPageRotate?: number;
+}
+
+/** The fields of a pdf.js `PDFPageView` that the viewer code reads. */
+export interface FakePageView {
+    div: HTMLDivElement;
+    viewport: PageViewport;
+    rotation: number;
+    pdfPageRotate: number;
 }
 
 export interface InstalledViewer {
@@ -44,25 +59,28 @@ export interface InstalledViewer {
     lastMessageOfType(type: string): any;
     /** Simulates the parent frame posting a command into the viewer. */
     sendFromParent(data: unknown): void;
-    /** Scrolls the fake container, as the active-heading tracker observes it. */
-    scrollTo(scrollTop: number): void;
+    /** Scrolls the fake container without a scroll event, which happy-dom does not dispatch. */
+    scrollTo(scrollTop: number, scrollLeft?: number): void;
     /** The `#viewer` element pdf.js renders pages into. */
     viewerEl: HTMLElement;
     /** Records `container.scrollTo` calls, since happy-dom does not scroll. */
     scrollRequests: Mock;
+    /** Records `pdfViewer.scrollPageIntoView()` calls, which turn to the page they name. */
+    scrollPageIntoView: Mock;
+    /** The page view of the page at `pageIndex`, which a test can change in place. */
+    pageView(pageIndex: number): FakePageView | undefined;
+    /** Turns the view of a page, as pdf.js does on a rotation: a new viewport at the rotation. */
+    rotatePage(pageIndex: number, rotation: number): Promise<void>;
 }
 
 /**
  * Loads `data` with real pdf.js and exposes it through a minimal viewer application.
  *
- * `pageGeometry` maps a zero-based page index to its on-screen box, which the active-heading
- * tracking in `toc.ts` and the scroll to an annotation read. Pages without an entry have no page
- * view.
+ * `pageGeometry` maps a zero-based page index to its on-screen box, which the reading position
+ * and the scroll to an annotation read. Pages without an entry have no page view.
  */
 export async function installViewerApp(data: Uint8Array, pageGeometry: Record<number, PageGeometry> = {}): Promise<InstalledViewer> {
     const pdfDocument = await getDocument({ data }).promise;
-    const viewports = await Promise.all(Array.from({ length: pdfDocument.numPages }, async (_, index) =>
-        (await pdfDocument.getPage(index + 1)).getViewport({ scale: 1 })));
     const eventBus = new EventBus();
 
     // Resolved once and shared, mirroring the real viewer: pdf.js returns a new config object
@@ -77,6 +95,23 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
     viewerEl.id = "viewer";
     container.append(viewerEl);
     document.body.append(container);
+
+    // Created once and attached, as pdf.js keeps a view per page; the scroll page mode detaches
+    // the views of the pages it does not show.
+    const pageViews = new Map<number, FakePageView>();
+    for (const [ key, geometry ] of Object.entries(pageGeometry)) {
+        const pageIndex = Number(key);
+        const page = await pdfDocument.getPage(pageIndex + 1);
+        const rotation = geometry.rotation ?? 0;
+        const pdfPageRotate = geometry.pdfPageRotate ?? page.rotate;
+        const div = document.createElement("div");
+        Object.defineProperty(div, "offsetTop", { value: geometry.offsetTop });
+        Object.defineProperty(div, "offsetLeft", { value: geometry.offsetLeft ?? 0 });
+        Object.defineProperty(div, "clientHeight", { value: geometry.clientHeight });
+        viewerEl.append(div);
+        const viewport = page.getViewport({ scale: 1, rotation: (rotation + pdfPageRotate) % 360 });
+        pageViews.set(pageIndex, { div, viewport, rotation, pdfPageRotate });
+    }
     // happy-dom leaves layout at zero; the tracker only needs a readable clientHeight.
     Object.defineProperty(container, "clientHeight", { value: 800, configurable: true });
     Object.defineProperty(container, "clientWidth", { value: 600, configurable: true });
@@ -87,6 +122,13 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
 
     const pdfLinkService = { goToDestination: vi.fn() };
     const messages: any[] = [];
+    const scrollPageIntoView = vi.fn(({ pageNumber }: { pageNumber: number }) => {
+        if (window.PDFViewerApplication) {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = pageNumber;
+        }
+    });
+    // The library that viewer.html loads, which the build of a saved document opens it with.
+    window.pdfjsLib = { getDocument: (src) => getDocument(src) } as Window["pdfjsLib"];
 
     // Each `setup*()` registers its own anonymous window listener, which it never removes
     // (the real viewer lives for the document's lifetime, so it has no reason to). Across a
@@ -110,18 +152,11 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
         pdfViewer: {
             container,
             currentPageNumber: 1,
+            pagesPromise: Promise.resolve(),
+            scrollPageIntoView,
             update: vi.fn(),
             optionalContentConfigPromise,
-            getPageView: (pageIndex: number) => {
-                const geometry = pageGeometry[pageIndex];
-                if (!geometry) {
-                    return undefined;
-                }
-                const div = document.createElement("div");
-                Object.defineProperty(div, "offsetTop", { value: geometry.offsetTop });
-                Object.defineProperty(div, "clientHeight", { value: geometry.clientHeight });
-                return { div, viewport: viewports[pageIndex] };
-            }
+            getPageView: (pageIndex: number) => pageViews.get(pageIndex)
         },
         pdfLinkService,
         store: undefined
@@ -138,11 +173,25 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
         sendFromParent: (data) => {
             window.dispatchEvent(new MessageEvent("message", { data, origin: window.location.origin }));
         },
-        scrollTo: (scrollTop) => {
+        scrollTo: (scrollTop, scrollLeft = 0) => {
             container.scrollTop = scrollTop;
+            container.scrollLeft = scrollLeft;
         },
         viewerEl,
-        scrollRequests
+        scrollRequests,
+        scrollPageIntoView,
+        pageView: (pageIndex) => pageViews.get(pageIndex),
+        async rotatePage(pageIndex, rotation) {
+            const view = pageViews.get(pageIndex);
+            if (!view) {
+                return;
+            }
+            const page = await pdfDocument.getPage(pageIndex + 1);
+            view.rotation = rotation;
+            view.viewport = page.getViewport({
+                scale: 1, rotation: (rotation + view.pdfPageRotate) % 360
+            });
+        }
     };
 }
 
@@ -150,6 +199,7 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
 export function uninstallViewerApp() {
     untrackWindowListeners();
     delete window.PDFViewerApplication;
+    window.TRILIUM_LOAD_TOKEN = undefined;
     document.body.replaceChildren();
     vi.restoreAllMocks();
 }

@@ -35,7 +35,7 @@ export function inspectImage(buffer: Uint8Array): InspectedImage {
 
     return {
         format,
-        mime: FORMAT_MIMES[format] ?? FORMAT_MIMES[UNKNOWN_FORMAT],
+        mime: FORMAT_MIMES[format],
         ...UNMEASURED,
         ...readHeader(format, buffer)
     };
@@ -113,10 +113,6 @@ function detectFormat(buffer: Uint8Array): string {
  * Each edge is a single byte, and 0 means 256 — how the format fits its largest size into a byte.
  */
 function readIcoHeader(buffer: Uint8Array): Partial<ImageMeasurements> {
-    if (buffer.length < 8) {
-        return {};
-    }
-
     return {
         width: buffer[6] || 256,
         height: buffer[7] || 256

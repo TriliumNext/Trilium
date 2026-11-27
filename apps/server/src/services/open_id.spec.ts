@@ -97,6 +97,8 @@ describe("open_id", () => {
         // No (or invalid) base URL → no icon, leaving the UI to use its glyph fallback.
         mfa.oauthIssuerBaseUrl = "";
         expect(openID.getSSOIssuerIcon()).toBe("");
+        mfa.oauthIssuerBaseUrl = "not a url";
+        expect(openID.getSSOIssuerIcon()).toBe("");
     });
 
     it("isUserSaved and getOAuthStatus read user_data", () => {
@@ -154,6 +156,16 @@ describe("open_id", () => {
             } as never;
             const res = await openID.isTokenValid(req, fakeRes, next);
             expect(res.success).toBe(false);
+        });
+
+        it("reports invalid and logs the raw value when fetchUserInfo rejects with a non-Error", async () => {
+            const info = vi.spyOn(getLog(), "info");
+            const req = { oidc: { fetchUserInfo: vi.fn().mockRejectedValue("token revoked") } } as never;
+
+            const res = await openID.isTokenValid(req, fakeRes, next);
+
+            expect(res).toEqual({ success: false, message: "Token is not valid", user: expect.any(Boolean) });
+            expect(info).toHaveBeenCalledWith("OIDC token validation failed: token revoked");
         });
     });
 
@@ -290,6 +302,26 @@ describe("open_id", () => {
             expect(saveSpy).toHaveBeenCalledWith("sub-1", "Alice", "alice@example.com");
         });
 
+        it("falls back to ID token claims when the UserInfo fetch rejects with a non-Error", async () => {
+            const cfg = buildConfig();
+            vi.spyOn(openIDEncryption, "isSubjectIdentifierSaved").mockReturnValue(false);
+            const saveSpy = vi.spyOn(openIDEncryption, "saveUser").mockReturnValue(true);
+            const info = vi.spyOn(getLog(), "info");
+            const req = {
+                oidc: {
+                    user: { sub: "sub-1", name: "Alice", email: "alice@example.com" },
+                    fetchUserInfo: vi.fn().mockRejectedValue("userinfo endpoint down")
+                },
+                session: sessionWith({ loggedIn: true })
+            } as never;
+
+            await cfg.afterCallback(req, {} as never, { marker: 10 } as never);
+
+            expect(info).toHaveBeenCalledWith("OAuth enrollment: UserInfo fetch failed, using ID token claims only. userinfo endpoint down");
+            expect(saveSpy).toHaveBeenCalledWith("sub-1", "Alice", "alice@example.com");
+            expect((req as { session: { loggedIn: boolean } }).session.loggedIn).toBe(true);
+        });
+
         it("refuses enrollment from an unauthenticated session (no first-login claim)", async () => {
             const cfg = buildConfig();
             vi.spyOn(openIDEncryption, "isSubjectIdentifierSaved").mockReturnValue(false);
@@ -363,6 +395,27 @@ describe("open_id", () => {
             expect((req as { session: { loggedIn: boolean } }).session.loggedIn).toBe(false);
             expect((req as { session: { lastAuthState?: unknown } }).session.lastAuthState).toBeUndefined();
             expect(result).toBe(session);
+        });
+
+        it("fails closed when session regeneration errors with a non-Error value", async () => {
+            const cfg = buildConfig();
+            vi.spyOn(openIDEncryption, "isSubjectIdentifierSaved").mockReturnValue(true);
+            vi.spyOn(openIDEncryption, "verifySubjectIdentifier").mockReturnValue(true);
+            const error = vi.spyOn(getLog(), "error");
+            const req = {
+                oidc: { user: { sub: "enrolled-sub", name: "Alice", email: "alice@example.com" } },
+                session: {
+                    regenerate(cb: (err?: unknown) => void) {
+                        cb("store unavailable");
+                    }
+                } as Record<string, unknown>
+            } as never;
+
+            await cfg.afterCallback(req, {} as never, { marker: 11 } as never);
+
+            expect(error).toHaveBeenCalledWith("OAuth session regeneration failed, refusing login: store unavailable");
+            expect((req as { session: { loggedIn: boolean } }).session.loggedIn).toBe(false);
+            expect((req as { session: { lastAuthState?: unknown } }).session.lastAuthState).toBeUndefined();
         });
     });
 
@@ -560,6 +613,40 @@ describe("open_id", () => {
                 idTokenSigningAlg: "RS256",
                 metadataAvailable: false
             });
+
+            const info = vi.spyOn(getLog(), "info");
+            vi.spyOn(globalThis, "fetch").mockRejectedValue("aborted");
+            expect((await openID.probeDiscovery()).metadataAvailable).toBe(false);
+            expect(info).toHaveBeenCalledWith(expect.stringMatching(/discovery fetch for https:\/\/issuer\.example\.com failed.* aborted$/));
+        });
+
+        it("aborts a discovery fetch that outlasts the timeout and falls back", async () => {
+            setOauthConfig(true);
+            vi.useFakeTimers();
+            try {
+                let signal: AbortSignal | undefined;
+                vi.spyOn(globalThis, "fetch").mockImplementation(((_url: string, init?: RequestInit) => {
+                    signal = init?.signal ?? undefined;
+                    return new Promise((_resolve, reject) => {
+                        signal?.addEventListener("abort", () => reject(new Error("The operation was aborted.")));
+                    });
+                }) as typeof fetch);
+
+                const probe = openID.probeDiscovery();
+                await vi.advanceTimersByTimeAsync(9_999);
+                expect(signal?.aborted).toBe(false);
+                await vi.advanceTimersByTimeAsync(1);
+
+                expect(signal?.aborted).toBe(true);
+                expect(await probe).toEqual({
+                    endSessionSupported: false,
+                    issuerBaseUrl: "https://issuer.example.com",
+                    idTokenSigningAlg: "RS256",
+                    metadataAvailable: false
+                });
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("does not attempt discovery when no issuer is configured", async () => {
@@ -1154,6 +1241,77 @@ describe("createReactiveOidcMiddleware", () => {
         const { req, res } = await run(t.middleware);
         expect(t.buildAuth).toHaveBeenCalledOnce();
         expect(t.oidcHandler).toHaveBeenCalledWith(req, res, expect.any(Function));
+    });
+
+    it("fails every request sharing a failed in-flight build, then retries on the next one", async () => {
+        const t = setup();
+        t.setConfigured(true);
+        let rejectProbe: (error: unknown) => void = () => {};
+        t.probeDiscovery.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectProbe = reject; }));
+
+        const first = run(t.middleware);
+        const second = run(t.middleware);
+        rejectProbe(new Error("discovery unreachable"));
+        const results = await Promise.all([first, second]);
+
+        for (const { req, redirect } of results) {
+            expect(redirect).toHaveBeenCalledWith("/");
+            expect(req.session.ssoConnectionFailed).toBe("discovery unreachable");
+        }
+        expect(t.probeDiscovery).toHaveBeenCalledOnce();
+        expect(t.oidcHandler).not.toHaveBeenCalled();
+
+        await run(t.middleware);
+        expect(t.probeDiscovery).toHaveBeenCalledTimes(2);
+        expect(t.oidcHandler).toHaveBeenCalledOnce();
+    });
+
+    it("passes the request on when the build yields no handler", async () => {
+        const t = setup();
+        t.setConfigured(true);
+        t.buildAuth.mockReturnValue(undefined as never);
+
+        const { next, redirect } = await run(t.middleware);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(next).toHaveBeenCalledWith();
+        expect(redirect).not.toHaveBeenCalled();
+    });
+
+    describe("with the default auth factory and session store", () => {
+        afterEach(() => {
+            vi.doUnmock("express-openid-connect");
+        });
+
+        /** Builds through the lazily imported library (mocked here) and the real `trilium.sid` store. */
+        async function runWithLibrary(library: (handler: RequestHandler) => Record<string, unknown>) {
+            const t = setup();
+            const libraryAuth = vi.fn(() => t.oidcHandler);
+            vi.doMock("express-openid-connect", () => library(libraryAuth as unknown as RequestHandler));
+            const middleware = createReactiveOidcMiddleware({
+                isConfigured: () => true,
+                probeDiscovery: t.probeDiscovery,
+                generateOAuthConfig: t.generateOAuthConfig
+            });
+            await run(middleware);
+            return { ...t, libraryAuth };
+        }
+
+        it("reads auth() from the CommonJS default export and stores the OIDC session with trilium.sid", async () => {
+            const t = await runWithLibrary((auth) => ({ default: { auth }, auth: undefined }));
+
+            const { sessionStore } = await import("../routes/session_parser.js");
+            expect(t.generateOAuthConfig).toHaveBeenCalledWith(false, PROBED_ISSUER, "RS256", sessionStore);
+            expect(t.libraryAuth).toHaveBeenCalledWith({ endSessionSupported: false });
+            expect(t.oidcHandler).toHaveBeenCalledOnce();
+        });
+
+        it("reads auth() off the namespace when the module has no default export", async () => {
+            const t = await runWithLibrary((auth) => ({ default: undefined, auth }));
+
+            expect(t.libraryAuth).toHaveBeenCalledWith({ endSessionSupported: false });
+            expect(t.oidcHandler).toHaveBeenCalledOnce();
+        });
     });
 
     // The provider round-trip failing outright (unreachable host, untrusted TLS certificate, token

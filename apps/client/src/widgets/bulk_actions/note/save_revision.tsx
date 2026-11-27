@@ -1,8 +1,8 @@
 import { useState } from "preact/hooks";
 import { t } from "../../../services/i18n.js";
 import FormTextBox from "../../react/FormTextBox.jsx";
-import { useSpacedUpdate } from "../../react/hooks.jsx";
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
+import { useSpacedUpdate } from "../../react/hooks/dom.js";
 import BulkAction from "../BulkAction.jsx";
 
 function SaveRevisionBulkActionComponent({ bulkAction, actionDef }: { bulkAction: AbstractBulkAction, actionDef: ActionDefinition }) {

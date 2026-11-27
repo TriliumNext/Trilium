@@ -4,24 +4,56 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component.js";
 import type FNote from "../../entities/fnote.js";
+import options from "../../services/options.js";
 import { buildNote } from "../../test/easy-froca.js";
-import { TREE_CLIPBOARD_TYPE } from "../react/hooks.js";
+import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
+import { LaunchBarContext, useLaunchBarTitlePosition } from "./launch_bar_widgets.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
-const h = vi.hoisted(() => ({ isElectron: false, showLauncherContextMenu: vi.fn() }));
+const h = vi.hoisted(() => ({
+    isElectron: false, isMobile: false, isTablet: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false,
+    dropTargetLoaded: false, customWidgetLoaded: false, ...gate()
+}));
+
+/** A promise the tab switcher's module waits on, so a case can see the bar before it loads. */
+function gate() {
+    let openTabSwitcherGate = () => {};
+    const tabSwitcherGate = new Promise<void>((resolve) => { openTabSwitcherGate = resolve; });
+    return { tabSwitcherGate, openTabSwitcherGate };
+}
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
-    isElectron: () => h.isElectron
+    isElectron: () => h.isElectron,
+    isMobile: () => h.isMobile,
+    isTablet: () => h.isTablet,
+    hasDesktopLaunchBar: () => !h.isMobile || h.isTablet
 }));
 vi.mock("../../menus/launcher_button_context_menu", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../menus/launcher_button_context_menu")>(),
     showLauncherContextMenu: h.showLauncherContextMenu
 }));
-vi.mock("./RecordMeetingButton", () => ({
-    default: () => <span className="record-meeting-button" />
-}));
+vi.mock("../mobile_widgets/TabSwitcher", async () => {
+    h.tabSwitcherLoaded = true;
+    await h.tabSwitcherGate;
+    return {
+        default: () => <span className="tab-switcher-stub" />,
+        LaunchBarTabSwipe: () => <span className="tab-swipe-stub" />
+    };
+});
+vi.mock("./RecordMeetingButton", () => {
+    h.recordMeetingLoaded = true;
+    return { default: () => <span className="record-meeting-button" /> };
+});
+vi.mock("./LauncherDropTarget", async (importOriginal) => {
+    h.dropTargetLoaded = true;
+    return await importOriginal<typeof import("./LauncherDropTarget")>();
+});
+vi.mock("./CustomWidget", () => {
+    h.customWidgetLoaded = true;
+    return { default: () => <span className="custom-widget-stub" /> };
+});
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
     CustomNoteLauncher: ({ launcherNote, getTargetNoteId, getOpenMode, parentNoteId }: {
@@ -128,13 +160,34 @@ describe("LauncherContainer", () => {
         await flush();
         expect(container.querySelector("#launcher-container")).not.toBeNull();
         expect(container.querySelector(".record-meeting-button")).toBeNull();
+        expect(h.recordMeetingLoaded).toBe(false);
         act(() => render(null, container));
         container.remove();
 
+        // The button is hidden while transcription is off, so the desktop app loads it only once on.
         h.isElectron = true;
+        options.set("transcriptionEnabled", "false");
+        const getState = vi.fn(async () => ({ status: "idle", noteId: null, pendingSources: [] }));
+        window.electronApi = { transcription: { getState } } as unknown as typeof window.electronApi;
         mount();
         await flush();
-        expect(container.querySelector(".record-meeting-button")).not.toBeNull();
+        expect(container.querySelector("#launcher-container")).not.toBeNull();
+        expect(getState).toHaveBeenCalled();
+        expect(h.recordMeetingLoaded).toBe(false);
+        act(() => render(null, container));
+        container.remove();
+
+        // A recording outlives the switch, so a frontend reloaded during one shows its stop button.
+        getState.mockResolvedValue({ status: "recording", noteId: null, pendingSources: [] });
+        mount();
+        await vi.waitFor(() => expect(container.querySelector(".record-meeting-button")).not.toBeNull());
+        act(() => render(null, container));
+        container.remove();
+        delete window.electronApi;
+
+        options.set("transcriptionEnabled", "true");
+        mount();
+        await vi.waitFor(() => expect(container.querySelector(".record-meeting-button")).not.toBeNull());
     });
 
     it("shows a note cloned into the bar as a launcher of itself, and takes drops", async () => {
@@ -142,7 +195,8 @@ describe("LauncherContainer", () => {
             id: "_lbVisibleLaunchers",
             title: "Visible Launchers",
             children: [
-                { id: "clonedNote", title: "Cloned note", "#bookmarkOpenMode": "newWindow" }
+                { id: "clonedNote", title: "Cloned note", "#bookmarkOpenMode": "newWindow" },
+                { id: "widgetLauncher", title: "Widget", type: "launcher", "#launcherType": "customWidget" }
             ]
         });
         container = document.createElement("div");
@@ -160,16 +214,28 @@ describe("LauncherContainer", () => {
         // "Remove from launch bar" removes this placement, not a bookmark of the note.
         expect(launcher?.getAttribute("data-parent")).toBe("_lbVisibleLaunchers");
 
+        // A custom widget loads with its launcher, and the drop target with the first drag.
+        await vi.waitFor(() => expect(container.querySelector(".custom-widget-stub")).not.toBeNull());
+        expect(h.customWidgetLoaded).toBe(true);
+        expect(h.dropTargetLoaded).toBe(false);
+
         const bar = container.querySelector("#launcher-container");
         expect(bar).not.toBeNull();
-        const dragOver = new Event("dragover", { bubbles: true, cancelable: true });
-        Object.defineProperty(dragOver, "dataTransfer", {
-            value: { types: [ TREE_CLIPBOARD_TYPE ] }
+        const dispatchDrag = (type: string) => {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "dataTransfer", {
+                value: { types: [ TREE_CLIPBOARD_TYPE ] }
+            });
+            act(() => {
+                bar?.dispatchEvent(event);
+            });
+        };
+        dispatchDrag("dragenter");
+        await vi.waitFor(() => {
+            dispatchDrag("dragover");
+            expect(document.body.querySelector(".launcher-drop-indicator")).not.toBeNull();
         });
-        act(() => {
-            bar?.dispatchEvent(dragOver);
-        });
-        expect(document.body.querySelector(".launcher-drop-indicator")).not.toBeNull();
+        expect(h.dropTargetLoaded).toBe(true);
     });
 
     it("shows a cloned note with #bookmarkFolder as a folder of its children", async () => {
@@ -200,10 +266,161 @@ describe("LauncherContainer", () => {
         act(() => {
             button?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
         });
-        expect(h.showLauncherContextMenu).toHaveBeenCalledExactlyOnceWith(
+        await vi.waitFor(() => expect(h.showLauncherContextMenu).toHaveBeenCalledExactlyOnceWith(
             expect.objectContaining({ noteId: "clonedFolder" }),
             expect.anything(),
             { parentNoteId: "_lbVisibleLaunchers" }
-        );
+        ));
+    });
+
+    it("loads the tab switcher only for a bar that shows it", async () => {
+        const mount = (isHorizontalLayout: boolean) => {
+            container = document.createElement("div");
+            document.body.appendChild(container);
+            act(() => render(
+                <ParentComponent.Provider value={new Component()}>
+                    <LauncherContainer isHorizontalLayout={isHorizontalLayout} />
+                </ParentComponent.Provider>, container));
+        };
+
+        buildNote({
+            id: "_lbVisibleLaunchers",
+            title: "Visible Launchers",
+            children: [ { title: "Spacer", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" } ]
+        });
+        mount(true);
+        await flush();
+        expect(container.querySelector(".spacer")).not.toBeNull();
+        expect(h.tabSwitcherLoaded).toBe(false);
+        act(() => render(null, container));
+        container.remove();
+
+        buildNote({
+            id: "_lbVisibleLaunchers",
+            title: "Visible Launchers",
+            children: [ {
+                id: "_lbTabSwitcher",
+                title: "Tabs",
+                type: "launcher",
+                "#launcherType": "builtinWidget",
+                "#builtinWidget": "mobileTabSwitcher"
+            } ]
+        });
+        mount(true);
+        await flush();
+        expect(h.tabSwitcherLoaded).toBe(true);
+        // Until it loads, a button of the same size holds its place, so the launchers do not move.
+        const slot = container.querySelector(".launcher-slot[data-launcher-id='_lbTabSwitcher']");
+        expect(slot?.querySelector("button.launcher-button.mobile-tab-switcher")).not.toBeNull();
+        expect(slot?.querySelector(".tab-switcher-stub")).toBeNull();
+
+        h.openTabSwitcherGate();
+        await flush();
+        expect(slot?.querySelector(".tab-switcher-stub")).not.toBeNull();
+        expect(slot?.querySelector("button.mobile-tab-switcher")).toBeNull();
+        expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
+    });
+});
+
+describe("LauncherContainer on a tablet", () => {
+    afterEach(() => {
+        h.isMobile = false;
+        h.isTablet = false;
+        options.set("aiEnabled", "false");
+    });
+
+    it("shows a phone the mobile launchers, without those marked desktop-only", async () => {
+        h.isMobile = true;
+        buildNote({ id: "_lbMobileVisibleLaunchers", title: "Mobile Visible Launchers", children: [
+            { id: "_lbMobileSpacerStub", title: "Spacer", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" },
+            { id: "_lbMobileJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileSpacerStub']")).not.toBeNull();
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileJumpToStub']")).toBeNull();
+    });
+
+    it("shows the AI chat launcher on desktop, where the right pane takes the chat", async () => {
+        options.set("aiEnabled", "true");
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers", children: [
+            { id: "_lbDesktopChatStub", title: "Chat", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "sidebarChat" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout={false} />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbDesktopChatStub']");
+        expect(chatSlot?.querySelector("button")).toBeInstanceOf(HTMLElement);
+    });
+
+    it("shows the desktop's launchers, those marked desktop-only among them, and leaves out the AI chat, with no tab switcher in either bar", async () => {
+        h.isMobile = true;
+        h.isTablet = true;
+        options.set("aiEnabled", "true");
+        buildNote({ id: "_lbMobileVisibleLaunchers", title: "Mobile Visible Launchers", children: [
+            { id: "_lbMobileCalendarStub", title: "Calendar", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" }
+        ] });
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers", children: [
+            { id: "_lbJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" },
+            { id: "_lbSidebarChatStub", title: "Chat", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "sidebarChat" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout={false} />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        // A tablet's tabs are in its tab bar.
+        expect(container.querySelector("#launcher-container")?.firstElementChild?.classList.contains("launcher-slot")).toBe(true);
+        expect(container.querySelector(".tab-switcher-stub, .mobile-tab-switcher")).toBeNull();
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileCalendarStub']")).toBeNull();
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbJumpToStub'] button")).not.toBeNull();
+        const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbSidebarChatStub']");
+        expect(chatSlot).not.toBeNull();
+        expect(chatSlot?.childElementCount).toBe(0);
+
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout />
+            </ParentComponent.Provider>, container));
+        await flush();
+        // The bottom bar of a tablet in portrait stands under a tab bar too, but takes a swipe between tabs.
+        expect(container.querySelector(".tab-switcher-stub, .mobile-tab-switcher")).toBeNull();
+        expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
+    });
+});
+
+describe("useLaunchBarTitlePosition", () => {
+    afterEach(() => { h.isMobile = false; });
+
+    it("opens beside a vertical bar, below a desktop's horizontal one and above a phone's", () => {
+        const positions: string[] = [];
+        function Probe() {
+            positions.push(useLaunchBarTitlePosition());
+            return null;
+        }
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        for (const [ isMobile, isHorizontalLayout ] of [ [ false, false ], [ false, true ], [ true, false ], [ true, true ] ]) {
+            h.isMobile = isMobile;
+            act(() => render(
+                <LaunchBarContext.Provider value={{ isHorizontalLayout }}><Probe /></LaunchBarContext.Provider>,
+                container));
+            act(() => render(null, container));
+        }
+        expect(positions).toEqual([ "right", "bottom", "right", "top" ]);
     });
 });

@@ -162,8 +162,8 @@
     "custom-widget-title": "Widget personalizado",
     "launch-bar-title": "Barra de lanzamiento",
     "available-launchers-title": "Lanzadores disponibles",
-    "go-to-previous-note-title": "Ir a nota previa",
-    "go-to-next-note-title": "Ir a nota siguiente",
+    "go-to-previous-note-title": "Ir a la nota anterior",
+    "go-to-next-note-title": "Ir a la nota siguiente",
     "new-note-title": "Nueva nota",
     "search-notes-title": "Buscar notas",
     "calendar-title": "Calendario",
@@ -239,13 +239,14 @@
     "broken-block-reference": "Referencia no válida",
     "play-video": "Reproducir vídeo",
     "content-not-available": "Este contenido no está disponible.",
-    "untitled-block": "Bloque"
+    "untitled-block": "Bloque",
+    "play-audio": "Reproducir audio"
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
     "unable-to-export-message": "No se ha podido exportar la nota actual como PDF.",
     "unable-to-export-title": "No es posible exportar como PDF",
-    "unable-to-save-message": "No se pudo escribir en el archivo seleccionado. Intente de nuevo o seleccione otro destino.",
+    "unable-to-save-message": "No se ha podido escribir en el archivo seleccionado. Inténtelo de nuevo o seleccione otro destino.",
     "unable-to-print": "No se puede imprimir la nota",
     "render-timeout": "La nota no terminó de renderizarse en {{seconds}} segundos."
   },
@@ -317,7 +318,7 @@
     "move-note-down": "Bajar nota",
     "move-note-up-in-hierarchy": "Subir nota en la jerarquía",
     "move-note-down-in-hierarchy": "Bajar nota en la jerarquía",
-    "edit-note-title": "Editar título de nota",
+    "edit-note-title": "Editar el título de la nota",
     "edit-branch-prefix": "Editar prefijo de rama",
     "clone-notes-to": "Clonar notas en",
     "move-notes-to": "Mover notas a",
@@ -613,5 +614,16 @@
   "open_custom": {
     "choose_application": "Elija una aplicación con la que abrir el archivo.",
     "applications_filter": "Aplicaciones"
+  },
+  "open-executable-dialog": {
+    "title": "Abrir programa",
+    "message": "¿Abrir «{{- name}}»?",
+    "detail": "{{- path}}\n\nEste archivo puede ejecutar un programa en su ordenador. Ábralo solo si ha creado usted mismo este enlace y confía en el archivo.",
+    "cancel": "Cancelar",
+    "open": "Abrir"
+  },
+  "revisions": {
+    "draft_description": "Cambios sin guardar",
+    "fragment_description": "Cambios sin guardar en un extracto"
   }
 }

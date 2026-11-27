@@ -6,7 +6,7 @@ import { useEffect, useState } from "preact/hooks";
 import branches from "../../services/branches";
 import froca from "../../services/froca";
 import { createEdgeScroller } from "../react/edge_scroll";
-import { TREE_CLIPBOARD_TYPE } from "../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag";
 
 /** How near an end of the bar a drag starts to scroll it, in pixels. */
 const EDGE_SCROLL_MARGIN = 40;

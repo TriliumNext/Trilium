@@ -45,14 +45,12 @@ function getCurrentLanguage(): LOCALE_IDS {
     let language: string | null = null;
     if (sql_init.isDbInitialized()) {
         language = options.getOptionOrNull("locale");
+        if (!language) {
+            console.info("Language option not found, falling back to en.");
+        }
     }
 
-    if (!language) {
-        console.info("Language option not found, falling back to en.");
-        language = "en";
-    }
-
-    return language as LOCALE_IDS;
+    return (language ?? "en") as LOCALE_IDS;
 }
 
 export async function changeLanguage(locale: string) {

@@ -219,7 +219,7 @@ html body .dropdown-item[disabled] {
 }
 
 /* Static menus (used as a list, such as on the note revisions dialog) */
-body.desktop .dropdown-menu.static {
+:is(body.desktop, body.mobile.tablet) .dropdown-menu.static {
     box-shadow: unset;
     border-radius: 4px;
     border: unset;
@@ -228,7 +228,7 @@ body.desktop .dropdown-menu.static {
     user-select: none;
 }
 
-body.desktop .dropdown-menu.static .dropdown-item.active {
+:is(body.desktop, body.mobile.tablet) .dropdown-menu.static .dropdown-item.active {
     --active-item-text-color: var(--menu-text-color);
 }
 
@@ -295,7 +295,7 @@ body.mobile .dropdown-menu.note-autocomplete-menu {
     }
 }
 
-body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
+body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu, body.tablet .static)) {
     --mobile-menu-group-radius: 6px;
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;

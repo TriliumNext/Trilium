@@ -235,34 +235,6 @@ async function saveSyncSeed(req: Request) {
     await withSetupLock("sync-seed", () => sqlInit.createDatabaseForSync(options));
 }
 
-/**
- * @swagger
- * /api/setup/sync-seed:
- *   get:
- *     tags:
- *       - auth
- *     summary: Sync documentSecret value
- *     description: First step to logging in.
- *     operationId: setup-sync-seed
- *     responses:
- *       '200':
- *         description: Successful operation
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 syncVersion:
- *                   type: integer
- *                   example: 34
- *                 options:
- *                   type: object
- *                   properties:
- *                     documentSecret:
- *                       type: string
- *     security:
- *       - user-password: []
- */
 function getSyncSeed() {
     getLog().info("Serving sync seed.");
 

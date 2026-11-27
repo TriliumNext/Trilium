@@ -1,4 +1,4 @@
-import type { WebSocketMessage } from "@triliumnext/commons";
+import type { EntityChange, WebSocketMessage } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -36,12 +36,15 @@ vi.mock("../../services/i18n", async () => {
 });
 // `useTriliumOptionBool` is mocked alongside `useTriliumOption` rather than left to the original:
 // it reaches for its module's own binding, which a mock of the export does not reach.
-vi.mock("../react/hooks", async (importOriginal) => {
-    const hooks = await importOriginal<typeof import("../react/hooks")>();
+vi.mock("../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/options")>()),
+    useTriliumOption: (name: string) => [ mocks.options[name] ?? "", vi.fn() ],
+    useTriliumOptionBool: (name: string) => [ mocks.options[name] === "true", vi.fn() ]
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => {
+    const hooks = await importOriginal<typeof import("../react/hooks/tooltip")>();
     return {
         ...hooks,
-        useTriliumOption: (name: string) => [ mocks.options[name] ?? "", vi.fn() ],
-        useTriliumOptionBool: (name: string) => [ mocks.options[name] === "true", vi.fn() ],
         useStaticTooltip: (...args: Parameters<typeof hooks.useStaticTooltip>) =>
             hooks.useStaticTooltip(args[0], { ...args[1], animation: false })
     };
@@ -136,6 +139,33 @@ describe("SyncStatus", () => {
             mount();
             expect(icon()).toBeNull();
         }
+    });
+
+    it("marks unpushed changes as soon as an edit arrives, and clears the mark once pushed", () => {
+        mount();
+        const star = () => container.querySelector(".sync-status-sub-icon");
+        const frontendUpdate = (id: number, isSynced: boolean): WebSocketMessage => ({
+            type: "frontend-update",
+            data: {
+                lastSyncedPush: 0,
+                entityChanges: [ { id, isSynced, entityName: "notes", entityId: "note1" } as EntityChange ]
+            }
+        });
+
+        act(() => { mocks.onMessage?.({ type: "sync-finished", lastSyncedPush: 0 }); });
+        expect(icon()?.classList.contains("sync-status-connected-no-changes")).toBe(true);
+        expect(star()).toBeNull();
+
+        act(() => { mocks.onMessage?.(frontendUpdate(4, false)); });
+        expect(star()).toBeNull();
+
+        act(() => { mocks.onMessage?.(frontendUpdate(5, true)); });
+        expect(icon()?.classList.contains("sync-status-connected-with-changes")).toBe(true);
+        expect(star()).not.toBeNull();
+
+        act(() => { mocks.onMessage?.({ type: "sync-finished", lastSyncedPush: 5 }); });
+        expect(icon()?.classList.contains("sync-status-connected-no-changes")).toBe(true);
+        expect(star()).toBeNull();
     });
 
     it("fills a progress bar while pulling, and drops it once the pull is over", () => {

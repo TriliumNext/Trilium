@@ -1,7 +1,7 @@
+import type { ScrollFadeState, ScrollFadeWatch } from "@triliumnext/commons";
 import {
-    NO_SCROLL_FADE, SCROLL_FADE_CLASSES, type ScrollFadeState, type ScrollFadeWatch,
-    watchScrollFade
-} from "@triliumnext/commons";
+    NO_SCROLL_FADE, SCROLL_FADE_CLASSES, watchScrollFade
+} from "@triliumnext/commons/src/lib/scroll_fade.js";
 import {
     type EditingView, type ModelElement, TableScrollEditing, type ViewDowncastWriter,
     type ViewElement

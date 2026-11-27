@@ -20,15 +20,14 @@ import { isMobile } from "../../../services/utils";
 import UserAttributesDisplay from "../../attribute_widgets/UserAttributesList";
 import { parseNavigationStateFromUrl } from "../../../services/link";
 import { FLIP_SETTLE_MS } from "../../react/flip";
+import { useTriliumEvent } from "../../react/hooks/events";
 import {
-    useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean, useNoteRelation,
-    useTriliumEvent
-} from "../../react/hooks";
+    useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean, useNoteRelation
+} from "../../react/hooks/note";
 import { TooltipIcon } from "../../react/Icon";
 import { HighlightedText } from "../../react/RawHtml";
-import {
-    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue
-} from "../../react/hooks";
+import { useIsOnScreen, useLingeringTrue } from "../../react/hooks/dom";
+import { type DragData, TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
 import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { useIsSelected, useSelection } from "../../react/selection";
 import CardToolbar from "./card_toolbar";

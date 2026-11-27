@@ -24,6 +24,17 @@ iframe.pdf-view {
     height: 800px;
 }
 
+#content :is(video, audio).media-player {
+    display: block;
+    width: 100%;
+}
+
+#content video.media-player {
+    max-height: 70vh;
+    border-radius: 8px;
+    background: #000;
+}
+
 /* The inline code of the app, `style.css`. */
 .ck-content code:not(pre code) {
     padding: 0.1em 0.35em;
@@ -267,7 +278,8 @@ iframe.pdf-view {
         color 150ms ease-in;
 }
 
-#content img {
+#content img,
+#content .mermaid svg {
     max-width: 100%;
     height: auto;
 }
@@ -397,18 +409,78 @@ body:not(.math-loaded) .math-tex {
     text-align: right;
 }
 
+#content details.include-note-expandable {
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+
+    & > summary {
+        display: flex;
+        align-items: center;
+        gap: .4em;
+        padding: .4em .75em;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &:hover {
+            background: var(--background-highlight);
+        }
+
+        & > .bx-chevron-right {
+            transition: transform .15s;
+        }
+    }
+
+    &[open] > summary {
+        border-bottom: 1px solid var(--main-border-color);
+
+        & > .bx-chevron-right {
+            transform: rotate(90deg);
+        }
+    }
+
+    & > :not(summary) {
+        margin-inline: .75em;
+    }
+
+    & > summary + * {
+        margin-top: .75em;
+    }
+
+    & > :last-child:not(summary) {
+        margin-bottom: .75em;
+    }
+
+    & > .media-player {
+        margin: 0;
+        border-radius: 0;
+    }
+}
+
 .ck-content figure.captioned-content-embed > section.link-embed {
     margin: 0;
     width: auto;
 }
 
 @media (max-width: 48em) {
-    .ck-content :is(
+    :root .ck-content :is(
         figure.include-note, figure.captioned-content-embed, section.link-embed
     )[data-position] {
         float: none;
         clear: both;
         margin: 1em 0;
+        width: auto;
+    }
+
+    :root .ck-content aside:not(.admonition)[data-position] {
+        float: none;
+        clear: both;
+        margin: var(--aside-margin-block) 0;
         width: auto;
     }
 }

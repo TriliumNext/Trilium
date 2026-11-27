@@ -1,10 +1,14 @@
 import {
-    ConvertAttachmentToNoteResponse, getAttachedFileMime, isAcceptedImageMime
+    ConvertAttachmentToNoteResponse, getAttachedFileMime, isAcceptedImageMime,
+    type SaveConflictResponse, type SavedAttachmentBase
 } from "@triliumnext/commons";
-import { ValidationError } from "../../errors";
+import { DetailedConflictError, ValidationError } from "../../errors";
 import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
+import type BAttachment from "../../becca/entities/battachment.js";
+import type BNote from "../../becca/entities/bnote.js";
+import { answerConflict } from "../helpers.js";
 import blobService from "../../services/blob.js";
 import imageService from "../../services/image.js";
 import { wrapStringOrBuffer } from "../../services/utils/binary.js";
@@ -35,15 +39,44 @@ function getAllAttachments(req: Request<{ attachmentId: string }>) {
     return attachment.getNote()?.getAttachments() || [];
 }
 
+/**
+ * Saves an attachment of a note. With a `blobId`, the blob that the attachment it replaces was
+ * read at, the save is refused with 409 when that attachment has another blob now, and the answer
+ * is the attachment as saved; with `keepOther` as well, the note keeps its version as a revision
+ * first. Without a `blobId`, the save is unconditional, with an empty answer.
+ */
 function saveAttachment(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
-    const { attachmentId, role, mime, title, content } = req.body;
+    const { attachmentId, role, mime, title, content, blobId, keepOther } = req.body;
     const matchByQuery = req.query.matchBy;
     const isValidMatchBy = (typeof matchByQuery === "string") && (matchByQuery === "attachmentId" || matchByQuery === "title");
     const matchBy = isValidMatchBy ? matchByQuery : undefined;
+    const row = { attachmentId, role, mime, title, content };
 
     const note = becca.getNoteOrThrow(noteId);
-    note.saveAttachment({ attachmentId, role, mime, title, content }, matchBy);
+    if (blobId === undefined) {
+        if (keepOther !== undefined && keepOther !== false) {
+            throw new ValidationError("A save that keeps its version needs its 'blobId'.");
+        }
+        note.saveAttachment(row, matchBy);
+        return;
+    }
+    if (typeof blobId !== "string") {
+        throw new ValidationError("Expected the 'blobId' that the attachment was read at.");
+    }
+
+    return answerConflict(() => {
+        const replaced = matchBy === "title"
+            ? note.getAttachmentByTitle(title)
+            : (attachmentId ? becca.getAttachment(attachmentId) : null);
+        if (replaced && replaced.blobId !== blobId) {
+            throw createAttachmentConflict(note, replaced);
+        }
+        if (keepOther === true && note.isVersioned()) {
+            note.saveRevision();
+        }
+        return toSavedAttachment(note.saveAttachment(row, matchBy));
+    });
 }
 
 async function uploadAttachment(req: Request<{ noteId: string }>) {
@@ -106,6 +139,26 @@ async function uploadAttachment(req: Request<{ noteId: string }>) {
 
 function getAttachmentLinkUrl(noteId: string, attachmentId: string | undefined) {
     return `#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}`;
+}
+
+/** The answer of 409 to a save of an attachment based on a blob that `attachment` has not. */
+function createAttachmentConflict(note: BNote, attachment: BAttachment) {
+    const message = `Attachment '${attachment.attachmentId}' of note '${note.noteId}' has `
+        + "changed since the version that the save is based on.";
+    return new DetailedConflictError<SaveConflictResponse>(message, {
+        reason: "version",
+        message,
+        blobId: note.blobId as string,
+        type: note.type,
+        mime: note.mime,
+        isVersioned: note.isVersioned(),
+        attachments: [ toSavedAttachment(attachment) ]
+    });
+}
+
+/** `attachment` as a save left it, which it has an ID and a blob after. */
+function toSavedAttachment({ attachmentId, title, blobId }: BAttachment): SavedAttachmentBase {
+    return { attachmentId: attachmentId as string, title, blobId: blobId as string };
 }
 
 function renameAttachment(req: Request<{ attachmentId: string }>) {

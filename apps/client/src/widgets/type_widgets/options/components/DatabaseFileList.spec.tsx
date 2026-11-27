@@ -18,8 +18,8 @@ vi.mock("../../../../services/database_files", () => ({
     describeDatabaseFile: () => "12 MB, yesterday"
 }));
 
-vi.mock("../../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../../react/hooks")>()),
+vi.mock("../../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

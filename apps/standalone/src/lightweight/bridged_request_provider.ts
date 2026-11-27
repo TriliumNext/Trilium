@@ -11,7 +11,7 @@ import { validateFetchableUrl } from "@triliumnext/core/src/services/request.js"
 export default class BridgedRequestProvider implements RequestProvider {
 
     private pending = new Map<string, {
-        resolve: (value: unknown) => void;
+        resolve: (value: BridgedResponse) => void;
         reject: (reason: Error) => void;
     }>();
     private nextId = 0;
@@ -60,7 +60,7 @@ export default class BridgedRequestProvider implements RequestProvider {
 
         let body: string | undefined;
         if (opts.body) {
-            body = typeof opts.body === "object" ? JSON.stringify(opts.body) : opts.body;
+            body = typeof opts.body === "string" ? opts.body : JSON.stringify(opts.body);
         }
 
         const id = String(this.nextId++);
@@ -112,7 +112,7 @@ export default class BridgedRequestProvider implements RequestProvider {
                 return msg.data;
             }
             const text = msg.body || "";
-            return text.trim() ? JSON.parse(text) : null;
+            return text.trim() ? JSON.parse(text) : null as T;
         }
 
         let errorMessage: string;

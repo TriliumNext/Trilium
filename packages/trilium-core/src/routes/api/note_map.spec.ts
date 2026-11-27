@@ -378,14 +378,14 @@ describe("Note map service (branch coverage)", () => {
     });
 
     it("updateDescendantCountMapForSearch: search parent aggregates child counts", () => {
-        const target = buildNote({ id: "udcTarget", title: "Target", children: [ { id: "udcChild", title: "Child" } ] });
+        buildNote({ id: "udcTarget", title: "Target", children: [ { id: "udcChild", title: "Child" } ] });
+        const leaf = buildNote({ id: "udcLeaf", title: "Leaf" });
         const searchNote = buildNote({ id: "udcSearch", title: "Search", type: "search" });
-        const spy = vi.spyOn(searchNote, "getSearchResultNotes").mockReturnValue([ becca.notes["udcTarget"]! ]);
+        const spy = vi.spyOn(searchNote, "getSearchResultNotes").mockReturnValue([ becca.getNoteOrThrow("udcTarget"), leaf ]);
 
         const res = note_map.getTreeMap(req(searchNote.noteId)) as TreeMapResponse;
-        // the search note's descendant count is derived from its resolved results
-        expect(res.noteIdToDescendantCountMap["udcSearch"]).toBeGreaterThanOrEqual(1);
-        expect(target).toBeDefined();
+        // A result with descendants adds their count, a leaf result counts as one.
+        expect(res.noteIdToDescendantCountMap["udcSearch"]).toBe(2);
         spy.mockRestore();
     });
 

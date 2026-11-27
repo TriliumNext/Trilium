@@ -116,9 +116,12 @@ describe("ShareThemeExportProvider", () => {
     });
 
     describe("mapExtension", () => {
-        it("keeps an attachment's image or .zip file, js for javascript, html otherwise", () => {
+        it("keeps an attachment's image, media or .zip file, js for javascript, html otherwise", () => {
             const p = makeProvider();
             expect(p.mapExtension(null, "image/png", ".png", "share")).toBeNull();
+            expect(p.mapExtension(null, "video/mp4", ".mp4", "share")).toBeNull();
+            expect(p.mapExtension(null, "audio/mpeg", ".mp3", "share")).toBeNull();
+            expect(p.mapExtension(null, "text/plain", ".txt", "share")).toBe("html");
             expect(p.mapExtension(null, "application/zip", ".zip", "share")).toBeNull();
             expect(p.mapExtension("code", "application/javascript", "", "share")).toBe("js");
             expect(p.mapExtension("image", "image/png", ".png", "share")).toBe("html");
@@ -152,6 +155,7 @@ describe("ShareThemeExportProvider", () => {
             // Render output exercises both the attachment and note link rewrites.
             mockContentRenderer.renderNoteForExport.mockReturnValue(
                 `<a href="api/attachments/att123456/download">f</a>` +
+                `<video src="api/attachments/att123456/download"></video>` +
                 `<a href="x./otherNote123">n</a>` +
                 `<a href="x./assets/keepme12345">keep</a>`
             );
@@ -167,6 +171,7 @@ describe("ShareThemeExportProvider", () => {
 
             // Attachment download link rewritten to its data file name.
             expect(out).toContain('href="files/att.png"');
+            expect(out).toContain('<video src="files/att.png">');
             // Plain note link rewritten to a hash anchor.
             expect(out).toContain('href="#root/otherNote123"');
             // /assets/ links are preserved untouched.
@@ -213,6 +218,29 @@ describe("ShareThemeExportProvider", () => {
             const out = p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any) as string;
             // basePath for a 2-element path is "" (root link points to the base).
             expect(out).toContain('href=""');
+        });
+
+        it("keeps the blocks and the bookmark that a note link points at", () => {
+            const note = { noteId: "linkNote", getBestNotePath: () => [ "root", "linkNote" ] };
+            mockBecca.getNote.mockReturnValue(null);
+            mockContentRenderer.renderNoteForExport.mockReturnValue(
+                `<a href="./otherNote123?block=a:b%20c">range</a>`
+                + `<a href="./otherNote123?block=a#Set%20up">both</a>`
+                + `<a href="./otherNote123#Set%20up">bookmark</a>`
+                + `<a href="./rootNote1234?block=r">root</a>`
+            );
+
+            const p = makeProvider();
+            (p as any).rootMeta = { noteId: "rootNote1234" };
+            const noteMeta: any = {
+                notePath: [ "root", "rootNote1234", "linkNote" ], attachments: []
+            };
+
+            const out = String(p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any));
+            expect(out).toContain(`href="#root/otherNote123?block=a:b%20c">range`);
+            expect(out).toContain(`href="#root/otherNote123?block=a#Set%20up">both`);
+            expect(out).toContain(`href="#root/otherNote123#Set%20up">bookmark`);
+            expect(out).toContain(`href="../?block=r">root`);
         });
 
         it("links the notes of an app view to their pages, the root to the base path", () => {
@@ -411,7 +439,10 @@ describe("hasMermaidDiagrams", () => {
 
         const fenced = "# Title\n\n~~~ mermaid\ngraph TD;\n~~~";
 
-        expect(hasMermaidDiagrams(subtreeOf({ ...markdown, content: fenced }))).toBe(true);
+        for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+            const note = subtreeOf({ type: "code", mime, content: fenced });
+            expect(hasMermaidDiagrams(note)).toBe(true);
+        }
         expect(hasMermaidDiagrams(subtreeOf(
             { ...markdown, content: "Inline ```mermaid is not a fence.\n\n```js\nmermaid();\n```" },
             { type: "code", mime: "application/javascript", content: "```mermaid" }

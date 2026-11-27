@@ -6,11 +6,13 @@ import prefresh from "@prefresh/vite";
 import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
+import { translationCatalogues } from "../client/translation-catalogues.mjs";
 import {
-    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    stripUniverHyphenation
 } from "../client/vite-plugins.mjs";
 
-const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
+const clientAssets = ["assets", "stylesheets", "fonts"];
 
 const isDev = process.env.NODE_ENV === "development";
 const FULL_COVERAGE = { lines: 100, functions: 100, branches: 100, statements: 100 };
@@ -199,11 +201,13 @@ let plugins: any = [
     narrowThirdPartySelectors(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
+    translationCatalogues(join(__dirname, "../client/src/translations")),
     viteStaticCopy({
         targets: clientAssets.map((asset) => ({
             src: `../../client/src/${asset}/**/*`,
             dest: asset,
-            rename: { stripBase: 3 }
+            rename: { stripBase: 3 },
+            ...(asset === "stylesheets" && { transform: bundleStylesheet })
         })),
         // Enable watching in development
         ...(isDev && {
@@ -348,6 +352,12 @@ export default defineConfig(() => ({
             {
                 find: "@client",
                 replacement: join(__dirname, "../client/src")
+            },
+            // The readable browser bundle rather than the `browser` entry, `exceljs.min.js`:
+            // `patches/exceljs@4.4.0.patch` edits this file and leaves the minified one alone.
+            {
+                find: /^exceljs$/,
+                replacement: join(__dirname, "../../node_modules/exceljs/dist/exceljs.js")
             },
             // Bypass officeparser's `browser` entry — a prebuilt ~2.7 MB monolith that
             // inlines pdfjs-dist for its PDF-parsing feature. The wrapper bundles the
@@ -534,6 +544,7 @@ export default defineConfig(() => ({
                 "**/playwright.config.ts",
                 // Test harness, not product code.
                 "**/test_setup.ts",
+                "**/test_environment_worker.ts",
                 // Thin re-export entry (forwards the client desktop entry).
                 "**/desktop.ts",
                 // The web-worker entry boots @triliumnext/core (and a second SQLite
@@ -547,10 +558,11 @@ export default defineConfig(() => ({
             // which are ambiguous in this monorepo and get attributed to whichever project wins
             // the match. Anchor to the repo root so every path is unambiguous.
             reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
-            // Threshold globs match paths relative to the root, `src`.
+            // Threshold globs match paths relative to the root, `src`; `**` does not cross `..`, so
+            // the second glob covers this app's own files and not core's.
             thresholds: {
                 "../../../packages/trilium-core/src/share/**": FULL_COVERAGE,
-                "lightweight/share_provider.ts": FULL_COVERAGE
+                "**/*.{ts,tsx}": FULL_COVERAGE
             }
         },
         server: {

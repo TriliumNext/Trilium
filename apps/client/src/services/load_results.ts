@@ -78,6 +78,8 @@ export default class LoadResults {
     private revisionRows: RevisionRow[];
     private noteReorderings: string[];
     private contentNoteIdToComponentId: ContentNoteIdToComponentIdRow[];
+    /** The notes whose title, type, MIME type or protection changed, beyond their content. */
+    private noteIdsWithChangedProperties = new Set<string>();
     private optionNames: OptionNames[];
     private attachmentRows: { attachment: AttachmentRow; componentId?: string | null }[];
     public hasEtapiTokenChanges: boolean = false;
@@ -192,6 +194,14 @@ export default class LoadResults {
 
         const componentIds = this.noteIdToComponentId[noteId];
         return componentIds && componentIds.find((sId) => sId !== componentId) !== undefined;
+    }
+
+    addNotePropertiesChange(noteId: string) {
+        this.noteIdsWithChangedProperties.add(noteId);
+    }
+
+    hasNotePropertiesChanged(noteId: string) {
+        return this.noteIdsWithChangedProperties.has(noteId);
     }
 
     addNoteContent(noteId: string, componentId: string) {

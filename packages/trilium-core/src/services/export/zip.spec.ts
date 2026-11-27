@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { PassThrough } from "stream";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { isLocalPreviewImageSrc } from "@triliumnext/commons";
 
@@ -824,6 +824,45 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(dataFile).toContain(`href="#root/${outside.noteId}"`);
         });
 
+        it("keeps the blocks and the bookmark that a link points at, in every format", async () => {
+            const { note: parent } = createNote("root", { title: "QueryParent", content: "" });
+            const { note: target } = createNote(parent.noteId, {
+                title: "QueryTarget", content: "<p>t</p>"
+            });
+            createNote(parent.noteId, {
+                title: "QuerySource",
+                content: `<p><a href="#root/${parent.noteId}/${target.noteId}?block=a:b">range</a>`
+                    + `<a href="#root/${target.noteId}?bookmark=Set%20up">mark</a>`
+                    + `<a href="#root/${target.noteId}?viewMode=source&amp;block=c">other</a></p>`
+            });
+            createNote(parent.noteId, {
+                title: "QueryMarkdown",
+                type: "code",
+                mime: "text/x-markdown",
+                content: `[range](#root/${target.noteId}?block=a:b)`
+                    + ` [mark](#root/${target.noteId}?bookmark=x)`
+            });
+
+            const readEntry = async (format: ExportFormat, fileName: string) => {
+                const { entries } = await exportSubtree(parent.getParentBranches()[0], format);
+                const entryName = Object.keys(entries).find((name) => name.endsWith(fileName));
+                return entries[entryName ?? ""].toString("utf-8");
+            };
+
+            const html = await readEntry("html", "QuerySource.html");
+            expect(html).toContain(`href="QueryTarget.html?block=a:b"`);
+            expect(html).toContain(`href="QueryTarget.html?bookmark=Set%20up"`);
+            expect(html).toContain(`href="QueryTarget.html?block=c"`);
+            expect(await readEntry("markdown", "QuerySource.md"))
+                .toContain("[range](QueryTarget.md?block=a:b)");
+            expect(await readEntry("html", "QueryMarkdown.md")).toContain(
+                "[range](QueryTarget.html?block=a:b) [mark](QueryTarget.html?bookmark=x)");
+            // A shared page reads `block` from its address and reveals the bookmark as a fragment.
+            const shared = await readEntry("share", "QuerySource.html");
+            expect(shared).toContain(`href="QueryTarget.html?block=a:b"`);
+            expect(shared).toContain(`href="QueryTarget.html#Set%20up"`);
+        });
+
         it("rewrites attachment links to the exported file and leaves unknown ids alone", async () => {
             const { note } = createNote("root", { title: "AttLinker", content: "" });
             const attachment = getContext().init(() =>
@@ -841,11 +880,10 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const dataFile = entries[rootMeta.dataFileName ?? ""].toString("utf-8");
 
             expect(dataFile).toContain(`href="AttLinker_doc.txt"`);
-            // An attachment that isn't part of the export can't be resolved, so the attachment rewriter
-            // leaves it alone and the generic note-link rewriter that runs next degrades it to the
-            // owning note's own exported file.
-            expect(dataFile).not.toContain("missingAtt01");
-            expect(dataFile).toContain(`href="AttLinker.html"`);
+            // The export holds no file for the other attachment, so its link stays as written.
+            expect(dataFile).toContain(
+                `href="#root/${note.noteId}?viewMode=attachments&attachmentId=missingAtt01"`);
+            expect(dataFile).not.toContain(`href="AttLinker.html"`);
         });
 
         it("rewrites api/notes download sources only in a share export", async () => {
@@ -896,6 +934,153 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             getContext().init(() => note.addLabel("excludeFromExport"));
 
             await expect(exportSubtree(note.getParentBranches()[0], "html")).rejects.toThrow("Unable to create root meta.");
+        });
+    });
+
+    it("leaves the ToC cache of a PDF out of the archive", async () => {
+        const parent = createNote("root", { title: "TocCacheExport", content: "" });
+        const pdfNote = createNote(parent.note.noteId, {
+            title: "Paper", type: "file", mime: "application/pdf", content: "%PDF-1.7"
+        }).note;
+        getContext().init(() => {
+            pdfNote.saveAttachment({ role: "tocCache", mime: "application/json", title: "toc-cache.json", content: "{}" });
+            pdfNote.saveAttachment({ role: "file", mime: "text/plain", title: "notes.txt", content: "kept" });
+        });
+
+        const { entries } = await exportSubtree(parent.branch);
+
+        const paperMeta = parseMeta(entries).files[0].children?.find((meta) => meta.title === "Paper");
+        expect(paperMeta?.attachments?.map(({ role }) => role)).toStrictEqual([ "file" ]);
+    });
+
+    it("leaves the ToC cache of a PDF out of the data of a share-theme export", async () => {
+        const board =
+            createNote("root", { title: "TocCacheShare", type: "book", content: "" }).note;
+        const pdfNote = createNote(board.noteId, {
+            title: "SharedPaper", type: "file", mime: "application/pdf", content: "%PDF-1.7"
+        }).note;
+        const kept = getContext().init(() => {
+            board.setLabel("viewType", "board");
+            pdfNote.saveAttachment({
+                role: "tocCache", mime: "application/json", title: "toc-cache.json", content: "{}"
+            });
+            return pdfNote.saveAttachment({
+                role: "file", mime: "text/plain", title: "notes.txt", content: "kept"
+            });
+        });
+
+        const { entries } = await exportSubtree(board.getParentBranches()[0], "share");
+
+        const rows = JSON.parse(entries["data/rows.json"].toString("utf-8"));
+        expect(rows.attachments[pdfNote.noteId].map(({ role }: { role: string }) => role))
+            .toStrictEqual([ "file" ]);
+        expect(Object.keys(entries).filter((name) => name.startsWith("data/blobs/attachments/")))
+            .toStrictEqual([ `data/blobs/attachments/${kept.attachmentId}.json` ]);
+    });
+
+    describe("links into PDF files", () => {
+        // A bound heading id of a protected PDF, which the import keeps whatever protection it
+        // gives the file.
+        const bound = "1c8d0zt0m4p9wb.Kp3vXq0aB7.p";
+        const pdf = (text: string) => encodeUtf8(`%PDF-1.7 ${text}`);
+        const file = (title: string) =>
+            ({ role: "file", mime: "application/pdf", title, content: pdf(title) });
+        const attachmentHref = (ownerId: string | undefined, attachmentId: string | undefined) =>
+            `#root/${ownerId}?viewMode=attachments&amp;attachmentId=${attachmentId}`;
+        const inMarkdown = (href: string) => href.replaceAll("&amp;", "&");
+        const child = (note: BNote | undefined, title: string) =>
+            note?.getChildNotes().find((n) => n.title === title);
+
+        beforeAll(() => protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")));
+        afterAll(() => protectedSessionService.resetDataKey());
+
+        it("keep their targets through an export and back, across folders", async () => {
+            const outside = createNote("root", { title: "TripOutside" }).note;
+            const parent = createNote("root", { title: "TargetTrip", content: "" }).note;
+            const sources = createNote(parent.noteId, { title: "Sources", content: "" }).note;
+            const documents = createNote(parent.noteId, { title: "Documents", content: "" }).note;
+            const owner = createNote(documents.noteId, { title: "Owner" }).note;
+            const manual = createNote(documents.noteId, {
+                title: "Manual", type: "file", mime: "application/pdf", content: "",
+                isProtected: true
+            }).note;
+            const appendix = getContext().init(() => owner.saveAttachment(file("appendix.pdf")));
+            const outsidePdf = getContext().init(() => outside.saveAttachment(file("outside.pdf")));
+            getContext().init(() => manual.setContent(pdf("manual")));
+            const appendixHref = `${attachmentHref(owner.noteId, appendix.attachmentId)}`
+                + "&amp;page=4&amp;heading=h2";
+            const outsideHref = `${attachmentHref(outside.noteId, outsidePdf.attachmentId)}`
+                + "&amp;page=5";
+            createNote(sources.noteId, {
+                title: "Text source",
+                content: `<p><a href="#root/${documents.noteId}/${manual.noteId}?page=3`
+                    + `&amp;heading=${bound}">manual</a></p>`
+                    + `<p><a class="reference-link" href="${appendixHref}">appendix.pdf</a></p>`
+                    + `<p><a class="reference-link" href="${outsideHref}">outside.pdf</a></p>`
+            });
+            createNote(sources.noteId, {
+                title: "Markdown source",
+                type: "code",
+                mime: "text/x-markdown",
+                content: `[manual](#root/${manual.noteId}?page=3&heading=${bound})`
+                    + ` [appendix](${inMarkdown(appendixHref)})`
+                    + ` [outside](${inMarkdown(outsideHref)})`
+                    + ` [[${manual.noteId}?page=3&heading=${bound}]]`
+            });
+
+            const taskContext = (await import("../task_context.js")).default;
+            const importZip = (await import("../import/zip.js")).default;
+            const branch = parent.getParentBranches()[0];
+            for (const format of [ "html", "markdown" ] as const) {
+                const { buffer, entries } = await exportSubtree(branch, format);
+                const archived = (fileName: string) =>
+                    entries[`TargetTrip/Sources/${fileName}`]?.toString("utf-8");
+                const isHtml = format === "html";
+                const separator = isHtml ? "&amp;" : "&";
+
+                // The owner of an attachment is found in another folder, and a link to an
+                // attachment of a note that the archive leaves out stays as written.
+                const textFile = archived(isHtml ? "Text source.html" : "Text source.md");
+                expect(textFile, format)
+                    .toContain(`../Documents/Manual.pdf?page=3${separator}heading=${bound}`);
+                expect(textFile, format)
+                    .toContain(`href="../Documents/Owner_appendix.pdf?page=4&amp;heading=h2"`);
+                expect(textFile, format).toContain(`href="${outsideHref}"`);
+                expect(archived("Markdown source.md"), format).toBe(
+                    `[manual](../Documents/Manual.pdf?page=3&heading=${bound})`
+                    + " [appendix](../Documents/Owner_appendix.pdf?page=4&heading=h2)"
+                    + ` [outside](${inMarkdown(outsideHref)})`
+                    + ` [[${manual.noteId}?page=3&heading=${bound}]]`);
+
+                const imported = await getContext().init(async () => await importZip.importZip(
+                    new taskContext("no-progress-reporting", "importNotes", {}),
+                    buffer,
+                    becca.getNoteOrThrow("root")
+                ));
+                const importedManual = child(child(imported, "Documents"), "Manual");
+                const importedOwner = child(child(imported, "Documents"), "Owner");
+                const importedText = child(child(imported, "Sources"), "Text source");
+                const importedMarkdown = child(child(imported, "Sources"), "Markdown source");
+                const importedAppendix = importedOwner?.getAttachments()[0];
+                const manualHref = `#root/${importedManual?.noteId}?page=3&amp;heading=${bound}`;
+                const importedAppendixHref =
+                    attachmentHref(importedOwner?.noteId, importedAppendix?.attachmentId);
+                // The link scan of the import copies another note's attachment into a text note
+                // and points the link at the copy.
+                const textCopy = importedText?.getAttachments()
+                    .find((attachment) => attachment.title === "appendix.pdf");
+
+                expect(importedManual?.isProtected, format).toBe(false);
+                expect(importedAppendix?.attachmentId, format).not.toBe(appendix.attachmentId);
+                expect(importedText?.getContent(), format).toContain(`href="${manualHref}"`);
+                expect(importedText?.getContent(), format).toContain(`href="${attachmentHref(
+                    importedText?.noteId, textCopy?.attachmentId)}&amp;page=4&amp;heading=h2"`);
+                expect(importedMarkdown?.getContent(), format).toBe(
+                    `[manual](${inMarkdown(manualHref)})`
+                    + ` [appendix](${inMarkdown(importedAppendixHref)}&page=4&heading=h2)`
+                    + ` [outside](${inMarkdown(outsideHref)})`
+                    + ` [[${importedManual?.noteId}?page=3&heading=${bound}]]`);
+            }
         });
     });
 
@@ -957,6 +1142,21 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const allContent = Object.values(entries).map((buffer) => buffer.toString("utf-8")).join("\n");
             expect(allContent).toContain("host body");
             expect(allContent).toContain("plain child body");
+        });
+
+        it("leaves a link to a protected note it leaves out unresolved", async () => {
+            const { note: holder } = createNote("root", { title: "ProtectedLinkHolder", content: "" });
+            const { note: leaf } = createNote(holder.noteId, {
+                title: "ProtectedLeaf", content: "<p>leaf</p>", isProtected: true
+            });
+            const { note: linker } = createNote(holder.noteId, {
+                title: "ProtectedLinker", content: `<p><a href="#root/${leaf.noteId}">leaf</a></p>`
+            });
+
+            const { entries } = await exportSubtree(holder.getParentBranches()[0], "html", { excludeProtected: true });
+            const linkerMeta = parseMeta(entries).files[0].children?.find((c) => c.noteId === linker.noteId);
+
+            expect(entries[`ProtectedLinkHolder/${linkerMeta?.dataFileName}`]?.toString("utf-8")).toContain(`href="#root/${leaf.noteId}"`);
         });
 
         it.each(EXCLUDING_FORMATS)("leaves a protected export root's title and content out (%s)", async (format) => {
@@ -1085,5 +1285,171 @@ describe("shouldStoreUncompressed", () => {
         expect(shouldStoreUncompressed(undefined)).toBe(false);
         expect(shouldStoreUncompressed(null)).toBe(false);
         expect(shouldStoreUncompressed("")).toBe(false);
+    });
+});
+
+describe.skipIf(isBrowserRuntime)("zip export edge cases (real DB)", () => {
+    let platformFactory: ZipExportProviderFactory;
+    beforeAll(async () => {
+        sql_init.initializeDb();
+        await sql_init.dbReady;
+        platformFactory = getZipExportProviderFactory();
+        const noAssets = { files: new Map(), readBuiltinFont: () => undefined };
+        initZipExportProviderFactory(async (format, data) => (format === "share"
+            ? new ShareThemeExportProvider(data, noAssets)
+            : platformFactory(format, data)));
+    });
+
+    afterAll(() => initZipExportProviderFactory(platformFactory));
+
+    /** The text of the exported data file of `noteId`, wherever in the archive it was written. */
+    function fileOf(entries: Record<string, Buffer>, noteId: string) {
+        const find = (meta: NoteMetaFile["files"][number]): string | undefined => meta.noteId === noteId
+            ? meta.dataFileName
+            : (meta.children ?? []).map(find).find((name) => name);
+        const dataFileName = find(parseMeta(entries).files[0]) ?? "\0";
+        const entryName = Object.keys(entries).find((name) => name.endsWith(dataFileName));
+        return entries[entryName ?? ""]?.toString("utf-8") ?? "";
+    }
+
+    it("names the archive and the root's data file after the prefix of the exported branch", async () => {
+        const { note, branch } = createNote("root", { title: "PrefixedRoot", content: "<p>x</p>" });
+        getContext().init(() => {
+            branch.prefix = "Pre";
+            branch.save();
+        });
+
+        const { res, entries } = await exportSubtree(note.getParentBranches()[0], "html");
+
+        expect(res.headers["Content-Disposition"]).toContain(encodeURIComponent("Pre - PrefixedRoot.zip"));
+        expect(parseMeta(entries).files[0].dataFileName).toBe("Pre - PrefixedRoot.html");
+    });
+
+    it("names the raw file of a share export after the title, the mime or a generic name", async () => {
+        const bytes = new Uint8Array([ 1, 2, 3 ]);
+        const { note: host } = createNote("root", { title: "RawNamesHost", content: "" });
+        const notes = [
+            createNote(host.noteId, { title: "report.pdf", type: "file", mime: "application/pdf" }).note,
+            createNote(host.noteId, { title: "Blob", type: "file", mime: "application/x-unheard-of" }).note,
+            createNote(host.noteId, { title: "///", type: "file", mime: "application/pdf" }).note
+        ];
+        getContext().init(() => {
+            for (const note of notes) note.setContent(bytes);
+        });
+
+        const { entries } = await exportSubtree(host.getParentBranches()[0], "share");
+
+        for (const raw of [ "report.pdf", "Blob.dat", "note.pdf" ]) {
+            expect([ ...entries[raw] ?? [] ], raw).toEqual([ ...bytes ]);
+        }
+    });
+
+    it("writes a clone of a Markdown export as a Markdown file", async () => {
+        const { note: parent } = createNote("root", { title: "MdCloneHolder", content: "" });
+        const { note: folderA } = createNote(parent.noteId, { title: "MdFolderA", content: "" });
+        const { note: folderB } = createNote(parent.noteId, { title: "MdFolderB", content: "" });
+        const { note: original } = createNote(folderA.noteId, { title: "MdOriginal", content: "<p>orig</p>" });
+        const cloningService = (await import("../cloning.js")).default;
+        getContext().init(() => cloningService.cloneNoteToParentNote(original.noteId, folderB.noteId));
+
+        const { entries } = await exportSubtree(parent.getParentBranches()[0], "markdown");
+        const folderBMeta = parseMeta(entries).files[0].children?.find((c) => c.noteId === folderB.noteId);
+        const clone = folderBMeta?.children?.[0];
+
+        expect(clone).toMatchObject({ isClone: true, format: "markdown" });
+        expect(clone?.dataFileName).toMatch(/\.clone\.md$/);
+    });
+
+    it("links a note without content to its directory, and leaves references out of the export alone", async () => {
+        const { note: outside } = createNote("root", { title: "EdgeOutside", content: "<p>out</p>" });
+        const { note: parent } = createNote("root", { title: "EdgeParent", content: "" });
+        const { note: folder } = createNote(parent.noteId, { title: "EdgeFolder", content: "" });
+        createNote(folder.noteId, { title: "EdgeLeaf", content: "<p>leaf</p>" });
+        const { note: source } = createNote(parent.noteId, {
+            title: "EdgeSource",
+            content: `<p><a href="#root/${folder.noteId}">folder</a></p>`
+                + `<p><img src="api/images/${outside.noteId}/out.png"></p>`
+                + `<p><img src="api/attachments/missingAtt02/image/x.png"></p>`
+                + `<p><img src="api/notes/${outside.noteId}/download"></p>`
+        });
+
+        const { entries } = await exportSubtree(parent.getParentBranches()[0], "html");
+        const html = fileOf(entries, source.noteId);
+        expect(html).toContain(`href="EdgeFolder"`);
+        expect(html).toContain(`src="api/images/${outside.noteId}/out.png"`);
+        expect(html).toContain(`src="api/attachments/missingAtt02/image/x.png"`);
+
+        const { entries: shared } = await exportSubtree(parent.getParentBranches()[0], "share");
+        expect(fileOf(shared, source.noteId)).toContain(`src="api/notes/${outside.noteId}/download"`);
+    });
+
+    it("keeps relations to the root and to named notes, which exist in every instance", async () => {
+        const { note } = createNote("root", { title: "NamedRelations", content: "<p>x</p>" });
+        getContext().init(() => {
+            note.addRelation("toRoot", "root");
+            note.addRelation("toHidden", "_hidden");
+        });
+
+        const { entries } = await exportSubtree(note.getParentBranches()[0], "html");
+        const relations = parseMeta(entries).files[0].attributes?.filter((a) => a.type === "relation");
+
+        expect(relations?.map((a) => [ a.name, a.value ])).toEqual([ [ "toRoot", "root" ], [ "toHidden", "_hidden" ] ]);
+    });
+
+    it("leaves out an asset of a virtual note that cannot be read", async () => {
+        registerVirtualNoteProvider({
+            namespace: "_vnull",
+            parentNoteId: "_hidden",
+            getSubtree: () => [ { id: "_vnullPage", title: "Null asset page", type: "text" } ],
+            getContent: () => `<p><img src="assets/v1/vnull/gone.png"></p>`,
+            getAssets: () => [
+                { id: "_vnullPage_a1", url: "assets/v1/vnull/gone.png", title: "gone.png", mime: "image/png", getContent: async () => null }
+            ]
+        });
+
+        try {
+            getContext().init(() => becca_loader.load());
+            const { entries } = await exportSubtree(becca.getBranchOrThrow("_hidden__vnullPage"), "html");
+
+            const attachmentFile = parseMeta(entries).files[0].attachments?.[0]?.dataFileName;
+            expect(attachmentFile).toBeDefined();
+            expect(entries[attachmentFile ?? ""]).toBeUndefined();
+        } finally {
+            unregisterVirtualNoteProvider("_vnull");
+            getContext().init(() => becca_loader.load());
+        }
+    });
+
+    it("rewrites links with the function the options provide", async () => {
+        const { note } = createNote("root", { title: "CustomRewrite", content: "<p>original</p>" });
+
+        const { entries } = await exportSubtree(note.getParentBranches()[0], "html", {
+            customRewriteLinks: (rewriteLinks) => (content, meta) => rewriteLinks(content, meta).replace("original", "rewritten")
+        });
+
+        expect(fileOf(entries, note.noteId)).toContain("rewritten");
+    });
+
+    it("reports a failure that is not an Error by its value", async () => {
+        const { branch } = createNote("root", { title: "ThrowsString", content: "<p>x</p>" });
+        const previous = getZipExportProviderFactory();
+        initZipExportProviderFactory(async () => {
+            throw "provider unavailable";
+        });
+        const TaskContext = (await import("../task_context.js")).default;
+        const reportError = vi.spyOn(TaskContext.prototype, "reportError");
+        const fileStream = vi.spyOn(getZipProvider(), "createFileStream")
+            .mockReturnValue({ destination: new PassThrough(), waitForFinish: async () => {} });
+
+        try {
+            await expect(getContext().init(() =>
+                zip.exportBranchToZipFile(branch.branchId ?? "", "html", "unused.zip", "zip-string-failure")
+            )).rejects.toBe("provider unavailable");
+            expect(reportError).toHaveBeenCalledWith("Export failed with error: provider unavailable");
+        } finally {
+            reportError.mockRestore();
+            fileStream.mockRestore();
+            initZipExportProviderFactory(previous);
+        }
     });
 });

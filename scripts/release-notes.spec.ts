@@ -4,11 +4,12 @@ import {
     AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings,
     collectItems, type Commit, compatibilityItems, escapeMarkdown, findNewLanguages, type Issue,
     isNightlyOnly, isShippedSeparately, languageName, lintChangelogEntry, markdownToHtml,
-    needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
-    parseDisplayLocales, parseNumstat, parseProtocolVersions, parsePullRequestNumber,
-    type PullRequest, rankContributors, renderReleaseNote, renderSection, splitExplanations,
+    needsEntry, NIGHTLY_COMMENT_MARKER, nightlyComment, type NoteItem, parseChangelogEntry,
+    parseClosingReferences, parseCommits, parseDisplayLocales, parseNumstat,
+    parseProtocolVersions, parsePullRequestNumber, type PullRequest, rankContributors,
+    renderReleaseNote, renderSection, selectNightlyFixes, splitExplanations,
     stripAreaPrefix, unreleasedNotice,
-    renderHighlights,
+    renderHighlights, lintOverview,
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -233,8 +234,9 @@ describe("parseChangelogEntry", () => {
             "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\nnotable: yes\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
             "unknown key `scope`; expected type, title, area, closes, credits or notable",
-            "`type` must be one of note, tip, important, warning, highlight, compatibility, "
-                + "breaking, mobile, fix, improvement, documentation, i18n, technical, security, "
+            "`type` must be one of note, tip, important, warning, overview, highlight, "
+                + "compatibility, breaking, mobile, fix, improvement, documentation, i18n, "
+                + "technical, security, "
                 + "not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
@@ -251,6 +253,21 @@ describe("parseChangelogEntry", () => {
 describe("lintChangelogEntry", () => {
     const entry: ChangelogEntry = { file: "a.md", date: 0, section: "Bugfixes", area: "Search",
         closes: [], credits: [], notable: false, text: "x", details: [] };
+
+    it("keeps the overview bare and alone, and requires one for a release", () => {
+        const overview = { ...entry, section: "Overview" as const, area: undefined };
+        expect(lintChangelogEntry(overview)).toEqual([]);
+        expect(lintChangelogEntry({ ...overview, area: "Search" }))
+            .toEqual([
+                "`area` has no effect in the overview, which is written above the sections" ]);
+        expect(lintOverview([ entry ])).toEqual([]);
+        expect(lintOverview([ entry ], { release: true }))
+            .toEqual([ "no overview entry; a release opens with one (`type: overview`, see "
+                + ".changelog/README.md)" ]);
+        expect(lintOverview([ overview, entry ], { release: true })).toEqual([]);
+        expect(lintOverview([ overview, { ...overview, file: "b.md" } ]))
+            .toEqual([ "2 overview entries; a release has one: a.md, b.md" ]);
+    });
 
     it("requires a title on highlights and rejects it elsewhere", () => {
         const highlight = { ...entry, section: "Key highlights" as const, area: undefined };
@@ -477,7 +494,20 @@ describe("markdownToHtml", () => {
 });
 
 describe("renderReleaseNote", () => {
-    it("fills matching sections, whatever their case, and keeps the others' placeholders", () => {
+    it("writes the overview after the notices and before the first section", () => {
+        const template = "# Release Template\n> [!NOTE]\n\n## 💡 Key highlights\n\n1.  \\[…\\]\n";
+        expect(renderReleaseNote(template, "v1.0.0", [
+            { section: "Overview", date: 1, text: "This release is about X.",
+                details: [ "It also does Y." ], credits: [] },
+            { section: "Tip", date: 1, text: "On Flathub", details: [], credits: [] }
+        ])).toBe([
+            "# v1.0.0", "> [!NOTE]", "",
+            "> [!TIP]", "> On Flathub", "",
+            "This release is about X.", "", "It also does Y.", ""
+        ].join("\n"));
+    });
+
+    it("fills matching sections, whatever their case, and drops the sections without items", () => {
         const template = [
             "# Release Template",
             "> [!NOTE]",
@@ -519,10 +549,6 @@ describe("renderReleaseNote", () => {
             ">",
             "> Or else.",
             "",
-            "## 💡 Key highlights",
-            "",
-            "1.  \\[…\\]",
-            "",
             "## 🚨 Breaking changes",
             "",
             "*   Gone",
@@ -539,7 +565,7 @@ describe("renderReleaseNote", () => {
         ].join("\n"));
     });
 
-    it("can drop the preamble and the sections without items, keeping the admonitions", () => {
+    it("can drop the preamble, keeping the admonitions", () => {
         const template = [
             "# Release Template",
             "> [!NOTE]",
@@ -561,7 +587,7 @@ describe("renderReleaseNote", () => {
         expect(renderReleaseNote(template, "Changes since v1.0.0", [
             { section: "Bugfixes", date: 1, text: "Fixed", details: [], credits: [] },
             { section: "Note", date: 0, text: "Rebuilt nightly", details: [], credits: [] }
-        ], { preamble: false, emptySections: false })).toBe([
+        ], { preamble: false })).toBe([
             "# Changes since v1.0.0",
             "> [!NOTE]",
             "> Rebuilt nightly",
@@ -638,6 +664,41 @@ describe("unreleasedNotice", () => {
         expect(notice.section).toBe("Note");
         expect(notice.text).toContain("since v0.107.0");
         expect(notice.text).toContain("`abc1234` of 2026-11-08");
+    });
+});
+
+describe("selectNightlyFixes", () => {
+    it("keeps the closed issues that ship with the app", () => {
+        const issue = (number: number, fields: Partial<Issue> = {}): Issue => ({
+            number, title: `Issue ${number}`, state: "CLOSED", labels: [],
+            url: `https://github.com/TriliumNext/Trilium/issues/${number}`, ...fields
+        });
+        const closing = (number: number, subject = `fix(tree): one (closes #${number})`) =>
+            ({ issue: number, date: number, subjects: [ subject ], contributors: [] });
+        const issues = new Map([
+            [ 1, issue(1) ],
+            [ 2, issue(2, { state: "OPEN" }) ],
+            [ 3, issue(3, { url: "https://github.com/TriliumNext/Trilium/pull/3" }) ],
+            [ 4, issue(4, { labels: [ "web-clipper" ] }) ],
+            [ 5, issue(5) ],
+            [ 7, issue(7) ]
+        ]);
+
+        expect(selectNightlyFixes([
+            closing(1), closing(2), closing(3), closing(4),
+            closing(5, "fix(web-clipper): one (closes #5)"), closing(6), closing(7)
+        ], issues).map((selected) => selected.number)).toEqual([ 1, 7 ]);
+    });
+});
+
+describe("nightlyComment", () => {
+    it("links the nightly release and names the build", () => {
+        const comment =
+            nightlyComment("TriliumNext/Trilium", { hash: "abc1234", date: "2026-11-10" });
+        expect(comment.startsWith(NIGHTLY_COMMENT_MARKER)).toBe(true);
+        expect(comment)
+            .toContain("(https://github.com/TriliumNext/Trilium/releases/tag/nightly)");
+        expect(comment).toContain("of 2026-11-10 (commit `abc1234`)");
     });
 });
 

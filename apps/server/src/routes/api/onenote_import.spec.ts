@@ -1,8 +1,12 @@
 import type { Request } from "express";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { markAsInternalElectronRequest } from "../../services/electron_request.js";
+import { getDesktopSession, setDesktopSession } from "../../services/import/onenote/desktop_session.js";
 import graph from "../../services/import/onenote/graph.js";
+import importer from "../../services/import/onenote/importer.js";
 import oauth from "../../services/oauth/oauth.js";
+import sqlInit from "../../services/sql_init.js";
 import onenoteImportRoute from "./onenote_import.js";
 
 vi.mock("../../services/oauth/oauth.js", () => ({
@@ -20,8 +24,15 @@ vi.mock("../../services/import/onenote/graph.js", () => ({
     }
 }));
 
+vi.mock("../../services/import/onenote/importer.js", () => ({
+    default: {
+        importSelection: vi.fn(() => Promise.resolve())
+    }
+}));
+
 const oauthMock = vi.mocked(oauth);
 const graphMock = vi.mocked(graph);
+const importerMock = vi.mocked(importer);
 
 /** A minimal express-session-shaped request: web (non-Electron), with a working save callback. */
 function fakeRequest(oneNoteImport?: Request["session"]["oneNoteImport"]): Request {
@@ -32,12 +43,144 @@ function fakeRequest(oneNoteImport?: Request["session"]["oneNoteImport"]): Reque
     return { session } as unknown as Request;
 }
 
+/** A request dispatched over the desktop `trilium-app://` protocol, carrying `body` and no usable session. */
+function fakeElectronRequest(body?: unknown): Request {
+    const req = { body, session: {} } as unknown as Request;
+    markAsInternalElectronRequest(req);
+    return req;
+}
+
 beforeEach(() => {
     oauthMock.requestDeviceCode.mockReset();
     oauthMock.pollDeviceToken.mockReset();
     oauthMock.refreshAccessToken.mockReset();
     graphMock.getAccount.mockReset();
     graphMock.listNotebooks.mockReset();
+    importerMock.importSelection.mockClear();
+    setDesktopSession(null);
+});
+
+describe("getStatus and disconnect", () => {
+    it("reads and clears the web connection from the express session", async () => {
+        const account = { name: "Ada", email: "ada@example.com" };
+        const req = fakeRequest({ accessToken: "access-token", account });
+
+        expect(onenoteImportRoute.getStatus(req)).toEqual({ connected: true, account });
+
+        expect(await onenoteImportRoute.disconnect(req)).toEqual({});
+        expect(req.session.oneNoteImport).toBeUndefined();
+        expect(onenoteImportRoute.getStatus(req)).toEqual({ connected: false, account: null });
+    });
+
+    it("reports a stored token without an account as connected with no account", () => {
+        expect(onenoteImportRoute.getStatus(fakeRequest({ accessToken: "access-token" }))).toEqual({ connected: true, account: null });
+    });
+
+    it("keeps the desktop connection in the process-wide session, not the request's", async () => {
+        const req = fakeElectronRequest();
+        expect(onenoteImportRoute.getStatus(req)).toEqual({ connected: false, account: null });
+
+        const account = { name: "Desk", email: "desk@example.com" };
+        setDesktopSession({ accessToken: "desktop-token", account });
+        expect(onenoteImportRoute.getStatus(req)).toEqual({ connected: true, account });
+        expect(req.session.oneNoteImport).toBeUndefined();
+
+        await onenoteImportRoute.disconnect(req);
+        expect(getDesktopSession()).toBeNull();
+    });
+});
+
+describe("token refresh through the route's token store", () => {
+    it("refreshes an expired web token and merges the new tokens into the session, keeping the account", async () => {
+        oauthMock.refreshAccessToken.mockResolvedValue({ token_type: "Bearer", access_token: "fresh-token", refresh_token: "fresh-refresh", expires_in: 3600 });
+        graphMock.listNotebooks.mockResolvedValue([]);
+        const account = { name: "Ada", email: "ada@example.com" };
+        const req = fakeRequest({ accessToken: "stale-token", refreshToken: "old-refresh", expiresAt: Date.now() - 1000, account });
+
+        expect(await onenoteImportRoute.getNotebooks(req)).toEqual({ notebooks: [] });
+        expect(oauthMock.refreshAccessToken).toHaveBeenCalledWith(expect.anything(), { refreshToken: "old-refresh" });
+        expect(req.session.oneNoteImport).toMatchObject({ accessToken: "fresh-token", refreshToken: "fresh-refresh", account });
+        // The notebook listing ran with the refreshed token, not the stale one.
+        const provider = graphMock.listNotebooks.mock.calls[0]?.[0];
+        expect(await provider?.()).toBe("fresh-token");
+    });
+
+    it("refreshes an expired desktop token into the process-wide session, keeping the account", async () => {
+        oauthMock.refreshAccessToken.mockResolvedValue({ token_type: "Bearer", access_token: "fresh-desktop", refresh_token: "fresh-refresh", expires_in: 3600 });
+        graphMock.listNotebooks.mockResolvedValue([]);
+        const account = { name: "Desk", email: "desk@example.com" };
+        setDesktopSession({ accessToken: "stale", refreshToken: "old-refresh", expiresAt: Date.now() - 1000, account });
+
+        await onenoteImportRoute.getNotebooks(fakeElectronRequest());
+
+        expect(getDesktopSession()).toMatchObject({ accessToken: "fresh-desktop", refreshToken: "fresh-refresh", account });
+    });
+
+    it("rejects the request when the session cannot be saved", async () => {
+        oauthMock.refreshAccessToken.mockResolvedValue({ token_type: "Bearer", access_token: "fresh-token", expires_in: 3600 });
+        const req = fakeRequest({ accessToken: "stale-token", refreshToken: "old-refresh", expiresAt: Date.now() - 1000 });
+        req.session.save = ((cb: (err?: Error) => void) => cb(new Error("session store unavailable"))) as Request["session"]["save"];
+
+        // The failed save surfaces as the connection failure reason instead of a silent success.
+        expect(await onenoteImportRoute.getNotebooks(req)).toEqual([401, "session store unavailable"]);
+        expect(graphMock.listNotebooks).not.toHaveBeenCalled();
+    });
+
+    it("reports a non-Error failure verbatim, and a generic reason when the failure carries none", async () => {
+        const failingSave = (err: unknown) => {
+            oauthMock.refreshAccessToken.mockResolvedValueOnce({ token_type: "Bearer", access_token: "fresh-token", expires_in: 3600 });
+            const req = fakeRequest({ accessToken: "stale-token", refreshToken: "old-refresh", expiresAt: Date.now() - 1000 });
+            req.session.save = ((cb: (e?: unknown) => void) => cb(err)) as unknown as Request["session"]["save"];
+            return req;
+        };
+
+        expect(await onenoteImportRoute.getNotebooks(failingSave("disk full"))).toEqual([401, "disk full"]);
+        expect(await onenoteImportRoute.getNotebooks(failingSave(new Error("")))).toEqual([401, "Not connected to OneNote."]);
+    });
+});
+
+describe("runImport", () => {
+    beforeAll(async () => {
+        sqlInit.initializeDb();
+        await sqlInit.dbReady;
+    });
+
+    const sections = [{ id: "sec-1", title: "Section", groupPath: [], notebookId: "nb-1", notebookTitle: "Notebook" }];
+    const connected = (body: unknown) => {
+        setDesktopSession({ accessToken: "desktop-token", expiresAt: Date.now() + 3_600_000 });
+        return fakeElectronRequest(body);
+    };
+
+    it("starts the import in the background with the request's token provider and options", async () => {
+        const req = connected({ parentNoteId: "root", sections, taskId: "task-1", debug: 1, shrinkImages: "" });
+
+        expect(await onenoteImportRoute.runImport(req)).toEqual({});
+        expect(importerMock.importSelection).toHaveBeenCalledWith({
+            getAccessToken: expect.any(Function),
+            parentNoteId: "root",
+            sections,
+            taskId: "task-1",
+            debug: true,
+            shrinkImages: false
+        });
+        const provider = importerMock.importSelection.mock.calls[0]?.[0].getAccessToken;
+        expect(await provider?.()).toBe("desktop-token");
+    });
+
+    it("refuses to start without a usable connection", async () => {
+        expect(await onenoteImportRoute.runImport(fakeElectronRequest({ parentNoteId: "root", sections, taskId: "task-1" })))
+            .toEqual([401, expect.stringContaining("sign in again")]);
+        expect(importerMock.importSelection).not.toHaveBeenCalled();
+    });
+
+    it("validates the request before starting anything", async () => {
+        await expect(onenoteImportRoute.runImport(connected({ sections, taskId: "task-1" }))).rejects.toThrow("parentNoteId and taskId are required.");
+        await expect(onenoteImportRoute.runImport(connected({ parentNoteId: "root", sections }))).rejects.toThrow("parentNoteId and taskId are required.");
+        expect(await onenoteImportRoute.runImport(connected({ parentNoteId: "root", sections: [], taskId: "task-1" }))).toEqual([400, "No sections were selected."]);
+        expect(await onenoteImportRoute.runImport(connected({ parentNoteId: "root", sections: "sec-1", taskId: "task-1" }))).toEqual([400, "No sections were selected."]);
+        await expect(onenoteImportRoute.runImport(connected({ parentNoteId: "doesNotExist", sections, taskId: "task-1" }))).rejects.toThrow(/doesNotExist/);
+        expect(importerMock.importSelection).not.toHaveBeenCalled();
+    });
 });
 
 describe("deviceLogin", () => {
@@ -144,6 +287,8 @@ describe("devicePoll", () => {
         expect(stored?.account).toEqual({ name: "Ada", email: "ada@example.com" });
         // The consumed device code must not linger next to the real tokens.
         expect(stored?.deviceCode).toBeUndefined();
+        // The profile lookup authenticates with the freshly issued token.
+        expect(await graphMock.getAccount.mock.calls[0]?.[0]()).toBe("access-token");
     });
 
     it("keeps the connection when the profile lookup fails after tokens are issued", async () => {
@@ -191,6 +336,30 @@ describe("devicePoll", () => {
 
         expect(result).toEqual({ status: "failed", error: "The sign-in was declined." });
         expect(req.session.oneNoteImport).toBeUndefined();
+
+        // A non-Error rejection is reported as its string form.
+        oauthMock.pollDeviceToken.mockRejectedValue("access_denied");
+        const second = fakeRequest({ deviceCode: "device-secret", deviceCodeExpiresAt: Date.now() + 900_000 });
+        expect(await onenoteImportRoute.devicePoll(second)).toEqual({ status: "failed", error: "access_denied" });
+    });
+
+    it("reports an earlier connection without a profile as connected with a blank account", async () => {
+        const result = await onenoteImportRoute.devicePoll(fakeRequest({ accessToken: "access-token" }));
+
+        expect(result).toEqual({ status: "connected", account: { name: "", email: "" } });
+        expect(oauthMock.pollDeviceToken).not.toHaveBeenCalled();
+    });
+
+    it("keeps the connection when the profile lookup rejects with a non-Error value", async () => {
+        oauthMock.pollDeviceToken.mockResolvedValue({
+            status: "success",
+            tokens: { token_type: "Bearer", access_token: "access-token", refresh_token: "refresh-token", expires_in: 3600 }
+        });
+        graphMock.getAccount.mockRejectedValue("timeout");
+        const req = fakeRequest({ deviceCode: "device-secret", deviceCodeExpiresAt: Date.now() + 900_000 });
+
+        expect(await onenoteImportRoute.devicePoll(req)).toEqual({ status: "connected", account: { name: "", email: "" } });
+        expect(req.session.oneNoteImport?.accessToken).toBe("access-token");
     });
 
     it("fails locally once the code has expired, without polling the provider", async () => {

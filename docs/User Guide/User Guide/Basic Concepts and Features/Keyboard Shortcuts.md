@@ -99,7 +99,7 @@ These are hooked in Electron to be similar to native browser keyboard shortcuts.
 ### Other
 
 *   <kbd>Alt</kbd>+<kbd>O</kbd> – show SQL console (use only if you know what you're doing)
-*   <kbd>Alt</kbd>+<kbd>M</kbd> – distraction-free mode - display only note editor, everything else is hidden
+*   <kbd>F9</kbd> – [Zen mode](Zen%20mode.md) - display only note editor, everything else is hidden
 *   <kbd>F11 </kbd> – toggle full screen
 *   <kbd>Ctrl</kbd>+<kbd>S</kbd> – toggle [search](Navigation/Search.md) form in tree pane
 *   <kbd>Alt</kbd>+<kbd>A</kbd> – show note [attributes](../Advanced%20Usage/Attributes.md) dialog

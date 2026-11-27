@@ -1,10 +1,15 @@
 import "./ChatHighlightsList.css";
 
+import { useContext } from "preact/hooks";
+
 import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useGetContextData } from "../react/hooks";
-import RightPanelWidget from "./RightPanelWidget";
+import { useFilterState } from "../react/filter";
+import { useGetContextData } from "../react/hooks/tree";
+import { HighlightedText } from "../react/RawHtml";
+import { useOutlineFilter } from "./outline_filter";
+import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 
 /**
  * Sidebar list of the user's highlights in the active AI chat. The data (and the scroll/remove
@@ -12,14 +17,28 @@ import RightPanelWidget from "./RightPanelWidget";
  */
 export default function ChatHighlightsList() {
     const data = useGetContextData("chatHighlights");
-    const highlights = data?.highlights ?? [];
+    const highlights = data?.highlights ?? NO_HIGHLIGHTS;
+    const onNavigated = useContext(NavigatedInNote);
+    const tokens = useFilterState()?.tokens;
+
+    function activate(id: string) {
+        data?.scrollToHighlight(id);
+        onNavigated?.();
+    }
+
+    const matches = useOutlineFilter(highlights, {
+        section: "chat-highlights",
+        getText: (highlight) => highlight.text,
+        activate: (highlight) => activate(highlight.id)
+    });
+    const shown = matches ? matches.map(({ item }) => item) : highlights;
 
     return (
         <RightPanelWidget id="chat-highlights" title={t("llm_chat.highlights_title", { count: highlights.length })} grow>
             <div className="chat-highlights-list">
-                {highlights.length > 0 ? (
+                {shown.length > 0 && (
                     <ol>
-                        {highlights.map(highlight => (
+                        {shown.map(highlight => (
                             <li key={highlight.id}>
                                 {/* The text is the focusable scroll target (keyboard-accessible); the ✕
                                     stays a separate button rather than nesting inside an interactive row. */}
@@ -27,15 +46,18 @@ export default function ChatHighlightsList() {
                                     className="chat-highlight-text"
                                     role="button"
                                     tabIndex={0}
-                                    onClick={() => data?.scrollToHighlight(highlight.id)}
+                                    onClick={() => activate(highlight.id)}
                                     onKeyDown={e => {
                                         if (e.key === "Enter" || e.key === " ") {
                                             e.preventDefault();
-                                            data?.scrollToHighlight(highlight.id);
+                                            activate(highlight.id);
                                         }
                                     }}
                                 >
-                                    {highlight.text}
+                                    <HighlightedText
+                                        text={highlight.text}
+                                        highlightedTokens={tokens}
+                                    />
                                 </span>
                                 <ActionButton
                                     className="chat-highlight-remove"
@@ -55,10 +77,13 @@ export default function ChatHighlightsList() {
                             </li>
                         ))}
                     </ol>
-                ) : (
+                )}
+                {!matches && highlights.length === 0 && (
                     <div className="no-highlights">{t("llm_chat.highlights_empty")}</div>
                 )}
             </div>
         </RightPanelWidget>
     );
 }
+
+const NO_HIGHLIGHTS: never[] = [];

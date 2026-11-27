@@ -33,6 +33,10 @@
     margin: 0 !important;
 }
 
+.note-detail-split .note-detail-code-editor .cm-content {
+    padding-bottom: calc(4px + var(--note-bottom-inset, 0px));
+}
+
 /* Error card, anchored to the top so the dimmed last render stays visible behind it.
    The card's header/details layout comes from `.extended-admonition`; here we only
    position it as an overlay and give it a solid background so the dimmed preview

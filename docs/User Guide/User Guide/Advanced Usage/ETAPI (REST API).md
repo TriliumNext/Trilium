@@ -12,7 +12,9 @@ As an alternative to calling the API directly, there are client libraries to sim
 
 ## Obtaining a token
 
-All operations with the REST API have to be authenticated using a token. You can get this token either from Options -> ETAPI or programmatically using the `/auth/login` REST call (see the [spec](https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/etapi.openapi.yaml)). With [multi-factor authentication](../Installation%20%26%20Setup/Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md) enabled, `/auth/login` also needs the one-time password or a recovery code in `totpToken`.
+All operations with the REST API have to be authenticated using a token. You can get this token either from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _ETAPI_ or programmatically using the `/auth/login` REST call (see the [spec](https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/etapi.openapi.yaml)). With [multi-factor authentication](../Installation%20%26%20Setup/Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md) enabled, `/auth/login` also needs the one-time password or a recovery code in `totpToken`.
+
+A token stays valid until it is deleted in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _ETAPI_ or through `/auth/logout`. Changing the password does not revoke it, including a token obtained through `/auth/login`, so a script keeps working after a password change.
 
 ## Authentication
 

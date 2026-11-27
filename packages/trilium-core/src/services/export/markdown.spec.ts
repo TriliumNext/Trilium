@@ -48,6 +48,25 @@ describe("Markdown export", () => {
         }
     });
 
+    it("uses a longer fence for code that contains a fence", () => {
+        expect(markdownExportService.toMarkdown(
+            `<pre><code class="language-text-x-markdown">Example:\n\n\`\`\`js\nfoo()\n\`\`\`</code></pre>`
+        )).toBe("````markdown\nExample:\n\n```js\nfoo()\n```\n````");
+
+        expect(markdownExportService.toMarkdown(
+            `<pre><code>  \`\`\`\`\nx</code></pre>`
+        )).toBe("`````\n  ````\nx\n`````");
+
+        // a run of backticks that doesn't start a line can't close the fence
+        expect(markdownExportService.toMarkdown(`<pre><code>a \`\`\` b</code></pre>`))
+            .toBe("```\na ``` b\n```");
+    });
+
+    it("names an unknown language after the last part of its tag", () => {
+        expect(markdownExportService.toMarkdown(`<pre><code class="language-text-x-madeup">x</code></pre>`))
+            .toBe("```madeup\nx\n```");
+    });
+
     it("removes auto tag for code blocks", () => {
         const html = trimIndentation`\
             <pre><code class="language-text-x-trilium-auto">Hello
@@ -810,11 +829,90 @@ describe("Markdown export", () => {
             <a id="say-&quot;hi&quot;"></a>Quoted`);
     });
 
-    it("drops the block ids of a text note, which Markdown has no syntax for", () => {
+    it("drops the block ids of a text note unless it is asked for block markers", () => {
         const html = `<h2 data-trilium-block-id="h1">Title</h2>`
             + `<p data-trilium-block-id="p1">Text</p>`;
 
         expect(markdownExportService.toMarkdown(html)).toBe("## Title\n\nText");
+        expect(markdownExportService.toMarkdown(html, { blockIds: "drop" })).toBe("## Title\n\nText");
+    });
+
+    describe("block markers", () => {
+        const marker = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
+        const exportMarkers = (html: string) =>
+            markdownExportService.toMarkdown(html, { blockIds: "markers" });
+
+        it("ends the text of a paragraph, a heading and a list item with the marker", () => {
+            expect(exportMarkers(`<h2 data-trilium-block-id="h">Title</h2>`
+                + `<p data-trilium-block-id="p">Text <a id="bm"></a>here<br>&nbsp;</p>`
+                + `<ul><li><p data-trilium-block-id="i">item</p></li></ul>`)).toBe(
+                `## Title${marker("h")}\n\nText <a id="bm"></a>here${marker("p")}  \n\u{a0}`
+                + `\n\n*   item${marker("i")}`);
+        });
+
+        it("keeps the space of an empty paragraph and starts a formula's line with the marker", () => {
+            expect(exportMarkers(`<p data-trilium-block-id="e">&nbsp;</p>`
+                + `<p data-trilium-block-id="f"><span class="math-tex">\\[x\\]</span> text</p>`))
+                .toBe(`&nbsp;${marker("e")}\n\n${marker("f")}$$x$$ text`);
+        });
+
+        it("writes a marker line above a code block, a quote, an admonition, a rule and tabs", () => {
+            expect(exportMarkers(`<pre><code class="language-text-plain" data-trilium-block-id="c">`
+                + `a &lt; b</code></pre><blockquote data-trilium-block-id="q"><p>quote</p></blockquote>`
+                + `<aside class="admonition tip" data-trilium-block-id="a"><p>tip</p></aside>`
+                + `<hr data-trilium-block-id="r">`
+                + `<div class="trilium-tabs" data-trilium-block-id="t"><section class="trilium-tab" `
+                + `data-trilium-block-id="t1"><p class="trilium-tab-title">One</p>`
+                + `<div class="trilium-tab-panel"><p>Body</p></div></section></div>`)).toBe([
+                marker("c"), "```plaintext\na < b\n```", marker("q"), "> quote", marker("a"),
+                "> [!TIP]\n> tip", marker("r"), "---", marker("t"), `=== "One${marker("t1")}"`,
+                "    Body"
+            ].join("\n\n"));
+        });
+
+        it("writes a marker line above a bare pre, and none for another container", () => {
+            expect(exportMarkers(`<pre data-trilium-block-id="p">raw</pre>`
+                + `<div data-trilium-block-id="d"><p>In a div</p></div>`
+                + `<section data-trilium-block-id="s"><p>In a section</p></section>`))
+                .toBe([ marker("p"), "```\nraw\n```", "In a div", "In a section" ].join("\n\n"));
+        });
+
+        it("writes no marker line above a block that the export drops as empty", () => {
+            expect(exportMarkers(`<pre><code data-trilium-block-id="c"></code></pre>`
+                + `<blockquote data-trilium-block-id="q"><p>&nbsp;</p></blockquote><p>next</p>`))
+                .toBe("next");
+        });
+
+        it("puts the id of a table in its first heading cell, or on a figure kept as HTML", () => {
+            expect(exportMarkers(`<figure class="table" data-trilium-block-id="t"><table><thead>`
+                + `<tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody>`
+                + `</table></figure>`)).toBe(`| A${marker("t")} | B |\n| --- | --- |\n| 1 | 2 |`);
+            expect(exportMarkers(`<figure class="table" data-trilium-block-id="r"><table><tbody>`
+                + `<tr><td>no</td><td>head</td></tr></tbody></table></figure>`)).toBe(
+                `<figure class="table" data-trilium-block-id="r"><table>\n    <tbody>\n        <tr>\n`
+                + `            <td>no</td>\n            <td>head</td>\n        </tr>\n    </tbody>\n`
+                + `</table></figure>`);
+            // One cell is a paragraph, and the blocks of a table belong to the table.
+            expect(exportMarkers(`<figure class="table" data-trilium-block-id="o"><table><tbody>`
+                + `<tr><td><p data-trilium-block-id="in">single</p></td></tr></tbody></table>`
+                + `</figure>`)).toBe("single");
+        });
+
+        it("marks the blocks inside an aside and a column, and leaves raw HTML its attributes", () => {
+            expect(exportMarkers(`<aside data-position="center" data-trilium-block-id="a">`
+                + `<p data-trilium-block-id="in">Beside</p></aside>`
+                + `<details data-trilium-block-id="d"><summary>More</summary>`
+                + `<p data-trilium-block-id="x">Inside</p></details>`)).toBe(
+                `<aside data-position="center" data-trilium-block-id="a">\n\nBeside${marker("in")}\n\n`
+                + `</aside>\n\n<details data-trilium-block-id="d">\n    <summary>More</summary>\n`
+                + `    <p data-trilium-block-id="x">Inside</p>\n</details>`);
+        });
+
+        it("writes an id with characters that Markdown would take as references", () => {
+            expect(exportMarkers(`<p data-trilium-block-id="a|b $c">Text</p>`))
+                .toBe(`Text${marker("a&#124;b&#32;&#36;c")}`);
+            expect(exportMarkers(`<p data-trilium-block-id="a:b">Text</p>`)).toBe("Text");
+        });
     });
 
     it("drops data-trilium-collapsed but keeps the collapsed item's children as bullets", () => {
@@ -841,6 +939,12 @@ describe("Markdown export", () => {
                 *   Child
             *   Sibling`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("drops data-trilium-collapsed from a heading but keeps its section", () => {
+        const html = `<h2 data-trilium-collapsed="true">Heading</h2><p>Text under it.</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe("## Heading\n\nText under it.");
     });
 
     it("exports jQuery code in table properly", () => {
@@ -1034,6 +1138,11 @@ describe("Markdown export", () => {
                     y`);
         });
 
+        it("keeps the title lines of a tabs block that holds no text at all", () => {
+            expect(markdownExportService.toMarkdown(tabs(tab("", ""), tab("", ""))))
+                .toBe(`=== ""\n\n=== ""`);
+        });
+
         it("drops the tab alignment, which MkDocs content tabs cannot express", () => {
             const html = "<div class=\"trilium-tabs\" data-trilium-tab-alignment=\"bottom\">" +
                 `${tab("Windows", "<p>a</p>")}</div>`;
@@ -1132,6 +1241,89 @@ describe("Markdown export", () => {
                 <div class="trilium-multicolumn-column">
                 </div>
                 </div>`);
+        });
+    });
+
+    describe("asides", () => {
+        it("writes the blocks of an aside as Markdown between its HTML tags", () => {
+            const html = "<p>Before</p>" +
+                "<aside style=\"--aside-width:18em;\" data-position=\"wrap-right\">" +
+                "<p>Side <strong>note</strong></p><ul><li>One</li></ul></aside><p>After</p>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                Before
+
+                <aside style="--aside-width:18em;" data-position="wrap-right">
+
+                Side **note**
+
+                *   One
+
+                </aside>
+
+                After`);
+        });
+
+        it("writes an aside as inserted as a bare tag, and marks one in the flow", () => {
+            const html = "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"background-color: #555555\" data-position=\"wrap-right\">" +
+                "<p>Without its variable</p></aside>" +
+                "<aside data-position=\"wrap-right\"><p>Transparent</p></aside>" +
+                "<aside><p>In the flow</p></aside>" +
+                "<aside data-position=\"left\"><p>Left</p></aside>" +
+                "<aside style=\"--aside-width:18em;\"><p>Resized</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside>
+
+                As inserted
+
+                </aside>
+
+                <aside>
+
+                Without its variable
+
+                </aside>
+
+                <aside data-position="wrap-right">
+
+                Transparent
+
+                </aside>
+
+                <aside data-position="center">
+
+                In the flow
+
+                </aside>
+
+                <aside data-position="left">
+
+                Left
+
+                </aside>
+
+                <aside style="--aside-width:18em;">
+
+                Resized
+
+                </aside>`);
+
+            const red = "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\" " +
+                "data-position=\"wrap-right\">";
+            expect(markdownExportService.toMarkdown(`${red}<p>Red</p></aside>`))
+                .toBe(`${red}\n\nRed\n\n</aside>`);
+        });
+
+        it("keeps an empty aside that Turndown would drop, apart from an admonition", () => {
+            const html = "<aside><p>&nbsp;</p></aside>" +
+                "<aside class=\"admonition tip\"><p>A tip.</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside data-position="center">
+                </aside>
+
+                > [!TIP]
+                > A tip.`);
         });
     });
 });

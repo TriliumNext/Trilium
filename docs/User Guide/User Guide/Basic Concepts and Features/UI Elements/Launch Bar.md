@@ -3,7 +3,7 @@
 
 On desktop, depending on the layout selected, the launcher bar will either be on the left side of the screen with buttons displayed vertically or at the top of the screen. See <a class="reference-link" href="Vertical%20and%20horizontal%20layout.md">Vertical and horizontal layout</a> for more information.
 
-On mobile, the launch bar will always be at the bottom.
+On mobile, the launch bar is at the bottom of the screen on a phone, and on the left side of the screen with buttons displayed vertically on wider screens, such as a tablet in landscape.
 
 If there are too many items in the launch bar to fit the screen, it will become scrollable.
 
@@ -28,7 +28,9 @@ Expanding _Available Launchers_ section will show the list of launchers that are
 
 ## Configuring the mobile launch bar
 
-The launch bar on mobile uses a different configuration from the desktop one. The reasoning is that not all desktop icons are available on mobile, and fewer icons fit on a mobile screen.
+The launch bar on a phone uses a different configuration from the desktop one. The reasoning is that not all desktop icons are available on mobile, and fewer icons fit on a phone screen.
+
+A tablet shows the desktop launch bar instead, in either orientation, and its tabs in the tab bar of the desktop version. Launchers marked as desktop-only are shown there too, while the launcher that opens the AI chat in the right sidebar is not, since the mobile layout has no right sidebar. The mobile layout counts as a tablet while the window is at least 744 pixels wide and 600 pixels tall, so a foldable switches between the two launch bars as it unfolds and folds.
 
 To configure the launch bar on mobile, go to <a class="reference-link" href="Global%20menu.md">Global menu</a> and select _Configure launch bar_.
 

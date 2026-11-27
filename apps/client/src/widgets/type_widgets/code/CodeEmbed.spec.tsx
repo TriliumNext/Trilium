@@ -19,11 +19,12 @@ import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
 import search from "../../../services/search";
 import {
-    buildCodeViewTextEditor, getEmbedMenuItems, runEmbedMenuItem, summarizeMenuItem
+    buildCodeViewTextEditor, buildVimPlugin, getEmbedMenuItems, runEmbedMenuItem, summarizeMenuItem
 } from "../../../test/content_embed";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CodeMirrorFindTarget } from "../../find_in_code";
+import { SCROLL_RAIL_MEASURE_EVENT } from "../../scroll_rail_markers";
 import { NoteSaves } from "../text/attachment_saves";
 import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 import EmbedHistories from "../text/embed_history";
@@ -153,7 +154,11 @@ describe("CodeEmbed", () => {
         expect(await target.replace(1, "log")).toBe(1);
         expect(view.state.doc.toString()).toBe("print(1)\nlog(2)");
         expect(onContentChange).toHaveBeenCalledOnce();
-        expect(target.close(0)).toBe(true);
+        const select = target.close(0);
+        expect(figure.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+        expect([ view.state.selection.main.from, view.state.selection.main.to ])
+            .not.toEqual([ 0, 5 ]);
+        select?.();
         expect([ view.state.selection.main.from, view.state.selection.main.to ]).toEqual([ 0, 5 ]);
         stopWatching();
         act(() => view.dispatch({ changes: { from: 0, insert: "#" } }));
@@ -170,6 +175,64 @@ describe("CodeEmbed", () => {
         expect(await target.replace(0, "log")).toBe(1);
         expect(await target.replaceAll("log")).toBe(1);
         expect(view.state.doc.toString()).toBe("#print(1)\nlog(2)");
+    });
+
+    it("names drawn matches by text, others by line; reports heights while searching", async () => {
+        const { figure } = await mount(buildCodeNote("print(1)\nprint(2)"), buildEditor(), {
+            isEditable: true
+        });
+        const view = await findView(figure);
+        const target = getEmbedFindTarget(figure);
+        if (!(target instanceof CodeMirrorFindTarget)) throw new Error("Expected a code target.");
+        const performFind = vi.spyOn(view as unknown as VanillaCodeMirror, "performFind");
+        const check = () => true;
+        const options = { matchCase: false, wholeWord: false };
+
+        await target.find("print", options, check);
+        expect(performFind).toHaveBeenLastCalledWith("print", false, false, false, check);
+        const rects = vi.spyOn(Element.prototype, "getBoundingClientRect");
+        const lines = [ ...figure.querySelectorAll(".cm-line") ];
+        const lineOf = (range: unknown) => range instanceof Range
+            ? lines.findIndex((line) => line.contains(range.startContainer))
+            : null;
+        const drawn = target.getMatchTargets();
+        expect(drawn.map((range) => range instanceof Range && range.toString()))
+            .toEqual([ "print", "print" ]);
+        expect(drawn.map(lineOf)).toEqual([ 0, 1 ]);
+
+        // A match outside the drawn ranges has no text in the page.
+        const visibleRanges = vi.spyOn(view, "visibleRanges", "get")
+            .mockReturnValue([ { from: 0, to: 8 } ]);
+        const lineTop = (position: number) =>
+            view.lineBlockAt(position).top + view.documentPadding.top;
+        const partly = target.getMatchTargets();
+        expect(lineOf(partly[0])).toBe(0);
+        expect(partly[1]).toEqual({ within: view.scrollDOM, offset: lineTop(9) });
+        expect(rects).not.toHaveBeenCalled();
+        rects.mockRestore();
+        visibleRanges.mockRestore();
+        expect(target.countMatches()).toBe(2);
+
+        // While it searches, each change of the editor's heights reaches the scroll rail.
+        const onMeasure = vi.fn();
+        figure.addEventListener(SCROLL_RAIL_MEASURE_EVENT, onMeasure);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        target.close(null);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        act(() => view.dispatch({ changes: { from: 0, to: 2 } }));
+        await target.find("print", options, check);
+
+        // A write whose check fails in the frame of its search after the edit keeps the edit.
+        const isWanted = () => false;
+        await act(async () => {
+            await target.replaceAll("log", isWanted);
+        });
+        expect(view.state.doc.toString()).toBe("log(1)\nlog(2)");
+        expect(performFind).toHaveBeenLastCalledWith("print", false, false, false, isWanted);
+        expect(figure.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+        expect(target.countMatches()).toBe(0);
     });
 
     it("keeps its edits on the text note's undo stack, read-only and remounted too", async () => {
@@ -784,6 +847,45 @@ describe("InlineCodeEmbed", () => {
         expectBoxSizeIconAlone(shown);
     });
 
+    it("starts a paragraph on Enter past blank lines, unlike an included note", async () => {
+        const insertParagraphBeside = vi.fn(() => true);
+        const { editable } = buildCodeViewTextEditor({
+            ContentEmbedCaret: { insertParagraphBeside }
+        });
+        const pressEnterAt = (view: Awaited<ReturnType<typeof findView>>, head: number) => {
+            act(() => view.dispatch({ selection: { anchor: head } }));
+            const event = new KeyboardEvent("keydown", {
+                key: "Enter", bubbles: true, cancelable: true
+            });
+            act(() => {
+                view.contentDOM.dispatchEvent(event);
+            });
+            return event.defaultPrevented;
+        };
+
+        const { figure } = await mountInline("foo\n\n", buildEditor(), {
+            language: "text-plain", isEditable: true, container: editable
+        });
+        const view = await findView(figure);
+        const content = figure.querySelector(".code-embed-content");
+        expect(pressEnterAt(view, view.state.doc.length)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "end", false);
+
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(pressEnterAt(view, 0)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "start", false);
+
+        const { figure: included } = await mount(buildCodeNote("foo\n\n"), buildEditor(), {
+            isEditable: true, container: editable
+        });
+        const includedView = await findView(included);
+        pressEnterAt(includedView, includedView.state.doc.length);
+        expect(includedView.state.doc.toString()).toBe("foo\n\n\n");
+        expect(insertParagraphBeside).toHaveBeenCalledTimes(2);
+    });
+
     it("edits the code, follows the code the note writes, and sets its language", async () => {
         options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-sh" ]));
         vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
@@ -823,6 +925,40 @@ describe("InlineCodeEmbed", () => {
         expect(getLabel(figure)).toBe("Shell (bash)");
     });
 
+    it("offers the tab width in the menu of its embed after the line numbers", async () => {
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", container: editable
+        });
+        await findView(figure, true);
+        expect(getContentEmbedTools(figure)?.getTools().map(({ id }) => id))
+            .toEqual([ "codeLanguage" ]);
+        const getStyleItems = () => {
+            const item = getEmbedMenuItems(figure)[2];
+            if (!item || "kind" in item) throw new Error("Expected the tab width submenu.");
+            return [ item.title, item.uiIcon, item.items?.slice(0, 3).map(summarizeMenuItem) ];
+        };
+        expect(getEmbedMenuItems(figure).map((item) => "title" in item && item.title)).toEqual([
+            "note_actions.word_wrap", "link_context_menu.line_numbers",
+            "link_context_menu.tab_width"
+        ]);
+        expect(getStyleItems()).toEqual([
+            "link_context_menu.tab_width", "bx bx-right-indent", [
+                { kind: "header", title: "status_bar.tab_width_style_header" },
+                { title: "status_bar.tab_width_style_spaces", checked: true },
+                { title: "status_bar.tab_width_style_tabs", checked: false }
+            ]
+        ]);
+
+        await runEmbedMenuItem(figure, 2, 2);
+        expect(textEditor.execute).toHaveBeenLastCalledWith(
+            "setContentEmbedCodeView", { tabWidth: undefined, indentWithTabs: true }
+        );
+        await vi.waitFor(() => expect(getStyleItems()[2]).toMatchObject([
+            {}, { checked: false }, { checked: true }
+        ]));
+    });
+
     it("names the language while edited, and offers a copy button otherwise", async () => {
         const copyButton = (figure: HTMLElement) =>
             figure.querySelector<HTMLElement>(".code-embed-content > button.copy-button");
@@ -854,6 +990,49 @@ describe("InlineCodeEmbed", () => {
         });
         await findView(shown, true);
         expect(copyButton(shown)).not.toBeNull();
+    });
+
+    it("takes the Vim keys of the text note around it, of code notes elsewhere", async () => {
+        options.set("vimKeymapEnabled", "true");
+        const hasVimKeys = (view: { scrollDOM: HTMLElement }) =>
+            view.scrollDOM.classList.contains("cm-vimMode");
+        const vim = buildVimPlugin();
+        const { editable } = buildCodeViewTextEditor({ TriliumVim: vim });
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", isEditable: true, container: editable
+        });
+        const view = await findView(figure);
+        const { figure: included } = await mount(buildCodeNote("print(1)"), buildEditor(), {
+            container: editable
+        });
+        const includedView = await findView(included, true);
+        expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ false, false ]);
+
+        act(() => vim.setMode("normal"));
+        await vi.waitFor(() =>
+            expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ true, true ]));
+        const { figure: added } = await mountInline("x", buildEditor(), {
+            language: "text-x-python", container: editable
+        });
+        const addedView = await findView(added, true);
+        await vi.waitFor(() => expect(hasVimKeys(addedView)).toBe(true));
+        act(() => vim.setMode(null));
+        expect(hasVimKeys(view)).toBe(false);
+
+        // A read-only text note has no Vim mode. Outside a text note, the option applies.
+        const readOnlyText = document.createElement("div");
+        readOnlyText.className = "note-detail-readonly-text-content";
+        document.body.append(readOnlyText);
+        const { figure: shown } = await mountInline("x", undefined, {
+            language: "text-x-python", container: readOnlyText
+        });
+        const shownView = await findView(shown, true);
+        const { figure: apart } = await mount(buildCodeNote("print(2)"), undefined);
+        const apartView = await findView(apart, true);
+        await vi.waitFor(() => expect(hasVimKeys(apartView)).toBe(true));
+        expect(hasVimKeys(shownView)).toBe(false);
+        readOnlyText.remove();
+        options.set("vimKeymapEnabled", "false");
     });
 });
 

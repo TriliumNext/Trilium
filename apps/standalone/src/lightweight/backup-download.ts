@@ -126,6 +126,7 @@ export async function streamDatabaseDownload(
                 return "abandoned";
             }
         }
+        /* v8 ignore next -- the loop above leaves `requests` non-empty, so `shift()` returns a value */
         return requests.shift() ?? "cancel";
     };
 

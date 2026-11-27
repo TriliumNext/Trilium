@@ -26,7 +26,7 @@ final class InterceptedResponse {
             Map<String, String> headers, InputStream body) {
         this.status = status;
         this.reasonPhrase = reasonPhrase;
-        this.headers = headers;
+        this.headers = withoutContentType(headers);
         this.body = body;
 
         String mime = "application/octet-stream";
@@ -56,6 +56,16 @@ final class InterceptedResponse {
         }
         return new InterceptedResponse(status, reasonPhrase, "text/plain; charset=utf-8", allHeaders,
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /**
+     * {@code WebResourceResponse} writes {@code Content-Type} from its mime type and encoding, and
+     * the WebView joins a second one from the header map into {@code "image/png, image/png"}.
+     */
+    private static Map<String, String> withoutContentType(Map<String, String> headers) {
+        Map<String, String> result = new HashMap<>(headers);
+        result.keySet().removeIf(name -> name != null && name.equalsIgnoreCase("content-type"));
+        return result;
     }
 
     /** Exception messages can contain characters that are not valid in a header value. */

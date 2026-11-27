@@ -227,6 +227,18 @@ describe("OCRContentExpression (real DB)", () => {
         expect(exp.toString()).toBe("OCRContent('foo', 'bar')");
     });
 
+    it("leaves out a match whose note is no longer in becca", () => {
+        const note = createNoteWithOcrText("evicted marker");
+        const inputNoteSet = new NoteSet([ note ]);
+        delete becca.notes[note.noteId];
+
+        try {
+            expect(execute(new OCRContentExpression([ "evicted" ]), inputNoteSet).notes).toEqual([]);
+        } finally {
+            becca.notes[note.noteId] = note;
+        }
+    });
+
     describe("protected notes", () => {
         beforeEach(() => protectedSessionService.setDataKey(PROTECTED_KEY));
         afterEach(() => protectedSessionService.resetDataKey());
@@ -296,6 +308,20 @@ describe("OCRContentExpression (real DB)", () => {
             for (const note of outOfSet) {
                 expect(readNoteIds.has(note.noteId)).toBe(false);
             }
+        });
+
+        it("matches a note once however many of its protected blobs match", () => {
+            const note = createProtectedNoteWithOcrAttachment("twice marker one");
+            const second = getContext().init(() => note.saveAttachment({
+                role: "image",
+                mime: "image/png",
+                title: "second-ocr-attachment",
+                content: "second-attachment-binary-placeholder"
+            }));
+            setTextRepresentationForBlob(second.blobId ?? "", blobService.encryptTextRepresentation("twice marker two", true));
+            getSql().execute("UPDATE attachments SET isProtected = 1 WHERE ownerId = ?", [ note.noteId ]);
+
+            expect(noteIds(execute(new OCRContentExpression([ "twice" ])))).toEqual([ note.noteId ]);
         });
 
         it("cannot match a protected note once the session is closed", () => {

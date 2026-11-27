@@ -321,6 +321,23 @@ describe("BAttachment (real DB)", () => {
             expect(unwrapStringOrBuffer(note.getContent())).toBe(parentContent);
         });
 
+        it("leaves the content of a non-text owner untouched", () => {
+            const codeContent = "const ref = 'attachmentId=';";
+            const { note } = getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root", title: "battachment-code-owner", content: codeContent, type: "code", mime: "application/javascript"
+            }));
+            const att = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "code-att", content: "x" })
+            );
+            const setContent = vi.spyOn(note, "setContent");
+
+            const { note: created } = getContext().init(() => att.convertToNote());
+
+            expect(created.type).toBe("file");
+            expect(setContent).not.toHaveBeenCalled();
+            expect(note.getContent()).toBe(codeContent);
+        });
+
         it("puts in a converted canvas drawing the images that it refers to", () => {
             const note = createNote();
             const drawing = getContext().init(() => {

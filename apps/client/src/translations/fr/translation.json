@@ -60,8 +60,6 @@
     "search_note": "rechercher une note par son nom",
     "link_title": "Titre du lien",
     "button_add_link": "Ajouter un lien",
-    "anchor": "Ancre (optionnel)",
-    "anchor_none": "Aucune (lien vers la note)",
     "edit_link": "Modifier le lien",
     "button_edit_link": "Enregistrer le lien",
     "fix_link": "Corriger le lien",
@@ -1577,7 +1575,6 @@
     "refresh-saved-search-results": "Rafraîchir les résultats de recherche enregistrée",
     "create-child-note": "Créer une note enfant",
     "unhoist": "Désactiver le focus",
-    "toggle-sidebar": "Basculer la barre latérale",
     "dropping-not-allowed": "Déplacer des notes à cet emplacement n'est pas autorisé.",
     "clone-indicator-tooltip": "Cette note a {{- count}} parents: {{- parents}}",
     "clone-indicator-tooltip-single": "Cette note est clonée (1 parent supplémentaire: {{- parent}})",
@@ -2895,6 +2892,8 @@
     "note_title": "Réunion du {{date}}"
   },
   "doc_notes": {
-    "share": "<p>Vous pouvez trouver ici toutes les notes partagées.</p>"
+    "share": "<p>Vous pouvez trouver ici toutes les notes partagées.</p>",
+    "launchbar_command_launcher": "Le raccourci clavier pour cette action de lanceur peut être configuré dans: - Options ; : Raccourcis.",
+    "launchbar_history_navigation": "Les boutons Retour et Avancement vous permettent de vous déplacer dans l'historique de navigation.Ces lanceurs ne sont actifs que dans la version du bureau et seront ignorés dans l'édition serveur où vous pouvez utiliser les boutons de navigation du navigateur natif à la place."
   }
 }

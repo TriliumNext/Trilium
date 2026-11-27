@@ -3,11 +3,78 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
-import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
+import VanillaCodeMirror from "@triliumnext/codemirror";
+import { HIGHLIGHT_STYLE } from "@triliumnext/commons/src/lib/marked_extensions.js";
+import { h, type Ref, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { findActiveBlock, renderWithSourceLines, revealTabAtLine, scrollToSourceLine } from "./Markdown.js";
+import appContext from "../../../components/app_context";
+import Component from "../../../components/component";
+import type NoteContext from "../../../components/note_context";
+import type TabManager from "../../../components/tab_manager";
+import type FNote from "../../../entities/fnote";
+import { consumeBlockReference } from "../../../services/block_reference";
+import { consumeBookmark } from "../../../services/bookmark_jump";
+import type { ViewScope } from "../../../services/link";
+import note_create from "../../../services/note_create";
+import server from "../../../services/server";
+import { buildNote } from "../../../test/easy-froca";
+import { ParentComponent } from "../../react/react_utils";
+import type { HeadingContext } from "../../sidebar/TableOfContents";
+import type { SplitEditorProps } from "../helpers/SplitEditor";
+import { getMarkdownReferenceSource, revealInSource } from "./editor_block_references";
+import { showEditLinkDialog } from "./editor_utils";
+import Markdown, {
+    findActiveBlock, placePreviewMarker, renderWithSourceLines, revealTabAtLine, scrollToSourceLine
+} from "./Markdown.js";
+
+/** The props of each stub of `SplitEditor`, by `ntxId`, and the splits without a preview. */
+const splits = vi.hoisted(() => ({
+    props: new Map<string, SplitEditorProps>(),
+    withoutPreview: new Set<string>()
+}));
+
+// The specs give the split its editor and the content of the note.
+vi.mock("../helpers/SplitEditor", async (importOriginal) => {
+    const preact = await import("preact");
+    return {
+        ...await importOriginal<typeof import("../helpers/SplitEditor")>(),
+        default: (props: SplitEditorProps) => {
+            const ntxId = String(props.ntxId);
+            splits.props.set(ntxId, props);
+            const preview = splits.withoutPreview.has(ntxId) ? null : props.previewContent;
+            return preact.h("div", null, preview);
+        }
+    };
+});
+vi.mock("../text/ReadOnlyText", async (importOriginal) => {
+    const preact = await import("preact");
+    return {
+        ...await importOriginal<typeof import("../text/ReadOnlyText")>(),
+        ReadOnlyTextContent: ({ html, className, contentRef }: {
+            html: string; className?: string; contentRef?: Ref<HTMLDivElement>;
+        }) => preact.h("div", {
+            className, ref: contentRef, dangerouslySetInnerHTML: { __html: html }
+        })
+    };
+});
+vi.mock("./editor_block_references", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./editor_block_references")>(),
+    revealInSource: vi.fn()
+}));
+vi.mock("./editor_utils", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./editor_utils")>(),
+    showEditLinkDialog: vi.fn()
+}));
+vi.mock("../../../services/block_reference", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/block_reference")>(),
+    consumeBlockReference: vi.fn()
+}));
+vi.mock("../../../services/bookmark_jump", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/bookmark_jump")>(),
+    consumeBookmark: vi.fn()
+}));
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -53,6 +120,53 @@ describe("renderWithSourceLines", () => {
         ].join("\n");
 
         expect(extractLines(src)).toEqual([ 1, 6 ]);
+    });
+
+    it("gives raw HTML around Markdown one line, and the blocks after it their own", () => {
+        const src = [
+            "Intro",                                    // 1
+            "",
+            "<aside>",                                  // 3
+            "",
+            "A side note",                              // 5
+            "",
+            "# Heading in the aside",                   // 7
+            "",
+            "</aside>",                                 // 9
+            "",
+            "After the aside",                          // 11
+            "",
+            '<details class="trilium-collapsible">',    // 13
+            "<summary>Summary</summary>",
+            "",
+            "Details",                                  // 16
+            "",
+            "</details>",                               // 18
+            "",
+            "<!-- A comment renders nothing -->",       // 20
+            "",
+            "After the comment",                        // 22
+            "",
+            "<div>One HTML block,</div>",               // 24
+            "<div>two elements</div>",
+            "",
+            "Last"                                      // 27
+        ].join("\n");
+
+        const container = document.createElement("div");
+        container.innerHTML = renderWithSourceLines(src).html;
+        const blocks = container.querySelectorAll<HTMLElement>("[data-source-line]");
+        expect(Array.from(blocks, (block) => [ block.tagName, block.dataset.sourceLine ])).toEqual([
+            [ "P", "1" ], [ "ASIDE", "3" ], [ "P", "11" ], [ "DETAILS", "13" ], [ "P", "22" ],
+            [ "DIV", "24" ], [ "DIV", "24" ], [ "P", "27" ]
+        ]);
+
+        // The caret on any line of the aside marks the aside.
+        for (const line of [ 3, 5, 7, 9 ]) {
+            expect(findActiveBlock(blocks, line)?.tagName).toBe("ASIDE");
+        }
+        expect(findActiveBlock(blocks, 11)?.textContent).toBe("After the aside");
+        expect(renderWithSourceLines(src).headings).toMatchObject([ { line: 7 } ]);
     });
 
     it("renders standard markdown constructs", () => {
@@ -174,6 +288,15 @@ describe("renderWithSourceLines", () => {
         const result = html('<div class="page-break"></div>\n\nAfter the break');
         expect(result).toContain('class="page-break"');
         expect(result).toContain("<p>After the break</p>");
+    });
+
+    it("renders the /aside template as a new aside, and the text after it", () => {
+        const result = html("<aside>\n\nA **side** note\n\n</aside>\n\nAfter the aside");
+        expect(result).toContain(
+            '<aside style="--tn-background:#555555;background-color:#555555;" '
+            + 'data-position="wrap-right"><p>A <strong>side</strong> note</p></aside>'
+        );
+        expect(result).toContain("<p>After the aside</p>");
     });
 
     it("renders the /table skeleton as a table without swallowing following content", () => {
@@ -350,6 +473,39 @@ describe("findActiveBlock", () => {
     });
 });
 
+describe("placePreviewMarker", () => {
+    /** A block of the preview with the given tag and class, laid out at `left` and `top`. */
+    function block(tagName: string, className: string, left: number, top: number) {
+        const el = document.createElement(tagName);
+        el.className = className;
+        Object.defineProperties(el, {
+            offsetLeft: { value: left },
+            offsetTop: { value: top },
+            offsetHeight: { value: 30 }
+        });
+        return el;
+    }
+
+    it("marks an aside at its own left edge, and any other block at the gutter", () => {
+        const preview = document.createElement("div");
+        const marker = () => [ "left", "top", "height" ]
+            .map((name) => preview.style.getPropertyValue(`--markdown-preview-marker-${name}`));
+
+        placePreviewMarker(preview, block("aside", "", 400, 50));
+        expect(marker()).toEqual([ "400px", "50px", "30px" ]);
+
+        placePreviewMarker(preview, block("p", "", 16, 90));
+        expect(marker()).toEqual([ "", "90px", "30px" ]);
+
+        placePreviewMarker(preview, block("aside", "admonition note", 16, 130));
+        expect(marker()).toEqual([ "", "130px", "30px" ]);
+
+        placePreviewMarker(preview, block("aside", "", 400, 50));
+        placePreviewMarker(preview, null);
+        expect(marker()).toEqual([ "", "0px", "0px" ]);
+    });
+});
+
 describe("scrollToSourceLine", () => {
     function preview() {
         const el = document.createElement("div");
@@ -481,3 +637,392 @@ describe("revealTabAtLine", () => {
         expect(activeTitles(el)).toEqual([ "B", "B2" ]);
     });
 });
+
+describe("Markdown", () => {
+    // `useSyncedHighlight()` watches the blocks of the preview, and jsdom has no `ResizeObserver`.
+    beforeEach(() => {
+        vi.stubGlobal("ResizeObserver", class {
+            observe() {}
+            disconnect() {}
+        });
+    });
+    afterEach(() => {
+        for (const cleanup of cleanups.splice(0)) cleanup();
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+        vi.clearAllMocks();
+    });
+
+    it("lands a link in the source and clears it there while no preview shows", async () => {
+        const note = buildMarkdownNote();
+        const viewScope: ViewScope = { block: "b" };
+        const split = mountMarkdown(note, contextOf(note, viewScope));
+        const view = createView(400);
+        split.showEditor(view);
+        expect(revealInSource).not.toHaveBeenCalled();
+
+        split.loadContent("Text");
+        expect(revealInSource).toHaveBeenCalledExactlyOnceWith(
+            view, viewScope, { isFlashed: true, isConsumed: true }
+        );
+
+        // A split that shows the source alone has no preview.
+        const sourceOnly = mountMarkdown(note, contextOf(note, viewScope), false);
+        expect(sourceOnly.preview).toBeNull();
+        const sourceView = createView(400);
+        sourceOnly.showEditor(sourceView);
+        sourceOnly.loadContent("Text");
+        expect(revealInSource).toHaveBeenLastCalledWith(
+            sourceView, viewScope, { isFlashed: true, isConsumed: true }
+        );
+
+        await nextFrame();
+        expect(consumeBookmark).not.toHaveBeenCalled();
+        expect(consumeBlockReference).not.toHaveBeenCalled();
+    });
+
+    it("lands a link in the source of a split, then in its preview a frame later", async () => {
+        const note = buildMarkdownNote();
+        const viewScope: ViewScope = { bookmark: "top" };
+        const split = mountMarkdown(note, contextOf(note, viewScope));
+        setClientHeight(split.preview, 400);
+        const view = createView(400);
+        split.showEditor(view);
+        split.loadContent("Text");
+
+        expect(revealInSource).toHaveBeenCalledExactlyOnceWith(
+            view, viewScope, { isFlashed: false, isConsumed: false }
+        );
+        expect(consumeBookmark).not.toHaveBeenCalled();
+        await nextFrame();
+        expect(consumeBookmark).toHaveBeenCalledExactlyOnceWith(split.preview, viewScope);
+        expect(consumeBlockReference).toHaveBeenCalledExactlyOnceWith(split.preview, viewScope);
+    });
+
+    it("lands a link in the preview alone while the source is hidden or not mounted", async () => {
+        const note = buildMarkdownNote();
+        const viewScope: ViewScope = { block: "b" };
+        const hiddenSource = mountMarkdown(note, contextOf(note, viewScope));
+        setClientHeight(hiddenSource.preview, 400);
+        hiddenSource.showEditor(createView(0));
+        hiddenSource.loadContent("Text");
+        // In preview mode the editor is not mounted, and the content comes from the blob.
+        const noSource = mountMarkdown(note, contextOf(note, viewScope));
+        setClientHeight(noSource.preview, 400);
+        noSource.loadContent("Text");
+
+        await nextFrame();
+        expect(revealInSource).not.toHaveBeenCalled();
+        expect(vi.mocked(consumeBlockReference).mock.calls).toEqual([
+            [ hiddenSource.preview, viewScope ], [ noSource.preview, viewScope ]
+        ]);
+    });
+
+    it("lands a link only with a target, and only on the content of its note", () => {
+        const [ first, second ] = [ buildMarkdownNote(), buildMarkdownNote() ];
+        for (const context of [ undefined, contextOf(first, {}) ]) {
+            const split = mountMarkdown(first, context);
+            split.showEditor(createView(400));
+            split.loadContent("Text");
+        }
+        expect(revealInSource).not.toHaveBeenCalled();
+
+        // An editor reused for another note keeps the content of the previous one until it loads.
+        const viewScope: ViewScope = { block: "b" };
+        const split = mountMarkdown(first);
+        const view = createView(400);
+        split.showEditor(view);
+        split.loadContent("First");
+        split.show(second, contextOf(second, viewScope));
+        expect(revealInSource).not.toHaveBeenCalled();
+
+        split.loadContent("Second");
+        expect(revealInSource).toHaveBeenCalledExactlyOnceWith(
+            view, viewScope, { isFlashed: true, isConsumed: true }
+        );
+    });
+
+    it("gives its note, path and preview to the menus of block references", () => {
+        const note = buildMarkdownNote();
+        const split = mountMarkdown(note, contextOf(note, {}));
+        const view = createView(400);
+        split.showEditor(view);
+
+        const source = getMarkdownReferenceSource(view);
+        expect(split.preview).not.toBeNull();
+        expect(source?.getNote()).toBe(note);
+        expect(source?.getNotePath()).toBe("root/docs/readme");
+        expect(source?.getPreview()).toBe(split.preview);
+    });
+
+    it("opens the link dialog over the source with its note and the path it shows", () => {
+        const note = buildMarkdownNote();
+        const split = mountMarkdown(note, contextOf(note, {}));
+        split.commands.addLinkToTextCommand();
+        expect(showEditLinkDialog).not.toHaveBeenCalled();
+
+        const view = createView(400);
+        split.showEditor(view);
+        split.commands.addLinkToTextCommand();
+        expect(showEditLinkDialog).toHaveBeenLastCalledWith(
+            view, { noteId: note.noteId, notePath: "root/docs/readme" }
+        );
+
+        // Without a note context, the dialog gets the best path of the note.
+        vi.spyOn(note, "getBestNotePathString").mockReturnValue("root/best");
+        const contextless = mountMarkdown(note);
+        const contextlessView = createView(400);
+        contextless.showEditor(contextlessView);
+        contextless.commands.addLinkToTextCommand();
+        expect(showEditLinkDialog).toHaveBeenLastCalledWith(
+            contextlessView, { noteId: note.noteId, notePath: "root/best" }
+        );
+    });
+
+    it("cuts the selection into a new note titled by its heading", async () => {
+        const note = buildMarkdownNote();
+        const child = buildNote({ title: "Setup" });
+        const { tabManager } = appContext;
+        appContext.tabManager = {
+            getActiveContextNote: () => note,
+            getActiveContextNotePath: () => "root/docs"
+        } as unknown as TabManager;
+        const createNote = vi.spyOn(note_create, "createNote").mockResolvedValue(
+            { note: child } as unknown as Awaited<ReturnType<typeof note_create.createNote>>
+        );
+        try {
+            const split = mountMarkdown(note);
+            const view = createView(400);
+            split.showEditor(view);
+            const cut = async (doc: string) => {
+                view.dispatch({
+                    changes: { from: 0, to: view.state.doc.length, insert: doc },
+                    selection: { anchor: 0, head: doc.length }
+                });
+                await act(() => split.commands.cutIntoNoteCommand());
+            };
+
+            await cut(`## Setup <a data-trilium-block-id="s"></a>\n\nRun it.`);
+            expect(createNote).toHaveBeenLastCalledWith("root/docs", expect.objectContaining({
+                title: "Setup", content: "Run it.", type: "code", mime: "text/x-markdown"
+            }));
+            expect(view.state.doc.toString()).toBe(`[[${child.noteId}]]`);
+
+            // Without a heading, the selection is the content, and the note has no title.
+            await cut("Just text");
+            expect(createNote).toHaveBeenLastCalledWith("root/docs", expect.objectContaining({
+                title: null, content: "Just text"
+            }));
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+    });
+
+    describe("links to the headings of the outline", () => {
+        const owned = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
+
+        /** The outline that the split last published, with the context it published to. */
+        function publishedToc(context: Partial<NoteContext>) {
+            const calls = vi.mocked(context.setContextData as (key: string, value: unknown) => void)
+                .mock.calls.filter(([ key ]) => key === "toc");
+            const toc = calls.at(-1)?.[1] as HeadingContext | undefined;
+            if (!toc?.headingLinks) throw new Error("No outline with links was published.");
+            return { headings: toc.headings, headingLinks: toc.headingLinks };
+        }
+
+        it("gives a heading of the editor a marker, confirmed in the saved note", async () => {
+            const note = buildMarkdownNote();
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            const view = createView(400);
+            const content = "# Title\n\n## Setup";
+            setDoc(view, content);
+            split.showEditor(view);
+            split.loadContent(content);
+            vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+            vi.spyOn(server, "getWithSilentErrors").mockImplementation(async () => ({
+                blobId: "b", content: view.state.doc.toString()
+            }));
+
+            const { headings, headingLinks } = publishedToc(context);
+            expect(headingLinks.hasPublicLinks).toBe(true);
+            // The link goes to the path that the rows were published for.
+            context.notePath = "root/elsewhere";
+            const target = await headingLinks.getTarget(headings[1]);
+            await target?.createReference?.();
+            const id = target?.params?.block ?? "";
+            expect(view.state.doc.toString()).toBe(`${content} ${owned(id)}`);
+            expect(target?.createLinkPath()).toBe(`root/docs/readme?block=${id}`);
+        });
+
+        it("posts the line of a saved heading, without a writable editor", async () => {
+            const note = buildMarkdownNote();
+            // The first heading has no text in the browser, and some on the server.
+            const content = "## <template>Hidden</template>\n\n"
+                + `## Install ${owned("first")}\n\n## Install ${owned("second")}`;
+            vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+            const post = vi.spyOn(server, "postWithSilentErrors")
+                .mockResolvedValue({ params: { block: "second" } });
+
+            for (const readOnlyView of [ null, createView(400, true) ]) {
+                const context = contextOf(note, {});
+                const split = mountMarkdown(note, context);
+                if (readOnlyView) {
+                    setDoc(readOnlyView, content);
+                    split.showEditor(readOnlyView);
+                }
+                split.loadContent(content, "shown");
+
+                const { headings, headingLinks } = publishedToc(context);
+                expect(headings).toHaveLength(3);
+                const target = await headingLinks.getTarget(headings[2]);
+                await target?.createReference?.();
+                expect(post).toHaveBeenLastCalledWith(`notes/${note.noteId}/references`, {
+                    kind: "heading", line: 5, title: "Install", blobId: "shown"
+                });
+                expect(target?.createLinkPath()).toBe("root/docs/readme?block=second");
+                expect(readOnlyView?.state.doc.toString() ?? content).toBe(content);
+            }
+
+            // Content that the editor typed has no blob to post against.
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            split.loadContent(content);
+            const { headings, headingLinks } = publishedToc(context);
+            expect(await headingLinks.getTarget(headings[2])).toBeNull();
+            expect(post).toHaveBeenCalledTimes(2);
+        });
+
+        it("has no target for rows of an earlier content or of another note", async () => {
+            const note = buildMarkdownNote();
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            const view = createView(400);
+            setDoc(view, "## Setup");
+            split.showEditor(view);
+            split.loadContent("## Setup");
+            const first = publishedToc(context);
+
+            // The line moved: the rows published before no longer match.
+            setDoc(view, "Intro\n\n## Setup");
+            split.loadContent("Intro\n\n## Setup");
+            expect(await first.headingLinks.getTarget(first.headings[0])).toBeNull();
+
+            // The editor is reused for another note.
+            const second = publishedToc(context);
+            const other = buildMarkdownNote();
+            split.show(other, contextOf(other, {}));
+            split.loadContent("Intro\n\n## Setup");
+            expect(await second.headingLinks.getTarget(second.headings[0])).toBeNull();
+
+            // A document that the editor changed since the rows were published.
+            const thirdContext = contextOf(note, {});
+            const third = mountMarkdown(note, thirdContext);
+            const thirdView = createView(400);
+            setDoc(thirdView, "## Setup");
+            third.showEditor(thirdView);
+            third.loadContent("## Setup");
+            const rows = publishedToc(thirdContext);
+            setDoc(thirdView, "## Setup!");
+            expect(await rows.headingLinks.getTarget(rows.headings[0])).toBeNull();
+        });
+    });
+});
+
+/** The commands of the text editor that `Markdown` handles for its parent component. */
+interface TextCommands {
+    addLinkToTextCommand(): void;
+    cutIntoNoteCommand(): Promise<void>;
+}
+
+/** Unmounts what the specs of `Markdown` mounted, in order: a component before its editor. */
+const cleanups: (() => void)[] = [];
+let mountCount = 0;
+
+/**
+ * Renders `Markdown` for `note` in a stub of `SplitEditor`, with a preview unless
+ * `isPreviewMounted` is false. The split gets its editor and the content of the note from the
+ * returned functions, and `show` renders another note in it.
+ */
+function mountMarkdown(note: FNote, noteContext?: Partial<NoteContext>, isPreviewMounted = true) {
+    const ntxId = `ntx-${++mountCount}`;
+    if (!isPreviewMounted) {
+        splits.withoutPreview.add(ntxId);
+    }
+    const parent = new Component();
+    const container = document.body.appendChild(document.createElement("div"));
+    const show = (shown: FNote, context?: Partial<NoteContext>) => {
+        act(() => {
+            render(h(ParentComponent.Provider, { value: parent }, h(Markdown, {
+                note: shown, noteContext: context as NoteContext | undefined,
+                viewScope: context?.viewScope, ntxId, parentComponent: undefined, isVisible: true
+            })), container);
+        });
+    };
+    show(note, noteContext);
+    cleanups.push(() => {
+        act(() => render(null, container));
+        container.remove();
+    });
+
+    const getSplit = () => {
+        const props = splits.props.get(ntxId);
+        if (!props) throw new Error("Markdown rendered no split.");
+        return props;
+    };
+    return {
+        commands: parent as unknown as TextCommands,
+        preview: container.querySelector<HTMLElement>(".markdown-preview"),
+        show,
+        showEditor(view: VanillaCodeMirror) {
+            const { editorRef } = getSplit();
+            if (typeof editorRef !== "function") throw new Error("Markdown takes no editor.");
+            act(() => {
+                editorRef(view);
+            });
+        },
+        /** Loads `content`, read from the blob `blobId` unless an editor typed it. */
+        loadContent(content: string, blobId?: string) {
+            const { onContentChanged } = getSplit();
+            act(() => onContentChanged?.(content, blobId));
+        }
+    };
+}
+
+/** A CodeMirror editor whose scroller is `clientHeight` pixels tall, 0 while it is hidden. */
+function createView(clientHeight: number, readOnly = false) {
+    const parent = document.body.appendChild(document.createElement("div"));
+    const view = new VanillaCodeMirror({ parent, readOnly });
+    setClientHeight(view.scrollDOM, clientHeight);
+    cleanups.push(() => {
+        view.destroy();
+        parent.remove();
+    });
+    return view;
+}
+
+/** Replaces the document of `view`: `setText()` calls `checkVisibility()`, which jsdom lacks. */
+function setDoc(view: VanillaCodeMirror, doc: string) {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: doc } });
+}
+
+function setClientHeight(element: HTMLElement | null, clientHeight: number) {
+    if (!element) throw new Error("There is no element to size.");
+    Object.defineProperty(element, "clientHeight", { configurable: true, value: clientHeight });
+}
+
+/** The context of a tab that shows `note` at `root/docs/readme` with `viewScope`. */
+function contextOf(note: FNote, viewScope: ViewScope): Partial<NoteContext> {
+    return {
+        noteId: note.noteId, notePath: "root/docs/readme", viewScope, setContextData: vi.fn()
+    };
+}
+
+function buildMarkdownNote() {
+    return buildNote({ title: "Readme", type: "code", mime: "text/x-markdown" });
+}
+
+/** Resolves on the next animation frame, after the callbacks requested before. */
+function nextFrame() {
+    return new Promise((resolve) => requestAnimationFrame(resolve));
+}

@@ -60,8 +60,6 @@
     "search_note": "cari catatan berdasarkan namanya",
     "link_title": "Judul tautan",
     "button_add_link": "Tambahkan tautan",
-    "anchor": "Anchor (opsional)",
-    "anchor_none": "Tidak ada (tautan ke catatan)",
     "edit_link": "Edit tautan",
     "button_edit_link": "Simpan tautan"
   },
@@ -2274,7 +2272,6 @@
     "refresh-saved-search-results": "Segarkan hasil pencarian tersimpan",
     "create-child-note": "Buat catatan anak",
     "unhoist": "Batalkan hoist",
-    "toggle-sidebar": "Alihkan sidebar",
     "dropping-not-allowed": "Menjatuhkan catatan ke lokasi ini tidak diperbolehkan.",
     "clone-indicator-tooltip": "Catatan ini memiliki {{- count}} induk: {{- parents}}",
     "clone-indicator-tooltip-single": "Catatan ini adalah clone (1 induk tambahan: {{- parent}})",
@@ -2425,8 +2422,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Hapus dari launch bar",
     "configure_launch_bar": "Konfigurasikan bilah launcher",
-    "launch_bar_orientation": "Orientasi bilah launcher",
-    "will_reload_frontend": "(aplikasi akan dimuat ulang)"
+    "launch_bar_orientation": "Orientasi bilah launcher"
   },
   "highlighting": {
     "title": "Blok Kode",
@@ -3433,7 +3429,6 @@
       "markdown-import-from-clipboard": "Impor Markdown dari papan klip",
       "math-editor-unavailable": "Editor matematika tidak tersedia",
       "math-equation": "Persamaan matematika",
-      "medium": "Sedang",
       "mermaid-diagram": "Diagram Mermaid",
       "mermaid-diagram-0": "Diagram Mermaid: %0",
       "missing-definition": "(definisi tidak ditemukan)",

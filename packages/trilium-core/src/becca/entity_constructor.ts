@@ -32,6 +32,11 @@ function getEntityFromEntityName(entityName: keyof typeof ENTITY_NAME_TO_ENTITY)
     return ENTITY_NAME_TO_ENTITY[entityName];
 }
 
+function isEntityName(entityName: string) {
+    return Object.hasOwn(ENTITY_NAME_TO_ENTITY, entityName);
+}
+
 export default {
-    getEntityFromEntityName
+    getEntityFromEntityName,
+    isEntityName
 };

@@ -27,6 +27,7 @@
  *
  *   pnpm chore:release-notes v0.107.0 [--from v0.106.0] [--stdout] [--force] [--unlisted]
  *   pnpm chore:release-notes unreleased [--from v0.106.0]
+ *   pnpm chore:release-notes announce-nightly --from <commit> [--dry-run]
  *   pnpm chore:release-notes consume v0.107.0
  *   pnpm changelog:new <slug>
  *   pnpm changelog:lint
@@ -34,7 +35,9 @@
  * `--unlisted` reports the fixes and features that neither close an issue nor come with an entry,
  * leaving out fixes that only change code written since the previous release. `unreleased` prints
  * the same note for the changes since the previous release, without the template's preamble and
- * empty sections, for the body of the nightly release (`nightly.yml`). `consume` runs in the
+ * empty sections, for the body of the nightly release (`nightly.yml`). `announce-nightly` comments
+ * on each issue closed by the commits after `<commit>` that the nightly build now carries.
+ * `consume` runs in the
  * release commit, once the note is final: it deletes the entries, or moves them to
  * `.changelog/pre-release/` for an rc or beta version, so that the final release lists them again.
  */
@@ -138,6 +141,7 @@ export const ENTRY_TYPES = {
     tip: "Tip",
     important: "Important",
     warning: "Warning",
+    overview: "Overview",
     highlight: "Key highlights",
     compatibility: "Compatibility",
     breaking: "Breaking changes",
@@ -156,7 +160,8 @@ export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
 /** Sections that fold each area into a `<details>` block; `notable` keeps an entry out of it. */
 const COLLAPSIBLE_SECTIONS = new Set<Section>(Object.values(ENTRY_TYPES)
-    .filter((section) => section !== "Key highlights" && !ADMONITIONS.has(section)));
+    .filter((section) => ![ "Overview", "Key highlights" ].includes(section)
+        && !ADMONITIONS.has(section)));
 /** Sections listed with bullets; the others are numbered. Key highlights are headings instead. */
 const BULLETED_SECTIONS =
     new Set<Section>([ "Compatibility", "Breaking changes", "Documentation" ]);
@@ -262,26 +267,18 @@ export function main(
             + "pass --force to overwrite it or --stdout to print instead.");
     }
 
+    const { entries, invalid } = readChangelogEntries();
+    const missingOverview = unreleased ? [] : lintOverview(entries, { release: true });
+    if (missingOverview.length > 0 && !stdout) {
+        throw new Error(missingOverview[0]);
+    }
+
     const base = from
         ?? git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", "HEAD").trim();
-    const commits = parseCommits(
-        git("log", "--reverse", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", `${base}..HEAD`));
     const github = new GitHub(repository);
-
-    const pullRequests = github.fetchPullRequests(commits.flatMap((commit) => {
-        const number = parsePullRequestNumber(commit.subject);
-        return number ? [ number ] : [];
-    }));
-    const authors = github.fetchCommitAuthors(commits
-        .filter((commit) => parseClosingReferences(`${commit.subject}\n${commit.body}`).length > 0
-            && !parsePullRequestNumber(commit.subject))
-        .map((commit) => commit.hash));
-
-    const closings = collectClosings(commits, pullRequests, authors);
+    const { commits, pullRequests, closings } = readClosings(`${base}..HEAD`, github);
     const issues = github.fetchIssues(closings.map((closing) => closing.issue));
     const languages = collectNewLanguages(base, commits, issues, github);
-    const { entries, invalid } = readChangelogEntries();
-
     const collected =
         collectItems({ closings, issues, languages, entries, pullRequests, repository });
     const explanations = splitExplanations(collected, findVersionBumps(base, github));
@@ -298,7 +295,7 @@ export function main(
     }
     const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"),
         unreleased ? `Changes since ${base}` : version, items,
-        { preamble: !unreleased, emptySections: !unreleased });
+        { preamble: !unreleased });
     if (stdout) {
         process.stdout.write(note);
     } else {
@@ -324,6 +321,9 @@ export function main(
     for (const { file, errors } of invalid) {
         console.error(`  left out ${file}:\n    ${errors.join("\n    ")}`);
     }
+    for (const message of missingOverview) {
+        console.error(`  ${message}`);
+    }
 
     if (unlisted) {
         const listed = {
@@ -341,6 +341,53 @@ export function main(
             console.error(`  ${commit.hash.slice(0, 10)} ${commit.subject}`);
         }
     }
+}
+
+/**
+ * Comments on each issue closed by the commits from `from` to `HEAD`, unless an earlier run
+ * already did, to say that the nightly build built from `HEAD` carries the change.
+ */
+export function announceNightlyFixes(
+    { from, dryRun, repository }: { from: string; dryRun: boolean; repository: string }
+) {
+    try {
+        git("merge-base", "--is-ancestor", from, "HEAD");
+    } catch {
+        console.error(`${from} is not an ancestor of HEAD; no issue is announced.`);
+        return;
+    }
+
+    const github = new GitHub(repository);
+    const { closings } = readClosings(`${from}..HEAD`, github);
+    const fixes = selectNightlyFixes(closings, github.fetchIssues(closings.map((c) => c.issue)));
+    const [ hash, date ] = git("log", "-1", "--format=%h %cs", "HEAD").trim().split(" ");
+    const body = nightlyComment(repository, { hash, date });
+    for (const issue of fixes) {
+        if (github.hasComment(issue.number, NIGHTLY_COMMENT_MARKER)) {
+            console.error(`  #${issue.number} was already announced`);
+        } else if (dryRun) {
+            console.error(`  would announce #${issue.number}: ${issue.title}`);
+        } else {
+            github.postComment(issue.number, body);
+            console.error(`  announced #${issue.number}: ${issue.title}`);
+        }
+    }
+    console.error(`${fixes.length} issues closed since ${from.slice(0, 10)}.`);
+}
+
+/** Reads the commits of `range` and the issues they close, directly or through their PRs. */
+function readClosings(range: string, github: GitHub) {
+    const commits = parseCommits(
+        git("log", "--reverse", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", range));
+    const pullRequests = github.fetchPullRequests(commits.flatMap((commit) => {
+        const number = parsePullRequestNumber(commit.subject);
+        return number ? [ number ] : [];
+    }));
+    const authors = github.fetchCommitAuthors(commits
+        .filter((commit) => parseClosingReferences(`${commit.subject}\n${commit.body}`).length > 0
+            && !parsePullRequestNumber(commit.subject))
+        .map((commit) => commit.hash));
+    return { commits, pullRequests, closings: collectClosings(commits, pullRequests, authors) };
 }
 
 function collectNewLanguages(base: string, commits: Commit[], issues: Map<number, Issue>,
@@ -660,24 +707,29 @@ export function collectItems(sources: ItemSources): NoteItem[] {
 }
 
 /**
- * Fills `Release Template.md` with the items, oldest first in each section. Sections that receive
- * no item keep the template's placeholder, unless `emptySections` is off, which drops them along
- * with their placeholder; `preamble` off drops the template's lines between the title and the
- * first section.
+ * Fills `Release Template.md` with the items, oldest first in each section, and drops the sections
+ * that receive no item along with their placeholder. `preamble` off drops the template's lines
+ * between the title and the first section.
  */
 export function renderReleaseNote(template: string, version: string, items: NoteItem[],
-    { preamble = true, emptySections = true } = {}): string {
+    { preamble = true } = {}): string {
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
     const admonitions = items
         .filter((item) => ADMONITIONS.has(item.section))
+        .sort((a, b) => a.date - b.date);
+    const overview = items
+        .filter((item) => item.section === "Overview")
         .sort((a, b) => a.date - b.date);
     const output: string[] = [];
     let inPreamble = false;
     for (let index = 0; index < lines.length; index++) {
         const line = lines[index];
-        if (line.startsWith("## ") && admonitions.length > 0) {
+        if (line.startsWith("## ") && admonitions.length + overview.length > 0) {
             output.push(...admonitions.flatMap((item) => [ ...renderAdmonition(item), "" ]));
+            output.push(...overview.flatMap((item) => [ item.text,
+                ...item.details.length > 0 ? [ "" ] : [], ...item.details, "" ]));
             admonitions.length = 0;
+            overview.length = 0;
         }
 
         const heading = /^## \S+\s+(.*)$/.exec(line)?.[1].trim().toLowerCase();
@@ -691,12 +743,12 @@ export function renderReleaseNote(template: string, version: string, items: Note
 
         const sectionItems = items.filter((item) => item.section.toLowerCase() === heading);
         if (sectionItems.length === 0) {
-            if (heading !== undefined && !emptySections) {
-                while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
-                    index++;
-                }
-            } else {
+            if (heading === undefined) {
                 output.push(line);
+                continue;
+            }
+            while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
+                index++;
             }
             continue;
         }
@@ -835,6 +887,29 @@ export function unreleasedNotice(base: string, head: { hash: string; date: strin
         details: [],
         credits: []
     };
+}
+
+/** Identifies the comment `announceNightlyFixes` posts, so that an issue gets it once. */
+export const NIGHTLY_COMMENT_MARKER = "<!-- nightly-fix -->";
+
+/**
+ * Picks the issues a nightly build announces: closed issues, not pull requests, of the app
+ * rather than of a product released on its own. A reopened issue is left out.
+ */
+export function selectNightlyFixes(closings: Closing[], issues: Map<number, Issue>): Issue[] {
+    return closings.flatMap((closing) => {
+        const issue = issues.get(closing.issue);
+        return issue && issue.state === "CLOSED" && !/\/pull\/\d+$/.test(issue.url)
+            && !isShippedSeparately(closing.subjects, issue.labels) ? [ issue ] : [];
+    });
+}
+
+/** The comment that tells an issue's participants which nightly build carries its change. */
+export function nightlyComment(repository: string, head: { hash: string; date: string }) {
+    return `${NIGHTLY_COMMENT_MARKER}\n`
+        + "The change that closed this issue is available in the "
+        + `[nightly build](https://github.com/${repository}/releases/tag/nightly) `
+        + `of ${head.date} (commit \`${head.hash}\`), and will ship with the next release.`;
 }
 
 /**
@@ -1144,6 +1219,9 @@ export function lintChangelogEntry(entry: ChangelogEntry): string[] {
     if (entry.title && entry.section !== "Key highlights") {
         return [ `\`title\` has no effect in ${entry.section}, which lists every entry` ];
     }
+    if (entry.area && entry.section === "Overview") {
+        return [ "`area` has no effect in the overview, which is written above the sections" ];
+    }
 
     const known = AREAS.join(", ");
     if (!entry.area) {
@@ -1181,8 +1259,26 @@ function editDistance(a: string, b: string) {
  * annotations when run in GitHub Actions. With `jsonPath`, also writes them there as
  * `{ file, message }` records. Fails when there is one.
  */
-function lintChangelogEntries(jsonPath?: string) {
+/**
+ * Checks the one entry a release writes as a whole: the overview. Several are an error at any
+ * time; none is an error when `release` is set, which the release CLI does before it builds a
+ * note. A pull request lint leaves the overview to the maintainer.
+ */
+export function lintOverview(entries: ChangelogEntry[], { release = false } = {}) {
+    const overviews = entries.filter((entry) => entry.section === "Overview");
+    if (overviews.length > 1) {
+        return [ `${overviews.length} overview entries; a release has one: `
+            + overviews.map((entry) => entry.file.split(/[\\/]/).at(-1)).join(", ") ];
+    }
+    return overviews.length === 0 && release
+        ? [ "no overview entry; a release opens with one (`type: overview`, see "
+            + ".changelog/README.md)" ]
+        : [];
+}
+
+function lintChangelogEntries(jsonPath?: string, { release = false } = {}) {
     const problems: { file: string; message: string }[] = [];
+    const entries: ChangelogEntry[] = [];
     for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {
         if (!existsSync(dir)) {
             continue;
@@ -1195,7 +1291,13 @@ function lintChangelogEntries(jsonPath?: string) {
             for (const message of [ ...errors, ...entry ? lintChangelogEntry(entry) : [] ]) {
                 problems.push({ file: relative, message });
             }
+            if (entry) {
+                entries.push(entry);
+            }
         }
+    }
+    for (const message of lintOverview(entries, { release })) {
+        problems.push({ file: ".changelog", message });
     }
 
     for (const { file, message } of problems) {
@@ -1539,6 +1641,25 @@ class GitHub {
         return result;
     }
 
+    /** Tells whether a comment on an issue contains `text`. */
+    hasComment(issue: number, text: string) {
+        return this.rest([ "--paginate", "--jq", ".[].body",
+            `repos/${this.owner}/${this.name}/issues/${issue}/comments` ]).includes(text);
+    }
+
+    postComment(issue: number, body: string) {
+        this.rest([ "--method", "POST", "-f", `body=${body}`,
+            `repos/${this.owner}/${this.name}/issues/${issue}/comments` ]);
+    }
+
+    private rest(args: string[]) {
+        return execFileSync("gh", [ "api", ...args ], {
+            encoding: "utf-8",
+            stdio: [ "ignore", "pipe", "inherit" ],
+            maxBuffer: 64 * 1024 * 1024
+        });
+    }
+
     /** Runs one aliased field per key, in batches, and returns the non-null results. */
     private query<T>(keys: T[], field: (key: T) => string): any[] {
         const unique = [ ...new Set(keys) ];
@@ -1593,7 +1714,8 @@ if (process.argv[1] === SCRIPT_PATH) {
             createChangelogEntry(args[1] ?? "");
         } else if (args[0] === "lint") {
             const jsonIndex = args.indexOf("--json");
-            lintChangelogEntries(jsonIndex >= 0 ? args[jsonIndex + 1] : undefined);
+            lintChangelogEntries(jsonIndex >= 0 ? args[jsonIndex + 1] : undefined,
+                { release: args.includes("--release") });
         } else if (args[0] === "consume" && args[1] && /^v\d/.test(args[1])) {
             consumeChangelogEntries(args[1]);
         } else if (args[0] === "unreleased") {
@@ -1606,13 +1728,20 @@ if (process.argv[1] === SCRIPT_PATH) {
                 unreleased: true,
                 repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
             });
+        } else if (args[0] === "announce-nightly" && fromIndex >= 0 && args[fromIndex + 1]) {
+            announceNightlyFixes({
+                from: args[fromIndex + 1],
+                dryRun: args.includes("--dry-run"),
+                repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
+            });
         } else if (!version || !/^v\d/.test(version)) {
             throw new Error([
                 "Usage: release-notes.mts <version, e.g. v0.107.0> [--from <tag>]",
                 "           [--stdout] [--force] [--unlisted]",
                 "       release-notes.mts unreleased [--from <tag>]",
+                "       release-notes.mts announce-nightly --from <commit> [--dry-run]",
                 "       release-notes.mts consume <version>",
-                "       release-notes.mts lint [--json <file>]",
+                "       release-notes.mts lint [--json <file>] [--release]",
                 "       release-notes.mts new <slug>"
             ].join("\n"));
         } else {

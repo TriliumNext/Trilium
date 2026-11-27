@@ -12,9 +12,13 @@ class Options {
     private latestSave: Record<string, number> = {};
 
     constructor() {
-        // Don't fetch on the share view, nor on the login / set-password pre-auth screens, where an
-        // unauthenticated GET /api/options would 401 (#10589). Options aren't needed to render those.
-        if (!isShare && !isPreAuthScreen()) {
+        // `/bootstrap` brings them to a signed-in client. Don't fetch on the share view, nor on the
+        // login / set-password pre-auth screens, where an unauthenticated GET /api/options would 401
+        // (#10589). Options aren't needed to render those.
+        if (window.glob?.options) {
+            this.load(window.glob.options);
+            this.initializedPromise = Promise.resolve();
+        } else if (!isShare && !isPreAuthScreen()) {
             this.initializedPromise = server.get<Record<string, OptionValue>>("options").then((data) => this.load(data));
         } else {
             this.initializedPromise = Promise.resolve();

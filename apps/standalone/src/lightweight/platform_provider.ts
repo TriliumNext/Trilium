@@ -1,5 +1,7 @@
 import type { PlatformProvider } from "@triliumnext/core";
 
+import { dbLock } from "./db_lock.js";
+
 // Build-time constant injected by Vite (see `define` in vite.config.mts).
 declare const __TRILIUM_INTEGRATION_TEST__: string;
 
@@ -47,6 +49,11 @@ export default class StandalonePlatformProvider implements PlatformProvider {
     /** The browser owns the storage the database lives in, and gives out no path to it. */
     getDatabasePath(): null {
         return null;
+    }
+
+    /** Waits for an import or another `createAsyncRoute()` holder of `dbLock` to finish. */
+    whenDatabaseFree<T>(fn: () => T): T | Promise<T> {
+        return dbLock.runShared(fn);
     }
 }
 

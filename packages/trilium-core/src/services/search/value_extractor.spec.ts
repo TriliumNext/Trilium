@@ -85,3 +85,22 @@ describe("Invalid value extractor property path", () => {
 
     it("relation is specified but target note property is not specified", () => expect(new ValueExtractor(dsc, ["note", "relations", "myrel"]).validate()).toBeTruthy());
 });
+
+describe("Value extractor edge cases", () => {
+    beforeEach(() => {
+        becca.reset();
+    });
+
+    it("yields nothing for a missing label or relation, and a random value on request", () => {
+        const austria = note("Austria").note;
+
+        expect(new ValueExtractor(dsc, [ "#capital" ]).extract(austria)).toBeNull();
+        expect(new ValueExtractor(dsc, [ "~neighbor", "title" ]).extract(austria)).toBeNull();
+        expect(new ValueExtractor(dsc, [ "note", "random" ]).extract(austria)).toMatch(/^0\.\d*|^0$/);
+    });
+
+    it("rejects an unknown property specifier", () => {
+        expect(new ValueExtractor(dsc, [ "note", "foo" ]).validate()).toBe("Unrecognized property specifier foo");
+        expect(new ValueExtractor(dsc, [ "note", "random" ]).validate()).toBeUndefined();
+    });
+});

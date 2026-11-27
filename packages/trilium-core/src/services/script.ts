@@ -45,6 +45,7 @@ function executeNote(note: BNote, apiParams: ApiParams) {
     }
 
     const bundle = getScriptBundle(note, true, "backend");
+    /* v8 ignore next 3 -- a root backend script note always yields a bundle */
     if (!bundle) {
         throw new Error("Unable to determine bundle.");
     }
@@ -219,11 +220,13 @@ export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: st
         const childBundle = getScriptBundle(child, false, scriptEnv, includedNoteIds);
 
         if (childBundle) {
-            if (childBundle.note) {
-                modules.push(childBundle.note);
+            // An HTML child only contributes markup; it defines no module to pass as a parameter.
+            if (child.isJavaScript() || child.isJsx()) {
+                modules.push(child);
             }
             bundle.script += childBundle.script;
             bundle.html += childBundle.html;
+            /* v8 ignore next -- a bundle built here always carries its notes */
             if (bundle.allNotes && childBundle.allNotes) {
                 bundle.allNotes = bundle.allNotes.concat(childBundle.allNotes);
             }
@@ -242,17 +245,23 @@ export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: st
             scriptContent = buildJsx(scriptContent).code;
         }
 
+        // Titles and note IDs go in as JSON string literals. Either can contain a quote, a
+        // backslash or a line break, and the ID of a synced note is not validated.
+        const noteId = JSON.stringify(note.noteId);
+        const failurePrefix = JSON.stringify(
+            `Load of script note "${note.title}" (${note.noteId}) failed with: `);
+
         bundle.script += `
-apiContext.modules['${note.noteId}'] = { exports: {} };
+apiContext.modules[${noteId}] = { exports: {} };
 ${root ? "return " : ""}${isFrontend ? "await" : ""} ((${isFrontend ? "async" : ""} function(exports, module, require, api${modules.length > 0 ? ", " : ""}${modules.map((child) => sanitizeVariableName(child.title)).join(", ")}) {
 try {
 ${overrideContent || scriptContent};
-} catch (e) { throw Object.assign(new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }), { scriptNoteId: "${note.noteId}" }); }
+} catch (e) { throw Object.assign(new Error(${failurePrefix} + e.message, { cause: e }), { scriptNoteId: ${noteId} }); }
 for (const exportKey in exports) module.exports[exportKey] = exports[exportKey];
 return module.exports;
-}).call({}, {}, apiContext.modules['${note.noteId}'], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis['${note.noteId}']${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules['${mod.noteId}'].exports`).join(", ")}));
+}).call({}, {}, apiContext.modules[${noteId}], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis[${noteId}]${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules[${JSON.stringify(mod.noteId)}].exports`).join(", ")}));
 `;
-    } else if (note.isHtml()) {
+    } else {
         bundle.html += note.getContent();
     }
 

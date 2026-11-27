@@ -1,7 +1,8 @@
 import { EMPTY_BLOB_ID } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import { load } from "../becca/becca_loader.js";
 import type BNote from "../becca/entities/bnote.js";
 import { NotFoundError } from "../errors.js";
 import blob from "./blob.js";
@@ -12,6 +13,7 @@ import notesService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 import { hash, hashedBlobId } from "./utils/index.js";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "./virtual_notes.js";
 
 const PROTECTED_KEY = encodeUtf8("0123456789abcdef"); // exactly 16 bytes
 
@@ -195,11 +197,62 @@ describe("blob", () => {
             }
         });
 
+        it("answers with nothing when the decrypted text is empty", () => {
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            const decrypt = vi.spyOn(protectedSessionService, "decryptString").mockReturnValue(null);
+            try {
+                expect(blob.decryptTextRepresentation("ciphertext", true)).toBe("");
+                expect(decrypt).toHaveBeenCalledWith("ciphertext");
+            } finally {
+                decrypt.mockRestore();
+                protectedSessionService.resetDataKey();
+            }
+        });
+
     });
 
     describe("getBlobPojo", () => {
         it("throws NotFoundError when the entity does not exist", () => {
             expect(() => getContext().init(() => blob.getBlobPojo("notes", "doesNotExist123"))).toThrow(NotFoundError);
+        });
+
+        it("throws NotFoundError when the entity's blob row is gone", () => {
+            expect(() => getContext().init(() => {
+                const { note } = notesService.createNewNote({
+                    parentNoteId: "root",
+                    title: "blob spec orphaned note",
+                    content: "<p>blob spec content whose row is removed</p>",
+                    type: "text"
+                });
+                getSql().execute("DELETE FROM blobs WHERE blobId = ?", [ note.blobId ]);
+                return blob.getBlobPojo("notes", note.noteId);
+            })).toThrow(/Blob .* was not found/);
+        });
+
+        it("derives a virtual note's blob from its provider, nulling binary content", () => {
+            const picture = Uint8Array.from([ 0x89, 0x50, 0x4e, 0x47 ]);
+            registerVirtualNoteProvider({
+                namespace: "_vblob",
+                parentNoteId: "_hidden",
+                getSubtree: () => [
+                    { id: "_vblobText", title: "Text", type: "text" },
+                    { id: "_vblobImage", title: "Image", type: "image", mime: "image/png" }
+                ],
+                getContent: (noteId) => (noteId === "_vblobImage" ? picture : "<p>shipped</p>")
+            });
+            getContext().init(() => load());
+
+            try {
+                expect(blob.getBlobPojo("notes", "_vblobText")).toMatchObject({
+                    blobId: hashedBlobId("<p>shipped</p>"), content: "<p>shipped</p>", contentLength: 14, isStubbed: false
+                });
+                expect(blob.getBlobPojo("notes", "_vblobImage")).toMatchObject({
+                    blobId: hashedBlobId(picture), content: null, contentLength: 4
+                });
+            } finally {
+                unregisterVirtualNoteProvider("_vblob");
+                getContext().init(() => load());
+            }
         });
 
         it("returns the decoded string content of a text note's blob", () => {
@@ -324,6 +377,14 @@ describe("blob", () => {
                 });
                 return blob.getDeletedNoteBlobPojo(note.noteId);
             })).toThrow(NotFoundError);
+        });
+
+        it("throws NotFoundError when the deleted note's blob has been erased", () => {
+            expect(() => getContext().init(() => {
+                const note = createDeletedNote({ content: "<p>deleted note whose blob was erased</p>" });
+                getSql().execute("DELETE FROM blobs WHERE blobId = ?", [ note.blobId ]);
+                return blob.getDeletedNoteBlobPojo(note.noteId);
+            })).toThrow(/for deleted note .* was not found/);
         });
 
         it("throws NotFoundError for an unknown note", () => {

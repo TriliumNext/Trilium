@@ -631,6 +631,22 @@ describe("waitForSahPoolRelease", () => {
         })).resolves.toBe(false);
     });
 
+    it("falls back to the origin's private filesystem, and does not wait where there is none", async () => {
+        try {
+            for (const missing of [ undefined, {}, { storage: {} } ]) {
+                vi.stubGlobal("navigator", missing);
+                await expect(waitForSahPoolRelease()).resolves.toBe(true);
+            }
+
+            const getDirectory = vi.fn(fakeRootWith([]));
+            vi.stubGlobal("navigator", { storage: { getDirectory } });
+            await expect(waitForSahPoolRelease()).resolves.toBe(true);
+            expect(getDirectory).toHaveBeenCalledOnce();
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
     it("treats a probe failure other than a held lock as nothing to wait for", async () => {
         const broken = {
             kind: "file",

@@ -1,5 +1,6 @@
 import "./index.css";
 
+import asideStylesheet from "@triliumnext/ckeditor5/src/theme/aside.css?raw";
 import multicolumnStylesheet from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
 import codePreviewStylesheet from "@triliumnext/codemirror/src/code_preview.css?raw";
 import { createPortal, RefObject } from "preact";
@@ -17,9 +18,10 @@ import katexStylesheet from "../../../services/katex.scss?inline";
 import options from "../../../services/options";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { SplitButton } from "../../react/Button";
-import {
-    useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabelWithDefault } from "../../react/hooks/note";
+import { useTriliumOptionBool } from "../../react/hooks/options";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
 import NoItems from "../../react/NoItems";
 import ShadowDom from "../../react/ShadowDom";
 import { ViewModeMedia, ViewModeProps } from "../interface";
@@ -359,6 +361,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
                 themeStylesheet,
                 katexStylesheet,
                 multicolumnStylesheet,
+                asideStylesheet,
                 codePreviewStylesheet,
                 codeThemeStylesheet,
                 slideCustomStylesheet

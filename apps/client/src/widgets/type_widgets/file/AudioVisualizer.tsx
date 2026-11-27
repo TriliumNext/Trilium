@@ -3,8 +3,11 @@ import "./AudioVisualizer.css";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { useTriliumEvent } from "../../react/hooks";
-import { buildRowColors, cellIntensity, computeColumnAmplitudes, computeGrid, hasMotion, resizePreserving, smoothAmplitudes, type VisualizerGrid } from "./audio_visualizer";
+import { useTriliumEvent } from "../../react/hooks/events";
+import {
+    buildRowColors, cellIntensity, computeColumnAmplitudes, computeGrid, hasMotion,
+    resizePreserving, smoothAmplitudes, type VisualizerGrid
+} from "./audio_visualizer";
 import { resolveCssColor } from "./css_color";
 import { useAudioAnalyser } from "./useAudioAnalyser";
 

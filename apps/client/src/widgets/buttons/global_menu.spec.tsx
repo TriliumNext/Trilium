@@ -1,3 +1,4 @@
+import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Shared, mutable control state for the mocks below. `vi.hoisted` runs before the hoisted `vi.mock`
 // factories, so they can safely reference it.
 const ctrl = vi.hoisted(() => ({
-    standalone: false, checkForUpdates: true, mobile: false, theme: "next", setTheme: vi.fn()
+    standalone: false, checkForUpdates: true, mobile: false, theme: "next", setTheme: vi.fn(),
+    itemsLoaded: false
 }));
 
 // `isStandalone` is a const in the target, read here as a live getter so each scenario can flip the
@@ -24,8 +26,8 @@ vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
 // The hook reads the user's preference through `useTriliumOptionBool`; stub just that one, so the
 // other hooks the menu pulls in keep their real implementation.
-vi.mock("../react/hooks", async (importOriginal) => {
-    const original = await importOriginal<typeof import("../react/hooks")>();
+vi.mock("../react/hooks/options", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../react/hooks/options")>();
     return {
         ...original,
         useTriliumOptionBool: () => [ ctrl.checkForUpdates, vi.fn() ],
@@ -33,6 +35,11 @@ vi.mock("../react/hooks", async (importOriginal) => {
             ? [ ctrl.theme, ctrl.setTheme ]
             : original.useTriliumOption(...args))
     };
+});
+
+vi.mock("./GlobalMenuItems", async (importOriginal) => {
+    ctrl.itemsLoaded = true;
+    return await importOriginal<typeof import("./GlobalMenuItems")>();
 });
 
 // Import AFTER the mocks (vi.mock is hoisted, but the import must resolve the mocked deps).
@@ -82,6 +89,7 @@ beforeEach(() => {
     ctrl.checkForUpdates = true;
     ctrl.mobile = false;
     status = undefined;
+    localStorage.clear();
 
     window.glob = { ...window.glob, triliumVersion: "0.104.0" };
     fetchMock = vi.fn().mockResolvedValue({ json: async () => ({ tag_name: "v0.104.1" }) });
@@ -144,6 +152,21 @@ describe("useTriliumUpdateStatus", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    it("reuses a recent check after a reload, and checks again once it is due", async () => {
+        await mount();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        unmount();
+
+        await advance(UPDATE_CHECK_INTERVAL / 2);
+        await mount();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(status?.latestVersion).toBe("0.104.1");
+        expect(status?.isUpdateAvailable).toBe(true);
+
+        await advance(UPDATE_CHECK_INTERVAL / 2);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
     it("keeps the badge hidden when GitHub cannot be reached", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         fetchMock.mockRejectedValue(new Error("offline"));
@@ -166,6 +189,38 @@ describe("parseLatestVersion", () => {
     });
 });
 
+describe("GlobalMenu's rows", () => {
+    it("load once the pointer enters the toggle, before the menu opens", async () => {
+        vi.useRealTimers();
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout />, container);
+        });
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
+        expect(ctrl.itemsLoaded).toBe(false);
+
+        const toggle = container.querySelector<HTMLButtonElement>("button.global-menu-button");
+        expect(toggle).not.toBeNull();
+        toggle?.dispatchEvent(new PointerEvent("pointerenter"));
+        await vi.waitFor(() => expect(ctrl.itemsLoaded).toBe(true));
+    });
+
+    it("shows the logo's tooltip beside a vertical launch bar", async () => {
+        vi.useRealTimers();
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout={false} />, container);
+        });
+        const logo = container.querySelector(".global-menu-button svg");
+        expect(logo).not.toBeNull();
+        await vi.waitFor(() => expect(logo && Tooltip.getInstance(logo)).toBeTruthy());
+        act(() => { if (logo) Tooltip.getInstance(logo)?.show(); });
+        await vi.waitFor(() => expect(document.querySelector(".tooltip")).not.toBeNull());
+        await vi.waitFor(() => expect(document.querySelector(".tooltip")?.getAttribute("data-popper-placement")).toBeTruthy());
+        expect(document.querySelector(".tooltip")?.getAttribute("data-popper-placement")).toBe("right");
+    });
+});
+
 describe("GlobalMenu", () => {
     const popup = () => document.querySelector<HTMLElement>(".tn-popup:not([data-closing])");
     /** The keys of the rows at the top of the menu, or of the submenu page open over it. */
@@ -181,7 +236,7 @@ describe("GlobalMenu", () => {
         });
         const toggle = container?.querySelector<HTMLButtonElement>("button.global-menu-button");
         await act(async () => toggle?.click());
-        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        await vi.waitFor(() => expect(popup()?.querySelector("li.dropdown-submenu")).toBeTruthy());
         const topLevelScroll = popup()?.querySelector(".tn-menu-scroll");
         const topLevel = rows(topLevelScroll);
 

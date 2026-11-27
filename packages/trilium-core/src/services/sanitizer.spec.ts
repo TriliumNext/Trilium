@@ -73,6 +73,15 @@ describe("sanitize", () => {
             .toBe(video.replace(` style="${width}"`, ""));
     });
 
+    it("keeps the width and the position of an aside, and drops other variables on it", () => {
+        const width = "--aside-width:18.5em";
+        const aside = `<aside style="${width}" data-position="wrap-right"><p>Text</p></aside>`;
+        expect(sanitizeHtml(aside)).toBe(aside);
+
+        expect(sanitizeHtml(aside.replace(width, "--aside-width:calc(100vh);--other:1em")))
+            .toBe(`<aside data-position="wrap-right"><p>Text</p></aside>`);
+    });
+
     it("keeps the hidden-border style on table header cells", () => {
         // The OneNote importer maps hidden borders to border-color:transparent on table, td and th —
         // all three must survive sanitization, or header cells render with visible borders.
@@ -119,6 +128,15 @@ describe("sanitize", () => {
             + `<td style="border-style:dotted;border-width:3px">D</td>`
             + "</tr></tbody></table></figure>";
         expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
+    it("keeps the page break the editor writes, and no other value of its style", () => {
+        const pageBreak = `<div class="page-break" style="page-break-after:always"></div>`;
+        expect(sanitizeHtml(pageBreak)).toBe(pageBreak);
+        expect(sanitizeHtml(`<div style="page-break-before:always">x</div>`))
+            .toBe(`<div style="page-break-before:always">x</div>`);
+        expect(sanitizeHtml(`<div style="page-break-after:auto">x</div>`)).toBe("<div>x</div>");
+        expect(sanitizeHtml(`<p style="page-break-after:always">x</p>`)).toBe("<p>x</p>");
     });
 
     it("keeps a fractional image aspect-ratio (OneNote reports fractional pixel dimensions)", () => {

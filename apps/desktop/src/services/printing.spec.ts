@@ -226,6 +226,20 @@ describe("setupPrintingHandlers", () => {
             expect(e.sender.send).toHaveBeenCalledWith("print-progress", { progress: 42, action: "printing" });
         });
 
+        it("renders in a tiny frameless window instead of offscreen on Linux", async () => {
+            setPlatform("linux");
+            await fireOn("print-note", { notePath: "root/abc" });
+            expect(h.lastBwOpts).toMatchObject({
+                show: true,
+                width: 1,
+                height: 1,
+                frame: false,
+                skipTaskbar: true,
+                focusable: false,
+                webPreferences: { offscreen: false }
+            });
+        });
+
         it("stringifies a non-Error rejection in the error payload", async () => {
             // Reject with a plain string so the `err instanceof Error` ternaries
             // take their String(err) / undefined arms.
@@ -500,6 +514,18 @@ describe("setupPrintingHandlers", () => {
             expect(sender.print).toHaveBeenCalledWith(expect.objectContaining({ silent: true, deviceName: "HP" }), expect.any(Function));
             expect(sender.send).toHaveBeenCalledWith("print-done", { type: "single-note" }, 3);
             expect(h.destroy).not.toHaveBeenCalled();
+        });
+
+        it("tags a failed live print with its job so the sender's window is restored", async () => {
+            const fn = h.on.get("print-from-preview");
+            const sender = {
+                send: vi.fn(),
+                print: vi.fn(() => { throw new Error("no printer"); })
+            };
+            await fn?.({ sender }, { ...PDF_OPTS, silent: true, liveJobId: 3 });
+
+            expect(sender.send).toHaveBeenCalledWith("print-from-preview-done");
+            expect(sender.send).toHaveBeenCalledWith("print-done", expect.objectContaining({ type: "error", message: "no printer" }), 3);
         });
     });
 });

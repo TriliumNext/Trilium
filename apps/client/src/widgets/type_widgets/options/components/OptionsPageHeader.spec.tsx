@@ -7,8 +7,8 @@ const mocks = vi.hoisted(() => ({
     note: undefined as { title: string; getIcon: () => string } | undefined
 }));
 
-vi.mock("../../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../../react/hooks")>()),
+vi.mock("../../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../react/hooks/note_context")>()),
     useNoteContext: () => ({ note: mocks.note })
 }));
 

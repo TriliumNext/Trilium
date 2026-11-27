@@ -248,6 +248,41 @@ describe("attribute_tools", () => {
             expect(note.hasOwnedLabel("status")).toBe(false);
         });
 
+        it("leaves an attribute an attributeId names untouched when nothing changes", () => {
+            const note = createNote("By id no-op host");
+            const tag = cls.init(() => note.addLabel("tag", "MCP", true));
+            const call = (args: object) => cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "MCP", attributeId: tag.attributeId, ...args
+            }));
+
+            expect(call({})).toEqual({ success: true, noteId: note.noteId, type: "label", name: "tag", value: "MCP" });
+            expect(call({ isInheritable: true })).toEqual({
+                success: true, noteId: note.noteId, type: "label", name: "tag", value: "MCP", isInheritable: true
+            });
+            expect(note.getOwnedLabels("tag").map((l) => l.attributeId)).toEqual([ tag.attributeId ]);
+        });
+
+        it("names a relation an attributeId points to when the type does not match", () => {
+            const note = createNote("By id relation host");
+            const relation = cls.init(() => note.addRelation("inbox", "root"));
+            expect(cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "inbox", value: "x", attributeId: relation.attributeId
+            }))).toEqual({ error: "Attribute is ~inbox, not #inbox" });
+        });
+
+        it("counts the same-name labels it left untouched in the plural", () => {
+            const note = createNote("Many tags host");
+            cls.init(() => {
+                note.addLabel("tag", "MCP");
+                note.addLabel("tag", "AI");
+                note.addLabel("tag", "LLM");
+            });
+            const result = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "tag", value: "Blender"
+            })) as { message: string };
+            expect(result.message).toContain("2 other #tag attributes were left unchanged");
+        });
+
         it("points to attributeId and add mode when set mode replaces one of several values", () => {
             const note = createNote("Hint host");
             cls.init(() => {
@@ -297,6 +332,12 @@ describe("attribute_tools", () => {
             });
             expect(note.getOwnedRelationValue("disabled:renderNote")).toBe("root");
             expect(note.getOwnedRelation("renderNote")).toBeNull();
+
+            const inheritable = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "widget", value: "", isInheritable: true
+            }));
+            expect(inheritable).toMatchObject({ name: "disabled:widget", isInheritable: true, disabled: true });
+            expect(note.getOwnedLabel("disabled:widget")?.isInheritable).toBe(true);
         });
 
         it("removes an active dangerous attribute it replaces with a disabled one", () => {

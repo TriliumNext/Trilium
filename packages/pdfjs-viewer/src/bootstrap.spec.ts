@@ -89,14 +89,16 @@ describe("boot sequence", () => {
         // Each sidebar panel is fed by its own setup call; a missing one shows as an empty
         // panel rather than an error, so assert they all reported.
         for (const type of [
+            "pdfjs-viewer-document-loaded",
             "pdfjs-viewer-annotations",
-            "pdfjs-viewer-toc",
             "pdfjs-viewer-page-info",
             "pdfjs-viewer-attachments",
             "pdfjs-viewer-layers"
         ]) {
             await vi.waitFor(() => expect(viewer.messagesOfType(type).length).toBeGreaterThan(0));
         }
+        // The outline comes from the ToC cache, which the client reads.
+        expect(viewer.messagesOfType("pdfjs-viewer-toc")).toHaveLength(0);
 
         // And the save plumbing is live: dirtying the storage reaches the parent.
         (viewer.pdfDocument.annotationStorage as any).setValue("field-1", { value: "typed" });
@@ -137,6 +139,61 @@ describe("boot sequence", () => {
 
         for (const message of viewer.messages) {
             expect(message).toMatchObject({ noteId: "note-2", ntxId: "ntx-2" });
+        }
+    });
+
+    it("reports the load and the failure of its document with its token, always", async () => {
+        delete (window as Partial<Window>).TRILIUM_NOTE_ID;
+        delete (window as Partial<Window>).TRILIUM_NTX_ID;
+        viewer = await installViewerApp(allFeaturesPdf());
+        await bootWith("editable=0&loadToken=load-7");
+        expect(window.TRILIUM_LOAD_TOKEN).toBe("load-7");
+
+        viewer.eventBus.dispatch("documentloaded", { source: null });
+        viewer.eventBus.dispatch("documenterror", { source: null, message: "Invalid PDF" });
+
+        expect(viewer.messagesOfType("pdfjs-viewer-document-loaded"))
+            .toStrictEqual([ {
+                type: "pdfjs-viewer-document-loaded", loadToken: "load-7", ntxId: undefined,
+                noteId: undefined
+            } ]);
+        expect(viewer.messagesOfType("pdfjs-viewer-document-error"))
+            .toStrictEqual([ {
+                type: "pdfjs-viewer-document-error", loadToken: "load-7", ntxId: undefined,
+                noteId: undefined
+            } ]);
+    });
+
+    it("reports the position and rotations to a note's viewer or one that asks, read-only too",
+        async () => {
+        const pages = {
+            0: { offsetTop: 0, clientHeight: 792 }, 1: { offsetTop: 1000, clientHeight: 792 }
+        };
+        for (const [ query, address ] of [
+            [ "editable=0&noteId=note-2&ntxId=ntx-2&loadToken=load-1",
+                { loadToken: "load-1", noteId: "note-2" } ],
+            [ "editable=0&position=1&loadToken=load-3", { loadToken: "load-3" } ],
+            [ "editable=1&loadToken=load-2", null ]
+        ] as const) {
+            delete (window as Partial<Window>).TRILIUM_NOTE_ID;
+            delete (window as Partial<Window>).TRILIUM_NTX_ID;
+            viewer = await installViewerApp(allFeaturesPdf(), pages);
+            await bootWith(query);
+
+            viewer.eventBus.dispatch("documentloaded", { source: null });
+            viewer.eventBus.dispatch("documentinit", { source: null });
+
+            if (address) {
+                await vi.waitFor(() => expect(viewer.lastMessageOfType("pdfjs-viewer-position"))
+                    .toMatchObject({ ...address, pageNumber: 1 }));
+                expect(viewer.lastMessageOfType("pdfjs-viewer-rotations"))
+                    .toMatchObject({ ...address, rotations: [ 0, 0 ] });
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 150));
+                expect(viewer.messagesOfType("pdfjs-viewer-position")).toHaveLength(0);
+                expect(viewer.messagesOfType("pdfjs-viewer-rotations")).toHaveLength(0);
+            }
+            uninstallViewerApp();
         }
     });
 
@@ -375,6 +432,23 @@ describe("nudging the save from input activity", () => {
         expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
     });
 
+    it("judges a stroke that began off the page by where it ends", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        manageSave();
+        startEditing();
+        const target = renderPage();
+
+        // Dragging from the toolbar and releasing over the toolbar again is not an edit...
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        document.body.dispatchEvent(new Event("pointerup", { bubbles: true }));
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
+
+        // ...but one released over a page can have changed it.
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        target.dispatchEvent(new Event("pointerup", { bubbles: true }));
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
+    });
+
     it("reports typing on a page while a tool is active", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         manageSave();
@@ -471,6 +545,16 @@ describe("viewer configuration", () => {
         expect(window.devicePixelRatio).toBe(2);
     });
 
+    it("treats a display that reports no pixel ratio as 1x", () => {
+        Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 0 });
+
+        applyMinPixelRatio(new URLSearchParams("minPixelRatio=0.5"));
+        expect(window.devicePixelRatio).toBe(0);
+
+        applyMinPixelRatio(new URLSearchParams("minPixelRatio=2"));
+        expect(window.devicePixelRatio).toBe(2);
+    });
+
     it("ignores a missing or nonsensical pixel ratio", () => {
         Object.defineProperty(window, "devicePixelRatio", { configurable: true, value: 1 });
 
@@ -498,6 +582,54 @@ describe("viewer configuration", () => {
         delete window.PDFViewerApplicationOptions;
     });
 
+    it("passes the locale on, and ignores announcements it cannot act on", () => {
+        window.history.replaceState({}, "", "/web/viewer.html?locale=de");
+        const set = vi.fn();
+        configurePdfViewerOptions();
+
+        // Another window's viewer, then one that has not published its options yet.
+        document.dispatchEvent(new CustomEvent("webviewerloaded", { detail: { source: {} } }));
+        configurePdfViewerOptions();
+        document.dispatchEvent(new CustomEvent("webviewerloaded", { detail: { source: window } }));
+        expect(set).not.toHaveBeenCalled();
+
+        window.PDFViewerApplicationOptions = { set };
+        configurePdfViewerOptions();
+        document.dispatchEvent(new CustomEvent("webviewerloaded", { detail: { source: window } }));
+        expect(set).toHaveBeenCalledWith("localeProperties", { lang: "de" });
+
+        delete window.PDFViewerApplicationOptions;
+        window.history.replaceState({}, "", "/");
+    });
+
+    it("listens on the parent window when running in an iframe, until the frame goes away", () => {
+        const parentDescriptor = Object.getOwnPropertyDescriptor(window, "parent");
+        const parent = new EventTarget();
+        const addEventListener = vi.spyOn(parent, "addEventListener");
+        const removeEventListener = vi.spyOn(parent, "removeEventListener");
+        Object.defineProperty(window, "parent", { configurable: true, value: parent });
+        const set = vi.fn();
+        window.PDFViewerApplicationOptions = { set };
+
+        try {
+            configurePdfViewerOptions();
+            // pdf.js dispatches `webviewerloaded` on the parent's document when it is framed.
+            const [ , handler ] = addEventListener.mock.calls[0];
+            parent.dispatchEvent(new CustomEvent("webviewerloaded", { detail: { source: window } }));
+            expect(set).toHaveBeenCalledWith("disablePreferences", true);
+
+            window.dispatchEvent(new Event("pagehide"));
+            expect(removeEventListener).toHaveBeenCalledWith("webviewerloaded", handler);
+        } finally {
+            if (parentDescriptor) {
+                Object.defineProperty(window, "parent", parentDescriptor);
+            } else {
+                delete (window as any).parent;
+            }
+            delete window.PDFViewerApplicationOptions;
+        }
+    });
+
     it("hides the sidebar toggle along with the spacer that follows it", () => {
         document.body.innerHTML = `
             <div id="viewsManagerToggleButton"></div>
@@ -510,5 +642,20 @@ describe("viewer configuration", () => {
         expect(window.TRILIUM_HIDE_SIDEBAR).toBe(true);
         expect(document.getElementById("viewsManagerToggleButton")?.style.display).toBe("none");
         expect(document.querySelector(".toolbarButtonSpacer")).toBeNull();
+    });
+
+    it("keeps an element after the toggle that is not its spacer, and copes without a toggle", () => {
+        document.body.innerHTML = `
+            <div id="viewsManagerToggleButton"></div>
+            <div class="other"></div>
+            <div class="toolbarButton"></div>`;
+
+        hideSidebar();
+        expect(document.querySelector(".toolbarButton")).not.toBeNull();
+
+        document.body.innerHTML = "";
+        delete window.TRILIUM_HIDE_SIDEBAR;
+        hideSidebar();
+        expect(window.TRILIUM_HIDE_SIDEBAR).toBe(true);
     });
 });

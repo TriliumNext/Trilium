@@ -1,5 +1,6 @@
 import { chooseLinkPreviewKind, isUrlAloneInBlock, type BlockChildLike } from '@triliumnext/commons';
 import { Plugin } from 'ckeditor5';
+import { copyColors } from "../colored_widgets.js";
 import {
     createLinkPreview, EMBEDDABLE_URL_REGEX, getLinkEmbedHost, getMetadataAttributes
 } from './link_embed_commands.js';
@@ -142,7 +143,9 @@ export default class AutoLinkToMention extends Plugin {
                             // first: the fetch was async and the caret may be words away by now, so
                             // the replacement must not drag it back to the mention.
                             const urlRange = writer.createRangeOn(item.item);
-                            editor.model.insertContent(writer.createElement('linkMention', attributes), urlRange);
+                            const mention = writer.createElement("linkMention", attributes);
+                            copyColors(writer, item.item, mention);
+                            editor.model.insertContent(mention, urlRange);
                             return;
                         }
 
@@ -151,6 +154,7 @@ export default class AutoLinkToMention extends Plugin {
                         // caret has moved on to the next line (that is what made this a block preview in
                         // the first place) and may already be mid-word, so it must not be dragged back.
                         const preview = createLinkPreview(writer, kind, attributes);
+                        copyColors(writer, item.item, preview);
                         writer.insert(preview, parentEl, 'before');
                         writer.remove(parentEl);
                         return;

@@ -328,13 +328,11 @@ export async function restoreDatabase(request: RestoreRequest): Promise<void> {
 }
 
 /**
- * Brings the stored backup passphrase into line with the database that has just been restored.
+ * Takes on the password that opened an encrypted backup as the stored backup passphrase.
  *
- * The passphrase lives outside the database — an OS keyring on the desktop, nowhere at all
- * elsewhere — so it is the one thing about how this instance backs up that a restore does not
- * replace. Left alone, an instance restored from someone else's backup goes on encrypting with the
- * password of the database it used to hold: the backups look fine, and the password the user
- * expects does not open them.
+ * The passphrase lives outside the database (an OS keyring on the desktop, nowhere elsewhere), so a
+ * restore does not replace it otherwise. A plain backup keeps the stored passphrase: only the OS
+ * dialog clears it, and while it is stored every backup that nobody is asked about is encrypted.
  *
  * Never allowed to fail the restore. The database is already in place and open by this point, and a
  * keyring that would not answer is not a reason to tell the user their restore did not work.
@@ -346,15 +344,13 @@ export async function adoptBackupPassphrase(
     request: RestoreRequest,
     wasEncrypted: boolean
 ): Promise<void> {
-    // A backup with no lock on it brings no password to take on, and the stored one is not an
-    // answer: it was the previous database's.
-    const passphrase = wasEncrypted ? request.passphrase ?? null : null;
+    if (!wasEncrypted || !request.passphrase) {
+        return;
+    }
 
     try {
-        await (getBackup() as ServerBackupService).adoptPassphrase(passphrase);
-        logRestore(passphrase
-            ? "the backup password is now the one that opened this backup"
-            : "let go of the backup password, which belonged to the previous database");
+        await (getBackup() as ServerBackupService).adoptPassphrase(request.passphrase);
+        logRestore("the backup password is now the one that opened this backup");
     } catch (e) {
         logRestoreError(`the backup password could not be brought up to date: ${messageOf(e)}`);
     }
@@ -646,6 +642,7 @@ function markerFor(document: string): string {
  * nothing threw — a process killed mid-swap leaves its last step as the last thing in the log.
  */
 function report(stage: RestoreStage): void {
+    /* v8 ignore else -- restoreDatabase() sets progress before any report() */
     if (progress) {
         // The position belonged to the step that has just ended, and would otherwise be read as this
         // one's — a step with nothing to report showing the last one's bar, frozen where it stopped.
@@ -657,6 +654,7 @@ function report(stage: RestoreStage): void {
 
 /** The step the restore had reached, for saying where it was when something went wrong. */
 function progressStage(): RestoreStage | "unknown" {
+    /* v8 ignore next -- called only after restoreDatabase() has set progress */
     return progress?.stage ?? "unknown";
 }
 

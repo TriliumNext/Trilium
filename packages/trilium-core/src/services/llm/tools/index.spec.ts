@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { allToolRegistries, resolveToolRegistries } from "./index.js";
+import { allToolRegistries, registerToolRegistry, resolveToolRegistries } from "./index.js";
 import { registerToolRegistryLoader } from "./registration.js";
 import { defineTools, type ToolRegistry } from "./tool_registry.js";
 
@@ -66,6 +66,15 @@ describe("resolveToolRegistries", () => {
         release(registry);
         await Promise.all([first, second]);
         expect(allToolRegistries).toContain(registry);
+    });
+
+    it("registers a registry only once, however often it is added", () => {
+        const registry = makeRegistry("twice_tool");
+        added.push(registry);
+
+        registerToolRegistry(registry);
+        registerToolRegistry(registry);
+        expect(allToolRegistries.filter((r) => r === registry)).toHaveLength(1);
     });
 
     it("picks up a loader registered after an earlier resolve completed", async () => {

@@ -66,6 +66,13 @@ export default abstract class BackupService {
     hasStoredPassphrase?(): Promise<boolean>;
 
     /**
+     * Whether a passphrase is stored, without reading it: unlike {@link hasStoredPassphrase}, this
+     * is also `true` while the keyring is locked. While one is stored, every backup that nobody is
+     * asked about is encrypted. Left out by platforms that keep no passphrase.
+     */
+    isPassphraseStored?(): boolean;
+
+    /**
      * Perform regular scheduled backups (daily, weekly, monthly).
      * Called periodically by the scheduler.
      * Default implementation runs inside an execution context.

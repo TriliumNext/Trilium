@@ -1,6 +1,6 @@
 import type { ContentEmbedCodeView } from "@triliumnext/ckeditor5";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons";
+import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons/src/lib/mime_type.js";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import { createPortal, type RefObject } from "preact";
 import { lazy, Suspense, useSyncExternalStore } from "preact/compat";
@@ -23,9 +23,9 @@ import {
 import { SaveStateBadge } from "../../layout/NoteBadges";
 import { useMimeTypes } from "../../layout/NoteTypeSwitcher";
 import ActionButton from "../../react/ActionButton";
-import {
-    useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
+import { useNoteBlob, useNoteLabelOptionalBool } from "../../react/hooks/note";
 import { useContentEmbedMenus } from "../text/content_embed_menus";
 import {
     type ContentEmbedToolbarItem, useContentEmbedAttribute, useContentEmbedFlag
@@ -123,6 +123,8 @@ export function InlineCodeEmbed({ content: savedContent, editor, language }: Sou
             hasCopyButton
             hiddenToolbarItems={EXTENDED_CODE_BLOCK_HIDDEN_ITEMS}
             hasPositions
+            hasTabWidthInMenu
+            hasCodeBlockKeys
         />
     );
 }
@@ -155,12 +157,20 @@ interface CodeEmbedContentProps {
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
     /** Whether the embed can be placed in the text, at the left, the right or wrapped in it. */
     hasPositions?: boolean;
+    /** Whether the menu of the embed offers the tab width, in place of a toolbar button. */
+    hasTabWidthInMenu?: boolean;
+    /**
+     * Whether Enter and Backspace act as in a code block: Enter past blank lines at an edge of
+     * the code starts a paragraph beside it, and Backspace in an empty block turns it into one.
+     */
+    hasCodeBlockKeys?: boolean;
 }
 
 /** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
 function CodeEmbedContent({
     rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
-    hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems, hasPositions
+    hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems, hasPositions,
+    hasTabWidthInMenu, hasCodeBlockKeys
 }: CodeEmbedContentProps) {
     const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
@@ -205,6 +215,7 @@ function CodeEmbedContent({
                             languageLabel={hasLanguageLabel && isEditing ? languageLabel : undefined}
                             viewRef={viewRef}
                             onClose={onContentChange}
+                            hasCodeBlockKeys={hasCodeBlockKeys}
                         />
                     </Suspense>
                 </CaretNavigationContext.Provider>
@@ -231,6 +242,7 @@ function CodeEmbedContent({
                 getCodeText={getCodeText}
                 hiddenToolbarItems={hiddenToolbarItems}
                 hasPositions={hasPositions}
+                hasTabWidthInMenu={hasTabWidthInMenu}
             />
         </>
     );
@@ -366,22 +378,31 @@ interface CodeToolsProps {
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
     /** Whether the embed can be placed in the text. */
     hasPositions?: boolean;
+    /** Whether the menu of the embed offers the tab width after `menuItems`, not the toolbar. */
+    hasTabWidthInMenu?: boolean;
 }
 
 /**
  * The box size of the embed around `rootRef` as an icon of its toolbar, and while `canEdit`, the
  * "Change language mode" and "Change tab width" menus of the status bar as buttons of the toolbar
- * and `menuItems` in the menu of the embed.
+ * and `menuItems` in the menu of the embed. With `hasTabWidthInMenu`, the tab width menu is a
+ * submenu of the menu of the embed instead.
  */
 function CodeTools({
-    rootRef, settings, canEdit, menuItems, getCodeText, hiddenToolbarItems, hasPositions
+    rootRef, settings, canEdit, menuItems, getCodeText, hiddenToolbarItems, hasPositions,
+    hasTabWidthInMenu
 }: CodeToolsProps) {
-    const language = useCodeLanguageMenu(settings);
-    const tabWidth = useTabWidthMenu(settings, async () => getCodeText());
+    const language = useCodeLanguageMenu<CommandNames>(settings);
+    const tabWidth = useTabWidthMenu<CommandNames>(settings, async () => getCodeText());
+    const tabWidthItem: MenuItem<CommandNames> = {
+        title: t("link_context_menu.tab_width"),
+        uiIcon: tabWidth.icon,
+        items: tabWidth.items
+    };
     useContentEmbedMenus(rootRef, canEdit ? [
         { id: "codeLanguage", ...language.menu },
-        { id: "tabWidth", ...tabWidth }
-    ] : [], canEdit ? menuItems : [], {
+        ...(hasTabWidthInMenu ? [] : [ { id: "tabWidth", ...tabWidth } ])
+    ] : [], canEdit ? [ ...menuItems, ...(hasTabWidthInMenu ? [ tabWidthItem ] : []) ] : [], {
         hasEditableFlag: canEdit,
         boxSizeIcon: moveVerticalIcon,
         hiddenToolbarItems,
@@ -413,8 +434,8 @@ export function SaveStatus({ rootRef, editor, isShown }: SaveStatusProps) {
 
 /**
  * Shows the content of `entity` after each save, also one made by another embed of it, once
- * `shownRef` is shown. Unsaved changes made in the embed are kept, and replace that content when
- * they save.
+ * `shownRef` is shown, and tells `editor` the version that it shows. Unsaved changes made in the
+ * embed are kept, and replace that content when they save.
  */
 export function useSavedContent(
     entity: FNote | FAttachment,
@@ -447,6 +468,9 @@ export function useSavedContent(
     useEffect(() => {
         if (content !== undefined && editor?.getUnsavedContent() === undefined) {
             setContent(content);
+            if (noteBlob) {
+                editor?.setLoadedVersion?.(noteBlob.blobId, content);
+            }
         }
     }, [ content ]);
 }

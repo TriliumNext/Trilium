@@ -7,6 +7,8 @@ const LOG_ALL_QUERIES = false;
 // smaller values can result in better performance due to better usage of statement cache
 const PARAM_LIMIT = 100;
 
+const SQL_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 /**
  * The output shapes a prepared statement can return: rows as objects, rows as arrays (`raw`), or the
  * first column alone (`pluck`). Each sticks to the statement once set, so a reader always names one.
@@ -91,6 +93,8 @@ export class SqlService {
             return;
         }
 
+        assertIdentifiers(tableName, ...keys);
+
         const columns = keys.join(", ");
         const questionMarks = keys.map((p) => "?").join(", ");
 
@@ -117,6 +121,8 @@ export class SqlService {
             this.log.error(`Can't upsert empty object into table ${tableName}`);
             return;
         }
+
+        assertIdentifiers(tableName, primaryKey, ...keys);
 
         const columns = keys.join(", ");
 
@@ -222,7 +228,7 @@ export class SqlService {
             results = results.concat(subResults);
         }
 
-        return (results as T[] | null) || [];
+        return results as T[];
     }
 
     /**
@@ -268,6 +274,7 @@ export class SqlService {
     }
 
     iterateRows<T>(query: string, params: Params = []): IterableIterator<T> {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -286,7 +293,7 @@ export class SqlService {
         const map: Record<K, V> = {} as Record<K, V>;
         const results = this.getRawRows<[K, V]>(query, params);
 
-        for (const row of results || []) {
+        for (const row of results) {
             map[row[0]] = row[1];
         }
 
@@ -322,6 +329,7 @@ export class SqlService {
     }
 
     executeMany(query: string, params: Params) {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -346,6 +354,7 @@ export class SqlService {
     }
 
     executeScript(query: string) {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -361,6 +370,7 @@ export class SqlService {
         const startTimestamp = Date.now();
         let result;
 
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -491,4 +501,16 @@ function disableSlowQueryLogging(disable: boolean) {
 
 function isSlowQueryLoggingDisabled() {
     return !!getContext().get("disableSlowQueryLogging");
+}
+
+/**
+ * Throws unless every name is a plain SQL identifier, since `insert()` and `upsert()` write table
+ * and column names into the statement text rather than binding them.
+ */
+function assertIdentifiers(...names: string[]) {
+    for (const name of names) {
+        if (!SQL_IDENTIFIER.test(name)) {
+            throw new Error(`'${name}' is not a valid SQL identifier.`);
+        }
+    }
 }

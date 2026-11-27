@@ -34,8 +34,8 @@ vi.mock("./attribute_widgets/relation_values_input", () => ({
 // held stable: the grid rebuilds its cells when the context changes, told apart by identity.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const noteContext = vi.hoisted(() => ({ viewScope: { viewMode: "default" } }));
-vi.mock("./react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./react/hooks")>()),
+vi.mock("./react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
     useNoteContext: () => ({
         note: shownNote.current,
         componentId: "cid",
@@ -55,7 +55,8 @@ import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import { ParentComponent } from "./react/react_utils";
-import PromotedAttributes, { buildPromotedCells, PromotedAttributesContent, usePromotedAttributeData } from "./PromotedAttributes";
+import { buildPromotedCells, usePromotedAttributeData } from "./promoted_attribute_cells";
+import PromotedAttributes, { PromotedAttributesContent } from "./PromotedAttributes";
 
 // The fields reach the server through these three; every suite stands them down, and the ones
 // asserting on what was written reach for these same handles.
@@ -91,6 +92,44 @@ describe("buildPromotedCells", () => {
         // the field updates that attribute rather than rewriting everything under the name.
         expect(cells[1].values).toBeUndefined();
         expect(cells[1].valueAttr.value).toBe("open");
+    });
+
+    it("shows the value a single-valued field inherits from a parent, without touching the inherited attribute", () => {
+        const parent = buildNote({
+            title: "Parent",
+            "#label:done(inheritable)": "promoted,single,boolean",
+            "#done(inheritable)": "true",
+            children: [ { title: "Child" } ]
+        });
+        const child = froca.notes[parent.children[0]];
+
+        const [ cell ] = buildPromotedCells(child);
+
+        expect(cell.valueName).toBe("done");
+        expect(cell.valueAttr.value).toBe("true");
+        // Edited on the child, it is written as a new attribute of its own...
+        expect(cell.valueAttr.attributeId).toBe("");
+        // ...and the parent's attribute keeps its id.
+        expect(parent.getOwnedAttributes("label", "done")[0].attributeId).not.toBe("");
+    });
+
+    it("shows one field for a definition without a multiplicity, however many values the note inherits", () => {
+        buildNote({ id: "doneTemplate", title: "Template", "#done": "false" });
+        const parent = buildNote({
+            title: "Parent",
+            "#label:done(inheritable)": "promoted,boolean",
+            "#done(inheritable)": "true",
+            children: [ { title: "Child", "~template": "doneTemplate" } ]
+        });
+        const child = froca.notes[parent.children[0]];
+        // `buildNote()` fills the cache without following templates; froca resolves them once it is empty.
+        noteAttributeCache.invalidate();
+        expect(child.getAttributes("label", "done")).toHaveLength(2);
+
+        const cells = buildPromotedCells(child);
+
+        expect(cells).toHaveLength(1);
+        expect(cells[0].valueAttr.value).toBe("true");
     });
 
     it("shows the values in the order the note holds them, whichever order they were loaded in", () => {

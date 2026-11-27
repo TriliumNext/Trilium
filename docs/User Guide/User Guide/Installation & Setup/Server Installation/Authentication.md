@@ -51,7 +51,9 @@ cookieMaxAge=86400
 
 When “Remember me” is unchecked, the behavior is different. At client/browser level the authentication does not have any expiration date, but it will be automatically cleared as soon as the user closes the browser. Nevertheless, the server will also dismiss this authentication in around 24 hours from the _last interaction with the application_.
 
-Changing or resetting the password logs out every session, including the one that made the change: open tabs return to the login screen, where you log in again with the new password. This also applies when the password is changed on another instance and reaches the server through synchronization. If you suspect that someone has obtained your session cookie, changing the password cuts off their access.
+Changing or resetting the password logs out every session, including the one that made the change: open tabs return to the login screen, where you log in again with the new password. This also applies when the password is changed on another instance and reaches the server through synchronization.
+
+Changing the password does not revoke <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> tokens. They are separate credentials for scripts and integrations, and they keep working until you delete them. If you suspect that someone has obtained your session cookie, change the password, then go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _ETAPI_ and delete any token you don't recognize by its name and _Created_ date, since anyone with your session can create new tokens.
 
 ## Viewing active sessions
 

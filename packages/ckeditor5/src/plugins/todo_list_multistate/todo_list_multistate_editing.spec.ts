@@ -1,10 +1,10 @@
 import { type TaskStateDef } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
-import { _setModelData as setModelData, ClassicEditor, Essentials, HorizontalLine, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, type Editor, env, Essentials, HorizontalLine, keyCodes, LinkEditing, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
-import { createTestEditor } from "../../../test/editor-kit.js";
+import { createTestEditor, pressKey } from "../../../test/editor-kit.js";
 import TodoListUncheckOnEnter from "../todo_list_uncheck_on_enter.js";
 import TodoListMultistateEditing, { buildTooltipTitle, getActiveTaskStates, getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
 
@@ -402,6 +402,37 @@ describe("TodoListMultistateEditing", () => {
             if (input) {
                 expect(Tooltip.getInstance(input)).toBeNull();
             }
+        });
+    });
+
+    describe("Ctrl+Enter on a link in a to-do item", () => {
+        beforeEach(async () => {
+            editor = await createTestEditor(
+                [Essentials, Paragraph, List, TodoList, LinkEditing, ReferenceStandIn, TodoListMultistateEditing]);
+        });
+
+        it("leaves the key to following the link and toggles the item elsewhere (#12561)", () => {
+            const root = editor.editing.view.getDomRoot();
+            const host = root?.parentElement;
+            if (!root || !host) {
+                throw new Error("The editor has no editing root.");
+            }
+            let bubbled = 0;
+            host.addEventListener("keydown", () => bubbled++);
+            const todo = (content: string) =>
+                `<paragraph listIndent="0" listItemId="a" listType="todo">${content}</paragraph>`;
+            const ctrl = env.isMac ? { metaKey: true } : { ctrlKey: true };
+
+            for (const content of [ "<$text linkHref=\"x\">Li[]nk</$text>", "[<reference></reference>]" ]) {
+                setModelData(editor.model, todo(content));
+                pressKey(editor, "Enter", { keyCode: keyCodes.enter, ...ctrl });
+                expect(getBlock(editor, 0).hasAttribute(TODO_LIST_CHECKED_ATTRIBUTE), content).toBe(false);
+            }
+            expect(bubbled).toBe(2);
+
+            setModelData(editor.model, todo("Task[]"));
+            pressKey(editor, "Enter", { keyCode: keyCodes.enter, ...ctrl });
+            expect(getBlock(editor, 0).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
         });
     });
 
@@ -987,3 +1018,9 @@ describe("clicking a checkbox", () => {
         expect(blurredPress.defaultPrevented).toBe(false);
     });
 });
+
+/** Stands in for the note reference that the internal link plugin inserts. */
+function ReferenceStandIn(editor: Editor) {
+    editor.model.schema.register("reference", { inheritAllFrom: "$inlineObject" });
+    editor.conversion.elementToElement({ model: "reference", view: "span" });
+}

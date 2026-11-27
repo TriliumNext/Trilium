@@ -71,6 +71,10 @@ describe("formatHtml", () => {
             .toBe(["<div>", `  ${pre}`, `  ${textarea}`, `  ${paragraph}`, "</div>"].join("\n"));
     });
 
+    it("keeps markup without a block on a single line", () => {
+        expect(formatHtml(`<span  class="a">x</span> <em>y</em>`)).toBe(`<span class="a">x</span> <em>y</em>`);
+    });
+
     it("separates the attributes of every tag by one space, keeping their values as written", () => {
         expect(formatHtml(`<div   id="d"\n><p>See <a\n          class="reference-link"   href='a  b'\tdata-x = 1>x</a>.</p></div>`))
             .toBe([ `<div id="d">`, `  <p>See <a class="reference-link" href='a  b' data-x=1>x</a>.</p>`, "</div>" ].join("\n"));

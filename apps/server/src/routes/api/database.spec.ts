@@ -1,12 +1,27 @@
-import { getBackup, getLog, utils, ValidationError } from "@triliumnext/core";
+import { becca_loader, getBackup, getLog, getSql, utils, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+// The database a rebuild reads lives in a temporary directory, so the spec never writes to the
+// shared test data directory.
+vi.mock("../../services/data_dir.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../services/data_dir.js")>();
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+    const root = mkdtempSync(join(tmpdir(), "trilium-database-route-spec-"));
+
+    return { ...original, default: { ...original.default, DOCUMENT_PATH: join(root, "document.db") } };
+});
 
 import anonymizationService from "../../services/anonymization.js";
 import dataDir from "../../services/data_dir.js";
+import sqlInit from "../../services/sql_init.js";
 import databaseRoute from "./database.js";
+
+afterAll(() => fs.rmSync(path.dirname(dataDir.DOCUMENT_PATH), { recursive: true, force: true }));
 
 function fakeRes() {
     const calls: { status?: number; body?: unknown; download?: unknown[] } = {};
@@ -93,50 +108,51 @@ describe("Database API", () => {
         spy.mockRestore();
     });
 
-    describe("downloadBackup error handling", () => {
-        it("returns 400 when filePath is missing", () => {
-            const { res, calls } = fakeRes();
-            databaseRoute.downloadBackup({ query: {} } as unknown as Request, res);
-            expect(calls.status).toBe(400);
-        });
-
-        it("returns 403 for a path outside the backup directory", () => {
-            const { res, calls } = fakeRes();
-            databaseRoute.downloadBackup({ query: { filePath: "/etc/passwd" } } as unknown as Request, res);
-            expect(calls.status).toBe(403);
-        });
-
-        it("returns 404 for a non-existent file inside the backup directory", () => {
-            const { res, calls } = fakeRes();
-            const filePath = path.join(dataDir.BACKUP_DIR, "missing-backup.db");
-            databaseRoute.downloadBackup({ query: { filePath } } as unknown as Request, res);
-            expect(calls.status).toBe(404);
-        });
-
-        it("streams an existing backup file via res.download", () => {
-            const filePath = path.join(dataDir.BACKUP_DIR, "spec-backup.db");
-            fs.mkdirSync(dataDir.BACKUP_DIR, { recursive: true });
-            fs.writeFileSync(filePath, "backup-bytes");
-            try {
-                const { res, calls } = fakeRes();
-                databaseRoute.downloadBackup({ query: { filePath } } as unknown as Request, res);
-                const downloadArgs = calls.download ?? [];
-                expect(downloadArgs[0]).toBe(path.resolve(filePath));
-                // A timestamped download filename is generated from the file mtime.
-                expect(String(downloadArgs[1])).toMatch(/spec-backup_.*\.db/);
-            } finally {
-                fs.rmSync(filePath, { force: true });
-            }
-        });
-    });
-
     describe("downloadAnonymizedDatabase", () => {
-        it("is restricted to the anonymized-db directory", () => {
-            // A backup file path is valid for downloadBackup but must be rejected here.
+        /** The status code of the download route for `filePath`. */
+        function downloadStatus(filePath?: string) {
             const { res, calls } = fakeRes();
-            const filePath = path.join(dataDir.BACKUP_DIR, "backup-now.db");
-            databaseRoute.downloadAnonymizedDatabase({ query: { filePath } } as unknown as Request, res);
-            expect(calls.status).toBe(403);
+            const query = filePath === undefined ? {} : { filePath };
+            databaseRoute.downloadAnonymizedDatabase({ query } as unknown as Request, res);
+
+            return calls.status;
+        }
+
+        it("answers 400 without a path and 404 for a listed name that is gone", () => {
+            expect(downloadStatus()).toBe(400);
+            expect(downloadStatus(path.join(dataDir.ANONYMIZED_DB_DIR, "anonymized-full-gone.db")))
+                .toBe(404);
+        });
+
+        it("is restricted to the anonymized-db directory", () => {
+            expect(downloadStatus(path.join(dataDir.BACKUP_DIR, "backup-now.db"))).toBe(403);
+        });
+
+        it("refuses a file of the anonymized-db directory that the listing does not name", () => {
+            const unlisted = [
+                path.join(dataDir.ANONYMIZED_DB_DIR, "anonymizing-0123456789ab.tmp"),
+                path.join(dataDir.ANONYMIZED_DB_DIR, "anonymized-full-x.db-journal"),
+                path.join(dataDir.ANONYMIZED_DB_DIR, "notes.txt"),
+                path.join(dataDir.ANONYMIZED_DB_DIR, "nested", "anonymized-full-x.db")
+            ];
+            fs.mkdirSync(path.join(dataDir.ANONYMIZED_DB_DIR, "nested"), { recursive: true });
+            try {
+                for (const filePath of unlisted) {
+                    fs.writeFileSync(filePath, "unscrubbed-bytes");
+                }
+
+                for (const filePath of unlisted) {
+                    const request = { query: { filePath } } as unknown as Request;
+                    expect(downloadStatus(filePath), filePath).toBe(403);
+                    expect(() => databaseRoute.deleteAnonymizedDatabase(request))
+                        .toThrow("Not an anonymized database.");
+                    expect(fs.existsSync(filePath)).toBe(true);
+                }
+            } finally {
+                for (const filePath of unlisted) {
+                    fs.rmSync(filePath, { force: true });
+                }
+            }
         });
 
         it("streams an existing anonymized database via res.download", () => {
@@ -175,6 +191,30 @@ describe("Database API", () => {
                 expect(() => databaseRoute.deleteAnonymizedDatabase({ query: { filePath } } as unknown as Request))
                     .toThrow(ValidationError);
             }
+            // No path at all is refused the same way.
+            expect(() => databaseRoute.deleteAnonymizedDatabase({ query: {} } as unknown as Request))
+                .toThrow("Not an anonymized database.");
         });
+    });
+
+    it("rebuilds the integration test database from the file at the document path, then reloads", async () => {
+        const fixture = Buffer.from("SQLite format 3\0 a stand-in for the fixture");
+        fs.writeFileSync(dataDir.DOCUMENT_PATH, fixture);
+        const steps: string[] = [];
+        const rebuild = vi.spyOn(getSql(), "rebuildFromBuffer").mockImplementation(() => {
+            steps.push("rebuild");
+        });
+        vi.spyOn(sqlInit, "initializeDb").mockImplementation(() => {
+            steps.push("initialize");
+        });
+        vi.spyOn(becca_loader, "load").mockImplementation(() => {
+            steps.push("load");
+        });
+
+        await databaseRoute.rebuildIntegrationTestDatabase();
+
+        expect(Buffer.from(rebuild.mock.calls[0][0])).toEqual(fixture);
+        expect(steps).toEqual([ "rebuild", "initialize", "load" ]);
+        vi.restoreAllMocks();
     });
 });

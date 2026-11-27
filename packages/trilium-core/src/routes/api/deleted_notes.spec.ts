@@ -124,5 +124,14 @@ describe("Deleted notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.title).toBe("Decrypted deleted title");
         });
+
+        it("masks a title that fails to decrypt", async () => {
+            vi.spyOn(protectedSessionService, "isProtectedSessionAvailable").mockReturnValue(true);
+            vi.spyOn(protectedSessionService, "decryptString").mockReturnValue(null);
+
+            const res = await api.get<DeletedNoteMetadata>(`/api/deleted-notes/${protectedNoteId}/metadata`);
+
+            expect(res.body.title).toBe("[protected]");
+        });
     });
 });

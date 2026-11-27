@@ -1,5 +1,5 @@
 import type { BulkAction } from "@triliumnext/commons";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
@@ -8,6 +8,7 @@ import bulkActionService from "./bulk_actions.js";
 import cloningService from "./cloning.js";
 import config from "./config.js";
 import { getContext } from "./context.js";
+import { getLog } from "./log.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
@@ -159,6 +160,24 @@ describe("bulk_actions service (real DB)", () => {
         });
     });
 
+    it("renameLabel / renameRelation keep inheritable attributes inheritable", () => {
+        const note = createNote("root");
+        getContext().init(() => {
+            note.note.addLabel("color", "red", true);
+            note.note.addRelation("link", "root", true);
+            bulkActionService.executeActions(
+                [
+                    { name: "renameLabel", oldLabelName: "color", newLabelName: "shade" },
+                    { name: "renameRelation", oldRelationName: "link", newRelationName: "ref" }
+                ],
+                [note.note.noteId]
+            );
+        });
+
+        expect(note.note.getOwnedLabel("shade")).toMatchObject({ value: "red", isInheritable: true });
+        expect(note.note.getOwnedRelation("ref")).toMatchObject({ value: "root", isInheritable: true });
+    });
+
     describe("renameNote", () => {
         it("evaluates the new title as a template with `note` in scope", () => {
             const note = createNote("root");
@@ -271,6 +290,17 @@ describe("bulk_actions service (real DB)", () => {
             expect(revisions.length).toBe(1);
             expect(revisions[0].description).toBe("");
         });
+
+        it("skips a note whose content is not available", () => {
+            const note = createNote("root");
+            vi.spyOn(note.note, "isContentAvailable").mockReturnValue(false);
+
+            getContext().init(() =>
+                bulkActionService.executeActions([ { name: "saveRevision" } ], [ note.note.noteId ])
+            );
+
+            expect(note.note.getRevisions().length).toBe(0);
+        });
     });
 
     describe("deleteRevisions", () => {
@@ -325,6 +355,44 @@ describe("bulk_actions service (real DB)", () => {
             // A clone is created under the target while the originals remain.
             expect(becca.getBranchFromChildAndParent(note.note.noteId, target.note.noteId)).not.toBeNull();
             expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+        });
+
+        it("logs a refused move of a single-parent note", () => {
+            const note = createNote("root");
+            const info = vi.spyOn(getLog(), "info");
+
+            try {
+                getContext().init(() =>
+                    bulkActionService.executeActions(
+                        [ { name: "moveNote", targetParentNoteId: note.note.noteId } ],
+                        [ note.note.noteId ]
+                    )
+                );
+
+                expect(info).toHaveBeenCalledWith(expect.stringContaining(
+                    `Moving/cloning note ${note.note.noteId} to ${note.note.noteId} failed`));
+                expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+            } finally {
+                info.mockRestore();
+            }
+        });
+
+        it("leaves the note in place when the clone is refused", () => {
+            const note = createNote("root");
+            const secondParent = createNote("root");
+            getContext().init(() =>
+                cloningService.cloneNoteToParentNote(note.note.noteId, secondParent.note.noteId)
+            );
+
+            getContext().init(() =>
+                bulkActionService.executeActions(
+                    [ { name: "moveNote", targetParentNoteId: note.note.noteId } ],
+                    [ note.note.noteId ]
+                )
+            );
+
+            expect(note.note.getParentNotes().map((parent) => parent.noteId).sort())
+                .toStrictEqual([ "root", secondParent.note.noteId ].sort());
         });
 
         it("is a no-op when the target parent does not exist", () => {

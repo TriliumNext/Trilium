@@ -1,24 +1,29 @@
 import "./text_notes.css";
 
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons/src/lib/mime_type.js";
 import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import { formatCustomDateTime } from "../../../services/dayjs";
 import { t } from "../../../services/i18n";
-import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
-import { formatDateTime, toggleBodyClass } from "../../../services/utils";
+import {
+    ensureMimeTypesForHighlighting, loadHighlightingTheme
+} from "../../../services/syntax_highlight";
+import { toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
+import FormTextArea from "../../react/FormTextArea";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import { getHtml } from "../../react/RawHtml";
 import { QUOTE_MARK_PRESETS } from "../text/quotes";
 import { type CustomReplacement, parseCustomReplacements } from "../text/replacements";
+import { showVimModeNotice } from "../text/vim_mode";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
@@ -147,8 +152,12 @@ function EditorFeatures() {
     const [mathFieldEnabled, setMathFieldEnabled] = useTriliumOptionBool("mathFieldEnabled");
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
+    const [linkTargetCompletionEnabled, setLinkTargetCompletionEnabled] =
+        useTriliumOptionBool("textNoteCompletionLinkTargetsEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
+    const [scrollRailHighlightsEnabled, setScrollRailHighlightsEnabled] =
+        useTriliumOptionBool("textNoteScrollRailHighlightsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
     const [linkTitleRetrievalEnabled, setLinkTitleRetrievalEnabled] =
         useTriliumOptionBool("textNoteLinkTitleRetrievalEnabled");
@@ -160,6 +169,8 @@ function EditorFeatures() {
 
     return (
         <Card heading={t("editorfeatures.title")}>
+            <VimModeOption />
+
             <OptionCardSection
                 name="mathlive-enabled"
                 label={t("editorfeatures.mathlive_enabled")}
@@ -221,6 +232,19 @@ function EditorFeatures() {
                 name="note-completion-enabled"
                 label={t("editorfeatures.note_completion_enabled")}
                 description={t("editorfeatures.note_completion_description")}
+                subSectionsVisible={noteCompletionEnabled}
+                subSections={
+                    <OptionCardSection
+                        name="note-completion-link-targets-enabled"
+                        label={t("editorfeatures.note_completion_link_targets_enabled")}
+                        description={t("editorfeatures.note_completion_link_targets_description")}
+                    >
+                        <FormToggle
+                            currentValue={linkTargetCompletionEnabled}
+                            onChange={setLinkTargetCompletionEnabled}
+                        />
+                    </OptionCardSection>
+                }
             >
                 <FormToggle currentValue={noteCompletionEnabled} onChange={setNoteCompletionEnabled} />
             </OptionCardSection>
@@ -242,6 +266,17 @@ function EditorFeatures() {
             </OptionCardSection>
 
             <OptionCardSection
+                name="scroll-rail-highlights-enabled"
+                label={t("editorfeatures.scroll_rail_highlights_enabled")}
+                description={t("editorfeatures.scroll_rail_highlights_description")}
+            >
+                <FormToggle
+                    currentValue={scrollRailHighlightsEnabled}
+                    onChange={setScrollRailHighlightsEnabled}
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
                 name="html-support-enabled"
                 label={t("editorfeatures.html_support_enabled")}
                 description={t("editorfeatures.html_support_description")}
@@ -249,6 +284,71 @@ function EditorFeatures() {
                 <FormToggle currentValue={htmlSupportEnabled} onChange={setHtmlSupportEnabled} />
             </OptionCardSection>
         </Card>
+    );
+}
+
+function VimModeOption() {
+    const [ isEnabled, setEnabled ] = useTriliumOptionBool("textNoteVimModeEnabled");
+    const [ isNoticeShown, setNoticeShown ] = useTriliumOptionBool("textNoteVimModeNoticeShown");
+    const [ areInsertKeysEnabled, setInsertKeysEnabled ] =
+        useTriliumOptionBool("textNoteVimInsertKeysEnabled");
+    const [ startupCommands, setStartupCommands ] = useTriliumOption("textNoteVimStartupCommands");
+    const [ areHintsEnabled, setHintsEnabled ] = useTriliumOptionBool("vimModeHintsEnabled");
+
+    function toggle(isOn: boolean) {
+        void setEnabled(isOn);
+        if (isOn && !isNoticeShown) {
+            void setNoticeShown(true);
+            showVimModeNotice();
+        }
+    }
+
+    return (
+        <OptionCardSection
+            name="vim-mode-enabled"
+            label={t("vim_mode.option")}
+            description={t("vim_mode.option_description")}
+            subSectionsVisible={isEnabled}
+            subSections={[
+                <OptionCardSection
+                    key="hints"
+                    name="vim-hints-enabled"
+                    label={t("vim_mode.hints")}
+                    description={t("vim_mode.hints_description")}
+                >
+                    <FormToggle currentValue={areHintsEnabled} onChange={setHintsEnabled} />
+                </OptionCardSection>,
+                <OptionCardSection
+                    key="insert-keys"
+                    name="vim-insert-keys-enabled"
+                    label={t("vim_mode.insert_keys")}
+                    description={t("vim_mode.insert_keys_description")}
+                >
+                    <FormToggle
+                        currentValue={areInsertKeysEnabled}
+                        onChange={setInsertKeysEnabled}
+                    />
+                </OptionCardSection>,
+                <OptionCardSection
+                    key="startup-commands"
+                    name="vim-startup-commands"
+                    label={t("vim_mode.startup_commands")}
+                    description={t("vim_mode.startup_commands_description")}
+                    stacked
+                >
+                    <FormTextArea
+                        className="vim-startup-commands"
+                        currentValue={startupCommands}
+                        onBlur={setStartupCommands}
+                        rows={4}
+                        spellcheck={false}
+                        placeholder={t("vim_mode.startup_commands_placeholder")}
+                    />
+                </OptionCardSection>
+            ]}
+        >
+            <FormToggle currentValue={isEnabled} onChange={toggle} />
+        </OptionCardSection>
     );
 }
 
@@ -486,7 +586,7 @@ function Editor() {
             <OptionCardSection
                 name="custom-date-time-format"
                 label={t("custom_date_time_format.title")}
-                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatDateTime(new Date(), customDateTimeFormat) })}</>}
+                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatCustomDateTime(new Date(), customDateTimeFormat) })}</>}
             >
                 <FormTextBox
                     placeholder="YYYY-MM-DD HH:mm"

@@ -1,4 +1,4 @@
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import { LocaleType } from "@univerjs/presets";
 import { describe, expect, it } from "vitest";
 

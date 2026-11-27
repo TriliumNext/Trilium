@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import * as cls from "../context.js";
 import date from "./date.js";
@@ -195,6 +195,19 @@ describe("date utils", () => {
                 return date.localNowDate();
             });
             expect(result).toBe("2023-08-21");
+        });
+
+        it("zero-pads single-digit months and days only", () => {
+            vi.useFakeTimers({ toFake: [ "Date" ] });
+            try {
+                vi.setSystemTime(new Date(2024, 10, 25, 12));
+                expect(cls.init(() => date.localNowDate())).toBe("2024-11-25");
+
+                vi.setSystemTime(new Date(2024, 0, 5, 12));
+                expect(cls.init(() => date.localNowDate())).toBe("2024-01-05");
+            } finally {
+                vi.useRealTimers();
+            }
         });
     });
 });

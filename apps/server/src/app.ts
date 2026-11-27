@@ -3,7 +3,6 @@ void import("@triliumnext/core");
 import { erase } from "@triliumnext/core";
 import compression from "compression";
 import cookieParser from "cookie-parser";
-import ejs from "ejs";
 import express from "express";
 import helmet from "helmet";
 import { t } from "i18next";
@@ -34,11 +33,6 @@ export default async function buildApp() {
     // The client source dir in dev, where `dist/public` is not rebuilt; the built `public` dir otherwise.
     const publicAssetsDir = path.join(getClientDir(), "assets");
     const assetsDir = RESOURCE_DIR;
-
-    // view engine setup
-    app.set("views", path.join(assetsDir, "views"));
-    app.engine("ejs", (filePath, options, callback) => ejs.renderFile(filePath, options, callback));
-    app.set("view engine", "ejs");
 
     app.use((req, res, next) => {
         // set CORS headers
@@ -116,6 +110,7 @@ export default async function buildApp() {
     app.use(`/manifest.webmanifest`, express.static(path.join(publicAssetsDir, "manifest.webmanifest"), STATIC_OPTIONS));
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
+    app.use(`/apple-touch-icon.png`, express.static(path.join(publicAssetsDir, "apple-touch-icon.png"), STATIC_OPTIONS));
 
     const {
         default: sessionParser,

@@ -38,6 +38,11 @@ describe("i18n service (core)", () => {
         }
     });
 
+    it("getCurrentLocale reads a missing locale option as English", () => {
+        vi.spyOn(options, "getOptionOrNull").mockReturnValue(null);
+        expect(getCurrentLocale().id).toBe("en");
+    });
+
     it("getCurrentLocale returns English when the DB is not initialized", () => {
         vi.spyOn(sql_init, "isDbInitialized").mockReturnValue(false);
         expect(getCurrentLocale().id).toBe("en");

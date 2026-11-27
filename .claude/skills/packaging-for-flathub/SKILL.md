@@ -127,7 +127,15 @@ A full build takes about ten minutes.
   That is also why the metainfo's `<releases>` — the version Flathub displays — has to be
   right in the commit that gets tagged. `pnpm chore:update-version` regenerates it from
   the newest five `vX.Y.Z` tags, so it is never hand-edited and never accumulates drift;
-  the version being prepared is dated today until its own tag supplies the date.
+  the version being prepared is dated today until its own tag supplies the date. Each entry
+  carries its release's notes, which Flathub requires: the overview paragraphs of
+  `docs/Release Notes/Release Notes/v<X.Y.Z>.md` (`releaseDescription()`), or for notes older
+  than the overview, their key-highlight titles or top-level entries, followed by the
+  Compatibility sentences `chore:release-notes` generates for a sync protocol or database
+  version change, and ending with "Also in
+  this release: N improvements and M bug fixes" counted from the note. An rc is written with
+  `type="development"`. The script fails when a listed version has no release note, so the note
+  is written before the bump.
 - **Sandboxed data dir, narrow filesystem access.** `trilium.sh` sets
   `TRILIUM_DATA_DIR` to `$XDG_DATA_HOME/trilium-data` (i.e. inside `~/.var/app`), falling
   back to host `~/.local/share/trilium-data` when that exists; a `flatpak override` wins.
@@ -242,6 +250,16 @@ build adjudicates it).
 - **What triggers a build**: `refs/pull/*/head` (test, publishes nothing), `master`
   (stable publish), `beta` (beta channel). A push to any other branch builds nothing — so
   a pull request is the only way to get a build without publishing.
+- **Every PR also gets a `flathub/permissions` status** from vorarbeiter, which
+  posts the built permissions to a review service in `flathub-infra/website`
+  (`backend/app/moderation/permission_rules.py`). It diffs the PR's permissions against the
+  published build: an addition is approved or rejected automatically when a moderator's
+  rule matches, otherwise it waits for a moderator. The rules are database rows only
+  moderators can list, so they cannot be mirrored. Rejected so far:
+  `--talk-name=org.freedesktop.secrets` (#3; `safeStorage` uses the Secret portal instead,
+  which works only where the desktop's `*-portals.conf` maps
+  `org.freedesktop.impl.portal.Secret` to a backend) and the two data-dir grants from
+  #10014.
 - Therefore **untagged commits go out as draft PRs to `master`** (shared `update/beta`
   branch, superseded per run) purely for the two-arch verdict. A real `beta` branch is
   for `-rc` tags with actual testers, and publishing there has no review gate.

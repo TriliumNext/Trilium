@@ -159,13 +159,13 @@ export function extractPageCreatedDate(rawHtml: string): string | undefined {
 function sortPositionedOutlines(scope: HTMLElement) {
     const outlines = scope.childNodes.filter(
         (node): node is HTMLElement =>
-            node instanceof HTMLElement && node.tagName?.toLowerCase() === "div" && parseStyle(node.getAttribute("style") ?? "").has("position")
+            node instanceof HTMLElement && node.tagName?.toLowerCase() === "div" && parseStyle(node.getAttribute("style")).has("position")
     );
     if (outlines.length < 2) {
         return;
     }
 
-    const coord = (el: HTMLElement, property: string) => parseFloat(parseStyle(el.getAttribute("style") ?? "").get(property) ?? "") || 0;
+    const coord = (el: HTMLElement, property: string) => parseFloat(parseStyle(el.getAttribute("style")).get(property) ?? "") || 0;
     const sorted = [...outlines].sort((a, b) => coord(a, "top") - coord(b, "top") || coord(a, "left") - coord(b, "left"));
 
     for (const outline of sorted) {
@@ -228,7 +228,7 @@ function wrapFloatingImages(scope: HTMLElement) {
 
         const width = img.getAttribute("width");
         const height = img.getAttribute("height");
-        const style = parseStyle(img.getAttribute("style") ?? "");
+        const style = parseStyle(img.getAttribute("style"));
         if (width && height && !style.has("aspect-ratio") && /^\d+(\.\d+)?$/.test(width) && /^\d+(\.\d+)?$/.test(height)) {
             style.set("aspect-ratio", `${width}/${height}`);
             img.setAttribute("style", serializeStyle(style));
@@ -261,7 +261,7 @@ function takeTrailingCaption(img: HTMLElement): string | null {
         return null;
     }
 
-    const sizeClass = fontSizeClass(parseStyle(sibling.getAttribute("style") ?? "").get("font-size"), sibling);
+    const sizeClass = fontSizeClass(parseStyle(sibling.getAttribute("style")).get("font-size"), sibling);
     const cite = `<cite>${sibling.innerHTML}</cite>`;
     const caption = sizeClass ? `<span class="${sizeClass}">${cite}</span>` : cite;
 
@@ -290,7 +290,9 @@ function convertTags(scope: HTMLElement) {
     // (and if so, whether it's completed) so adjacent ones can be grouped.
     const completedByCheckbox = new Map<HTMLElement, boolean>();
     for (const p of tagged) {
-        const tags = (p.getAttribute("data-tag") ?? "").split(",").map((entry) => {
+        /* v8 ignore next -- the p[data-tag] selector guarantees the attribute, so the fallback never applies. */
+        const tagList = p.getAttribute("data-tag") ?? "";
+        const tags = tagList.split(",").map((entry) => {
             const [shape, status] = entry.trim().split(":");
             return { shape, status };
         });
@@ -350,7 +352,7 @@ function tagGlyph(shape: string) {
  */
 function convertInlineFormatting(scope: HTMLElement) {
     for (const el of scope.querySelectorAll("[style]")) {
-        const style = parseStyle(el.getAttribute("style") ?? "");
+        const style = parseStyle(el.getAttribute("style"));
         const weight = style.get("font-weight");
         const decorations = (style.get("text-decoration") ?? "").split(/\s+/);
 
@@ -502,7 +504,7 @@ function allTextMonospace(el: HTMLElement, inherited: boolean): boolean {
 
 /** The element's own font-family declaration, if any. */
 function declaredFontFamily(el: HTMLElement): string | undefined {
-    return parseStyle(el.getAttribute("style") ?? "").get("font-family");
+    return parseStyle(el.getAttribute("style")).get("font-family");
 }
 
 /**
@@ -511,7 +513,7 @@ function declaredFontFamily(el: HTMLElement): string | undefined {
  * skipped — their level already conveys size. Returns null for the base band and unparseable values.
  */
 function fontSizeClass(value: string | undefined, el: HTMLElement): string | null {
-    if (!value || /^h[1-6]$/.test(el.tagName?.toLowerCase() ?? "")) {
+    if (!value || /^h[1-6]$/i.test(el.tagName)) {
         return null;
     }
     const match = value.match(/^([\d.]+)\s*(pt|px)?$/);
@@ -531,10 +533,10 @@ function fontSizeClass(value: string | undefined, el: HTMLElement): string | nul
     return points < 28 ? "text-big" : "text-huge";
 }
 
-/** Parses an inline `style` attribute into a property→value map (both lowercased). */
-function parseStyle(style: string): Map<string, string> {
+/** Parses an inline `style` attribute into a property→value map (both lowercased); empty when absent. */
+function parseStyle(style: string | undefined): Map<string, string> {
     const declarations = new Map<string, string>();
-    for (const declaration of style.split(";")) {
+    for (const declaration of (style ?? "").split(";")) {
         const separator = declaration.indexOf(":");
         if (separator > 0) {
             const property = declaration.slice(0, separator).trim().toLowerCase();
@@ -552,7 +554,7 @@ function parseStyle(style: string): Map<string, string> {
  */
 function normalizeNamedColors(scope: HTMLElement) {
     for (const el of scope.querySelectorAll("[style]")) {
-        const style = parseStyle(el.getAttribute("style") ?? "");
+        const style = parseStyle(el.getAttribute("style"));
         let changed = false;
         for (const property of ["color", "background-color"]) {
             const hex = NAMED_COLORS.get(style.get(property) ?? "");
@@ -585,7 +587,7 @@ const DEFAULT_TEXT_COLORS = new Set(["#000000", "#000", "black"]);
  */
 function removeDefaultTextColor(scope: HTMLElement) {
     for (const el of scope.querySelectorAll("[style]")) {
-        const style = parseStyle(el.getAttribute("style") ?? "");
+        const style = parseStyle(el.getAttribute("style"));
         if (!DEFAULT_TEXT_COLORS.has(style.get("color") ?? "")) {
             continue;
         }
@@ -630,14 +632,14 @@ function normalizeListMarkers(scope: HTMLElement) {
             continue;
         }
         const firstItem = list.childNodes.find((node): node is HTMLElement => node instanceof HTMLElement && node.tagName?.toLowerCase() === "li");
-        const marker = firstItem && parseStyle(firstItem.getAttribute("style") ?? "").get("list-style-type");
+        const marker = firstItem && parseStyle(firstItem.getAttribute("style")).get("list-style-type");
         if (marker) {
             list.setAttribute("style", `list-style-type:${LIST_STYLE_MAP.get(marker) ?? marker};`);
         }
     }
 
     for (const li of scope.querySelectorAll("li")) {
-        const style = parseStyle(li.getAttribute("style") ?? "");
+        const style = parseStyle(li.getAttribute("style"));
         if (style.delete("list-style-type")) {
             if (style.size === 0) {
                 li.removeAttribute("style");
@@ -656,7 +658,7 @@ function normalizeListMarkers(scope: HTMLElement) {
  */
 function normalizeTableBorders(scope: HTMLElement) {
     for (const el of scope.querySelectorAll("table, td, th")) {
-        const style = parseStyle(el.getAttribute("style") ?? "");
+        const style = parseStyle(el.getAttribute("style"));
         const border = style.get("border");
         style.delete("border");
         style.delete("border-collapse");
@@ -710,7 +712,7 @@ function resizeTables(scope: HTMLElement) {
 
         for (const cells of cellRows) {
             for (const cell of cells) {
-                const style = parseStyle(cell.getAttribute("style") ?? "");
+                const style = parseStyle(cell.getAttribute("style"));
                 if (style.delete("width")) {
                     if (style.size === 0) {
                         cell.removeAttribute("style");
@@ -737,7 +739,7 @@ function hasCellSpan(cell: HTMLElement): boolean {
 
 /** A cell's positive pixel `width` (OneNote writes it unit-less, e.g. `width:150`), or undefined. */
 function columnWidth(cell: HTMLElement | undefined): number | undefined {
-    const value = cell && parseStyle(cell.getAttribute("style") ?? "").get("width");
+    const value = cell && parseStyle(cell.getAttribute("style")).get("width");
     const pixels = value ? parseFloat(value) : NaN;
     return Number.isFinite(pixels) && pixels > 0 ? pixels : undefined;
 }
@@ -770,7 +772,7 @@ function columnPercentages(widths: number[]): number[] {
  */
 function correctTableShadingColors(scope: HTMLElement) {
     for (const cell of scope.querySelectorAll("td, th")) {
-        const style = parseStyle(cell.getAttribute("style") ?? "");
+        const style = parseStyle(cell.getAttribute("style"));
         const background = parseColor(style.get("background-color") ?? "");
         if (!background || background.lightness() >= 50) {
             continue;

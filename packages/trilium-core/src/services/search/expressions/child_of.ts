@@ -17,7 +17,7 @@ class ChildOfExp extends Expression {
         const subInputNoteSet = new NoteSet();
 
         for (const note of inputNoteSet.notes) {
-            subInputNoteSet.addAll(note.parents);
+            subInputNoteSet.addAll(searchContext.readable(note.parents));
         }
 
         const subResNoteSet = this.subExpression.execute(subInputNoteSet, executionContext, searchContext);

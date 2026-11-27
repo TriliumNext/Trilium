@@ -35,7 +35,9 @@ describe("hosted view data", () => {
     });
 
     it("reads a built-in template from becca, which lacks shaca, and lists it only once", () => {
-        buildNote({ "id": "_template_calendar", "title": "Calendar", "#viewType": "calendar" });
+        buildNote({ id: "_hidden", children: [ { id: "_templates", children: [
+            { "id": "_template_calendar", "title": "Calendar", "#viewType": "calendar" }
+        ] } ] });
         const shared = buildShareNote({ "id": "sharedNote", "~template": "_template_calendar" });
         const noteIds = (rows: FrocaRows) => rows.notes.map((row) => row.noteId);
 
@@ -50,6 +52,28 @@ describe("hosted view data", () => {
         const exported = buildNote({ "id": "exportedCalendar", "~template": "_template_calendar" });
         expect(noteIds(buildFrocaRows([ exported ], () => true, (note) => note.noteId)))
             .toEqual([ "exportedCalendar", "_template_calendar" ]);
+    });
+
+    it("embeds no user note named like a template, nor a template's share credentials", () => {
+        buildNote({ "id": "_template_team_docs", "#shareCredentials": "secret", "#apiKey": "key" });
+        buildNote({ id: "_hidden", children: [ { id: "_templates", children: [
+            { "id": "_template_board", "#shareCredentials": "secret", "#viewType": "board" },
+            { "id": "_template_locked", "#viewType": "table" }
+        ] } ] });
+        becca.getNoteOrThrow("_template_locked").isProtected = true;
+        const shared = buildShareNote({
+            "id": "sharedNote",
+            "~template": "_template_team_docs",
+            "~inherit": "_template_board",
+            "~child:template": "_template_locked"
+        });
+
+        const rows = buildFrocaPayload(shared);
+        expect(rows.notes.map((row) => row.noteId)).toEqual([ "_template_board", "sharedNote" ]);
+        expect(rows.attributes.map((row) => [ row.noteId, row.name ])).toEqual([
+            [ "_template_board", "viewType" ],
+            [ "sharedNote", "inherit" ]
+        ]);
     });
 
     it("places no note on a relation map whose content is not its JSON", () => {

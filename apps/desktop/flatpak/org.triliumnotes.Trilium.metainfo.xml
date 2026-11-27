@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>org.triliumnotes.Trilium</id>
   <name>Trilium Notes</name>
-  <summary>Build your personal knowledge base</summary>
+  <summary>Grow your knowledge base</summary>
   <url type="bugtracker">https://github.com/TriliumNext/Trilium/issues</url>
   <url type="homepage">https://triliumnotes.org</url>
   <url type="donation">https://triliumnotes.org/support-us</url>
@@ -16,55 +16,112 @@
   <project_license>AGPL-3.0-or-later</project_license>
   <content_rating type="oars-1.1"/>
   <description>
-    <p>Trilium Notes is a hierarchical note-taking application with focus on building large personal knowledge bases.</p>
-    <p>Features:</p>
+    <p>Trilium Notes keeps everything you know in one tree of notes, as deep as you need it. Write rich text with tables, images and math, keep code with syntax highlighting, sketch ideas on a canvas or in a mind map, and find any of it again with full-text search.</p>
+    <p>Your notes live in a database on your computer and stay available offline. Sync them with a Trilium server you run yourself, and the same notes follow you to your other computers, your phone and any browser.</p>
     <ul>
-      <li>Rich WYSIWYG note editing including e.g. tables, images and math with markdown autoformat</li>
-      <li>Support for editing notes with source code, including syntax highlighting</li>
-      <li>Notes can be arranged into arbitrarily deep tree</li>
-      <li>A single note can be placed into multiple places in the tree (see cloning)</li>
-      <li>Fast and easy navigation between notes, full text search and note hoisting</li>
-      <li>Seamless note versioning</li>
-      <li>Note attributes can be used for note organization, querying and advanced scripting</li>
-      <li>Synchronization with self-hosted sync server</li>
-      <li>Sharing (publishing) notes to public internet</li>
-      <li>Strong note encryption with per-note granularity</li>
-      <li>Relation maps and link maps for visualizing notes and their relations</li>
-      <li>Scales well in both usability and performance upwards of 100 000 notes</li>
-      <li>Evernote and Markdown import &amp; export</li>
-      <li>Web Clipper for easy saving of web content</li>
-      <li>REST API for automation</li>
+      <li>Tabs, split views and several windows to work on many notes at once</li>
+      <li>Global keyboard shortcuts and a tray icon to capture a thought from anywhere</li>
+      <li>A web clipper that saves pages and selections from your browser</li>
+      <li>Mind maps, canvas drawings, Mermaid diagrams and spreadsheets</li>
+      <li>Collections that show notes as a board, a calendar, a table or pins on a map</li>
+      <li>Labels, relations and templates to organize and query your notes</li>
+      <li>A note can sit in several places of the tree at once</li>
+      <li>Revision history for every note, and automatic backups</li>
+      <li>Strong encryption for the notes that must stay private</li>
     </ul>
+    <p>Trilium is open source and has no ads, no tracking and no account to create. An optional AI assistant works with the provider of your choice, including models running on your own computer.</p>
   </description>
   <keywords>
+    <keyword>notes</keyword>
+    <keyword>note-taking</keyword>
+    <keyword>knowledge base</keyword>
+    <keyword>wiki</keyword>
+    <keyword>outliner</keyword>
+    <keyword>markdown</keyword>
+    <keyword>journal</keyword>
     <keyword>Trillium</keyword>
   </keywords>
   <launchable type="desktop-id">org.triliumnotes.Trilium.desktop</launchable>
+  <branding>
+    <color type="primary" scheme_preference="light">#f7dcc6</color>
+    <color type="primary" scheme_preference="dark">#8a4512</color>
+  </branding>
   <screenshots>
     <screenshot type="default">
-      <caption>Rich-text editing with the note tree and table of contents</caption>
-      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/adc31d157d172077c6642e9faeef227a74f1b671/apps/website/original-images/screenshot_desktop_linux_light.png</image>
+      <caption>A text note with a trip itinerary: headings, a highlighted link, a callout and a table</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/text.png</image>
     </screenshot>
     <screenshot>
-      <caption>Dark theme</caption>
-      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/adc31d157d172077c6642e9faeef227a74f1b671/apps/website/original-images/screenshot_desktop_linux_dark.png</image>
+      <caption>Tasks for a trip on a board, in to-do, in-progress and done columns</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/board.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The Seven Wonders of the World pinned on a map</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/geo-map.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A hand-drawn sketch of shapes, arrows and notes on a canvas</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/canvas.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A flowchart drawn from the Mermaid text beside it</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/diagram.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A section of notes shown as a grid of cards next to the note tree</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/collection.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Python code with syntax highlighting, in the dark theme</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/dark.png</image>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.108.0-rc.1" date="2026-11-21" type="development">
+      <description>
+        <p>Links can now point at a heading or an anchor instead of a whole note, in text and Markdown notes as well as in PDF, EPUB, Word and OpenDocument files. The Outline tab lists the headings of those files too, with a filter and a way to copy a reference to any of them. Text notes also gain collapsible headings, aside blocks and a scrollbar that marks search results and colored text.</p>
+        <p>Vim users can now bring their habits to text notes, with a Vim mode that understands paragraphs, lists, tables and embedded content. Trilium also starts noticeably faster, on desktop and on phones.</p>
+        <p>Android gets its first stable release, with the APK attached below. It syncs with a server of the same version and installs beside the nightly build, so moving from the nightly means syncing again or restoring a backup.</p>
+        <p>Also in this release: 32 improvements and 97 bug fixes.</p>
+      </description>
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.108.0-rc.1</url>
+    </release>
+    <release version="0.107.0" date="2026-11-08">
+      <description>
+        <p>This is the release where a text note stops being a single document. Notes can be embedded, quoted and referenced inside other notes and edited where they appear, laid out in columns and tabs, and mixed with drawings, attached files and video. Tables in text notes get the tools they had been missing, from merged cells to sorting, and the old layout is gone, a year after the new one replaced it.</p>
+        <p>Around the editor, the parts of the app that everyone touches were rebuilt: the context menus and the note autocomplete, the full search and the jump dialog, the launch bar and the tree. Shared pages look like the app again and render collections with their own views, and the calendar and geo map collections get the properties dialogs the board already had.</p>
+        <p>The AI integration becomes something to trust with a real database: every tool call asks before it reads or changes a note, a ChatGPT Codex subscription can stand in for an API key, and local models get web search through a search engine of your choice. On phones, iOS has a new layout and both apps navigate without a sidebar.</p>
+        <p>The sync protocol version went from 39 to 41: instances on different versions cannot sync with each other, so update the server and every desktop and mobile client together.</p>
+        <p>The database version went from 240 to 242: the database is migrated the first time this version opens it, after an automatic backup, and an earlier version refuses to open it afterwards.</p>
+        <p>Also in this release: 162 improvements and 92 bug fixes.</p>
+      </description>
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.107.0</url>
+    </release>
     <release version="0.106.1" date="2026-10-23">
+      <description>
+        <ul>
+          <li>Updated Node.js in the Docker images to 24.22.1 (22.23.4 for the legacy image), taking in the Node.js security releases of 21 October 2026.</li>
+        </ul>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.1</url>
     </release>
     <release version="0.106.0" date="2026-09-25">
+      <description>
+        <ul>
+          <li>Kanban board overhaul</li>
+          <li>Significant improvements to search</li>
+          <li>Geomap now features a built-in location search, current position indicator and shapes</li>
+          <li>Templates can now define a default parent for new notes</li>
+          <li>Also in this release: 33 improvements and 48 bug fixes.</li>
+        </ul>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.0</url>
     </release>
     <release version="0.105.0" date="2026-08-19">
+      <description>
+        <p>The release that makes Trilium lighter, more visual and easier to organise: images shrink themselves, attributes get a home of their own, and your backups can finally be restored.</p>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.105.0</url>
-    </release>
-    <release version="0.104.1" date="2026-07-25">
-      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.104.1</url>
-    </release>
-    <release version="0.104.0" date="2026-07-18">
-      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.104.0</url>
     </release>
   </releases>
   <provides>

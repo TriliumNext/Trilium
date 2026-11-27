@@ -3,7 +3,8 @@ import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import { ParentComponent } from "../react/react_utils";
 import BasicWidget from "../basic_widget";
-import { useNoteContext, useTriliumEvents } from "../react/hooks";
+import { useTriliumEvents } from "../react/hooks/events";
+import { useNoteContext } from "../react/hooks/note_context";
 import appContext from "../../components/app_context";
 
 interface MovePaneButtonProps {

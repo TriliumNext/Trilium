@@ -232,5 +232,16 @@ describe("Recent changes API (core)", () => {
             expect(entry?.title).toBe("Decrypted secret");
             expect(entry?.current_title).toBe("Decrypted secret");
         });
+
+        it("masks protected titles that fail to decrypt", async () => {
+            vi.spyOn(protectedSessionService, "isProtectedSessionAvailable").mockReturnValue(true);
+            vi.spyOn(protectedSessionService, "decryptString").mockReturnValue(null);
+
+            const res = await api.get<RecentChangeRow[]>("/api/recent-changes/root");
+
+            const entry = res.body.find((change) => change.noteId === protectedNoteId);
+            expect(entry?.title).toBe("[protected]");
+            expect(entry?.current_title).toBe("[protected]");
+        });
     });
 });

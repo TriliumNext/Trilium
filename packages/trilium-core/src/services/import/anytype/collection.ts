@@ -20,6 +20,7 @@ import noteService from "../../notes.js";
 import { basename } from "../../utils/path.js";
 import { attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, stripUrlScheme, toAttributeName } from "../collection_utils.js";
 import mimeService from "../mime.js";
+import { importedAttributeName } from "../utils.js";
 import type { AnytypeBlock, AnytypeDetails, AnytypeSnapshot, CollectionViewType, FileObjectInfo, Multiplicity, ParsedCollection, ParsedColumn, ParsedObject, ParsedProperty, PropertyLabelType, RelationInfo } from "./model.js";
 
 /** Normalizes a zip entry / file path to forward slashes and lower case (Windows exports use backslashes),
@@ -335,9 +336,9 @@ export function applyCollectionView(note: BNote, viewType: CollectionViewType, c
 }
 
 /** Applies a page's custom property values to its note as labels. */
-export function applyProperties(note: BNote, properties: ParsedProperty[]) {
+export function applyProperties(note: BNote, properties: ParsedProperty[], safeImport: boolean) {
     for (const property of properties) {
-        note.addLabel(property.name, property.value);
+        note.addLabel(importedAttributeName("label", property.name, safeImport), property.value);
     }
 }
 

@@ -50,6 +50,7 @@ export const DEFAULT_DATABASE_NAME = DATABASE_NAMES[0];
 
 /** Where a backup is written while it is being checked, which is wherever the live one is not. */
 function candidateNameFor(live: string): string {
+    /* v8 ignore next -- of two distinct names at least one differs from `live`, so `find()` always matches */
     return DATABASE_NAMES.find((name) => name !== live) ?? DATABASE_NAMES[1];
 }
 
@@ -219,6 +220,7 @@ function validate(pool: SAHPoolUtil, candidate: string): DatabaseValidation {
 /** The three questions the checks ask, answered by a database opened from the pool. */
 function candidateOf(db: InstanceType<SAHPoolUtil["OpfsSAHPoolDb"]>): CandidateDatabase {
     return {
+        /* v8 ignore next -- `validate()` passes `skipIntegrityCheck: true`, so the checks never call it */
         integrityCheck: () => String(db.selectValue("PRAGMA quick_check")),
         tableNames: () => db.selectValues("SELECT name FROM sqlite_master WHERE type = 'table'") as string[],
         option: (name) => db.selectValue("SELECT value FROM options WHERE name = ?", [ name ]) as string | undefined

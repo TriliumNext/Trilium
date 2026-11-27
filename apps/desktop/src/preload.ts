@@ -3,6 +3,7 @@ import type {
     BackupPassphraseStatus,
     ElectronApi,
     ElectronContextMenuParams,
+    NativeDirectoryPickResult,
     NativeImportOptions,
     OneNoteLoginResult,
     RendererStartupMetric,
@@ -93,16 +94,11 @@ contextBridge.exposeInMainWorld("electronApi", {
         showWindow() {
             ipcRenderer.send("show-window");
         },
+        releaseFirstPaint() {
+            ipcRenderer.send("release-first-paint");
+        },
         reportStartupMetric(metric: RendererStartupMetric) {
             ipcRenderer.send("report-startup-metric", metric);
-        },
-
-        // Background effects
-        setBackgroundMaterial(material: string) {
-            ipcRenderer.send("set-background-material", material);
-        },
-        setVibrancy(vibrancy: string) {
-            ipcRenderer.send("set-vibrancy", vibrancy);
         },
 
         // Main → renderer events
@@ -356,6 +352,15 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         clear(): Promise<BackupPassphraseChange> {
             return ipcRenderer.invoke("backup-passphrase-clear");
+        }
+    },
+
+    backupLocation: {
+        choose(): Promise<NativeDirectoryPickResult> {
+            return ipcRenderer.invoke("backup-location-choose");
+        },
+        reset(): Promise<void> {
+            return ipcRenderer.invoke("backup-location-reset");
         }
     },
 

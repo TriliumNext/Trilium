@@ -25,7 +25,7 @@ export default class LinkedNotesExp extends Expression {
         const subInputNoteSet = new NoteSet();
 
         for (const note of inputNoteSet.notes) {
-            subInputNoteSet.addAll(this.linkedNotes(note));
+            subInputNoteSet.addAll(searchContext.readable(this.linkedNotes(note)));
         }
 
         const matched = this.subExpression.execute(subInputNoteSet, executionContext, searchContext);

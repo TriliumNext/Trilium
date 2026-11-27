@@ -344,9 +344,11 @@ async function writeThroughSink(
 /** The chunk's bytes as exactly one ArrayBuffer, which is what the message channel carries. */
 function exactBuffer(chunk: Uint8Array): ArrayBuffer {
     const { buffer, byteOffset, byteLength } = chunk;
+    /* v8 ignore else -- rechunk() yields only whole arrays it allocated itself */
     if (byteOffset === 0 && byteLength === buffer.byteLength && buffer instanceof ArrayBuffer) {
         return buffer;
     }
+    /* v8 ignore next -- see above */
     return buffer.slice(byteOffset, byteOffset + byteLength) as ArrayBuffer;
 }
 
@@ -363,12 +365,15 @@ async function withoutCallLogging<T>(write: () => Promise<T>): Promise<T> {
     const cap = (window as any).Capacitor;
     const wasEnabled = cap?.isLoggingEnabled;
 
+    // getPlugin() has already thrown when window.Capacitor is absent, so `cap` is set here.
+    /* v8 ignore else */
     if (cap) {
         cap.isLoggingEnabled = false;
     }
     try {
         return await write();
     } finally {
+        /* v8 ignore else */
         if (cap) {
             cap.isLoggingEnabled = wasEnabled;
         }
@@ -469,6 +474,7 @@ function take(parts: Uint8Array[], size: number): Uint8Array {
 
     while (filled < size) {
         const part = parts[0];
+        /* v8 ignore next 3 -- rechunk() never asks for more bytes than `parts` holds */
         if (!part) {
             return out.subarray(0, filled);
         }

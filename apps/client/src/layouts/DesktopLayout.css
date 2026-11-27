@@ -1,0 +1,60 @@
+.desktop-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+
+    #horizontal-main-container {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+    }
+
+    #launcher-pane {
+        display: flex;
+        flex-shrink: 0;
+
+        &.vertical {
+            flex-direction: column;
+            width: 53px;
+        }
+
+        &.horizontal {
+            height: 53px;
+        }
+    }
+
+    #rest-pane {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .note-splits-host {
+        display: contents;
+    }
+
+    #vertical-main-container {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+        min-width: 0;
+    }
+
+    #center-pane {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
+        min-width: 0;
+    }
+}
+
+.custom-widgets,
+.custom-widget-host {
+    display: contents;
+}
+
+.title-row > * {
+    margin: 5px;
+}

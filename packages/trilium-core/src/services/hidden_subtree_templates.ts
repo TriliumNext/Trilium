@@ -8,7 +8,7 @@ export default function buildHiddenSubtreeTemplates() {
         value: "false"
     };
 
-    const templates: HiddenSubtreeItem = {
+    const templates: HiddenSubtreeItem & { children: HiddenSubtreeItem[] } = {
         id: "_templates",
         title: t("hidden_subtree_templates.built-in-templates"),
         type: "book",
@@ -387,7 +387,7 @@ export default function buildHiddenSubtreeTemplates() {
 
     // Enforce attributes.
     templates.enforceAttributes = true;
-    for (const template of templates.children ?? []) {
+    for (const template of templates.children) {
         template.enforceAttributes = true;
     }
 

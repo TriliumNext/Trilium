@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "lib": ["ES2023", "WebWorker", "WebWorker.Iterable"],
+    "types": [],
+    "rootDir": "src",
+    "outDir": "out-tsc/sw",
+    "tsBuildInfoFile": "out-tsc/sw.tsbuildinfo"
+  },
+  "include": ["src/sw.ts"]
+}

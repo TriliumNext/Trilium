@@ -7,8 +7,8 @@
  * user might run into module not found errors or styling errors caused by an old cache.
  *
  * This script is supposed to be run in the CI, which will update locally the version field of
- * `package.json` to contain the date. For example, `0.90.9-beta` will become `0.90.9-test-YYMMDD-HHMMSS`,
- * and the released `0.90.9` will become `0.90.10-test-YYMMDD-HHMMSS`.
+ * `package.json` to contain the date. For example, `0.90.9-beta` and `0.90.9-rc.1` will become
+ * `0.90.9-test-YYMMDD-HHMMSS`, and the released `0.90.9` will become `0.90.10-test-YYMMDD-HHMMSS`.
  *
  */
 
@@ -23,12 +23,12 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
  *
  * A pre-release sorts below its release, so a nightly of a released version bumps the patch
  * number first; otherwise winget and the in-app update check offer the release as an upgrade.
+ * Any pre-release tag is replaced, because Squirrel's NuGet step rejects a pre-release part
+ * longer than 20 characters.
  */
 export function processVersion(version: string, date: Date) {
-    if (version.includes("-test-")) {
-        version = version.split("-test-")[0];
-    } else if (version.endsWith("-beta")) {
-        version = version.replace("-beta", "");
+    if (version.includes("-")) {
+        version = version.split("-")[0];
     } else if (/^\d+\.\d+\.\d+$/.test(version)) {
         const [ major, minor, patch ] = version.split(".");
         version = `${major}.${minor}.${Number(patch) + 1}`;

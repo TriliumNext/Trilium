@@ -1,4 +1,4 @@
-import type { Environment } from "vitest/environments";
+import type { Environment } from "vitest/runtime";
 
 /**
  * A Vitest environment shaped like the dedicated Web Worker core runs in under standalone:

@@ -1,4 +1,4 @@
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 import { describe, expect, it, vi } from "vitest";
 
 import { centerMapOn, parseMapTranslation, readMapCenter, stepZoom } from "./viewport";

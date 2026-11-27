@@ -77,9 +77,10 @@ function installCapacitor({ share, runs, renameRefusesReplace }: {
 
 /**
  * Models `window.triliumFileSink`, the binary channel `TriliumFileSink.java` injects: acknowledges
- * every message the way the native side does, or answers a chunk with an error when asked to.
+ * every message the way the native side does, or answers a chunk with `chunkReply` instead, or
+ * not at all when that is `null`.
  */
-function installFileSink({ failOnChunk = false } = {}) {
+function installFileSink({ chunkReply = "written" }: { chunkReply?: string | null } = {}) {
     const posted: (string | ArrayBuffer)[] = [];
     const listeners = new Set<(event: { data: string }) => void>();
     const reply = (data: string) => queueMicrotask(() => {
@@ -92,7 +93,9 @@ function installFileSink({ failOnChunk = false } = {}) {
         postMessage: (message: string | ArrayBuffer) => {
             posted.push(message);
             if (typeof message !== "string") {
-                reply(failOnChunk ? "error:disk full" : "written");
+                if (chunkReply !== null) {
+                    reply(chunkReply);
+                }
             } else {
                 reply((JSON.parse(message) as { type: string }).type === "open" ? "opened" : "closed");
             }
@@ -294,6 +297,50 @@ describe("capacitor download", () => {
             });
         });
 
+        it("fails with the thrown reason when the fetch itself throws", async () => {
+            installCapacitor();
+            vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Network down"); }));
+            expect(await saveUrlToDevice("api/x")).toEqual({
+                status: "failed",
+                fileName: "download",
+                message: "Network down"
+            });
+
+            vi.stubGlobal("fetch", vi.fn(() => Promise.reject("offline")));
+            expect(await saveUrlToDevice("api/x")).toMatchObject({ status: "failed", message: "offline" });
+        });
+
+        it("keeps a name whose percent-escapes do not decode as it came", async () => {
+            const { renamed } = installCapacitor();
+            vi.stubGlobal("fetch", vi.fn(async () => fakeResponse({
+                headers: { "content-disposition": `attachment; filename="100%.bin"` },
+                buffer: Uint8Array.from([1])
+            })));
+
+            const result = await saveUrlToDevice("api/x");
+
+            expect(result).toMatchObject({ status: "saved", fileName: "100%.bin" });
+            // The location is the URI's path left encoded, since it does not decode either.
+            expect(result.location).toMatch(new RegExp(`^/cache/trilium-downloads/${RUN}/100%\\.bin$`));
+            expect(renamed[0]?.to).toMatch(/\/100%\.bin$/);
+        });
+
+        it("orders runs by name length then name, and tolerates a run that cannot be removed", async () => {
+            const { filesystem, removed } = installCapacitor({ runs: ["b-1", "a-1", "a-1", "zz-1"] });
+            filesystem.rmdir.mockImplementationOnce(async () => {
+                throw new Error("Busy");
+            });
+            vi.stubGlobal("fetch", vi.fn(async () => fakeResponse({ buffer: Uint8Array.from([1]) })));
+
+            expect(await saveUrlToDevice("api/a.bin")).toMatchObject({ status: "saved" });
+            // The first removal fails and is skipped; the longest name is the newest run and stays.
+            expect(filesystem.rmdir).toHaveBeenCalledTimes(3);
+            expect(filesystem.rmdir.mock.calls.map(([opts]) => opts.path)).toEqual([
+                "trilium-downloads/a-1", "trilium-downloads/a-1", "trilium-downloads/b-1"
+            ]);
+            expect(removed).toEqual(["trilium-downloads/a-1", "trilium-downloads/b-1"]);
+        });
+
         it("fails on an error status, and on a bridge that has no Filesystem plugin", async () => {
             installCapacitor();
             vi.stubGlobal("fetch", vi.fn(async () => fakeResponse({ status: 500 })));
@@ -389,6 +436,22 @@ describe("capacitor download", () => {
             expect(renamed).toEqual([{ from: "Trilium/db.tnbackup.part", to: "Trilium/db.tnbackup" }]);
         });
 
+        it("still saves when the first rename fails and there is no previous file to delete", async () => {
+            const { filesystem, renamed } = installCapacitor();
+            filesystem.rename.mockRejectedValueOnce(new Error("Transient"));
+            filesystem.deleteFile.mockRejectedValueOnce(new Error("No such file"));
+
+            const result = await saveChunksToDevice(
+                "db.tnbackup", inPieces(Uint8Array.from([1, 2, 3]), 3), BACKUP_TARGET
+            );
+
+            expect(result.status).toBe("saved");
+            expect(filesystem.deleteFile).toHaveBeenCalledWith(
+                { path: "Trilium/db.tnbackup", directory: "DOCUMENTS" }
+            );
+            expect(renamed).toEqual([{ from: "Trilium/db.tnbackup.part", to: "Trilium/db.tnbackup" }]);
+        });
+
         it("streams raw bytes through the native sink when the shell provides one", async () => {
             const { filesystem, written, sharePlugin } = installCapacitor();
             const { posted, listeners } = installFileSink();
@@ -415,7 +478,7 @@ describe("capacitor download", () => {
 
         it("fails the save when the sink answers a chunk with an error, without sharing", async () => {
             const { sharePlugin, deleted, renamed } = installCapacitor();
-            const { listeners } = installFileSink({ failOnChunk: true });
+            const { listeners } = installFileSink({ chunkReply: "error:disk full" });
 
             const result = await saveChunksToDevice(
                 "db.tnbackup", inPieces(Uint8Array.from([ 1, 2, 3 ]), 3), BACKUP_TARGET
@@ -431,6 +494,79 @@ describe("capacitor download", () => {
             // The debris goes; the file under the final name was never touched.
             expect(deleted).toEqual(["Trilium/db.tnbackup.part"]);
             expect(renamed).toEqual([]);
+        });
+
+        it("skips empty pieces and reports a non-Error throw as its string", async () => {
+            const { written } = installCapacitor();
+            async function* withEmpty() {
+                yield new Uint8Array(0);
+                yield Uint8Array.from([4, 5, 6]);
+            }
+            expect(await saveChunksToDevice("a.bin", withEmpty(), BACKUP_TARGET))
+                .toMatchObject({ status: "saved" });
+            expect(writtenBytes(written)).toEqual(Uint8Array.from([4, 5, 6]));
+
+            async function* throwsString(): AsyncGenerator<Uint8Array> {
+                throw "stream gone";
+            }
+            expect(await saveChunksToDevice("b.bin", throwsString(), BACKUP_TARGET)).toEqual({
+                status: "failed",
+                fileName: "b.bin",
+                message: "stream gone"
+            });
+
+            installCapacitor({ share: vi.fn(() => Promise.reject("no share target")) });
+            expect(await saveChunksToDevice("c.bin", withEmpty(), BACKUP_TARGET)).toMatchObject({
+                status: "failed",
+                fileName: "c.bin",
+                message: "no share target"
+            });
+        });
+
+        it("fails on a sink reply it does not recognize", async () => {
+            const { sharePlugin } = installCapacitor();
+            const { listeners } = installFileSink({ chunkReply: "huh" });
+
+            expect(await saveChunksToDevice(
+                "db.tnbackup", inPieces(Uint8Array.from([1, 2, 3]), 3), BACKUP_TARGET
+            )).toEqual({
+                status: "failed",
+                fileName: "db.tnbackup",
+                message: "Unexpected sink reply: huh"
+            });
+            expect(sharePlugin.share).not.toHaveBeenCalled();
+            expect(listeners.size).toBe(0);
+        });
+
+        it("gives up on a sink that stops answering, and frees it for the next save", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            try {
+                const { deleted } = installCapacitor();
+                const { posted, listeners } = installFileSink({ chunkReply: null });
+
+                const pending = saveChunksToDevice(
+                    "db.tnbackup", inPieces(Uint8Array.from([1, 2, 3]), 3), BACKUP_TARGET
+                );
+                await vi.waitFor(() => expect(posted.length).toBe(2));
+                await vi.advanceTimersByTimeAsync(30_000);
+
+                expect(await pending).toEqual({
+                    status: "failed",
+                    fileName: "db.tnbackup",
+                    message: "The file sink stopped answering."
+                });
+                expect(listeners.size).toBe(0);
+                expect(deleted).toEqual(["Trilium/db.tnbackup.part"]);
+
+                // The sink was released, so the next save takes it again rather than the plugin.
+                const next = installFileSink();
+                expect(await saveChunksToDevice(
+                    "db.tnbackup", inPieces(Uint8Array.from([1, 2, 3]), 3), BACKUP_TARGET
+                )).toMatchObject({ status: "saved" });
+                expect(next.posted.length).toBe(3);
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("encodes through the runtime's own toBase64 when it has one, to the same bytes", async () => {
@@ -486,6 +622,21 @@ describe("capacitor download", () => {
             expect(written.every((write) => write.path.endsWith(".part"))).toBe(true);
             expect(renamed).toEqual([]);
             expect(deleted).toEqual(["Trilium/db.tnbackup.part"]);
+        });
+
+        it("reports the stream's own error when the partial file cannot be cleaned up", async () => {
+            const { filesystem } = installCapacitor();
+            filesystem.deleteFile.mockRejectedValueOnce(new Error("Permission denied"));
+            async function* breaks() {
+                yield Uint8Array.from([1, 2, 3]);
+                throw new Error("The backup stream failed.");
+            }
+
+            expect(await saveChunksToDevice("db.tnbackup", breaks(), BACKUP_TARGET)).toMatchObject({
+                status: "failed",
+                message: "The backup stream failed."
+            });
+            expect(filesystem.deleteFile).toHaveBeenCalledOnce();
         });
     });
 });

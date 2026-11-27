@@ -4,12 +4,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import appContext from "../components/app_context.js";
 import type { EventData } from "../components/app_context.js";
 import type TabManager from "../components/tab_manager.js";
+import FBranch from "../entities/fbranch.js";
+import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
+import frocaUpdater from "../services/froca_updater.js";
 import hoistedNoteService from "../services/hoisted_note.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
+import LoadResults from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
+import type { EntityChange } from "../server_types.js";
 import treeService from "../services/tree.js";
 import ws from "../services/ws.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -83,6 +89,17 @@ describe("NoteTreeWidget", () => {
         return widget;
     }
 
+    it("shows the shortcuts of its buttons, as it renders after the startup", async () => {
+        const updateDisplayedShortcuts = vi.spyOn(keyboardActionsService, "updateDisplayedShortcuts")
+            .mockImplementation(() => {});
+        const widget = await renderWidget();
+
+        const [ $container ] = updateDisplayedShortcuts.mock.calls[0] ?? [];
+        expect($container?.find("[data-trigger-command=collapseTree]")).toHaveLength(1);
+        expect($container?.find("[data-trigger-command=scrollToActiveNote]")).toHaveLength(1);
+        expect(widget.$widget.has($container?.get(0) ?? "")).toHaveLength(1);
+    });
+
     it("creates new notes in the tree's own note context (not the active tab's)", async () => {
         const widget = await renderWidget();
         const noteContext = { ntxId: "popup-ctx" };
@@ -143,6 +160,32 @@ describe("NoteTreeWidget", () => {
 
         // The popup's own hoisted note is passed explicitly — not the active tab's.
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
+    });
+
+    it("brings the first active note into view at once, and later ones with the scroll animation", async () => {
+        const widget = await renderWidget();
+        (widget as { noteContext?: unknown }).noteContext = { notePath: "root/child", hoistedNoteId: "root" };
+        vi.spyOn(options, "is").mockImplementation((name) => name === "treeScrollFollowNavigation");
+        vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+        vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
+        const calls: string[] = [];
+        const node = {
+            isVisible: () => true,
+            scrollIntoView: vi.fn((effects: boolean) => { calls.push(`scrollIntoView ${effects}`); }),
+            setActive: vi.fn(() => { calls.push("setActive"); })
+        };
+        vi.spyOn(widget, "getNodeFromPath").mockResolvedValue(node as unknown as Fancytree.FancytreeNode);
+        const getActiveNode = vi.spyOn(widget, "getActiveNode").mockReturnValue(null);
+
+        await widget.refresh();
+        expect(calls).toEqual([ "scrollIntoView false", "setActive" ]);
+
+        calls.length = 0;
+        getActiveNode.mockReturnValue({
+            hasFocus: () => false, setActive: () => {}, setFocus: () => {}
+        } as unknown as Fancytree.FancytreeNode);
+        await widget.refresh();
+        expect(calls).toEqual([ "setActive" ]);
     });
 
     it("follows the display density option, also when it changes", async () => {
@@ -227,11 +270,124 @@ describe("NoteTreeWidget", () => {
             expect(activeVisibleOnActivation).toBe(false);
         });
 
-        it("expands to the active note when the tree follows it", async () => {
-            const { getNodeFromPath, node, activeVisibleOnActivation } = await reload(true);
-            expect(getNodeFromPath).toHaveBeenCalledWith("root/parent/child", true, false);
-            expect(node.setActive).toHaveBeenCalled();
-            expect(activeVisibleOnActivation).toBe(true);
+        /** Renders a real fancytree over `root → Parent → Child` and `root → Other`, with Child active. */
+        async function renderTreeWithActiveChild() {
+            vi.spyOn(options, "is").mockImplementation((name) => name === "treeScrollFollowNavigation");
+            vi.spyOn(server, "put").mockResolvedValue(undefined);
+            vi.spyOn(appContext, "tabManager", "get")
+                .mockReturnValue({ getActiveContext: () => null } as unknown as TabManager);
+            vi.spyOn(froca, "loadSubTree").mockImplementation(async (noteId) => froca.notes[noteId]);
+            const root = buildNote({
+                id: "root",
+                title: "root",
+                children: [
+                    { id: "parent", title: "Parent", children: [{ id: "child", title: "Child" }] },
+                    { id: "other", title: "Other" }
+                ]
+            });
+            froca.branches.none_root = new FBranch(froca, {
+                branchId: "none_root", noteId: "root", parentNoteId: "none", notePosition: 0, fromSearchNote: false
+            });
+            const parentBranch = froca.getBranch("root_parent");
+            if (parentBranch) parentBranch.isExpanded = true;
+
+            const widget = await renderWidget();
+            vi.mocked(widget.initFancyTree).mockRestore();
+            vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+            (widget as { noteContext?: unknown }).noteContext = {
+                notePath: "root/parent/child", hoistedNoteId: "root"
+            };
+            widget.$widget.appendTo(document.body);
+            widget.initFancyTree();
+            // happy-dom does not match jQuery UI's `:ui-fancytree` pseudo, so `$.ui.fancytree.getTree()` returns null.
+            const internals = widget as unknown as { tree: Fancytree.Fancytree; $tree: JQuery };
+            internals.tree = internals.$tree.fancytree("getTree");
+
+            const childNode = await widget.getNodeFromPath("root/parent/child");
+            expect(childNode?.data.noteId).toBe("child");
+            await childNode?.setActive(true, { noEvents: true, noFocus: true });
+
+            return { widget, root, parentBranch };
+        }
+
+        function addBranch(branchId: string, noteId: string, parentNoteId: string) {
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId, parentNoteId, notePosition: 10, fromSearchNote: false
+            });
+            froca.getNoteFromCache(parentNoteId)?.addChild(noteId, branchId, false);
+            froca.getNoteFromCache(noteId)?.addParent(parentNoteId, branchId, false);
+            return { entityName: "branches", entityId: branchId, entity: { branchId, noteId, parentNoteId, notePosition: 10 } };
+        }
+
+        it("keeps a collapsed ancestor of the active note collapsed when a note is created elsewhere (#6641)", async () => {
+            const { widget, parentBranch } = await renderTreeWithActiveChild();
+            await widget.getNodesByNoteId("parent")[0].setExpanded(false, { noAnimation: true });
+            expect(parentBranch?.isExpanded).toBe(false);
+
+            // The note created under root reaches the tree before the note context switches to it.
+            buildNote({ id: "newNote", title: "New note" });
+            const loadResults = new LoadResults([addBranch("root_newNote", "newNote", "root") as unknown as EntityChange]);
+            loadResults.addBranch("root_newNote", "none");
+            loadResults.addNote("newNote");
+            await widget.entitiesReloadedEvent({ loadResults });
+
+            expect(widget.getNodesByNoteId("newNote")).toHaveLength(1);
+            expect(widget.getNodesByNoteId("parent")[0].isExpanded()).toBe(false);
+            expect(parentBranch?.isExpanded).toBe(false);
+        });
+
+        it("updates a note whose type and content one request changed, as converting a document does", async () => {
+            const { widget } = await renderTreeWithActiveChild();
+            const other = froca.notes.other;
+            other.blobId = "documentBlob";
+            const before = widget.getNodesByNoteId("other")[0].icon;
+
+            let loadResults: LoadResults | undefined;
+            vi.spyOn(appContext, "triggerEvent").mockImplementation(async (name, data) => {
+                if (name === "entitiesReloaded") {
+                    loadResults = (data as EventData<"entitiesReloaded">).loadResults;
+                }
+                return [];
+            });
+            await frocaUpdater.processEntityChanges([ {
+                entityName: "notes", entityId: "other", componentId: "client", hash: "h",
+                isSynced: false, isErased: false,
+                entity: {
+                    ...other, type: "file", mime: "application/pdf", blobId: "textBlob"
+                }
+            } as unknown as EntityChange ]);
+            expect(loadResults).toBeDefined();
+            if (loadResults) {
+                await widget.entitiesReloadedEvent({ loadResults });
+            }
+
+            const after = widget.getNodesByNoteId("other")[0].icon;
+            expect(after).not.toBe(before);
+            expect(after).toBe(other.getIcon());
+        });
+
+        it("reveals the active note under its new parent when it is moved and the tree follows it", async () => {
+            const { widget } = await renderTreeWithActiveChild();
+
+            const parent = froca.notes.parent;
+            const child = froca.notes.child;
+            parent.children = [];
+            parent.childToBranch = {};
+            child.parents = [];
+            child.parentToBranch = {};
+            delete froca.branches.parent_child;
+            const deleted = { entityName: "branches", entityId: "parent_child", entity: {
+                branchId: "parent_child", noteId: "child", parentNoteId: "parent", isDeleted: true
+            } };
+            const added = addBranch("other_child", "child", "other");
+            const loadResults = new LoadResults([deleted, added] as unknown as EntityChange[]);
+            loadResults.addBranch("parent_child", "none");
+            loadResults.addBranch("other_child", "none");
+            await widget.entitiesReloadedEvent({ loadResults });
+
+            const otherNode = widget.getNodesByNoteId("other")[0];
+            expect(otherNode.isExpanded()).toBe(true);
+            expect(widget.getActiveNode()?.getParent()).toBe(otherNode);
         });
     });
 });
@@ -239,18 +395,31 @@ describe("NoteTreeWidget", () => {
 describe("the drop marker's distance from the row boundary", () => {
     const shift = () => document.body.style.getPropertyValue("--tree-drop-marker-shift");
 
-    /** A row of `rowHeight` around a title of `titleHeight`, which is all the measurement reads. */
-    function nodeWithRow(rowHeight: number, titleHeight: number) {
+    const indent = () => document.body.style.getPropertyValue("--tree-drop-marker-indent");
+
+    /** A row of `rowHeight` around a title of `titleHeight` starting at `titleLeft`. */
+    function nodeWithRow(rowHeight: number, titleHeight: number, titleLeft = 0, children: Fancytree.FancytreeNode[] = [], expanded = false) {
         const row = document.createElement("span");
         const title = document.createElement("span");
         title.className = "fancytree-title";
         row.appendChild(title);
 
         vi.spyOn(row, "getBoundingClientRect").mockReturnValue({ height: rowHeight } as DOMRect);
-        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight } as DOMRect);
+        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight, left: titleLeft } as DOMRect);
 
-        return { span: row } as Fancytree.FancytreeNode;
+        return { span: row, children, isExpanded: () => expanded } as unknown as Fancytree.FancytreeNode;
     }
+
+    it("lines up the marker below an expanded note with its first child", () => {
+        const child = nodeWithRow(34, 18, 44);
+
+        // The drop lands before the first child, so the line starts where that child's title does.
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], true));
+        expect(indent()).toBe("20px");
+
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], false));
+        expect(indent()).toBe("0px");
+    });
 
     it("is half the room the row leaves around its title", () => {
         // dnd5 anchors on the title's edge, which is that far from the boundary the note lands on.
@@ -269,6 +438,82 @@ describe("the drop marker's distance from the row boundary", () => {
         publishDropMarkerShift({ span: undefined } as unknown as Fancytree.FancytreeNode);
 
         expect(shift()).toBe("8px");
+    });
+});
+
+describe("focusing the tree", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps a focus asked for before the tree is built, and focuses it once it is", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "initFancyTree").mockImplementation(() => {});
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        await widget.focusTreeEvent();
+
+        const focus = vi.fn();
+        const setFocus = vi.fn();
+        vi.mocked(widget.initFancyTree).mockRestore();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({ $container: { focus }, setFocus } as never);
+        widget.initFancyTree();
+
+        expect(focus).toHaveBeenCalledTimes(1);
+        expect(setFocus).toHaveBeenCalledWith(true);
+    });
+});
+
+describe("rendering before the tabs exist", () => {
+    const originalTabManager = appContext.tabManager;
+
+    afterEach(() => {
+        appContext.tabManager = originalTabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("settles its first render once Fancytree has built the tree", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        const fancytree = vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        let buildsAtSettle: number | undefined;
+        void widget.firstRender.then(() => { buildsAtSettle = fancytree.mock.calls.length; });
+
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(buildsAtSettle).toBeUndefined();
+        widget.doRender();
+        await widget.firstRender;
+        expect(buildsAtSettle).toBe(1);
+    });
+
+    it("renders a note's title while the tab manager is not created yet", async () => {
+        buildNote({ id: "early", title: "Early" });
+        const widget = new NoteTreeWidget();
+        let treeOptions: Fancytree.FancytreeOptions | undefined;
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery, opts: unknown) {
+            treeOptions = opts as Fancytree.FancytreeOptions;
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        widget.initFancyTree();
+
+        appContext.tabManager = undefined as unknown as TabManager;
+        const span = document.createElement("span");
+        span.innerHTML = `<span class="fancytree-title">Early</span>`;
+        const enhanceTitle = treeOptions?.enhanceTitle as ((event: Event, data: unknown) => Promise<void>) | undefined;
+        expect(enhanceTitle).toBeDefined();
+        await expect(enhanceTitle?.(new Event("render"), { node: { data: { noteId: "early" }, span, extraClasses: "" }, noteId: "early" }))
+            .resolves.toBeUndefined();
     });
 });
 
@@ -321,5 +566,34 @@ describe("drags onto the tree", () => {
         const editorTypes = [ "text/plain", "text/html", "application/ckeditor5-dragging-uid" ];
         expect(dnd.dragEnter(target, dragOf(...editorTypes))).toBe(false);
         expect(dnd.dragEnter(target, dragOf("text/plain", "text/html"))).toBe(true);
+    });
+
+    it("drops below an expanded note as its first child, not as its next sibling", async () => {
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
+        const moveBefore = vi.spyOn(branchService, "moveBeforeBranch").mockResolvedValue(true);
+        const moveAfter = vi.spyOn(branchService, "moveAfterBranch").mockResolvedValue(true);
+        const dnd = await getDndHandlers();
+
+        const grandparent = { data: { noteId: "grandparent", noteType: "text" } };
+        const firstChild = { data: { noteId: "first", branchId: "parent_first", noteType: "text" } };
+        const parentNode = (expanded: boolean) => ({
+            data: { noteId: "parent", branchId: "grandparent_parent", noteType: "text" },
+            children: [ firstChild ],
+            isExpanded: () => expanded,
+            getParent: () => grandparent
+        });
+        const dropAfter = (node: unknown) => dnd.dragDrop(node, {
+            hitMode: "after",
+            dataTransfer: { files: [], getData: () => JSON.stringify([ { noteId: "moved", branchId: "x_moved" } ]) }
+        });
+
+        await dropAfter(parentNode(true));
+        expect(moveBefore).toHaveBeenCalledWith([ "x_moved" ], "parent_first");
+        expect(moveAfter).not.toHaveBeenCalled();
+
+        moveBefore.mockClear();
+        await dropAfter(parentNode(false));
+        expect(moveAfter).toHaveBeenCalledWith([ "x_moved" ], "grandparent_parent");
+        expect(moveBefore).not.toHaveBeenCalled();
     });
 });

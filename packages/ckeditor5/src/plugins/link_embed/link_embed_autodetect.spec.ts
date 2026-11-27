@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
+import { _setModelData as setModelData, type ClassicEditor, FontColor } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -39,6 +39,22 @@ describe("AutoLinkToMention", () => {
         expect(mention).toBeDefined();
         expect(mention?.getAttribute("url")).toBe(url);
         expect(mention?.getAttribute("title")).toBe(META.title);
+    });
+
+    it("gives a preview the colors of the URL's text", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, FontColor ];
+        const coloring = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        const url = "https://example.com/article";
+
+        autoLinkIn(coloring,
+            `<paragraph><$text fontColor="#e64d4d">see ${url} []</$text></paragraph>`, url);
+        await flushFetch();
+        expect(findElement(coloring, "linkMention")?.getAttribute("fontColor")).toBe("#e64d4d");
+
+        autoLinkIn(coloring, `<paragraph><$text fontColor="#e64d4d">${url}</$text></paragraph>`
+            + "<paragraph>[]</paragraph>", url);
+        await flushFetch();
+        expect(findElement(coloring, "linkEmbed")?.getAttribute("fontColor")).toBe("#e64d4d");
     });
 
     it("leaves the text link untouched when the metadata could not be resolved, and says why", async () => {

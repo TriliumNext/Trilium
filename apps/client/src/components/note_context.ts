@@ -1,18 +1,21 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, TriliumVim } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 
 import type FNote from "../entities/fnote.js";
-import { closeActiveDialog } from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
-import type { ViewScope } from "../services/link.js";
+import {
+    getNavigationTarget, getNoteIdAndParentIdFromUrl, isSameViewScope, type ViewScope
+} from "../services/navigation_state.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
-import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ScrollRailLayer } from "../widgets/scroll_rail_markers.js";
+import type { TocDocumentState } from "../widgets/sidebar/CachedToCProvider.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
@@ -64,35 +67,42 @@ const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
     "table"
 ];
 
-/** View scope keys that hold the context's own state rather than what a navigation asks for. */
-const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
+/**
+ * A section of the PDF sidebar for the viewer load `loadToken`: `loading` until the viewer of that
+ * load sends it, then `ready` with its data.
+ */
+export type PdfSectionData<T> =
+    | { status: "loading"; loadToken: string }
+    | ({ status: "ready"; loadToken: string } & T);
 
 export interface NoteContextDataMap {
     toc: HeadingContext;
+    /** Published by the type widget of a document whose outline comes from its ToC cache. */
+    tocDocument: TocDocumentState;
     highlights: HighlightContext;
     chatHighlights: ChatHighlightsContext;
-    pdfPages: {
+    pdfPages: PdfSectionData<{
         totalPages: number;
         currentPage: number;
         scrollToPage(page: number): void;
         requestThumbnail(page: number): void;
         /** Copies a reference that opens the PDF at `page`. */
         copyReference(page: number): void;
-    };
-    pdfAttachments: {
+    }>;
+    pdfAttachments: PdfSectionData<{
         attachments: PdfAttachment[];
         downloadAttachment(id: string): void;
-    };
-    pdfLayers: {
+    }>;
+    pdfLayers: PdfSectionData<{
         layers: PdfLayer[];
         toggleLayer(layerId: string, visible: boolean): void;
-    };
-    pdfAnnotations: {
+    }>;
+    pdfAnnotations: PdfSectionData<{
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
         /** Copies a reference that opens the PDF at the annotation. */
         copyReference(annotationId: string, pageNumber: number): void;
-    };
+    }>;
     /** Published by a board, so the right pane can list its columns and scroll the board to one. */
     boardColumns: {
         /** The columns in the order the board draws them. */
@@ -109,14 +119,29 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the shown text view of the note, for the highlight lines of the scroll rail. */
+    scrollRailHighlights: ScrollRailLayer;
+    /** Published by the find bar while a search has matches, for the scroll rail of the split. */
+    scrollRailFind: ScrollRailLayer;
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
+    /**
+     * Published by the text editor of the note, so the status bar can show the mode and the
+     * command line of its Vim mode, or of the one in the focused embed.
+     */
+    vimMode: TriliumVim;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,
      * so the note detail can show a loading state instead of the previous note's content. */
     contentLoad: {
         state: "loading" | "loaded" | "error";
         /** Re-attempts the content fetch (e.g. from a "Retry" button after an error). */
         retry: () => void;
+    };
+    /** Published by the note detail once its type widget shows the note: after the widget has
+     * started loading the content, or once it has drawn it (`reportsContentShown`), so the note
+     * list waits for that content. */
+    typeWidgetNote: {
+        noteId: string;
     };
 }
 
@@ -180,7 +205,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     /** @returns the note context that ended up showing the note: usually `this`, or a new tab when a pinned tab redirected the navigation. `undefined` if nothing was navigated. */
     async setNote(inputNotePath: string | undefined, opts: SetNoteOpts = {}): Promise<NoteContext | undefined> {
         opts.triggerSwitchEvent = opts.triggerSwitchEvent !== undefined ? opts.triggerSwitchEvent : true;
-        // Readers like `revealBlockReference()` change the scope, so the context keeps a copy.
+        // Readers like `consumeBlockReference()` change the scope, so the context keeps a copy.
         const viewScope: ViewScope = {
             ...opts.viewScope,
             viewMode: opts.viewScope?.viewMode || "default"
@@ -201,7 +226,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         // Pinned tabs stay on the note they were pinned to — redirect navigation to a new tab instead.
-        const { noteId: targetNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath);
+        const { noteId: targetNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath);
         if (shouldRedirectPinnedNavigation(this.pinned, this.noteId, targetNoteId)) {
             return appContext.tabManager.openContextWithNote(resolvedNotePath, {
                 activate: true,
@@ -213,7 +238,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
 
-        if (!opts.keepActiveDialog) {
+        // Only `dialog.openDialog()` sets `glob.activeDialog`, so `dialog.ts` is loaded whenever one is open.
+        if (!opts.keepActiveDialog && glob.activeDialog) {
+            const { closeActiveDialog } = await import("../services/dialog.js");
             closeActiveDialog();
         }
 
@@ -221,7 +248,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         this.notePath = resolvedNotePath;
         this.viewScope = viewScope;
-        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
+        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath));
 
         // Clear context data only when actually switching to a different note.
         // Context data (e.g. ToC headings) is tied to the note content, so it
@@ -408,8 +435,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         });
     }
 
-    /** @returns {Promise<boolean>} */
-    async isReadOnly() {
+    /**
+     * {@link isReadOnly} as far as it can tell without the note's content: `undefined` while the
+     * auto read-only check, which reads the content's size, has not run for the view.
+     */
+    isReadOnlyIfKnown(): boolean | undefined {
         if (this?.viewScope?.readOnlyTemporarilyDisabled && this.note?.isContentWritable !== false) {
             return false;
         }
@@ -443,6 +473,16 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         // Auto read-only based on content size is only configurable for text/code.
         if (this.note.type !== "text" && this.note.type !== "code") {
             return false;
+        }
+
+        return this.viewScope?.isReadOnly;
+    }
+
+    /** @returns {Promise<boolean>} */
+    async isReadOnly() {
+        const known = this.isReadOnlyIfKnown();
+        if (known !== undefined || !this.note) {
+            return known ?? false;
         }
 
         // Store the initial decision about read-only status in the viewScope
@@ -710,20 +750,6 @@ export function openInCurrentNoteContext(
     } else {
         appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
-}
-
-/**
- * Whether navigating with `requested` shows what `current` already shows. Ignores the
- * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
- */
-function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
-    return utils.areObjectsEqual(
-        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
-}
-
-function getNavigationTarget(viewScope: ViewScope) {
-    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
-        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }
 
 export default NoteContext;

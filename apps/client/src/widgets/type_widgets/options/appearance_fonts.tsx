@@ -1,6 +1,12 @@
 import "./appearance_fonts.css";
 
-import { customFontFamily, customFontNoteId, customFontOption, FontFamily, MONOSPACE_FONT_FAMILY, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
+import type { FontFamily, OptionNames, UserFont } from "@triliumnext/commons";
+import {
+    customFontFamily, customFontNoteId, customFontOption
+} from "@triliumnext/commons/src/lib/custom_fonts.js";
+import {
+    MONOSPACE_FONT_FAMILY, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK
+} from "@triliumnext/commons/src/lib/options_interface.js";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, Fragment } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -8,17 +14,22 @@ import { Trans } from "react-i18next";
 
 import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
-import { filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "../../../services/font";
+import {
+    filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily
+} from "../../../services/font";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
-import { isElectron, isMobile } from "../../../services/utils";
+import { isElectron, isMobile, STACKED_TREE_LAYOUT } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import { filterTokens, matchesFilter } from "../../react/filter";
 import FormList, { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useChildNotes, useNoteTitle, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useMediaQuery } from "../../react/hooks/dom";
+import { useChildNotes } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import Modal from "../../react/Modal";
 import NoItems from "../../react/NoItems";
@@ -161,6 +172,7 @@ export default function Fonts() {
                         key={target.key}
                         target={target}
                         option={fontOptions[target.key]}
+                        documentSize={fontOptions.detail.size}
                         disabled={!isEnabled}
                         onOpen={() => {
                             setPickerTarget(target);
@@ -185,6 +197,7 @@ export default function Fonts() {
                 target={pickerTarget}
                 onTargetChange={setPickerTarget}
                 option={fontOptions[pickerTarget.key]}
+                documentSize={fontOptions.detail.size}
                 groups={fontGroups}
             />
 
@@ -373,11 +386,13 @@ function useFontOption(familyOption: OptionNames, sizeOption: OptionNames): Font
 interface FontRowProps {
     target: FontTarget;
     option: FontOption;
+    /** The document size, which the monospace size is a percentage of. */
+    documentSize: number;
     disabled?: boolean;
     onOpen: () => void;
 }
 
-function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRowProps) {
+function FontRow({ target, option: { family, size }, documentSize, disabled, onOpen }: FontRowProps) {
     // One of the user's own fonts is named by the note holding it, so its own title says what is
     // set — read from the cache rather than waited for from the listing, and it follows a rename.
     const customFontTitle = useNoteTitle(customFontNoteId(family) ?? undefined, undefined);
@@ -394,11 +409,28 @@ function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRow
             onAction={disabled ? undefined : onOpen}
         >
             <span className="font-option-preview">
-                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: `${size}%` }}>{name}</span>
+                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: specimenFontSize(target, size, documentSize) }}>{name}</span>
                 <span className="tn-card-chevron" />
             </span>
         </OptionCardSection>
     );
+}
+
+/**
+ * The size a specimen is drawn at, in `rem` so that it does not depend on the card's own size,
+ * which is the document size. `rem` is the interface size; the tree and document sizes are
+ * percentages of it, and code is drawn inside the document, so the monospace size is a
+ * percentage of the document size.
+ */
+function specimenFontSize(target: FontTarget, size: number, documentSize: number): string {
+    switch (target.key) {
+        case "main":
+            return "1rem";
+        case "monospace":
+            return `${(size * documentSize) / 10000}rem`;
+        default:
+            return `${size / 100}rem`;
+    }
 }
 
 /** What CSS is given to draw an entry, whose value is not always a family the browser can resolve. */
@@ -555,14 +587,18 @@ interface FontPickerModalProps {
     target: FontTarget;
     onTargetChange: (target: FontTarget) => void;
     option: FontOption;
+    /** The document size, which the monospace size is a percentage of. */
+    documentSize: number;
     groups: FontGroup[];
 }
 
-function FontPickerModal({ show, onHidden, target, onTargetChange, option: { family, size, setFamily, setSize }, groups }: FontPickerModalProps) {
+function FontPickerModal({ show, onHidden, target, onTargetChange, option: { family, size, setFamily, setSize }, documentSize, groups }: FontPickerModalProps) {
     const [ query, setQuery ] = useState("");
     const searchRef = useRef<HTMLInputElement>(null);
     const matching = useMemo(() => filterFontGroups(groups, query), [ groups, query ]);
     const { Preview } = target;
+    const isStacked = useMediaQuery(STACKED_TREE_LAYOUT);
+    const isPhone = isMobile() && isStacked;
 
     return createPortal(
         <Modal
@@ -646,14 +682,14 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                     {target.sizeDescription && <small className="font-size-description">{target.sizeDescription}</small>}
                 </div>
 
-                {!isMobile() && (
+                {!isPhone && (
                     <div className="font-preview">
                         <label>{t("fonts.preview")}</label>
                         <div
                             className="font-preview-text"
                             style={{
                                 fontFamily: cssFontFamily(target, family),
-                                fontSize: `${size}%`
+                                fontSize: specimenFontSize(target, size, documentSize)
                             }}
                         >
                             {Preview ? <Preview /> : PREVIEW_TEXT}

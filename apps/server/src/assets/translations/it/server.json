@@ -94,7 +94,21 @@
     "move-split-left": "Sposta a sinistra",
     "move-split-right": "Sposta la divisione a destra",
     "focus-split-left": "Focus spostato a sinistra",
-    "focus-split-right": "Focus diviso a destra"
+    "focus-split-right": "Focus diviso a destra",
+    "duplicate-note": "Nota duplicata senza bambini",
+    "focus-formatting-toolbar": "Barra degli strumenti di formattazione del focus",
+    "show-basic-properties": "Mostra le proprietà di base",
+    "focus-collection-properties": "Proprietà della raccolta Focus",
+    "focus-file-actions": "Azioni sui file in primo piano",
+    "focus-image-actions": "Azioni di messa a fuoco dell'immagine",
+    "toggle-owned-attributes": "Attiva/disattiva attributi posseduti",
+    "toggle-inherited-attributes": "Attiva/disattiva attributi ereditati",
+    "toggle-promoted-attributes": "Attiva/disattiva attributi promossi",
+    "show-note-map": "Mostra la mappa delle note",
+    "show-note-info": "Mostra le informazioni della nota",
+    "show-note-paths": "Mostra i percorsi delle note",
+    "toggle-similar-notes": "Mostra/Nascondi note simili",
+    "peek-left-pane": "Pannello di anteprima dell'albero"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -170,7 +184,10 @@
     "content-manager-title": "Responsabile dei contenuti",
     "desktop-title": "Desktop",
     "space-usage-title": "Utilizzo dello spazio",
-    "database-title": "Database"
+    "database-title": "Database",
+    "record-meeting-title": "Trascrizione della riunione",
+    "transcription-title": "Trascrizione",
+    "resources-title": "Risorse scaricate"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -185,7 +202,12 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato.",
-    "included-note-requires-credentials": "Questa nota allegata è protetta da password e non può essere visualizzata qui."
+    "included-note-requires-credentials": "Questa nota allegata è protetta da password e non può essere visualizzata qui.",
+    "content-not-available": "Questo contenuto non è disponibile.",
+    "broken-block-reference": "Riferimento interrotto",
+    "untitled-block": "Bloccare",
+    "play-video": "Guarda il video",
+    "play-audio": "Riproduci audio"
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
@@ -226,7 +248,24 @@
     "toggle-navigation": "Attiva/disattiva la navigazione",
     "toggle-toc": "Mostra/Nascondi sommario",
     "logo-alt": "Logo",
-    "login": "Login"
+    "login": "Login",
+    "appearance": "Aspetto",
+    "theme-light": "Leggero",
+    "theme-dark": "Buio",
+    "theme-system": "Sistema",
+    "theme-current": "Aspetto: {{- theme}}",
+    "subpages-of": "Sottopagine di {{- title}}",
+    "hidden-subpages_one": "{{count}} sottopagina nascosta dall'albero",
+    "hidden-subpages_many": "{{count}} sottopagine nascoste dall'albero",
+    "hidden-subpages_other": "{{count}} sottopagine nascoste dall'albero",
+    "tab-title": "Titolo della scheda",
+    "heading-link": "Collega a questa sezione",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "page-navigation": "Pagine precedente e successiva",
+    "previous-tabs": "Scorri alle schede precedenti",
+    "next-tabs": "Scorri alle schede successive",
+    "copy-code": "Copia codice"
   },
   "keyboard_actions": {
     "back-in-note-history": "Naviga alla nota precedente della cronologia",
@@ -302,7 +341,12 @@
     "focus-split-right": "Sposta il focus sulla divisione a destra di quella attiva",
     "split-view": "Visualizzazione divisa",
     "move-split-left": "Scambia la divisione attiva con quella alla sua sinistra, in modo che la nota si sposti e il focus la segua",
-    "move-split-right": "Scambia la divisione attiva con quella alla sua destra, in modo che la nota si sposti e il focus la segua"
+    "move-split-right": "Scambia la divisione attiva con quella alla sua destra, in modo che la nota si sposti e il focus la segua",
+    "note-panels": "Note sui pannelli",
+    "show-note-map": "Mostra la mappa delle note nel riquadro di destra",
+    "focus-collection-properties": "Sposta il focus sul selettore del tipo di visualizzazione della raccolta",
+    "focus-formatting-toolbar": "Sposta il focus tra la barra degli strumenti di formattazione fissa e l'editor",
+    "peek-left-pane": "Visualizza l'albero delle note come un pannello temporaneo che fluttua sopra il contenuto"
   },
   "login": {
     "title": "Accedi",
@@ -412,7 +456,8 @@
       "cannot-compare-with": "non è paragonabile a \"{{- token}}\". Per cercare un valore letterale, usa le virgolette: \"{{- token}}\"",
       "misplaced-expression": "Espressione \"{{- token}}\" errata o incompleta",
       "fulltext-after-expression": "\"{{- token}}\" non è un'espressione valida. Per cercare del testo, inseriscilo prima dei filtri degli attributi (ad esempio, \"{{- token}} #label\" invece di \"#label {{- token}}\").",
-      "unrecognized-expression": "Espressione non riconosciuta \"{{- token}}\""
+      "unrecognized-expression": "Espressione non riconosciuta \"{{- token}}\"",
+      "regex-not-allowed": "L'operatore di espressione regolare \"%=\" non è disponibile qui."
     }
   },
   "password": {
@@ -529,5 +574,56 @@
     "detail": "Ti verrà prima proposto di eseguire un backup della tua attuale base di conoscenza. Nulla verrà eliminato finché non deciderai di creare una nuova base di conoscenza, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo.\n\nNon procedere se uno script o una nota che non conosci ti ha invitato a farlo.",
     "cancel": "Annulla",
     "confirm": "Riavvia e ricomincia da capo"
+  },
+  "open_custom": {
+    "choose_application": "Scegli un'applicazione con cui aprire il file.",
+    "applications_filter": "Applicazioni"
+  },
+  "open-executable-dialog": {
+    "title": "Apri programma",
+    "message": "Aprire \"{{- name}}\"?",
+    "detail": "{{- path}}\n\nQuesto file può eseguire un programma sul tuo computer. Aprilo solo se hai creato tu questo collegamento e ti fidi del file.",
+    "cancel": "Annulla",
+    "open": "Apri"
+  },
+  "transcription": {
+    "already-recording": "È già in corso la trascrizione di una riunione.",
+    "note-not-found": "La nota della riunione non esiste più.",
+    "start-failed": "Impossibile avviare la trascrizione: {{- message}}",
+    "stopped-unexpectedly": "La trascrizione si è interrotta in modo imprevisto. Ciò che è stato trascritto fino a quel momento viene conservato.",
+    "save-locked": "La trascrizione non può essere salvata mentre la sessione protetta è bloccata. La trascrizione verrà conservata e salvata non appena accederai alla sessione protetta, purché Trilium rimanga aperto.",
+    "save-failed": "Impossibile salvare la trascrizione: {{- message}} La trascrizione verrà conservata e verrà effettuato un nuovo tentativo con la frase successiva.",
+    "capture-lost": "La trascrizione si è interrotta perché non è più possibile acquisire l'audio. Ciò che è stato trascritto fino a quel momento viene conservato.",
+    "attachment-title": "Trascrizione",
+    "model-not-downloaded": "Il modello di riconoscimento vocale non è ancora stato scaricato. Avvia una registrazione dal launcher per scaricarlo.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, alta precisione",
+    "recognizer-description": "Un modello di riconoscimento vocale di NVIDIA che supporta 25 lingue europee. Il riconoscimento viene eseguito interamente su questo dispositivo, quindi le tue registrazioni non lo lasciano mai.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Utilizzato per rilevare il parlato nell'audio, in modo da trascrivere solo le parti vocali.",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "Utilizzato per distinguere gli interlocutori, in modo da poter vedere chi ha detto cosa nella trascrizione."
+  },
+  "resources": {
+    "unknown": "Nessuna risorsa denominata {{id}}.",
+    "http-error": "Download di {{name}} non riuscito con stato HTTP {{status}}.",
+    "size-mismatch": "{{name}} non ha le dimensioni previste.",
+    "hash-mismatch": "{{name}} non corrisponde al checksum previsto, pertanto è stato scartato.",
+    "delete-while-downloading": "{{- title}} è in fase di download. Annulla il download prima di eliminarlo.",
+    "not-foreign": "{{- name}} non è una voce inutilizzata della cartella delle risorse.",
+    "stalled": "Il download di {{name}} si è interrotto: nessun dato ricevuto per {{seconds}} secondi. Controlla la tua connessione e riprova."
+  },
+  "share_target": {
+    "default-title": "Contenuto condiviso",
+    "nothing-to-share": "Niente da condividere: non è stato ricevuto alcun testo, link o file.",
+    "rejected": "Condivisione rifiutata: {{- reason}}",
+    "other-page": "Solo il menu di condivisione di sistema può inviare contenuti a questo indirizzo."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium viene eseguito come Flatpak, quindi non può avviare programmi installati all'esterno del suo sandbox, come {{- cli}}. Per usare {{- cli}}:\n\n1. Installalo su questo computer ed effettua l'accesso da un terminale.\n2. Consenti a Trilium di avviare programmi all'esterno del suo sandbox eseguendo questo comando in un terminale:\n\n{{- grantCommand}}\n\n3. Riavvia Trilium.\n\nQuesto fornisce a Trilium lo stesso accesso al tuo computer di un'installazione esterna a Flatpak. Per revocarlo, esegui:\n\n{{- revokeCommand}}"
+  },
+  "revisions": {
+    "draft_description": "Modifiche non salvate",
+    "fragment_description": "Modifiche non salvate a un estratto"
   }
 }

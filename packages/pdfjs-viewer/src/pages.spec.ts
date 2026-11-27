@@ -32,6 +32,21 @@ describe("page reporting", () => {
         });
     });
 
+    it("waits for pdf.js to initialise the pages when no document is open yet", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const app = window.PDFViewerApplication;
+        const pdfDocument = app?.pdfDocument;
+        if (!app || !pdfDocument) throw new Error("viewer not installed");
+        (app as any).pdfDocument = null;
+
+        setupPdfPages();
+        expect(viewer.messagesOfType("pdfjs-viewer-page-info")).toHaveLength(0);
+
+        app.pdfDocument = pdfDocument;
+        viewer.eventBus.dispatch("pagesinit", { source: null });
+        expect(viewer.lastMessageOfType("pdfjs-viewer-page-info")?.totalPages).toBe(2);
+    });
+
     it("re-reports once pdf.js has initialised the pages", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         setupPdfPages();
@@ -126,6 +141,27 @@ describe("thumbnail generation", () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
 
         expect(viewer.messagesOfType("pdfjs-viewer-thumbnail")).toHaveLength(0);
+    });
+
+    it("names the load of its frame in the page info, page changes and thumbnails", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+        stubCanvas();
+        const page = await viewer.pdfDocument.getPage(1);
+        vi.spyOn(page, "render").mockReturnValue({ promise: Promise.resolve() } as never);
+        vi.spyOn(viewer.pdfDocument, "getPage").mockResolvedValue(page);
+        setupPdfPages();
+
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 2 });
+        viewer.sendFromParent({ type: "trilium-request-thumbnail", pageNumber: 1 });
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-thumbnail"))
+            .toHaveLength(1));
+
+        for (const type of [
+            "pdfjs-viewer-page-info", "pdfjs-viewer-current-page", "pdfjs-viewer-thumbnail"
+        ]) {
+            expect(viewer.lastMessageOfType(type)).toMatchObject({ loadToken: "load-7" });
+        }
     });
 
     it("logs and sends nothing when the page cannot be loaded", async () => {

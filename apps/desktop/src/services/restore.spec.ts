@@ -108,6 +108,11 @@ describe("choosing a backup to restore", () => {
             status: "error",
             message: "Cannot start 'restore-backup': setup is already busy with 'new-document'."
         });
+
+        sessionMock.setPendingBackup.mockImplementation(() => {
+            throw "busy";
+        });
+        await expect(pickBackup()).resolves.toEqual({ status: "error", message: "busy" });
     });
 
     it("offers the backup extensions first, and everything else after them", async () => {

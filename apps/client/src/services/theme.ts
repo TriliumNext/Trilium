@@ -95,6 +95,36 @@ export function buildThemeStylesheetRefs(theme: string, customThemeCssUrl?: stri
     return refs;
 }
 
+/** The `localStorage` key that `index.html` reads the root background of the last start from. */
+const ROOT_BACKGROUND_KEY = "trilium-root-background";
+
+/**
+ * Stores the theme's root background once `stylesheets` have loaded and whenever it changes, for
+ * `index.html` to paint before the stylesheets of the next start apply, and hands the page
+ * background back to the stylesheets. `#background-color-tracker` transitions its color to
+ * `--root-background`, so its `transitionend` marks each change.
+ */
+export async function rememberRootBackground(stylesheets: HTMLLinkElement[]) {
+    const tracker = document.getElementById("background-color-tracker");
+    if (!tracker) return;
+
+    await Promise.all(stylesheets.map((stylesheet) => new Promise((resolve) => {
+        stylesheet.addEventListener("load", resolve, { once: true });
+        stylesheet.addEventListener("error", resolve, { once: true });
+    })));
+
+    const remember = () => {
+        try {
+            localStorage.setItem(ROOT_BACKGROUND_KEY, getComputedStyle(tracker).color);
+        } catch {
+            // Without storage the next start paints no background before its stylesheets.
+        }
+    };
+    remember();
+    document.documentElement.style.removeProperty("background-color");
+    tracker.addEventListener("transitionend", remember);
+}
+
 export function createStylesheetLink(ref: StylesheetRef, opts?: { base?: boolean; theme?: boolean }): HTMLLinkElement {
     const linkEl = document.createElement("link");
     linkEl.href = ref.href;

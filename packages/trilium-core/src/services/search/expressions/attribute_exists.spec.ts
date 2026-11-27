@@ -5,10 +5,10 @@ import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import NoteSet from "../note_set.js";
+import SearchContext from "../search_context.js";
 import AttributeExistsExp from "./attribute_exists.js";
 
-// SearchContext-like argument is unused by execute(), so we pass an empty object.
-const dummySearchContext = {} as any;
+const searchContext = new SearchContext({ ignoreHoistedNote: true });
 
 /** Build a NoteSet that contains every note currently registered in becca. */
 function allNotesSet() {
@@ -16,7 +16,7 @@ function allNotesSet() {
 }
 
 function execute(exp: AttributeExistsExp, inputNoteSet = allNotesSet()) {
-    return exp.execute(inputNoteSet, {}, dummySearchContext);
+    return exp.execute(inputNoteSet, {}, searchContext);
 }
 
 function noteIds(noteSet: NoteSet) {

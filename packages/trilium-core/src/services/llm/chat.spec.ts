@@ -13,6 +13,10 @@ const state = vi.hoisted(() => ({
     chunkSignal: undefined as AbortSignal | undefined,
     /** When true the chunk-native provider asks about a tool call and reports the answer. */
     asksApproval: false,
+    /** When true the provider asks only after a macrotask, so the request arrives while the stream waits. */
+    approvalDelayed: false,
+    /** Replaces the chunk-native provider's generator with an iterator of the test's own. */
+    chunkIterator: undefined as AsyncIterator<unknown> | undefined,
     /** Records how runChat resolved the provider. */
     providerIdRequested: undefined as string | undefined,
     providerTypeRequested: undefined as string | undefined,
@@ -37,13 +41,18 @@ vi.mock("./index.js", () => {
             if (state.chatThrows !== undefined) throw state.chatThrows;
             return {};
         },
-        chatChunks: state.chunkNative
+        chatChunks: state.chunkIterator
+            ? () => ({ [Symbol.asyncIterator]: () => state.chunkIterator })
+            : state.chunkNative
             ? async function* (_messages: unknown, config: LlmProviderConfig, signal?: AbortSignal) {
                 state.chunkSignal = signal;
                 for (const c of state.chunks) yield c;
                 if (state.asksApproval) {
                     const toolInput = { title: "New" };
                     yield { type: "tool_use", toolCallId: "c1", toolName: "create_note", toolInput };
+                        if (state.approvalDelayed) {
+                            await new Promise((resolve) => setTimeout(resolve, 0));
+                        }
                     const approved = await config.toolApprovals?.request({ toolCallId: "c1", toolName: "create_note", toolInput });
                     yield { type: "text", content: `approved: ${approved}` };
                 }
@@ -123,6 +132,8 @@ describe("runChat", () => {
             chunkNative: false,
             chunkSignal: undefined,
             asksApproval: false,
+            approvalDelayed: false,
+            chunkIterator: undefined,
             providerIdRequested: undefined,
             providerTypeRequested: undefined,
             chatConfig: undefined
@@ -249,6 +260,38 @@ describe("runChat", () => {
             expect((await turn.next()).done).toBe(true);
             // The turn has ended, so nothing waits under its id any more.
             expect(answerToolApproval("s1", "c1", true)).toBe(false);
+        });
+
+        it("announces a call that starts waiting after the stream went quiet", async () => {
+            state.chunkNative = true;
+            state.asksApproval = true;
+            state.approvalDelayed = true;
+            const turn = runChat("s1", HELLO, {});
+
+            expect((await turn.next()).value).toEqual(TOOL_USE);
+            expect((await turn.next()).value).toEqual(REQUEST);
+            expect(answerToolApproval("s1", "c1", false)).toBe(true);
+            expect((await turn.next()).value).toEqual({ type: "text", content: "approved: false" });
+            expect((await turn.next()).done).toBe(true);
+        });
+
+        it("swallows the failures of a provider stream the consumer left early", async () => {
+            let failPending: ((reason: Error) => void) | undefined;
+            const iteratorReturn = vi.fn(() => Promise.reject(new Error("cannot close")));
+            const next = vi.fn()
+                .mockResolvedValueOnce({ done: false, value: { type: "text", content: "partial" } })
+                .mockReturnValueOnce(new Promise((_resolve, reject) => {
+                    failPending = reject;
+                }));
+            state.chunkIterator = { next, return: iteratorReturn };
+            const turn = runChat("s1", HELLO, {});
+
+            expect((await turn.next()).value).toEqual({ type: "text", content: "partial" });
+            expect((await turn.return(undefined)).done).toBe(true);
+            expect(iteratorReturn).toHaveBeenCalledOnce();
+            failPending?.(new Error("connection dropped"));
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(next).toHaveBeenCalledTimes(2);
         });
 
         it("runs a call of a tool the chat allowed without announcing it", async () => {

@@ -1,12 +1,14 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import * as cls from "./context.js";
+import { getCrypto } from "./encryption/crypto.js";
 import events from "./events.js";
 import notes from "./notes.js";
 import { getSql } from "./sql/index.js";
 import syncUpdateService from "./sync_update.js";
-import { encodeBase64 } from "./utils/binary.js";
+import { decodeBase64, encodeBase64 } from "./utils/binary.js";
 import dateUtils from "./utils/date.js";
 import ws from "./ws.js";
 
@@ -221,20 +223,71 @@ describe("sync_update service (real DB)", () => {
         // The decode pool reuses one scratch buffer across blobs on platforms with an in-place
         // decoder. A longer blob followed by a shorter one exercises the case where stale bytes
         // from the previous decode sit beyond the new content's end in the same buffer.
+        // The Node crypto provider has no `base64DecodeInto`, so one is installed for this test.
         const longContent = "long-blob-content-".repeat(50);
         const shortContent = "tiny";
+        const provider = getCrypto();
+        const ownDecoder = Object.getOwnPropertyDescriptor(provider, "base64DecodeInto");
+        const realDecodeInto = provider.base64DecodeInto?.bind(provider);
+        const targets: Uint8Array[] = [];
+        provider.base64DecodeInto = (base64, target) => {
+            targets.push(target);
+            if (realDecodeInto) {
+                return realDecodeInto(base64, target);
+            }
+            const bytes = decodeBase64(base64);
+            target.set(bytes);
+            return bytes.length;
+        };
 
-        apply([
-            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_a" }), entity: blobRow("su_blob_pool_a", encodeBase64(longContent)) },
-            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_b" }), entity: blobRow("su_blob_pool_b", encodeBase64(shortContent)) }
-        ]);
+        try {
+            apply([
+                { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_a" }), entity: blobRow("su_blob_pool_a", encodeBase64(longContent)) },
+                { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_b" }), entity: blobRow("su_blob_pool_b", encodeBase64(shortContent)) }
+            ]);
+        } finally {
+            if (ownDecoder) {
+                Object.defineProperty(provider, "base64DecodeInto", ownDecoder);
+            } else {
+                Reflect.deleteProperty(provider, "base64DecodeInto");
+            }
+        }
 
         const a = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_a"]);
         const b = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_b"]);
 
+        expect(targets).toHaveLength(2);
+        expect(targets[1]).toBe(targets[0]);
         expect(Buffer.from(a ?? []).toString()).toBe(longContent);
         expect(Buffer.from(b ?? []).toString()).toBe(shortContent);
     });
+
+    it("keeps a newer local branch without requeuing any blob for it", () => {
+        const branchId = cls.init(() => notes.createNewNote({
+            parentNoteId: "root", title: "su-branch", content: "<p/>", type: "text"
+        }).branch.branchId) ?? "";
+        const branch = getSql().getRow<EntityRow>("SELECT * FROM branches WHERE branchId = ?", [ branchId ]);
+        const maxIdBefore = maxEntityChangeId();
+
+        apply([ { entityChange: buildEC({ entityName: "branches", entityId: branchId, hash: "different", utcDateChanged: PAST }), entity: { ...branch, prefix: "remote" } as EntityRow } ]);
+
+        expect(getSql().getValue("SELECT prefix FROM branches WHERE branchId = ?", [ branchId ])).toBeNull();
+        expect(requeuedSince(maxIdBefore, "branches", branchId)).toBe(true);
+        expect(getSql().getValue("SELECT COUNT(*) FROM entity_changes WHERE entityName = 'blobs' AND id > ?", [ maxIdBefore ])).toBe(0);
+    });
+
+    it("stores blob content that already arrives as bytes, and decodes blobs above the pool ceiling", () => {
+        const hugeBase64 = "A".repeat(44_739_244);
+        apply([
+            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_bytes" }), entity: { ...blobRow("su_blob_bytes", ""), content: Uint8Array.of(1, 2, 3) } as unknown as EntityRow },
+            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_huge" }), entity: blobRow("su_blob_huge", hugeBase64) }
+        ]);
+
+        const bytes = getSql().getValue<Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", [ "su_blob_bytes" ]);
+        expect(Array.from(bytes)).toEqual([ 1, 2, 3 ]);
+        expect(getSql().getValue("SELECT LENGTH(content) FROM blobs WHERE blobId = ?", [ "su_blob_huge" ])).toBe(33_554_433);
+        cls.init(() => getSql().execute("DELETE FROM blobs WHERE blobId = 'su_blob_huge'"));
+    }, 60_000);
 
     it("ignores option changes that have no entity row", () => {
         // entityName 'options' + no row -> early return, no throw.
@@ -253,7 +306,97 @@ describe("sync_update service (real DB)", () => {
     it("throws on a note_reordering change missing its body", () => {
         expect(() => apply([{ entityChange: buildEC({ entityName: "note_reordering", entityId: "su_no_reorder" }), entity: undefined }])).toThrow(/Empty note_reordering body/);
     });
+
+    describe("identifiers from the peer (GHSA-7cq2-8qmh-7x7c)", () => {
+        const EXFIL_SELECT = "SELECT 'su_exfil', value, 1, '2026-01-01 00:00:00.000Z' FROM options WHERE name = ? /*";
+
+        it("skips a change for a table that is not a synced entity, and applies the rest of the batch", () => {
+            const noteId = createNote();
+
+            expect(() => apply([
+                { entityChange: buildEC({ entityName: "su_no_such_table", entityId: "su_probe" }), entity: { anycol: "x" } as unknown as EntityRow },
+                { entityChange: buildEC({ entityId: noteId, hash: "changed" }), entity: rowWith(noteId, { title: "after-bad-table" }) }
+            ])).not.toThrow();
+
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("after-bad-table");
+            expect(entityChangeCount("su_no_such_table")).toBe(0);
+        });
+
+        it("skips a row carrying a column the table does not have, and applies the rest of the batch", () => {
+            const victimId = createNote();
+            const victimTitle = getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [victimId]);
+            const noteId = createNote();
+
+            expect(() => apply([
+                { entityChange: buildEC({ entityId: victimId, hash: "changed" }), entity: rowWith(victimId, { title: "bad-column", su_evil_col: "x" }) },
+                { entityChange: buildEC({ entityId: noteId, hash: "changed" }), entity: rowWith(noteId, { title: "after-bad-column" }) }
+            ])).not.toThrow();
+
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [victimId])).toBe(victimTitle);
+            expect(localHash("notes", victimId)).not.toBe("changed");
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("after-bad-column");
+        });
+
+        it("does not run SQL smuggled in through the entity name", () => {
+            const entityName = `options (name, value, isSynced, utcDateModified) ${EXFIL_SELECT}`;
+
+            apply([{ entityChange: buildEC({ entityName, entityId: "su_exfil_table" }), entity: { x: "documentSecret" } as unknown as EntityRow }]);
+
+            expect(getSql().getRowOrNull("SELECT 1 FROM options WHERE name = 'su_exfil'")).toBeNull();
+            expect(entityChangeCount(entityName)).toBe(0);
+        });
+
+        it("does not run SQL smuggled in through a column name", () => {
+            const column = `name, value, isSynced, utcDateModified) ${EXFIL_SELECT}`;
+
+            apply([{ entityChange: buildEC({ entityName: "options", entityId: "su_exfil_column" }), entity: { [column]: "documentSecret" } as unknown as EntityRow }]);
+
+            expect(getSql().getRowOrNull("SELECT 1 FROM options WHERE name = 'su_exfil'")).toBeNull();
+            expect(entityChangeCount("options", "su_exfil_column")).toBe(0);
+        });
+
+        it("still applies a genuine row of every synced entity type", () => {
+            const noteId = createNote("su-genuine");
+            const now = dateUtils.utcNowDateTime();
+            const { attributeId, attachmentId, revisionId } = cls.init(() => {
+                const note = becca.getNoteOrThrow(noteId);
+                const attribute = note.addLabel("suGenuine", "before");
+                const attachment = note.saveAttachment({ role: "file", mime: "text/plain", title: "su-genuine.txt", content: "x" });
+                const revision = note.saveRevision();
+                const sql = getSql();
+                sql.execute("INSERT INTO etapi_tokens (etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified) VALUES ('su_token', 'before', 'h', ?, ?)", [now, now]);
+                sql.execute("INSERT INTO recent_notes (noteId, notePath, utcDateCreated) VALUES (?, 'root/before', ?)", [noteId, now]);
+                sql.execute("INSERT INTO options (name, value, isSynced, utcDateModified) VALUES ('suGenuineOption', 'before', 1, ?)", [now]);
+                return { attributeId: attribute.attributeId, attachmentId: attachment.attachmentId, revisionId: revision.revisionId };
+            });
+
+            const cases: [entityName: string, primaryKey: string, entityId: string, column: string][] = [
+                ["notes", "noteId", noteId, "title"],
+                ["attributes", "attributeId", attributeId, "value"],
+                ["attachments", "attachmentId", attachmentId, "title"],
+                ["revisions", "revisionId", revisionId, "title"],
+                ["etapi_tokens", "etapiTokenId", "su_token", "name"],
+                ["recent_notes", "noteId", noteId, "notePath"],
+                ["options", "name", "suGenuineOption", "value"]
+            ];
+
+            apply(cases.map(([entityName, primaryKey, entityId, column]) => {
+                const row = getSql().getRow<EntityRow>(`SELECT * FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]);
+                return { entityChange: buildEC({ entityName, entityId, hash: "changed" }), entity: { ...row, [column]: "after" } as EntityRow };
+            }));
+
+            for (const [entityName, primaryKey, entityId, column] of cases) {
+                expect(getSql().getValue(`SELECT ${column} FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]), entityName).toBe("after");
+            }
+        });
+    });
 });
+
+function entityChangeCount(entityName: string, entityId?: string): number {
+    return entityId === undefined
+        ? getSql().getValue<number>("SELECT COUNT(*) FROM entity_changes WHERE entityName = ?", [entityName]) ?? 0
+        : getSql().getValue<number>("SELECT COUNT(*) FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? 0;
+}
 
 function localChangeId(entityName: string, entityId: string): string {
     return getSql().getValue<string>("SELECT changeId FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? "";

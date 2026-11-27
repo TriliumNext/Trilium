@@ -5,7 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
-import { useNoteProperty, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteProperty } from "../../react/hooks/note";
 
 /**
  * Displays the messages that a frontend or backend script note logs via `api.log()`, below its editor.

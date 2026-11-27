@@ -11,3 +11,12 @@ describe("Parens handler", () => {
         expect(handleParens(input)).toEqual(actual);
     });
 });
+
+describe("Parens handler edge cases", () => {
+    it("keeps groups that are already structured and rejects an unclosed parenthesis", () => {
+        const tokens = (...values: string[]) => values.map((token) => ({ token }));
+
+        expect(handleParens([ ...tokens("("), tokens("a"), ...tokens(")") ])).toEqual([ [ tokens("a") ] ]);
+        expect(() => handleParens(tokens("(", "a"))).toThrow("Did not find matching right parenthesis.");
+    });
+});

@@ -181,11 +181,18 @@ function sortNotes(
             return compareLevel(a, b, { key: "title", isLabel: false }, reverse);
         });
 
+        // The note tree hides `_hidden` with CSS and steps over it only as the last child of root.
+        const hiddenIndex = notes.findIndex((note) => note.noteId === "_hidden");
+        if (hiddenIndex !== -1) {
+            notes.push(...notes.splice(hiddenIndex, 1));
+        }
+
         let position = 10;
         let someBranchUpdated = false;
 
         for (const note of notes) {
             const branch = note.getParentBranches().find((b) => b.parentNoteId === parentNoteId);
+            /* v8 ignore next -- `getChildNotes()` is built from these branches */
             if (!branch) {
                 continue;
             }

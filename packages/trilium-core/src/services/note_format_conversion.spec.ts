@@ -1,8 +1,12 @@
-import { HIGHLIGHT_STYLE, trimIndentation } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import {
+    collectBlocks, compareBlockIds, HIGHLIGHT_STYLE, sliceToBlockReference, trimIndentation
+} from "@triliumnext/commons";
+import { parse as parseHtml } from "node-html-parser";
+import { describe, expect, it, vi } from "vitest";
 
 import { getContext } from "./context.js";
-import { convertNoteContent, convertNoteFormat } from "./note_format_conversion.js";
+import { getLog } from "./log.js";
+import { convertNoteByConversionId, convertNoteContent, convertNoteFormat } from "./note_format_conversion.js";
 import noteService from "./notes.js";
 
 describe("note format conversion", () => {
@@ -82,6 +86,103 @@ describe("note format conversion", () => {
     });
 });
 
+describe("block ids across a conversion", () => {
+    /** A text note with a block id on every kind of block, as the text editor saves it. */
+    const FIXTURE = [
+        `<h2 data-trilium-block-id="h1">Intro</h2>`,
+        `<p data-trilium-block-id="p1">First paragraph with <a id="bm"></a>a bookmark.</p>`,
+        `<p data-trilium-block-id="empty">&nbsp;</p>`,
+        `<ul><li><p data-trilium-block-id="par">parent</p><ul><li>child one</li>`
+            + `<li><p data-trilium-block-id="ch2">child two</p></li></ul></li></ul>`,
+        `<ol><li>one</li><li><p data-trilium-block-id="i2">two</p></li>`
+            + `<li><p data-trilium-block-id="i3">three</p></li></ol>`,
+        `<pre><code class="language-application-javascript-env-frontend" `
+            + `data-trilium-block-id="code1">if (a &lt; b &amp;&amp; c) {\n    go();\n}</code></pre>`,
+        `<figure class="table" data-trilium-block-id="tab1"><table><thead><tr><th>A</th><th>B</th>`
+            + `</tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table></figure>`,
+        `<figure class="table" data-trilium-block-id="raw1"><table><tbody><tr><td>no</td>`
+            + `<td>header</td></tr></tbody></table></figure>`,
+        `<figure class="table" data-trilium-block-id="raw2"><table><thead><tr><th>Code</th></tr>`
+            + `</thead><tbody><tr><td><pre><code class="language-text-plain">x</code></pre></td></tr>`
+            + `</tbody></table></figure>`,
+        `<blockquote data-trilium-block-id="q1"><p>quoted one</p>`
+            + `<p data-trilium-block-id="q2">quoted two</p></blockquote>`,
+        `<aside class="admonition note" data-trilium-block-id="adm1">`
+            + `<p data-trilium-block-id="admp">Body</p></aside>`,
+        `<hr data-trilium-block-id="hr1">`,
+        `<p data-trilium-block-id="math"><span class="math-tex">\\[x^2\\]</span></p>`,
+        `<ul class="todo-list"><li><label class="todo-list__label `
+            + `todo-list__label_without-description"><input type="checkbox" disabled="disabled">`
+            + `</label><p data-trilium-block-id="todo">task</p></li></ul>`,
+        `<details class="trilium-collapsible" data-trilium-block-id="det">`
+            + `<summary data-trilium-block-id="sum">More</summary>`
+            + `<p data-trilium-block-id="inner">Inside</p></details>`,
+        `<div class="trilium-tabs" data-trilium-block-id="tabs"><section class="trilium-tab" `
+            + `data-trilium-block-id="tab"><p class="trilium-tab-title">One</p>`
+            + `<div class="trilium-tab-panel"><p data-trilium-block-id="intab">In tab</p></div>`
+            + `</section></div>`,
+        `<aside data-position="wrap-right" style="--tn-background:#555555;background-color:#555555;" `
+            + `data-trilium-block-id="aside"><p data-trilium-block-id="inaside">Beside</p></aside>`,
+        `<div class="trilium-multicolumn-layout"><div class="trilium-multicolumn-column">`
+            + `<p data-trilium-block-id="col1">Left</p></div><div class="trilium-multicolumn-column">`
+            + `<p>Right</p></div></div>`,
+        `<p data-trilium-block-id="img"><img src="api/images/abc123/x.png"></p>`,
+        `<figure class="include-note" data-note-id="target1" data-block="h1" `
+            + `data-box-size="full" data-trilium-block-id="embed"></figure>`,
+        `<pre><code class="language-text-plain" data-trilium-block-id="emptycode"></code></pre>`,
+        `<figure class="table" data-trilium-block-id="onecell"><table><tbody><tr><td>single</td>`
+            + `</tr></tbody></table></figure>`,
+        `<p data-trilium-block-id="last">Last paragraph.</p>`
+    ].join("");
+
+    const parse = (html: string) => parseHtml(html, { blockTextElements: {} });
+
+    it("keeps every id on the same block from text to Markdown and back, but two shapes", () => {
+        const toMarkdown = convertNoteContent("html", FIXTURE, "Title");
+        expect({ lost: toMarkdown.lostBlockIds, moved: toMarkdown.movedBlockIds })
+            .toEqual({ lost: [ "emptycode", "onecell" ], moved: [] });
+
+        const back = convertNoteContent("markdown", toMarkdown.content, "Title");
+        expect({ lost: back.lostBlockIds, moved: back.movedBlockIds }).toEqual({ lost: [], moved: [] });
+        const report = compareBlockIds(collectBlocks(parse(FIXTURE)), collectBlocks(parse(back.content)));
+        expect(report).toEqual({ lostBlockIds: [ "emptycode", "onecell" ], movedBlockIds: [] });
+
+        // A second export of the result is the first one.
+        expect(convertNoteContent("html", back.content, "Title").content).toBe(toMarkdown.content);
+    });
+
+    it("slices the same blocks for a range before and after the conversion", () => {
+        const back = convertNoteContent("markdown",
+            convertNoteContent("html", FIXTURE, "Title").content, "Title").content;
+        const ranges = [
+            "h1:p1", "empty", "par", "ch2", "i2:i3", "code1:tab1", "raw1:raw2", "q1", "q2", "adm1",
+            "admp", "hr1:math", "todo", "det", "sum", "inner", "tabs", "tab", "intab", "aside",
+            "inaside", "col1", "img:embed", "last"
+        ];
+        for (const range of ranges) {
+            const before = parse(FIXTURE);
+            const after = parse(back);
+            expect(sliceToBlockReference(before, range), range).toBe(true);
+            expect(sliceToBlockReference(after, range), range).toBe(true);
+            const keys = (root: ReturnType<typeof parse>) =>
+                collectBlocks(root).map(({ key }) => [ key.kind, key.ancestry, key.text ]);
+            expect(keys(after), range).toEqual(keys(before));
+        }
+    });
+
+    it("writes Wikilinks as links into the tree, with their query", () => {
+        const { content } = convertNoteContent("markdown", "[[abc123?block=x1:y2]] and [[def456]]", "T");
+        expect(content).toContain(`href="#root/abc123?block=x1:y2"`);
+        expect(content).toContain(`href="#root/def456"`);
+    });
+
+    it("demotes an H1 equal to the title that has an id, and writes it back with the id", () => {
+        const { content } = convertNoteContent("markdown",
+            `# Title <a data-trilium-block-id="t"></a>\n\nText`, "Title");
+        expect(content).toBe(`<h2 data-trilium-block-id="t">Title</h2><p>Text</p>`);
+    });
+});
+
 describe("note format conversion (real DB)", () => {
     let counter = 0;
 
@@ -126,5 +227,37 @@ describe("note format conversion (real DB)", () => {
         expect(markdownDescription).toBeTruthy();
         expect(textDescription).toBeTruthy();
         expect(textDescription).not.toBe(markdownDescription);
+    });
+
+    it("logs the block references that a bulk conversion loses", () => {
+        const note = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "convert-spec-lost", type: "text",
+            content: `<p data-trilium-block-id="kept">Kept</p>`
+                + `<pre><code class="language-text-plain" data-trilium-block-id="lost"></code></pre>`
+        }).note);
+        const info = vi.spyOn(getLog(), "info");
+
+        expect(getContext().init(() => convertNoteByConversionId(note, "htmlToMarkdown")))
+            .toBe(true);
+        expect(info).toHaveBeenCalledWith(
+            `Converting note '${note.noteId}' lost 1 and moved 0 block references.`);
+        info.mockRestore();
+    });
+
+    it("rejects a note of another type, unavailable content and binary content", () => {
+        const codeNote = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "convert-spec-code", content: "x", type: "code", mime: "application/javascript"
+        }).note);
+        expect(() => convertNoteFormat(codeNote)).toThrow("cannot be converted");
+
+        const unavailable = createTextNote();
+        vi.spyOn(unavailable, "isContentAvailable").mockReturnValue(false);
+        expect(() => convertNoteFormat(unavailable)).toThrow("not available");
+        expect(convertNoteByConversionId(unavailable, "htmlToMarkdown")).toBe(false);
+
+        const binary = createTextNote();
+        vi.spyOn(binary, "getContent").mockReturnValue(new Uint8Array([ 1, 2 ]));
+        expect(() => convertNoteFormat(binary)).toThrow("textual content");
+        expect(binary.type).toBe("text");
     });
 });

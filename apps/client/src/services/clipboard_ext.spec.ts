@@ -1,12 +1,17 @@
 import type { ElectronApi } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import toast from "./toast.js";
+vi.mock("./i18n.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./i18n.js")>()),
+    t: (key: string) => key
+}));
+
+import toast, { type ToastOptions } from "./toast.js";
 import utils from "./utils.js";
 import { buildNote } from "../test/easy-froca";
 import {
-    canReadClipboardText, copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText,
-    copyTextWithToast, readClipboardText
+    canReadClipboardText, type CopiedContent, copyHtml, copyHtmlWithToast,
+    copyReferenceWithToast, copyText, copyTextWithToast, copyWhenReady, readClipboardText
 } from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
@@ -19,8 +24,16 @@ function setClipboard(value: unknown) {
     });
 }
 
+/** Installs the `ClipboardItem` constructor that the asynchronous Clipboard API needs. */
+function stubClipboardItem() {
+    (globalThis as any).ClipboardItem = class {
+        constructor(public readonly data: Record<string, unknown>) {}
+    };
+}
+
 afterEach(() => {
     vi.restoreAllMocks();
+    delete (globalThis as any).ClipboardItem;
     if (originalClipboard) {
         Object.defineProperty(navigator, "clipboard", originalClipboard);
     } else {
@@ -122,42 +135,224 @@ describe("copyTextWithToast", () => {
         vi.clearAllMocks();
     });
 
-    it("shows a success message when the copy succeeds", () => {
+    it("shows a success message when the copy succeeds", async () => {
         setClipboard({ writeText: vi.fn() });
         const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
 
-        copyTextWithToast("yay");
+        await copyTextWithToast("yay");
 
         expect(showMessage).toHaveBeenCalledTimes(1);
         expect(showError).not.toHaveBeenCalled();
     });
 
-    it("shows an error message when the copy fails", () => {
+    it("shows an error message when the copy fails", async () => {
         setClipboard(undefined);
         (document as unknown as { execCommand: () => boolean }).execCommand = () => false;
         const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
 
-        copyTextWithToast("nope");
+        await copyTextWithToast("nope");
 
         expect(showError).toHaveBeenCalledTimes(1);
         expect(showMessage).not.toHaveBeenCalled();
     });
+
+    it("waits for the write, and tries the text area when the browser refuses it", async () => {
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        setClipboard({ writeText: vi.fn(async () => { throw new Error("NotAllowedError"); }) });
+        const execCommand = vi.fn(() => false);
+        (document as unknown as { execCommand: typeof execCommand }).execCommand = execCommand;
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
+        await copyTextWithToast("refused");
+        expect(execCommand).toHaveBeenCalledWith("copy");
+        expect(showError).toHaveBeenCalledExactlyOnceWith("clipboard.copy_failed");
+        expect(showMessage).not.toHaveBeenCalled();
+
+        execCommand.mockReturnValue(true);
+        await copyTextWithToast("refused");
+        expect(showMessage).toHaveBeenCalledExactlyOnceWith("clipboard.copy_success");
+    });
 });
 
-describe("copyHtml", () => {
-    afterEach(() => {
-        delete (globalThis as any).ClipboardItem;
-    });
+describe("copyWhenReady", () => {
+    /** A promise of `CopiedContent` that the test resolves or rejects. */
+    function deferred() {
+        let resolve: (value: CopiedContent | null) => void = () => {};
+        let reject: (reason: unknown) => void = () => {};
+        const promise = new Promise<CopiedContent | null>((onResolve, onReject) => {
+            resolve = onResolve;
+            reject = onReject;
+        });
+        return { promise, resolve, reject };
+    }
 
-    /** Install the `ClipboardItem` constructor the asynchronous Clipboard API needs. */
-    function stubClipboardItem() {
-        (globalThis as any).ClipboardItem = class {
-            constructor(public readonly data: Record<string, unknown>) {}
+    /** A clipboard whose `write()` reads every value of its item, as a browser does. */
+    function stubReadingClipboard() {
+        const write = vi.fn(async (items: { data: Record<string, Promise<Blob>> }[]) => {
+            await Promise.all(Object.values(items[0].data));
+        });
+        setClipboard({ write });
+        stubClipboardItem();
+        return write;
+    }
+
+    function spyOnToasts() {
+        return {
+            showMessage: vi.spyOn(toast, "showMessage").mockImplementation(() => {}),
+            showError: vi.spyOn(toast, "showError").mockImplementation(() => {}),
+            showPersistent: vi.spyOn(toast, "showPersistent").mockImplementation(() => {})
         };
     }
 
+    /** Runs `action` and returns the rejections that nothing handled meanwhile. */
+    async function collectUnhandledRejections(action: () => Promise<void>) {
+        const rejections: unknown[] = [];
+        const onRejection = (reason: unknown) => rejections.push(reason);
+        process.on("unhandledRejection", onRejection);
+        try {
+            await action();
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        } finally {
+            process.off("unhandledRejection", onRejection);
+        }
+        return rejections;
+    }
+
+    /** The button of the toast that `showPersistent` showed. */
+    function getReadyButton(showPersistent: ReturnType<typeof spyOnToasts>["showPersistent"]) {
+        const options = showPersistent.mock.calls[0]?.[0] as ToastOptions | undefined;
+        expect(options?.message).toBe("clipboard.copy_ready");
+        const button = options?.buttons?.[0];
+        expect(button?.text).toBe("clipboard.copy_button");
+        return button;
+    }
+
+    it("starts the write before the content resolves, with HTML only when asked", async () => {
+        const write = stubReadingClipboard();
+        const toasts = spyOnToasts();
+        const content = deferred();
+
+        const copied = copyWhenReady(content.promise, { isHtml: true });
+        expect(write).toHaveBeenCalledTimes(1);
+        const data = write.mock.calls[0][0][0].data;
+        expect(Object.keys(data).sort()).toStrictEqual([ "text/html", "text/plain" ]);
+        content.resolve({ html: "<a>Link</a>", text: "#root/a" });
+        await copied;
+        expect(await (await data["text/html"]).text()).toBe("<a>Link</a>");
+        expect(await (await data["text/plain"]).text()).toBe("#root/a");
+        expect(toasts.showMessage).toHaveBeenCalledExactlyOnceWith("clipboard.copy_success");
+
+        await copyWhenReady(Promise.resolve({ text: "https://example.com" }), { isHtml: false });
+        expect(Object.keys(write.mock.calls[1][0][0].data)).toStrictEqual([ "text/plain" ]);
+        expect(toasts.showError).not.toHaveBeenCalled();
+    });
+
+    it("rejects the promised data for no content, and shows nothing of its own", async () => {
+        stubReadingClipboard();
+        const toasts = spyOnToasts();
+
+        const rejections = await collectUnhandledRejections(() =>
+            copyWhenReady(Promise.resolve(null), { isHtml: true }));
+        expect(rejections).toStrictEqual([]);
+        expect(toasts.showMessage).not.toHaveBeenCalled();
+        expect(toasts.showError).not.toHaveBeenCalled();
+        expect(toasts.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("leaves no rejection unhandled when a refused write precedes a failed lookup", async () => {
+        const toasts = spyOnToasts();
+        const refusingWrite = vi.fn(async () => { throw new Error("NotAllowedError"); });
+        setClipboard({ write: refusingWrite });
+        stubClipboardItem();
+        const lookup = deferred();
+
+        const rejections = await collectUnhandledRejections(async () => {
+            const copied = copyWhenReady(lookup.promise, { isHtml: true });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            toast.showError("lookup failed");
+            lookup.resolve(null);
+            await copied;
+        });
+        expect(refusingWrite).toHaveBeenCalledTimes(1);
+
+        // A constructor that throws is refused the same way.
+        (globalThis as any).ClipboardItem = class {
+            constructor() {
+                throw new TypeError("Promises are not supported.");
+            }
+        };
+        const secondLookup = deferred();
+        rejections.push(...await collectUnhandledRejections(async () => {
+            const copied = copyWhenReady(secondLookup.promise, { isHtml: false });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            secondLookup.resolve(null);
+            await copied;
+        }));
+
+        expect(rejections).toStrictEqual([]);
+        expect(toasts.showError).toHaveBeenCalledExactlyOnceWith("lookup failed");
+        expect(toasts.showPersistent).not.toHaveBeenCalled();
+        expect(toasts.showMessage).not.toHaveBeenCalled();
+    });
+
+    it("reports an exception in the content as a failed reference", async () => {
+        stubReadingClipboard();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const toasts = spyOnToasts();
+
+        await copyWhenReady(Promise.reject(new Error("defect")), { isHtml: true });
+        expect(toasts.showError).toHaveBeenCalledExactlyOnceWith("block_reference.copy_failed");
+        expect(toasts.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("offers the ready content in a toast when the write is refused", async () => {
+        setClipboard({ write: vi.fn(async () => { throw new Error("NotAllowedError"); }) });
+        stubClipboardItem();
+        const toasts = spyOnToasts();
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+
+        await copyWhenReady(Promise.resolve({ html: "<a>Link</a>", text: "#a" }), { isHtml: true });
+        expect(copyHtmlToClipboard).not.toHaveBeenCalled();
+        expect(toasts.showMessage).not.toHaveBeenCalled();
+        const button = getReadyButton(toasts.showPersistent);
+
+        const dismissToast = vi.fn();
+        button?.onClick({ dismissToast });
+        expect(copyHtmlToClipboard).toHaveBeenCalledExactlyOnceWith("<a>Link</a>", "#a");
+        expect(toasts.showMessage).toHaveBeenCalledExactlyOnceWith("clipboard.copy_success");
+        expect(dismissToast).toHaveBeenCalledTimes(1);
+
+        copyHtmlToClipboard.mockReturnValue(false);
+        button?.onClick({ dismissToast });
+        expect(toasts.showError).toHaveBeenCalledExactlyOnceWith("clipboard.copy_failed");
+        expect(dismissToast).toHaveBeenCalledTimes(2);
+    });
+
+    it("copies through the copy command without the asynchronous API", async () => {
+        setClipboard(undefined);
+        const toasts = spyOnToasts();
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+
+        await copyWhenReady(Promise.resolve({ html: "<a>Link</a>", text: "#a" }), { isHtml: true });
+        expect(copyHtmlToClipboard).toHaveBeenCalledExactlyOnceWith("<a>Link</a>", "#a");
+        expect(toasts.showMessage).toHaveBeenCalledExactlyOnceWith("clipboard.copy_success");
+
+        // A plain text copy goes through the text area, and a failed one offers the button.
+        const execCommand = vi.fn(() => false);
+        (document as unknown as { execCommand: typeof execCommand }).execCommand = execCommand;
+        await copyWhenReady(Promise.resolve({ text: "https://example.com" }), { isHtml: false });
+        expect(execCommand).toHaveBeenCalledWith("copy");
+        const button = getReadyButton(toasts.showPersistent);
+        execCommand.mockReturnValue(true);
+        button?.onClick({ dismissToast: vi.fn() });
+        expect(toasts.showMessage).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("copyHtml", () => {
     it("writes both flavours through navigator.clipboard when available", async () => {
         const write = vi.fn(async (..._args: any[]) => {});
         setClipboard({ write });
@@ -259,6 +454,24 @@ describe("copyReferenceWithToast", () => {
         // What a Markdown or code note pastes, where the rich flavour is of no use.
         expect(plainText).toBe(href);
         expect(showMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("starts the write before the label of the link is loaded", async () => {
+        const write = vi.fn(async (items: { data: Record<string, Promise<Blob>> }[]) => {
+            await Promise.all(Object.values(items[0].data));
+        });
+        setClipboard({ write });
+        stubClipboardItem();
+        vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const board = buildNote({ title: "Board" });
+        const href = `#root/${board.noteId}`;
+
+        const copied = copyReferenceWithToast(href);
+        expect(write).toHaveBeenCalledTimes(1);
+        await copied;
+        const html = await (await write.mock.calls[0][0][0].data["text/html"]).text();
+        expect(html).toContain("Board");
+        expect(html).toContain(`href="${href}"`);
     });
 });
 

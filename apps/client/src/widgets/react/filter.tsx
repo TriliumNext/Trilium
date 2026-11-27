@@ -1,5 +1,6 @@
 import "./filter.css";
 
+import { getHeadingAncestors } from "@triliumnext/commons/src/lib/toc.js";
 import { type ComponentChildren, createContext, isValidElement } from "preact";
 import { useContext, useMemo } from "preact/hooks";
 
@@ -142,7 +143,7 @@ export function filterRoleClass(role: FilterRole | undefined | false) {
  * "Modele" finds "Modèle". Returns an empty array for a query holding no terms.
  */
 export function filterTokens(query: string): string[] {
-    return normalize(query).split(/\s+/).filter((token) => token.length > 0);
+    return prepareFilterText(query).split(/\s+/).filter((token) => token.length > 0);
 }
 
 /**
@@ -155,9 +156,50 @@ export function filterTokens(query: string): string[] {
 export function matchesFilter(tokens: string[], ...content: ComponentChildren[]): boolean {
     if (tokens.length === 0) return true;
 
-    const haystack = normalize(content.map((item) => filterText(item)).join(" "));
+    const haystack = prepareFilterText(content.map((item) => filterText(item)).join(" "));
 
     return tokens.every((token) => haystack.includes(token));
+}
+
+/** `text` lowercased and stripped of accents, ready to be searched for the terms. */
+export function prepareFilterText(text: string): string {
+    return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
+/** An item that {@link filterOutline} kept. */
+export interface OutlineFilterResult<T> {
+    item: T;
+    /** The position of the item in the list filtered. */
+    index: number;
+    /** The items that the item nests under, the outermost first. */
+    parents: readonly T[];
+}
+
+export interface FilterOutlineOptions<T> {
+    /** The text of each item, prepared by {@link prepareFilterText}, in the order of the items. */
+    texts: readonly string[];
+    /** The level of an item, for its `parents`. Without it, no item has parents. */
+    getLevel?(item: T): number | undefined;
+    /** The group of an item: an item nests only under items of its group. */
+    getGroup?(item: T): unknown;
+}
+
+/**
+ * The items of an outline, such as the headings of a note, whose text holds every term, in their
+ * order, each with the items that it nests under.
+ */
+export function filterOutline<T>(
+    items: readonly T[], tokens: string[], { texts, getLevel, getGroup }: FilterOutlineOptions<T>
+): OutlineFilterResult<T>[] {
+    const ancestors = getLevel ? getHeadingAncestors(items, getLevel, getGroup) : undefined;
+    const results: OutlineFilterResult<T>[] = [];
+    for (const [ index, item ] of items.entries()) {
+        const text = texts[index] ?? "";
+        if (tokens.every((token) => text.includes(token))) {
+            results.push({ item, index, parents: ancestors?.[index] ?? [] });
+        }
+    }
+    return results;
 }
 
 /**
@@ -185,8 +227,4 @@ function createFilterState(query: string): FilterState | null {
         tokens,
         matches: (...content) => matchesFilter(tokens, ...content)
     };
-}
-
-function normalize(text: string): string {
-    return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }

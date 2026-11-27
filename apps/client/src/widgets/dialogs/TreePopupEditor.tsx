@@ -8,7 +8,10 @@ import TitleRow from "../layout/TitleRow";
 import NoteTreeWidget from "../note_tree";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
-import { useContainedLinkNavigation, useDetachedNoteContext, useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useDetachedNoteContext } from "../react/hooks/note_context";
+import { useLegacyWidget } from "../react/hooks/legacy";
+import { useContainedLinkNavigation } from "../react/hooks/content";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 

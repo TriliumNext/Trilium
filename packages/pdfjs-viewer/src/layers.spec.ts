@@ -32,6 +32,22 @@ describe("layer extraction", () => {
         });
     });
 
+    it("names the load of its frame in the list, an empty one included", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+        await setupPdfLayers();
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers"))
+            .toMatchObject({ loadToken: "load-7" });
+        uninstallViewerApp();
+
+        viewer = await installViewerApp(barePdf());
+        window.TRILIUM_LOAD_TOKEN = "load-8";
+        await setupPdfLayers();
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers")).toMatchObject({
+            layers: [], loadToken: "load-8"
+        });
+    });
+
     it("drops groups pdf.js reports without a name", async () => {
         viewer = await installViewerApp(layeredPdf());
 
@@ -68,6 +84,46 @@ describe("layer extraction", () => {
             type: "pdfjs-viewer-layers",
             layers: []
         });
+    });
+
+    it("reads the document's own config when the viewer holds none", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const app = window.PDFViewerApplication;
+        if (app) {
+            app.pdfViewer.optionalContentConfigPromise = undefined as never;
+        }
+
+        await setupPdfLayers();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers").layers.map((layer: any) => layer.name))
+            .toEqual([ "Visible layer", "Hidden layer" ]);
+    });
+
+    it("reports an empty list when pdf.js resolves no config at all", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const app = window.PDFViewerApplication;
+        if (app) {
+            app.pdfViewer.optionalContentConfigPromise = Promise.resolve(null) as never;
+        }
+
+        await setupPdfLayers();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers")).toEqual({
+            type: "pdfjs-viewer-layers",
+            layers: []
+        });
+    });
+
+    it("skips order entries that are neither a group id nor a nested group", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const config = await viewer.optionalContentConfig();
+        const [ visibleId ] = config.getOrder();
+        vi.spyOn(config, "getOrder").mockReturnValue([ null, { name: "Label only" }, visibleId ]);
+
+        await setupPdfLayers();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers").layers)
+            .toEqual([ { id: visibleId, name: "Visible layer", visible: true } ]);
     });
 
     it("reports an empty list when extraction throws", async () => {
@@ -110,6 +166,41 @@ describe("layer toggling", () => {
             { id: expect.any(String), name: "Visible layer", visible: true },
             { id: hiddenId, name: "Hidden layer", visible: true }
         ]);
+    });
+
+    it("drops a toggle while the viewer has no page view or config to apply it to", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        await setupPdfLayers();
+        const app = window.PDFViewerApplication;
+        if (!app) throw new Error("viewer not installed");
+        const pdfViewer = app.pdfViewer;
+        const announced = vi.fn();
+        viewer.eventBus.on("optionalcontentconfig", announced);
+
+        (app as any).pdfViewer = undefined;
+        viewer.sendFromParent({ type: "trilium-toggle-layer", layerId: "12R", visible: false });
+        app.pdfViewer = pdfViewer;
+        pdfViewer.optionalContentConfigPromise = Promise.resolve(null) as never;
+        viewer.sendFromParent({ type: "trilium-toggle-layer", layerId: "12R", visible: false });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(announced).not.toHaveBeenCalled();
+        expect(viewer.messagesOfType("pdfjs-viewer-layers")).toHaveLength(1);
+    });
+
+    it("logs a toggle pdf.js rejects and leaves the reported layers alone", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        await setupPdfLayers();
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        const config = await viewer.optionalContentConfig();
+        vi.spyOn(config, "setVisibility").mockImplementation(() => {
+            throw new Error("boom");
+        });
+
+        viewer.sendFromParent({ type: "trilium-toggle-layer", layerId: "12R", visible: false });
+        await vi.waitFor(() => expect(error).toHaveBeenCalled());
+
+        expect(viewer.messagesOfType("pdfjs-viewer-layers")).toHaveLength(1);
     });
 
     it("ignores toggle requests from another origin", async () => {

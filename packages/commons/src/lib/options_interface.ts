@@ -106,6 +106,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeBlockThemeDark: string;
     textNoteEditorType: string;
     layoutOrientation: string;
+    /** How a text note shows its title: `large` above the content, or `compact` in the title row only. */
+    noteTitleStyle: "large" | "compact";
     allowedHtmlTags: string;
     /** JSON: what the Content Manager's cleanup tool was last set to erase — see `CleanupToolOptions`. */
     cleanupToolOptions: string;
@@ -149,6 +151,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** JPEG quality a lossless image is converted at, kept apart from {@link imageJpegQuality}. */
     imageConversionQuality: number;
     leftPaneWidth: number;
+    /** The width of the tree docked beside the note on a tablet, in pixels; `0` for the default. */
+    mobileLeftPaneWidth: number;
     rightPaneWidth: number;
     rightPaneCollapsedItems: string;
     rightPaneSelectedTab: string;
@@ -306,12 +310,22 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteEmojiCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for notes is triggered when typing `@` in text notes (attribute editing is not affected). */
     textNoteCompletionEnabled: boolean;
+    /**
+     * Whether a note picked after `@` is followed by a list of its headings and anchors to point
+     * the link at.
+     */
+    textNoteCompletionLinkTargetsEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
     /** Whether the MathLive visual editor is shown when editing math. If false, only the LaTeX textarea is used. */
     mathFieldEnabled: boolean;
     /** Whether the editor surfaces content-area hints (bottom-corner popups that document how to interact with the element under the caret or pointer, e.g. task-state cycle, collapsible-summary shortcut, drag-handle label). */
     textNoteContentHintsEnabled: boolean;
+    /**
+     * Whether the scrollbar of a text note marks the text with a font or background color with a
+     * line in that color.
+     */
+    textNoteScrollRailHighlightsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
     /** Whether the link editor fills the empty title of a text link with the page's title. */
@@ -337,6 +351,21 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
      * so an imported note shows them correctly until it is edited.
      */
     textNoteHtmlSupportEnabled: boolean;
+    /** Whether text notes are edited with the keys of Vim, on this device. */
+    textNoteVimModeEnabled: boolean;
+    /** Whether the notice that explains Vim mode was shown when it was first turned on. */
+    textNoteVimModeNoticeShown: boolean;
+    /** Whether six more Ctrl keys of Insert mode, such as `Ctrl+V`, follow Vim. */
+    textNoteVimInsertKeysEnabled: boolean;
+    /** The Ex commands that Vim mode runs when it starts, one per line, such as mappings. */
+    textNoteVimStartupCommands: string;
+    /** Whether Vim mode shows key hints, in text notes now and in code notes later. */
+    vimModeHintsEnabled: boolean;
+    /**
+     * Whether Normal and Visual mode show their keys in place of the breadcrumb. `Esc` in Normal
+     * mode with nothing pending switches it.
+     */
+    vimModeHintStripShown: boolean;
     /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
     clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;

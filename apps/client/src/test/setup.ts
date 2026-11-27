@@ -7,6 +7,8 @@ import { Modal } from "bootstrap";
 import $ from "jquery";
 import { afterAll, vi } from "vitest";
 
+import { loadTooltips } from "../widgets/react/hooks/tooltip";
+import { setBootstrapModal } from "../widgets/react/modal_focustrap";
 import { stubHighlightApi } from "./highlights";
 
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
@@ -18,6 +20,10 @@ stubHighlightApi();
 survivePendingModalCallbacks();
 deferSelectionChange();
 drainBootstrapTransitions();
+// The app loads tooltips at the first hover; specs inspect them right after rendering.
+await loadTooltips();
+// The app hands `Modal` over as the first dialog opens; specs show modals with `dialog.ts` mocked.
+setBootstrapModal(Modal);
 
 function injectGlobals() {
     const uncheckedWindow = window as any;
@@ -119,6 +125,11 @@ function mockServer() {
             return { iconClassToCountMap: {} };
         }
 
+        // Asked for by the icon picker as it opens, for the icons to list.
+        if (url === "other/icon-registry") {
+            return { sources: [] };
+        }
+
         if (url === "tree") {
             return {
                 branches: [],
@@ -143,6 +154,10 @@ function mockServer() {
             // Froca's blob and attachment loads go through this variant; it only differs from `get`
             // in how it reports 404s, which the mock never produces, so share the same routing.
             getWithSilentNotFound: get,
+
+            // The workbook of an XLSX file is fetched through this variant, which differs from
+            // `get` only in the failures it leaves to the caller.
+            getWithSilentErrors: get,
 
             // A backend script run goes through this variant so its failure is reported against the
             // note rather than as a request that went wrong; it differs from `post` only in how it

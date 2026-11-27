@@ -1,9 +1,12 @@
 import "./appearance.css";
 
+import type { OptionDefinitions } from "@triliumnext/commons";
 import { useMemo } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
-import { ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES } from "../../../services/color_scheme";
+import {
+    ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES
+} from "../../../services/color_scheme";
 import { t } from "../../../services/i18n";
 import { isElectron, isIOS, isMobile } from "../../../services/utils";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
@@ -12,7 +15,7 @@ import { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import SegmentedChoice, { SegmentedChoiceOption } from "../../react/SegmentedChoice";
 import Fonts from "./appearance_fonts";
@@ -52,6 +55,11 @@ const COLOR_SCHEMES: SegmentedChoiceOption<ColorScheme>[] = [
     { value: "dark", label: t("theme.color_scheme_dark"), icon: "bx-moon" }
 ];
 
+const NOTE_TITLE_STYLES: SegmentedChoiceOption<OptionDefinitions["noteTitleStyle"]>[] = [
+    { value: "large", label: t("theme.note_title_style_large"), icon: "bx-heading" },
+    { value: "compact", label: t("theme.note_title_style_compact"), icon: "bx-collapse-vertical" }
+];
+
 function resolveTheme(themeVal: string | null): { family: ThemeFamily | null; scheme: ColorScheme; isCustom: boolean } {
     const { family: familyKey, scheme, isCustom } = resolveColorScheme(themeVal);
     const family = THEME_FAMILIES.find(f => f.key === familyKey) ?? null;
@@ -88,6 +96,7 @@ function UserInterface() {
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
     const [ editedNotesIncludeLlmChats, setEditedNotesIncludeLlmChats ] =
         useTriliumOptionBool("editedNotesIncludeLlmChats");
+    const [ noteTitleStyle, setNoteTitleStyle ] = useTriliumOption("noteTitleStyle");
 
     const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
     const isCustom = resolved.isCustom;
@@ -167,6 +176,19 @@ function UserInterface() {
             </OptionCardSection>
 
             <OptionCardSection
+                name="note-title-style"
+                label={t("theme.note_title_style")}
+                description={t("theme.note_title_style_description")}
+            >
+                <SegmentedChoice
+                    options={NOTE_TITLE_STYLES}
+                    currentValue={noteTitleStyle === "compact" ? "compact" : "large"}
+                    onChange={setNoteTitleStyle}
+                    collapseOnMobile
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
                 name="edited-notes-open-in-ribbon"
                 label={t("theme.edited_notes_expanded")}
             >
@@ -190,7 +212,7 @@ function UserInterface() {
 }
 
 function LayoutOrientation() {
-    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
+    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation");
 
     return (
         <Card className="thumbnail-selector-option-card" heading={t("settings_appearance.ui_layout_orientation")}>

@@ -1,9 +1,9 @@
 import "./transcription.css";
 
+import type { ResourcesStatusResponse, TranscriptionModelId } from "@triliumnext/commons";
 import {
-    getTranscriptionModel, type ResourcesStatusResponse, TRANSCRIPTION_MODELS,
-    type TranscriptionModelId
-} from "@triliumnext/commons";
+    getTranscriptionModel, TRANSCRIPTION_MODELS
+} from "@triliumnext/commons/src/lib/transcript.js";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -15,7 +15,7 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import { DirectoryLocation } from "../../react/DirectoryLink";
 import FormDropdownList from "../../react/FormDropdownList";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";

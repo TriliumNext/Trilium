@@ -1,197 +1,87 @@
-let outlineMap: Map<string, any> | null = null;
-let headingPositions: Array<{ id: string; pageIndex: number; y: number }> | null = null;
+import {
+    PDF_TOC_READER, type PdfOutline, readPdfOutline, toPdfTocHeadings
+} from "@triliumnext/commons/src/lib/pdf_toc.js";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 
-export async function extractAndSendToc() {
-    const app = window.PDFViewerApplication;
+import { digestBlobId, getDocumentBlobId } from "./digest";
+import { whenDocumentLoaded } from "./navigation";
 
-    try {
-        const outline = await app.pdfDocument.getOutline();
+/** The outline of the loaded document, read once. */
+let outline: { pdf: object; read: Promise<PdfOutline> } | null = null;
 
-        if (!outline || outline.length === 0) {
-            window.parent.postMessage({
-                type: "pdfjs-viewer-toc",
-                data: null,
-                ntxId: window.TRILIUM_NTX_ID,
-                noteId: window.TRILIUM_NOTE_ID
-            } satisfies PdfViewerTocMessage, window.location.origin);
+/**
+ * The outline of `pdf` as the generators read it, with the levels of the file, each heading's
+ * own destination and the page it inherits. Read once per document.
+ */
+export function ensureOutline(pdf: PDFDocumentProxy): Promise<PdfOutline> {
+    if (outline?.pdf !== pdf) {
+        outline = { pdf, read: readPdfOutline(pdf) };
+    }
+    return outline.read;
+}
+
+/**
+ * Answers `trilium-build-toc`: the table of contents of the loaded document, or of the bytes in
+ * the request, and the `blobId` of those bytes in the form that `isProtected` names. Runs before
+ * the first `await` of `main()`, and for read-only documents too.
+ */
+export function setupTocBuild() {
+    window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin || event.data?.type !== "trilium-build-toc") {
             return;
         }
 
-        // Store outline items with their destinations for later scrolling
-        outlineMap = new Map();
-        headingPositions = [];
-        const toc = convertOutlineToToc(outline, 0, outlineMap);
-
-        // Build position mapping for active heading detection
-        await buildPositionMapping(outlineMap);
-
-        window.parent.postMessage({
-            type: "pdfjs-viewer-toc",
-            data: toc,
-            ntxId: window.TRILIUM_NTX_ID,
-            noteId: window.TRILIUM_NOTE_ID
-        } satisfies PdfViewerTocMessage, window.location.origin);
-    } catch (error) {
-        window.parent.postMessage({
-            type: "pdfjs-viewer-toc",
-            data: null,
-            ntxId: window.TRILIUM_NTX_ID,
-            noteId: window.TRILIUM_NOTE_ID
-        } satisfies PdfViewerTocMessage, window.location.origin);
-    }
-}
-
-function convertOutlineToToc(outline: any[], level = 0, outlineMap?: Map<string, any>, parentId = ""): any[] {
-    return outline.map((item, index) => {
-        const id = parentId ? `${parentId}-${index}` : `pdf-outline-${index}`;
-
-        if (outlineMap) {
-            outlineMap.set(id, item);
-        }
-
-        return {
-            title: item.title,
-            level: level,
-            dest: item.dest,
-            id: id,
-            items: item.items && item.items.length > 0 ? convertOutlineToToc(item.items, level + 1, outlineMap, id) : []
-        };
+        const { requestId, isProtected, data } = event.data;
+        void answerBuild(requestId, isProtected === true, data instanceof Uint8Array ? data : null);
     });
 }
 
-export function setupScrollToHeading() {
-    window.addEventListener("message", async (event) => {
-        // Only accept messages from the same origin to prevent malicious iframes
-        if (event.origin !== window.location.origin) return;
-
-        if (event.data?.type === "trilium-scroll-to-heading") {
-            const headingId = event.data.headingId;
-
-            if (!outlineMap) return;
-
-            const outlineItem = outlineMap.get(headingId);
-            if (!outlineItem || !outlineItem.dest) return;
-
-            const app = window.PDFViewerApplication;
-
-            // Navigate to the destination
-            try {
-                const dest = typeof outlineItem.dest === 'string'
-                    ? await app.pdfDocument.getDestination(outlineItem.dest)
-                    : outlineItem.dest;
-
-                if (dest) {
-                    app.pdfLinkService.goToDestination(dest);
-                }
-            } catch (error) {
-                console.error("Error navigating to heading:", error);
-            }
-        }
-    });
+async function answerBuild(requestId: number, isProtected: boolean, data: Uint8Array | null) {
+    const address = { ntxId: window.TRILIUM_NTX_ID, noteId: window.TRILIUM_NOTE_ID };
+    let message: PdfViewerTocBuildMessage;
+    try {
+        const build = data
+            ? await buildSavedToc(data, isProtected)
+            : await buildLoadedToc(isProtected);
+        message = { type: "pdfjs-viewer-toc-build", requestId, ...build, ...address };
+    } catch {
+        message = { type: "pdfjs-viewer-toc-build", requestId, failed: true, ...address };
+    }
+    window.parent.postMessage(message, window.location.origin);
 }
 
-async function buildPositionMapping(outlineMap: Map<string, any>) {
-    const app = window.PDFViewerApplication;
-
-    for (const [id, item] of outlineMap.entries()) {
-        if (!item.dest) continue;
-
-        try {
-            const dest = typeof item.dest === 'string'
-                ? await app.pdfDocument.getDestination(item.dest)
-                : item.dest;
-
-            if (dest && dest[0]) {
-                const pageRef = dest[0];
-                const pageIndex = await app.pdfDocument.getPageIndex(pageRef);
-
-                // Extract Y coordinate from destination (dest[3] is typically the y-coordinate)
-                const y = typeof dest[3] === 'number' ? dest[3] : 0;
-
-                headingPositions?.push({ id, pageIndex, y });
-            }
-        } catch (error) {
-            // Skip items with invalid destinations
-        }
-    }
-
-    // Sort by page and then by Y position (descending, since PDF coords are bottom-up)
-    headingPositions?.sort((a, b) => {
-        if (a.pageIndex !== b.pageIndex) {
-            return a.pageIndex - b.pageIndex;
-        }
-        return b.y - a.y; // Higher Y comes first (top of page)
-    });
+/** The table of contents of the loaded document, which shares its outline and digest. */
+async function buildLoadedToc(isProtected: boolean) {
+    const { pdfDocument } = await whenDocumentLoaded();
+    const started = performance.now();
+    const [ read, blobId ] = await Promise.all([
+        ensureOutline(pdfDocument), getDocumentBlobId(pdfDocument, isProtected)
+    ]);
+    return toBuild(read, blobId, started);
 }
 
-export function setupActiveHeadingTracking() {
-    const app = window.PDFViewerApplication;
-    let lastActiveHeading: string | null = null;
-
-    // Offset from top of viewport to consider a heading "active"
-    // This makes the heading active when it's near the top, not when fully scrolled past
-    const ACTIVE_HEADING_OFFSET = 100;
-
-    function updateActiveHeading() {
-        if (!headingPositions || headingPositions.length === 0) return;
-
-        const viewer = app.pdfViewer;
-        const container = viewer.container;
-        const scrollTop = container.scrollTop;
-
-        // Find the heading closest to the top of the viewport
-        let activeHeadingId: string | null = null;
-        let bestDistance = Infinity;
-
-        for (const heading of headingPositions) {
-            // Get the page view to calculate actual position
-            const pageView = viewer.getPageView(heading.pageIndex);
-            if (!pageView || !pageView.div) {
-                continue;
-            }
-
-            const pageTop = pageView.div.offsetTop;
-            const pageHeight = pageView.div.clientHeight;
-
-            // Convert PDF Y coordinate (bottom-up) to screen position (top-down)
-            const headingScreenY = pageTop + (pageHeight - heading.y);
-
-            // Calculate distance from top of viewport
-            const distance = Math.abs(headingScreenY - scrollTop);
-
-            // If this heading is closer to the top of viewport, and it's not too far below
-            if (headingScreenY <= scrollTop + ACTIVE_HEADING_OFFSET && distance < bestDistance) {
-                activeHeadingId = heading.id;
-                bestDistance = distance;
-            }
-        }
-
-        if (activeHeadingId !== lastActiveHeading) {
-            lastActiveHeading = activeHeadingId;
-            window.parent.postMessage({
-                type: "pdfjs-viewer-active-heading",
-                headingId: activeHeadingId,
-                ntxId: window.TRILIUM_NTX_ID,
-                noteId: window.TRILIUM_NOTE_ID
-            } satisfies PdfViewerActiveHeadingMessage, window.location.origin);
-        }
+/**
+ * The table of contents of `data`, the bytes of a save, opened without a password: one that needs
+ * a password fails. The loading task is destroyed whether the open succeeds or not.
+ */
+async function buildSavedToc(data: Uint8Array, isProtected: boolean) {
+    const started = performance.now();
+    // Digested first, since pdf.js takes the bytes it opens.
+    const blobId = await digestBlobId(data, isProtected);
+    const task = window.pdfjsLib.getDocument({ data });
+    try {
+        return toBuild(await readPdfOutline(await task.promise), blobId, started);
+    } finally {
+        await task.destroy();
     }
+}
 
-    // Debounced scroll handler
-    let scrollTimeout: number | null = null;
-    const debouncedUpdate = () => {
-        if (scrollTimeout) {
-            clearTimeout(scrollTimeout);
-        }
-        scrollTimeout = window.setTimeout(updateActiveHeading, 100);
+function toBuild({ headings, isCut }: PdfOutline, blobId: string, started: number) {
+    return {
+        blobId,
+        headings: toPdfTocHeadings(headings),
+        isCut,
+        properties: { reader: PDF_TOC_READER },
+        elapsedMs: performance.now() - started
     };
-
-    app.eventBus.on("pagechanging", debouncedUpdate);
-
-    // Also listen to scroll events for more granular updates within a page
-    const container = app.pdfViewer.container;
-    container.addEventListener("scroll", debouncedUpdate);
-
-    // Initial update
-    updateActiveHeading();
 }

@@ -31,7 +31,7 @@
      through the room above, so that saying it once there is enough. */
   --geo-map-inset: var(--overlay-button-inset, 10px);
   --geo-map-inset-top: var(--geo-map-inset);
-  --geo-map-inset-bottom: var(--geo-map-inset);
+  --geo-map-inset-bottom: calc(var(--geo-map-inset) + var(--note-bottom-inset, 0px));
   --geo-map-inset-left: var(--geo-map-inset);
   --geo-map-inset-right: var(--geo-map-inset);
 

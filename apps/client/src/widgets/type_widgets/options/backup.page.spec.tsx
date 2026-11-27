@@ -48,12 +48,15 @@ vi.mock("../../../services/setup_mode", () => ({
     bootToSetup: vi.fn()
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOptionBool: (name: string) => [
         mocks.stored[name] === true,
         (value: boolean) => void mocks.saved.push([ name, value ])
-    ],
+    ]
+}));
+vi.mock("../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

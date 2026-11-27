@@ -200,6 +200,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "contentManagerSortOrder", value: "title", isSynced: true },
     { name: "contentManagerViewMode", value: "category", isSynced: true },
     { name: "leftPaneWidth", value: "25", isSynced: false },
+    { name: "mobileLeftPaneWidth", value: "0", isSynced: false },
     { name: "leftPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },
@@ -329,9 +330,11 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteCustomReplacements", value: "[]", isSynced: true },
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
+    { name: "textNoteCompletionLinkTargetsEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
     { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
+    { name: "textNoteScrollRailHighlightsEnabled", value: "true", isSynced: false },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
     { name: "textNoteLinkTitleRetrievalEnabled", value: "true", isSynced: true },
     { name: "textNoteLinkDetailsRetrievalEnabled", value: "true", isSynced: true },
@@ -339,10 +342,17 @@ const defaultOptions: DefaultOption[] = [
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
     { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
+    { name: "textNoteVimModeEnabled", value: "false", isSynced: false },
+    { name: "textNoteVimModeNoticeShown", value: "false", isSynced: false },
+    { name: "textNoteVimInsertKeysEnabled", value: "false", isSynced: true },
+    { name: "textNoteVimStartupCommands", value: "", isSynced: true },
+    { name: "vimModeHintsEnabled", value: "true", isSynced: true },
+    { name: "vimModeHintStripShown", value: "true", isSynced: true },
     { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },
+    { name: "noteTitleStyle", value: "large", isSynced: false },
     { name: "backgroundEffects", value: "true", isSynced: false },
     {
         name: "allowedHtmlTags",

@@ -1,5 +1,5 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
-import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons";
+import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons/src/lib/content_embeds.js";
 import type { RefObject } from "preact";
 import { flushSync } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -110,7 +110,10 @@ const providers = new Map<HTMLElement, ContentEmbedToolProvider>();
 const watchers = new Set<{ container: HTMLElement; callback: () => void }>();
 const caretTargets = new Map<HTMLElement, EmbedCaretTarget>();
 const findTargets = new Map<HTMLElement, FindTarget>();
-const findWatchers = new Set<{ container: HTMLElement; callback: () => void }>();
+const findWatchers = new Set<{
+    container: HTMLElement;
+    callback: (reason: FindChangeReason) => void;
+}>();
 
 /** The event that `revealContentEmbed()` dispatches on the content box of an embed. */
 const FIND_REVEAL_EVENT = "contentEmbedFindReveal";
@@ -187,12 +190,12 @@ export function enterContentEmbed(embed: HTMLElement, edge: EmbedEdge) {
  */
 export function registerEmbedFindTarget(element: HTMLElement, target: FindTarget) {
     findTargets.set(element, target);
-    notifyFindWatchers(element);
-    const stopWatching = target.watchContent?.(() => notifyFindWatchers(element));
+    notifyFindWatchers(element, "targets");
+    const stopWatching = target.watchContent?.(() => notifyFindWatchers(element, "content"));
     return () => {
         stopWatching?.();
         findTargets.delete(element);
-        notifyFindWatchers(element);
+        notifyFindWatchers(element, "targets");
     };
 }
 
@@ -209,11 +212,18 @@ export function getEmbedFindTarget(embed: HTMLElement) {
 }
 
 /**
- * Calls `callback` when the targets that search the embeds inside `container` change, as when the
- * editor of an included note replaces its preview, or when the content they search changes.
- * Stops when the returned function is called.
+ * Why the matches in the embeds changed: a target was added, removed or swapped, as when the
+ * editor of an included note replaces its preview, or the content that a target searches changed.
  */
-export function watchEmbedFindTargets(container: HTMLElement, callback: () => void) {
+export type FindChangeReason = "targets" | "content";
+
+/**
+ * Calls `callback` with the reason when the targets that search the embeds inside `container`
+ * change, or the content they search. Stops when the returned function is called.
+ */
+export function watchEmbedFindTargets(
+    container: HTMLElement, callback: (reason: FindChangeReason) => void
+) {
     const watcher = { container, callback };
     findWatchers.add(watcher);
     return () => {
@@ -253,11 +263,11 @@ export function useContentEmbedFindReveal(contentRef: RefObject<HTMLElement | nu
     return [ isRevealed, setIsRevealed ] as const;
 }
 
-function notifyFindWatchers(element: HTMLElement) {
+function notifyFindWatchers(element: HTMLElement, reason: FindChangeReason) {
     for (const { container, callback } of findWatchers) {
         // An element that left the page can have been in any container.
         if (!element.isConnected || container.contains(element)) {
-            callback();
+            callback(reason);
         }
     }
 }
@@ -468,7 +478,7 @@ export function useContentEmbedEvent(
  * Calls `callback` once `element` is in the page: at once, or when it joins it. Stops waiting
  * when the returned function is called.
  */
-function whenInPage(element: HTMLElement, callback: () => void) {
+export function whenInPage(element: HTMLElement, callback: () => void) {
     if (element.isConnected) {
         callback();
         return () => {};

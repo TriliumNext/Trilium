@@ -58,9 +58,17 @@ export interface MentionHostedFeed {
 
 /** What a {@link MentionHostedList} is shown for, each time the query changes. */
 export interface MentionHostedListState {
-    /** The text typed after the marker, up to the caret. */
+    /** The text typed after the marker, or after the mention of `followUpOf`, up to the caret. */
     query: string;
-    /** Where the caret ends the query, in viewport coordinates. */
+    /**
+     * The item committed with `commitAndFollowUp()`, while the list follows up on its mention.
+     * `null` while the query follows the marker.
+     */
+    followUpOf: MentionFeedObjectItem | null;
+    /**
+     * The rect to place the list against, in viewport coordinates: the marker's, or that of the
+     * mention of `followUpOf`.
+     */
     caretRect(): DOMRect;
     /**
      * The editable element the caret is in. A list anchored at {@link caretRect} watches the
@@ -73,6 +81,15 @@ export interface MentionHostedListState {
      * stays for good where it settles on `undefined`.
      */
     commit( item: MentionFeedObjectItem | Promise<MentionFeedObjectItem | undefined> ): void;
+    /**
+     * Commits `item` as `commit()` does, and keeps the list open to follow up on its mention,
+     * such as with the places in a note that a link to it can point at. The list is shown again
+     * with `followUpOf` once the mention is in the document as an inline object, and then for the
+     * text typed after the mention. A commit of that list replaces the mention and that text.
+     */
+    commitAndFollowUp( item: MentionFeedObjectItem ): void;
+    /** Closes the list, as Escape does. */
+    dismiss(): void;
     /**
      * Points the editable at the list's highlighted entry through `aria-activedescendant`, by the
      * id of the entry's element, or at none for `null`. Once the list closes, it points at none.

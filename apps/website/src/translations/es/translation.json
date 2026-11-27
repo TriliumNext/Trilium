@@ -1,49 +1,53 @@
 {
     "get-started": {
         "title": "Comenzar",
-        "desktop_title": "Descarga la aplicación de escritorio (v{{version}})",
+        "desktop_title": "Descargue la aplicación de escritorio (v{{version}})",
         "architecture": "Arquitectura:",
         "older_releases": "Ver versiones anteriores",
-        "server_title": "Configura un servidor para acceder desde múltiples dispositivos"
+        "server_title": "Configure un servidor para acceder desde varios dispositivos",
+        "nightly_title": "Pruebe la versión nocturna",
+        "nightly_subtitle": "Se compila cada día a partir de la rama principal e incluye las funciones y correcciones más recientes antes de su publicación. El instalador de una versión nocturna sustituye a su instalación estable y abre las mismas notas. Si una versión nocturna modifica la base de datos, para volver a la versión estable tendrá que restaurar una copia de seguridad.",
+        "nightly_all_downloads": "Todas las descargas nocturnas",
+        "nightly_learn_more": "Acerca de las versiones nocturnas"
     },
     "hero_section": {
-        "title": "Organice sus ideas. Construya su propia base de conocimiento personal.",
-        "subtitle": "Trilium es una aplicación de código abierto para tomar notas y organizar su base de conocimiento personal. Puede usarla localmente en su escritorio o sincronizarla con su propio servidor para tener sus notas disponibles en cualquier lugar.",
+        "title": "Haga crecer su base de conocimiento personal.",
+        "subtitle": "Guarde todo lo que sabe en un único árbol de notas, tan profundo como lo necesite. Escriba, dibuje y planifique en su ordenador y en su teléfono, y sincronice mediante un servidor propio para acceder a sus notas desde cualquier navegador.",
         "get_started": "Comenzar",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Captura de pantalla de la aplicación de escritorio Trilium Notes",
+        "screenshot_alt": "La aplicación de escritorio de Trilium Notes, con una nota de texto abierta junto al árbol de notas",
         "tagline_license": "Con licencia AGPL-3.0",
-        "tagline_no_account": "No necesitas una cuenta",
+        "tagline_no_account": "No necesita una cuenta",
         "tagline_cross_platform": "Funciona sin conexión a internet"
     },
     "organization_benefits": {
         "title": "Organice sus notas, a su manera",
         "note_structure_title": "Estructura de notas",
-        "note_structure_description": "Las notas se pueden organizar de forma jerárquica. No necesitas carpetas, ya que cada nota puede contener subnotas. Una misma nota puede añadirse en varios lugares de la jerarquía.",
+        "note_structure_description": "Las notas se pueden organizar de forma jerárquica. No necesita carpetas, ya que cada nota puede contener subnotas. Una misma nota puede añadirse en varios lugares de la jerarquía.",
         "attributes_title": "Etiquetas de notas y relaciones",
-        "attributes_description": "Puede establecer relaciones entre notas o añadir etiquetas para categorizarlas más fácilmente. Los atributos promovidos permiten ingresar información estructurada, que luego puede usar en tablas o tableros.",
-        "hoisting_title": "Espacios de trabajo y organización jerárquica",
-        "hoisting_description": "Se pueden separar fácilmente sus notas personales y de trabajo agrupándolas en un espacio de trabajo, lo que centra el árbol de notas en mostrar únicamente un conjunto específico de ellas.",
+        "attributes_description": "Utilice relaciones entre notas o añada etiquetas para categorizarlas con facilidad. Los atributos promovidos permiten introducir información estructurada que luego puede emplear en tablas y tableros.",
+        "hoisting_title": "Espacios de trabajo y enfoque de nota",
+        "hoisting_description": "Separe fácilmente sus notas personales y de trabajo agrupándolas en un espacio de trabajo, que enfoca el árbol de notas para mostrar únicamente un conjunto específico de ellas.",
         "screenshot_alt": "Árbol jerárquico de notas en Trilium"
     },
     "productivity_benefits": {
-        "title": "Productividad y seguridad",
+        "title": "Funciones potentes para el día a día",
         "revisions_title": "Revisiones de notas",
         "revisions_content": "Las notas se guardan automáticamente en segundo plano y las revisiones permiten revisarlas o deshacer cambios accidentales. También se pueden crear revisiones manualmente cuando se necesite.",
         "sync_title": "Sincronización",
         "sync_content": "Use una instancia propia o en la nube para sincronizar fácilmente sus notas entre varios dispositivos y acceder a ellas desde el móvil mediante una PWA.",
         "protected_notes_title": "Notas protegidas",
-        "protected_notes_content": "Protege información personal sensible cifrando las notas y bloqueándolas dentro de una sesión protegida con contraseña.",
-        "search_title": "Búsqueda potente",
-        "search_content": "O busca texto dentro de las notas y acota la búsqueda filtrando por la nota principal o por nivel de profundidad.",
+        "protected_notes_content": "Proteja la información personal sensible cifrando las notas y bloqueándolas tras una sesión protegida con contraseña.",
+        "search_title": "Búsqueda y navegación rápida",
+        "search_content": "Salte a cualquier nota o comando por su título con coincidencia aproximada, o realice una búsqueda de texto completo en sus notas, incluso del texto contenido en imágenes y PDF mediante OCR.",
         "web_clipper_title": "Clipper web",
-        "web_clipper_content": "Captura páginas web (o capturas de pantalla) y agrégalas directamente a Trilium usando la extensión del \"Clipper web\" para el navegador.",
+        "web_clipper_content": "Capture páginas web (o capturas de pantalla) y colóquelas directamente en Trilium con la extensión de navegador «Clipper web».",
         "auth_title": "Inicio de sesión seguro",
         "auth_content": "Proteja el inicio de sesión de su servidor con autenticación multifactor (TOTP) o inicie sesión mediante su proveedor de identidad con OpenID Connect.",
         "templates_title": "Plantillas",
-        "templates_content": "Define plantillas de notas reutilizables con una estructura, atributos y contenido predefinidos, y crea nuevas notas a partir de ellas con un solo clic.",
-        "share_title": "Comparte notas en la red",
+        "templates_content": "Defina plantillas de notas reutilizables con una estructura, atributos y contenido predefinidos, y cree nuevas notas a partir de ellas con un solo clic.",
+        "share_title": "Comparta notas en la web",
         "share_content": "Si dispone de un servidor, publique cualquier subárbol de sus notas como un sitio web público de solo lectura que cualquiera puede explorar sin necesidad de una cuenta.",
         "api_title": "REST API",
         "api_content": "Lea, cree y actualice sus notas mediante programación a través de HTTP con la API REST integrada de Trilium, ideal para automatizaciones e integraciones de terceros."
@@ -54,14 +58,14 @@
         "code_title": "Notas tipo código",
         "code_description": "Fragmentos extensos de código fuente o scripts se manejan en un editor dedicado, con resaltado de sintaxis para múltiples lenguajes de programación y distintos temas de color.",
         "file_title": "Notas tipo archivo",
-        "file_description": "Incorpora archivos multimedia, como PDFs, imágenes o videos, con vista previa directamente en la aplicación.",
+        "file_description": "Incorpore archivos multimedia, como PDF, imágenes o vídeos, con vista previa directamente en la aplicación.",
         "canvas_title": "Lienzo",
-        "canvas_description": "Organiza formas, imágenes y texto en un lienzo infinito, usando la misma tecnología de excalidraw.com. Perfecto para diagramas, bocetos y planificación visual.",
+        "canvas_description": "Organice formas, imágenes y texto en un lienzo infinito, con la misma tecnología de excalidraw.com. Ideal para diagramas, bocetos y planificación visual.",
         "mermaid_title": "Diagramas Mermaid",
-        "mermaid_description": "Crea diagramas de flujo, de clases, de secuencia, de Gantt y muchos más con la sintaxis de Mermaid.",
+        "mermaid_description": "Cree diagramas de flujo, de clases, de secuencia, de Gantt y muchos más con la sintaxis de Mermaid.",
         "mindmap_title": "Mapa mental",
         "mindmap_description": "Organice ideas visualmente o realice una sesión de lluvia de ideas.",
-        "title": "Múltiples formas de representar su información",
+        "title": "Un tipo de nota para cada clase de contenido",
         "subtitle": "No todo encaja perfectamente en un párrafo. Trilium ofrece una amplia variedad de tipos de notas, desde texto enriquecido y código hasta hojas de cálculo, diagramas y mapas mentales, para que pueda capturar cada idea en el formato que mejor se adapte a ella y combinarlos libremente en su árbol de notas.",
         "others_label": "Y más",
         "notemap_title": "Mapa de notas",
@@ -71,31 +75,31 @@
         "webview_title": "Vistas web",
         "markdown_title": "Markdown",
         "markdown_description": "¿Prefiere texto plano? Escriba sus notas directamente en Markdown, manteniéndolas portables y fáciles de versionar, mientras sigue viendo tablas, bloques de código y formato enriquecido en una vista previa en paralelo.",
-        "spreadsheet_title": "Hojas de cálculo",
+        "spreadsheet_title": "Hoja de cálculo",
         "spreadsheet_description": "Una hoja de cálculo completa para datos tabulares, con fórmulas, formato condicional, validación de datos, ordenación y filtrado. Importe y exporte archivos Excel (.xlsx) y CSV."
     },
     "collections": {
         "calendar_title": "Calendario",
         "calendar_description": "Organice sus eventos personales o profesionales en un calendario, con soporte para eventos de todo el día o de varios días. Consulte sus eventos rápidamente con las vistas semanal, mensual y anual. Añada o mueva eventos de forma sencilla.",
         "table_title": "Tabla",
-        "table_description": "Muestra y edita información sobre las notas en una estructura tabular, con distintos tipos de columna como texto, número, casillas de verificación, fecha y hora, enlaces y colores, y con soporte para relaciones. Opcionalmente, muestra las notas dentro de una jerarquía en forma de árbol dentro de la tabla.",
+        "table_description": "Muestre y edite información sobre las notas en una estructura tabular, con distintos tipos de columna como texto, número, casillas de verificación, fecha y hora, enlaces y colores, y con soporte para relaciones. Opcionalmente, muestre las notas en una jerarquía en forma de árbol dentro de la tabla.",
         "board_title": "Tablero Kanban",
         "board_description": "Organice sus tareas o el progreso de sus proyectos en un tablero Kanban. Cree fácilmente nuevos elementos y columnas, y cambie su estado simplemente arrastrándolos por el tablero.",
         "geomap_title": "Mapa geográfico",
-        "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios.",
-        "title": "Colecciones",
+        "geomap_description": "Planifique sus vacaciones o marque puntos de interés en un mapa geográfico con marcadores personalizables. Visualice rutas GPX registradas para seguir itinerarios.",
+        "title": "Vea sus notas desde todos los ángulos",
         "presentation_title": "Presentación",
-        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente.",
+        "presentation_description": "Organice la información en diapositivas y preséntela en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente.",
         "dashboard_title": "Panel de control",
         "subtitle": "Las colecciones dan a un grupo de notas una vista específica. Muestre las mismas notas como calendario, tabla, tablero Kanban, mapa interactivo y más, y cambie de diseño cuando cambien sus necesidades.",
-        "dashboard_description": "Organice sus notas como mosaicos arrastrables y redimensionables en una cuadrícula. Las notas se convierten en widgets vivos que muestran su contenido de un vistazo; ideal para construir una página de inicio personal o una vista general de proyecto que reúna todo en un solo lugar."
+        "dashboard_description": "Organice sus notas como mosaicos arrastrables y redimensionables en una cuadrícula. Las notas se convierten en widgets dinámicos que muestran su contenido de un vistazo; ideal para construir una página de inicio personal o una vista general de proyecto que reúna todo en un solo lugar."
     },
     "faq": {
         "title": "Preguntas frecuentes",
         "mobile_question": "¿Existe una aplicación móvil?",
         "mobile_answer": "Actualmente no hay una aplicación móvil oficial. Sin embargo, si se dispone de una instancia en un servidor, se puede acceder desde un navegador web e incluso instalarla como PWA. Para Android, existe una aplicación no oficial llamada TriliumDroid que funciona incluso sin conexión (igual que un cliente de escritorio).",
         "database_question": "¿Dónde se almacenan los datos?",
-        "database_answer": "Todas las notas se almacenan en una base de datos SQLite dentro de la carpeta de la aplicación. Trilium utiliza una base de datos en lugar de archivos de texto plano por motivos de rendimiento y porque algunas funciones, como los clones (la misma nota en varios lugares del árbol), serían mucho más difíciles de implementar. Para localizar la carpeta de la aplicación, basta con abrir la ventana \"Acerca de\".",
+        "database_answer": "Todas las notas se almacenan en una base de datos SQLite dentro de la carpeta de la aplicación. Trilium utiliza una base de datos en lugar de archivos de texto plano por motivos de rendimiento y porque algunas funciones, como los clones (la misma nota en varios lugares del árbol), serían mucho más difíciles de implementar. Para localizar la carpeta de la aplicación, basta con abrir la ventana «Acerca de».",
         "server_question": "¿Es necesario un servidor para usar Trilium?",
         "server_answer": "No, el servidor permite acceder desde un navegador web y gestionar la sincronización si se usan varios dispositivos. Para empezar, basta con descargar la aplicación de escritorio y comenzar a usarla.",
         "scaling_question": "¿Cómo escala la aplicación con una gran cantidad de notas?",
@@ -103,7 +107,7 @@
         "network_share_question": "¿Puedo compartir mi base de datos a través de una unidad de red?",
         "network_share_answer": "No, generalmente no es recomendable compartir una base de datos SQLite mediante una unidad de red. Aunque a veces podría funcionar, existe el riesgo de que la base de datos se corrompa debido a bloqueos de archivos imperfectos en la red.",
         "security_question": "¿Cómo se protegen mis datos?",
-        "security_answer": "Por defecto, las notas no están encriptadas y se pueden leer directamente desde la base de datos. Una vez que una nota se marca como encriptada, se cifra usando AES-128-CBC.",
+        "security_answer": "De forma predeterminada, las notas no están cifradas y se pueden leer directamente desde la base de datos. Una vez que una nota se marca como cifrada, se protege mediante AES-128-CBC.",
         "free_question": "¿Trilium es gratuito?",
         "free_answer": "Sí, por completo. Trilium es libre y de código abierto bajo la licencia AGPL-3.0, sin niveles de pago, cuentas ni barreras de pago por funciones. Es libre de usarlo, autohospedarlo y modificarlo como desee.",
         "cloud_question": "¿Existe una versión alojada o en la nube?",
@@ -113,15 +117,15 @@
         "more_questions": "¿Aún tiene preguntas? <0>Pregunte a la comunidad</0>"
     },
     "final_cta": {
-        "title": "Empiece a crear su base de conocimientos",
-        "description": "Construya su propia base de conocimiento con funciones avanzadas y total privacidad.",
+        "title": "Empiece a hacer crecer su base de conocimiento",
+        "description": "Organice todo en una única aplicación de código abierto: notas jerárquicas, búsqueda potente y sincronización con un servidor que usted controla.",
         "get_started": "Comenzar"
     },
     "components": {
         "link_learn_more": "Saber más…"
     },
     "download_now": {
-        "text": "Descarga ahora ",
+        "text": "Descargue ahora ",
         "platform_big": "v{{version}} para {{platform}}",
         "platform_small": "para {{platform}}",
         "linux_big": "v{{version}} para Linux",
@@ -139,25 +143,25 @@
         "reddit": "Reddit"
     },
     "support_us": {
-        "title": "Apóyanos",
+        "title": "Apóyenos",
         "financial_donations_title": "Donaciones económicas",
         "financial_donations_description": "Trilium se desarrolla y mantiene con <Link>cientos de horas de trabajo</Link>. Su apoyo ayuda a mantenerlo de código abierto, mejorar sus funciones y cubrir gastos como el alojamiento.",
-        "financial_donations_cta": "Considera apoyar al desarrollador principal (<Link>eliandoran</Link>) de la aplicación a través de:",
-        "github_sponsors": "Patrocinadores de GitHub",
+        "financial_donations_cta": "Considere apoyar al desarrollador principal (<Link>eliandoran</Link>) de la aplicación a través de:",
+        "github_sponsors": "GitHub Sponsors",
         "paypal": "PayPal",
-        "buy_me_a_coffee": "Compra un café"
+        "buy_me_a_coffee": "Buy Me A Coffee"
     },
     "contribute": {
         "title": "Otras formas de contribuir",
         "way_translate": "Traduzca la aplicación a su idioma nativo a través de <Link>Weblate</Link>.",
-        "way_community": "Interactúa con la comunidad en <Discussions>GitHub Discussions</Discussions> o en <Matrix>Matrix</Matrix>.",
-        "way_reports": "Reporta errores a través de <Link>GitHub Issues</Link>.",
-        "way_document": "Ayuda a mejorar la documentación señalando vacíos en ella o contribuyendo con guías, preguntas frecuentes o tutoriales.",
-        "way_market": "Corre la voz: comparte Trilium Notes con amigos, en blogs o en redes sociales."
+        "way_community": "Interactúe con la comunidad en <Discussions>GitHub Discussions</Discussions> o en <Matrix>Matrix</Matrix>.",
+        "way_reports": "Notifique errores a través de <Link>GitHub Issues</Link>.",
+        "way_document": "Ayude a mejorar la documentación señalando carencias en ella o aportando guías, preguntas frecuentes o tutoriales.",
+        "way_market": "Corra la voz: comparta Trilium Notes con amigos, en blogs o en redes sociales."
     },
     "404": {
         "title": "404: No encontrado",
-        "description": "La página que buscas no se pudo encontrar. Tal vez fue eliminada o la URL es incorrecta."
+        "description": "No se ha podido encontrar la página que buscaba. Quizá se haya eliminado o la URL sea incorrecta."
     },
     "download_helper_desktop_windows": {
         "title_x64": "Windows de 64 bits",
@@ -165,7 +169,7 @@
         "description_x64": "Compatible con dispositivos Intel o AMD que ejecuten Windows 10 u 11.",
         "description_arm64": "Compatible con dispositivos ARM (por ejemplo, con Qualcomm Snapdragon).",
         "quick_start": "Para instalar mediante Winget:",
-        "download_exe": "Descarga instalador (.exe)",
+        "download_exe": "Descargar instalador (.exe)",
         "download_zip": "Versión portátil (.zip)",
         "download_scoop": "Scoop"
     },
@@ -186,16 +190,16 @@
     "download_helper_desktop_macos": {
         "title_x64": "macOS para Intel",
         "title_arm64": "macOS para Apple Silicon",
-        "description_x64": "Para Macs con procesador Intel que ejecuten macOS Monterey o posterior.",
-        "description_arm64": "Para Macs con Apple Silicon, como los que tienen chips M1 y M2.",
+        "description_x64": "Para Mac con procesador Intel que ejecuten macOS Ventura o posterior.",
+        "description_arm64": "Para Mac con Apple Silicon, como los que tienen chips M1 y M2.",
         "quick_start": "Para instalar mediante Homebrew:",
         "download_dmg": "Descargar instalador (.dmg)",
         "download_homebrew_cask": "Homebrew Cask",
         "download_zip": "Versión portátil (.zip)"
     },
     "download_helper_server_docker": {
-        "title": "Autohospedado usando Docker",
-        "description": "Despliega fácilmente en Windows, Linux o macOS mediante un contenedor Docker.",
+        "title": "Autohospedado con Docker",
+        "description": "Despliegue fácilmente en Windows, Linux o macOS mediante un contenedor Docker.",
         "download_dockerhub": "Docker Hub",
         "download_ghcr": "ghcr.io"
     },
@@ -212,22 +216,22 @@
         "download_pikapod": "Configurar en PikaPods"
     },
     "header": {
-        "get-started": "Comencemos",
+        "get-started": "Comenzar",
         "documentation": "Documentación",
-        "support-us": "Apóyanos",
+        "support-us": "Apóyenos",
         "resources": "Recursos",
         "language": "Idioma"
     },
     "resources": {
         "title": "Recursos",
         "icon_packs": "Paquetes de iconos",
-        "icon_packs_intro": "Ampliar la selección de iconos disponibles para sus notas utilizando un paquete de iconos. Para más información acerca de paquetes de icono, vea la <DocumentationLink>documentación oficial</DocumentationLink>.",
+        "icon_packs_intro": "Amplíe la selección de iconos disponibles para sus notas mediante un paquete de iconos. Para más información sobre los paquetes de iconos, consulte la <DocumentationLink>documentación oficial</DocumentationLink>.",
         "download": "Descargar",
         "website": "Sitio web"
     },
     "section_nav": {
         "aria_label": "Ir a la sección",
-        "organization": "Organiza",
+        "organization": "Organizar",
         "productivity": "Características",
         "note_types": "Tipos de nota",
         "import": "Importar y exportar",
@@ -238,7 +242,7 @@
     },
     "import": {
         "title": "Sus notas nunca quedan bloqueadas",
-        "subtitle": "Sus notas son libres de moverse. Impórtelas desde otras aplicaciones, extráigalas en formatos abiertos o conviértalas en documentos pulidos, cuando lo desee.",
+        "subtitle": "Sus notas son suyas y puede moverlas con libertad. Impórtelas desde otras aplicaciones, extráigalas en formatos abiertos o conviértalas en documentos pulidos, cuando lo desee.",
         "pillar_import_title": "Importar",
         "pillar_import_description": "Importe sus notas desde otras aplicaciones con su estructura intacta, o importe archivos estándar Markdown, HTML y OPML.",
         "pillar_export_title": "Exportar",
@@ -283,5 +287,15 @@
         "render_description": "Construya paneles interactivos y miniaplicaciones que se renderizan directamente dentro de una nota, como el reloj que se muestra aquí.",
         "api_title": "Script API",
         "api_description": "Una API tipada para notas, ramas, atributos y búsqueda, disponible tanto para scripts de frontend como de backend."
+    },
+    "download_helper_nightly": {
+        "desktop_description": "La compilación de escritorio más reciente para este equipo. Utilice el selector de arquitectura de arriba para obtener la otra.",
+        "download_flatpak": ".flatpak",
+        "android_title": "Android",
+        "android_description": "La aplicación móvil conserva una copia completa de sus notas en el teléfono, funciona sin conexión y se sincroniza con su servidor.",
+        "download_apk": "Descargar APK (.apk)",
+        "server_title": "Servidor",
+        "server_description": "La compilación más reciente del servidor, como imagen de Docker o como paquete para Linux.",
+        "server_quick_start": "Para ejecutarlo con Docker:"
     }
 }

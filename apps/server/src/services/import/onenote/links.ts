@@ -82,9 +82,9 @@ function dropRedundantWebViewLink(internalAnchor: HTMLElement, pageId: string) {
         return;
     }
     const webHref = web.getAttribute("href") ?? "";
-    // The web link is the same page's counterpart when its URL embeds the page-id GUID; guard against
-    // accidentally matching an already-rewritten internal link.
-    if (webHref.startsWith("#root/") || !containsGuid(webHref, pageId)) {
+    // The web link is the same page's counterpart when it is an http(s) URL that embeds the page-id
+    // GUID. Any other link to that page, such as a second `onenote:` link or a `#root/` link, is kept.
+    if (!/^https?:/i.test(webHref) || !containsGuid(webHref, pageId)) {
         return;
     }
 

@@ -1,6 +1,8 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import hiddenSubtreeService, {
@@ -13,7 +15,18 @@ import hiddenSubtreeService, {
     LBTPL_SPACER,
     LBTPL_WIDGET
 } from "./hidden_subtree.js";
+import { getLog } from "./log.js";
+import migrationService from "./migration.js";
+import * as templatesModule from "./hidden_subtree_templates.js";
 import noteService from "./notes.js";
+
+/** Items appended to `_templates`, so a spec can drive definitions the built-in tree does not use. */
+const extraTemplates = { items: [] as HiddenSubtreeItem[] };
+const buildTemplates = templatesModule.default;
+vi.spyOn(templatesModule, "default").mockImplementation(() => {
+    const templates = buildTemplates();
+    return { ...templates, children: [ ...templates.children, ...extraTemplates.items ] };
+});
 
 /**
  * Re-create a deprecated hidden-subtree note under its declared parent so the
@@ -324,6 +337,143 @@ describe("hidden_subtree (real DB)", () => {
                 expect(id.startsWith("_")).toBe(true);
             }
             expect(new Set(ids).size).toBe(ids.length);
+        });
+    });
+    describe("migration guard", () => {
+        it("does not touch the tree while the database still awaits migrations", () => {
+            const hidden = becca.notes["_hidden"];
+            getContext().init(() => {
+                hidden.addLabel("strayDuringMigration", "x");
+            });
+            vi.spyOn(migrationService, "isDbUpToDate").mockReturnValueOnce(false);
+
+            checkHiddenSubtree();
+            expect(hidden.hasOwnedLabel("strayDuringMigration")).toBe(true);
+
+            checkHiddenSubtree();
+            expect(hidden.hasOwnedLabel("strayDuringMigration")).toBe(false);
+        });
+    });
+
+    describe("definitions the built-in tree does not exercise", () => {
+        afterEach(() => {
+            extraTemplates.items = [];
+        });
+
+        function createNote(noteId: string, parentNoteId: string, extra: { type?: "text" | "code"; mime?: string; content?: string } = {}) {
+            return getContext().init(() => noteService.createNewNote({
+                noteId,
+                title: noteId,
+                type: extra.type ?? "text",
+                mime: extra.mime,
+                parentNoteId,
+                content: extra.content ?? "",
+                ignoreForbiddenParents: true
+            }).note);
+        }
+
+        function liveParents(noteId: string) {
+            return becca.getNoteOrThrow(noteId).getParentBranches()
+                .filter((branch) => !branch.isDeleted)
+                .map((branch) => branch.parentNoteId)
+                .sort();
+        }
+
+        function branchUnder(noteId: string, parentNoteId: string) {
+            return becca.getNoteOrThrow(noteId).getParentBranches()
+                .find((branch) => branch.parentNoteId === parentNoteId);
+        }
+
+        it("moves an enforceBranches note into place, keeping only clones outside the hidden tree", () => {
+            createNote("_testEnforced", "root", { type: "code", mime: "text/x-python", content: "print()" });
+            createNote("testUserParent", "root");
+            createNote("_testEnforcedPos", "root");
+            getContext().init(() => {
+                new BBranch({ noteId: "_testEnforced", parentNoteId: "testUserParent" }).save();
+                new BBranch({ noteId: "_testEnforced", parentNoteId: "_hidden" }).save();
+            });
+            extraTemplates.items = [
+                { id: "_testEnforced", title: "Enforced", type: "code", mime: "text/plain", content: "print()", enforceBranches: true },
+                { id: "_testEnforcedPos", title: "Positioned", type: "text", enforceBranches: true, notePosition: 5, isExpanded: true }
+            ];
+
+            checkHiddenSubtree(true);
+
+            // The clones under `root` and `_hidden` go; the one under a user note stays.
+            expect(liveParents("_testEnforced")).toEqual([ "_templates", "testUserParent" ]);
+            expect(becca.getNoteOrThrow("_testEnforced").mime).toBe("text/plain");
+            expect(branchUnder("_testEnforced", "_templates")?.isExpanded).toBe(false);
+            expect(liveParents("_testEnforcedPos")).toEqual([ "_templates" ]);
+            expect(branchUnder("_testEnforcedPos", "_templates")?.notePosition).toBe(5);
+            expect(branchUnder("_testEnforcedPos", "_templates")?.isExpanded).toBe(true);
+
+            // A later run finds the branch in place and only repairs its state.
+            getContext().init(() => {
+                const positioned = branchUnder("_testEnforcedPos", "_templates");
+                if (positioned) {
+                    positioned.isExpanded = false;
+                    positioned.save();
+                }
+            });
+            checkHiddenSubtree(true);
+            expect(liveParents("_testEnforcedPos")).toEqual([ "_templates" ]);
+            expect(branchUnder("_testEnforcedPos", "_templates")?.isExpanded).toBe(true);
+        });
+
+        it("restores a tampered docName label, reading a missing value as empty", () => {
+            extraTemplates.items = [
+                { id: "_testDocNamed", title: "Doc", type: "text", attributes: [ { type: "label", name: "docName", value: "doc_named" } ] },
+                { id: "_testDocBlank", title: "Blank", type: "text", attributes: [ { type: "label", name: "docName" } ] }
+            ];
+            checkHiddenSubtree(true);
+
+            const named = becca.getNoteOrThrow("_testDocNamed").getOwnedAttributes("label", "docName")[0];
+            getContext().init(() => {
+                named.value = "tampered";
+                named.save();
+            });
+            const blank = becca.getNoteOrThrow("_testDocBlank").getOwnedAttributes("label", "docName")[0];
+            expect(blank.value).toBe("");
+            const blankSave = vi.spyOn(blank, "save");
+
+            checkHiddenSubtree(true);
+
+            expect(becca.getNoteOrThrow("_testDocNamed").getOwnedLabelValue("docName")).toBe("doc_named");
+            expect(blankSave).not.toHaveBeenCalled();
+        });
+
+        it("logs content it cannot read instead of aborting the check", () => {
+            extraTemplates.items = [ { id: "_testContent", title: "Content", type: "text", content: "<p>x</p>" } ];
+            checkHiddenSubtree(true);
+
+            const note = becca.getNoteOrThrow("_testContent");
+            const errorSpy = vi.spyOn(getLog(), "error");
+            const stackless = new Error("no stack");
+            stackless.stack = undefined;
+            for (const thrown of [ new Error("with stack"), stackless, "plain string" ]) {
+                vi.spyOn(note, "getContent").mockImplementationOnce(() => {
+                    throw thrown;
+                });
+                checkHiddenSubtree(true);
+            }
+
+            const messages = errorSpy.mock.calls.map(([ message ]) => String(message));
+            expect(messages).toHaveLength(3);
+            expect(messages[0]).toContain("with stack");
+            expect(messages[1]).toContain("_testContent: no stack");
+            expect(messages[2]).toContain("_testContent: plain string");
+        });
+
+        it("rejects a malformed definition", () => {
+            const malformed: [HiddenSubtreeItem, RegExp][] = [
+                [ { id: "_testUntitled", title: "", type: "text" }, /mandatory properties/ ],
+                [ { id: "testNoUnderscore", title: "No underscore", type: "text" }, /has to start with underscore/ ],
+                [ { id: "_testIdleLauncher", title: "Idle launcher", type: "launcher" }, /No action defined/ ]
+            ];
+            for (const [ item, error ] of malformed) {
+                extraTemplates.items = [ item ];
+                expect(() => checkHiddenSubtree(true)).toThrow(error);
+            }
         });
     });
 });

@@ -659,6 +659,18 @@ describe("convertPageHtml", () => {
         expect(figure?.querySelector("img")?.getAttribute("style")).toContain("aspect-ratio:480/441");
     });
 
+    it("adds no aspect ratio to a floating image without usable dimensions or with one already set", () => {
+        const src = "https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value";
+        const out = converter.convertPageHtml(`<body><div>`
+            + `<img src="${src}" /><br />`
+            + `<img width="auto" height="10" src="${src}" /><br />`
+            + `<img width="40" height="20" style="aspect-ratio:4/3" src="${src}" /></div></body>`);
+        const images = parse(out).querySelectorAll("figure.image > img");
+
+        expect(images).toHaveLength(3);
+        expect(images.map((img) => img.getAttribute("style") ?? "")).toEqual(["", "", "aspect-ratio:4/3"]);
+    });
+
     it("leaves an inline image (inside a paragraph) unwrapped", () => {
         const out = converter.convertPageHtml(`<body><div><p>before <img width="16" height="16" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value" /> after</p></div></body>`);
         const root = parse(out);

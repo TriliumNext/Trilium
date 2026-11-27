@@ -1,5 +1,8 @@
-import type { AttachmentRow, AttributeType, CloneResponse, EraseExcessRevisionsOptions, NoteRow, NoteType, RevisionRow, RevisionSource } from "@triliumnext/commons";
-import { dayjs, getNoteIcon, isMarkdownMime } from "@triliumnext/commons";
+import type {
+    AttachmentRow, AttributeType, CloneResponse, EraseExcessRevisionsOptions, NoteRow, NoteType,
+    RevisionRow, RevisionSource, SavedAttachmentRow
+} from "@triliumnext/commons";
+import { dayjs, getNoteIcon, isDerivedAttachmentRole, isMarkdownMime } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date.js";
@@ -20,6 +23,7 @@ import type BBranch from "./bbranch.js";
 import BRevision from "./brevision.js";
 import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
+import { decodeBase64 } from "../../services/utils/binary.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
 import { getVirtualNoteContent, isVirtualNoteContentWritable, setVirtualNoteContent } from "../../services/virtual_notes.js";
 
@@ -48,6 +52,24 @@ interface Relationship {
 interface ConvertOpts {
     /** if true, the action is not triggered by user, but e.g. by migration, and only perfect candidates will be migrated */
     autoConversion?: boolean;
+}
+
+export interface SaveRevisionOptions {
+    description?: string;
+    source?: RevisionSource;
+    /** The ID of the new revision, drawn by the client of a draft. */
+    revisionId?: string;
+    /** What the revision holds instead of the note as it is now. */
+    draft?: RevisionDraft;
+}
+
+/** Changes that an editor could not save, kept as a revision of their own format. */
+export interface RevisionDraft {
+    content: string;
+    type: NoteType;
+    mime: string;
+    /** The attachment edits of the draft, written into the copies of the attachments. */
+    attachments?: SavedAttachmentRow[];
 }
 
 /** A note's title in the two forms scoring needs, cached together since both derive from it. */
@@ -1001,6 +1023,15 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return getSql().getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
     }
 
+    /**
+     * The attachments that revisions, copies and exports of the note carry: all but those of a
+     * derived role, which the note rebuilds (`isDerivedAttachmentRole()`).
+     */
+    getPortableAttachments() {
+        return this.getAttachments()
+            .filter((attachment) => !isDerivedAttachmentRole(attachment.role));
+    }
+
     getAttachmentById(attachmentId: string) {
         const query = /*sql*/`\
             SELECT attachments.*, LENGTH(blobs.content) AS contentLength
@@ -1319,19 +1350,21 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return !(this.noteId in this.becca.notes) || this.isBeingDeleted;
     }
 
-    saveRevision(opts: { description?: string; source?: RevisionSource } = {}): BRevision {
+    saveRevision(opts: SaveRevisionOptions = {}): BRevision {
         return getSql().transactional(() => {
-            let noteContent = this.getContent();
+            const { draft } = opts;
+            const type = draft?.type ?? this.type;
 
             const revision = new BRevision(
                 {
+                    revisionId: opts.revisionId,
                     noteId: this.noteId,
                     // title and text should be decrypted now
                     title: this.title,
                     description: opts.description || "",
                     source: opts.source || "auto",
-                    type: this.type,
-                    mime: this.mime,
+                    type,
+                    mime: draft?.mime ?? this.mime,
                     isProtected: this.isProtected,
                     utcDateLastEdited: this.utcDateModified,
                     utcDateCreated: dateUtils.utcNowDateTime(),
@@ -1344,33 +1377,74 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
             revision.save(); // to generate revisionId, which is then used to save attachments
 
-            for (const noteAttachment of this.getAttachments()) {
-                const revisionAttachment = noteAttachment.copy();
-
-                /* v8 ignore next 3 -- defensive: revision.save() above always assigns revisionId */
-                if (!revision.revisionId) {
-                    throw new Error("Revision ID is missing.");
-                }
-
-                revisionAttachment.ownerId = revision.revisionId;
-                revisionAttachment.setContent(noteAttachment.getContent(), { forceSave: true });
-
-                if (this.type === "text" && typeof noteContent === "string") {
-                    // content is rewritten to point to the revision attachments
-                    noteContent = noteContent.replaceAll(`attachments/${noteAttachment.attachmentId}`, `attachments/${revisionAttachment.attachmentId}`);
-
-                    noteContent = noteContent.replaceAll(
-                        new RegExp(`href="[^"]*attachmentId=${noteAttachment.attachmentId}[^"]*"`, "gi"),
-                        `href="api/attachments/${revisionAttachment.attachmentId}/download"`
-                    );
-                }
+            /* v8 ignore next 3 -- defensive: revision.save() above always assigns revisionId */
+            if (!revision.revisionId) {
+                throw new Error("Revision ID is missing.");
             }
 
-            revision.setContent(noteContent);
+            const attachmentIds =
+                this.copyAttachments(revision.revisionId, draft?.attachments ?? []);
+            let content = draft ? draft.content : this.getContent();
+            if (typeof content === "string") {
+                // The revision previews a text note with download links to its own attachments.
+                if (type === "text") {
+                    content = toAttachmentDownloadLinks(content, attachmentIds);
+                }
+                content = remapAttachmentReferences(content, attachmentIds);
+            }
+            revision.setContent(content);
 
             this.eraseExcessRevisionSnapshots();
             return revision;
         });
+    }
+
+    /**
+     * Copies the attachments of this note to the owner `ownerId`, with `edits`, the attachment rows
+     * of a draft, written into the copies or added. Returns the ID of each copy by the ID of the
+     * attachment it copies.
+     */
+    private copyAttachments(ownerId: string, edits: SavedAttachmentRow[]) {
+        const attachmentIds = new Map<string, string>();
+        const usedEdits = new Set<SavedAttachmentRow>();
+        for (const noteAttachment of this.getPortableAttachments()) {
+            const edit = edits.find((row) => row.attachmentId
+                ? row.attachmentId === noteAttachment.attachmentId
+                : row.title === noteAttachment.title);
+            const copy = noteAttachment.copy();
+            copy.ownerId = ownerId;
+            if (edit) {
+                usedEdits.add(edit);
+                copy.setContent(decodeAttachmentRow(edit), { forceSave: true });
+            } else {
+                copy.setContent(noteAttachment.getContent(), { forceSave: true });
+            }
+            // Both are saved, so both have an ID.
+            attachmentIds.set(noteAttachment.attachmentId as string, copy.attachmentId as string);
+        }
+
+        // An attachment of a draft that the note does not have: a new one, or one deleted since.
+        for (const edit of edits) {
+            if (!usedEdits.has(edit)) {
+                const { role, mime, title, position } = edit;
+                const { isProtected } = this;
+                const copy = new BAttachment({ ownerId, role, mime, title, position, isProtected });
+                copy.setContent(decodeAttachmentRow(edit), { forceSave: true });
+                if (edit.attachmentId) {
+                    attachmentIds.set(edit.attachmentId, copy.attachmentId as string);
+                }
+            }
+        }
+        return attachmentIds;
+    }
+
+    /**
+     * Whether the note keeps revisions. With `#disableVersioning`, or a snapshot limit of zero, it
+     * keeps none, and a version that is replaced is lost.
+     */
+    isVersioned() {
+        return !this.isLabelTruthy("disableVersioning")
+            && this.resolveSnapshotLimit(undefined) !== 0;
     }
 
     /**
@@ -1638,6 +1712,62 @@ export function compareNotePathRecords(a: NotePathRecord, b: NotePathRecord): nu
         return a.isHidden ? 1 : -1;
     }
     return a.notePath.length - b.notePath.length;
+}
+
+/**
+ * `content` with every reference to an attachment of `attachmentIds` pointing at the attachment
+ * that the map gives for it: its URLs (`attachments/<id>`), its link parameter (`attachmentId=`)
+ * and the attribute of an attachment embed (`data-attachment-id`).
+ */
+export function remapAttachmentReferences(content: string, attachmentIds: Map<string, string>) {
+    if (attachmentIds.size === 0) {
+        return content;
+    }
+
+    const remap = (match: string, prefix: string, attachmentId: string) => {
+        const newId = attachmentIds.get(attachmentId);
+        return newId ? `${prefix}${newId}` : match;
+    };
+    return content
+        .replace(/(attachments\/)([a-zA-Z0-9_]+)(?![a-zA-Z0-9_])/g, remap)
+        .replace(/(attachmentId=)([a-zA-Z0-9_]+)(?![a-zA-Z0-9_])/g, remap)
+        .replace(/(data-attachment-id=["'])([a-zA-Z0-9_]+)(?=["'])/g, remap);
+}
+
+/**
+ * `content` with each link to an attachment of `attachmentIds` turned into a download link of the
+ * attachment that the map gives for it, which a revision can show without its note.
+ *
+ * Exported for testing.
+ */
+export function toAttachmentDownloadLinks(content: string, attachmentIds: Map<string, string>) {
+    return content.replace(/href="([^"]*)"/gi, (match, href: string) => {
+        const attachmentId = /attachmentId=([a-zA-Z0-9_]+)/i.exec(href)?.[1];
+        const newId = attachmentId && attachmentIds.get(attachmentId);
+        return newId ? `href="api/attachments/${newId}/download"` : match;
+    });
+}
+
+/**
+ * `content` with each download link of {@link toAttachmentDownloadLinks} to an attachment of
+ * `attachmentIds` turned back into a link to the attachment of the note `noteId` that the map gives
+ * for it, as a restored revision of a text note holds it.
+ */
+export function toAttachmentReferenceLinks(
+    content: string, noteId: string, attachmentIds: Map<string, string>
+) {
+    return content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g,
+        (match, attachmentId: string) => {
+            const newId = attachmentIds.get(attachmentId);
+            return newId
+                ? `href="#root/${noteId}?viewMode=attachments&amp;attachmentId=${newId}"`
+                : match;
+        });
+}
+
+/** The content of `row`, decoded when its `encoding` is `base64`. */
+export function decodeAttachmentRow(row: Pick<SavedAttachmentRow, "content" | "encoding">) {
+    return row.encoding === "base64" ? decodeBase64(row.content) : row.content;
 }
 
 export default BNote;

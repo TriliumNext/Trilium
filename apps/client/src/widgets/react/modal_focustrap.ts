@@ -1,4 +1,17 @@
-import { Modal as BootstrapModal } from "bootstrap";
+import type { Modal } from "bootstrap";
+
+/** Bootstrap's `Modal`, once a module that shows dialogs has loaded it: `Modal.tsx`, or else `dialog.ts`. */
+let BootstrapModal: typeof Modal | undefined;
+
+/** Hands over Bootstrap's `Modal`, which {@link suspendModalFocusTraps} reads the shown modals from. */
+export function setBootstrapModal(loadedModal: typeof Modal) {
+    BootstrapModal = loadedModal;
+}
+
+/** Bootstrap's `Modal`, or `undefined` while nothing has loaded it, when no dialog can be open. */
+export function getBootstrapModal() {
+    return BootstrapModal;
+}
 
 /** Bootstrap's private focus-trap, reachable via `Modal._focustrap` (see {@link suspendModalFocusTraps}). */
 interface BootstrapFocusTrap {
@@ -31,7 +44,7 @@ export function suspendModalFocusTraps(exceptElement?: HTMLElement | null): () =
     for (const modalElement of document.querySelectorAll<HTMLElement>(".modal.show")) {
         if (modalElement === exceptElement) continue;
 
-        const instance = BootstrapModal.getInstance(modalElement) as (BootstrapModal & { _focustrap?: BootstrapFocusTrap }) | null;
+        const instance = BootstrapModal?.getInstance(modalElement) as (Modal & { _focustrap?: BootstrapFocusTrap }) | null | undefined;
         const focustrap = instance?._focustrap;
         if (focustrap?._isActive) {
             focustrap.deactivate();

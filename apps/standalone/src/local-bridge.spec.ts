@@ -220,6 +220,13 @@ describe("worker message handling", () => {
 
         expect(() => lastWorker().onerror?.({ message: "fatal" })).not.toThrow();
         expect(document.getElementById("trilium-error-overlay")?.textContent).toContain("fatal");
+
+        // First failure wins, so a fresh bridge shows the fallback for an error with no message.
+        document.getElementById("trilium-error-overlay")?.remove();
+        (await freshBridge()).startLocalServerWorker();
+        lastWorker().onerror?.({ message: "" });
+        expect(document.getElementById("trilium-error-overlay")?.textContent)
+            .toContain("The database worker failed to start.");
     });
 
     it("ignores messages without a recognized type", async () => {
@@ -430,6 +437,22 @@ describe("localUpload", () => {
     });
 });
 
+describe("localUpload without headers", () => {
+    it("sends an empty header set", async () => {
+        const bridge = await freshBridge();
+        const promise = bridge.localUpload("api/import", { method: "POST", fields: {}, file: new File([ "x" ], "x.zip") });
+
+        const worker = lastWorker();
+        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ request: expect.objectContaining({ headers: {} }) }),
+            []
+        ));
+        const posted = worker.postMessage.mock.calls.at(-1)?.[0] as { id: string };
+        worker.onmessage?.({ data: { type: "LOCAL_RESPONSE", id: posted.id, response: { status: 204, headers: {} } } });
+        expect((await promise).status).toBe(204);
+    });
+});
+
 describe("localFetch", () => {
     it("posts a GET LOCAL_REQUEST with no body transfer and builds a Response from the reply", async () => {
         const bridge = await freshBridge();
@@ -543,6 +566,25 @@ describe("backup download keepalive", () => {
 
         expect(fetchSpy).not.toHaveBeenCalled();
         vi.useRealTimers();
+    });
+});
+
+describe("backup download keepalive failures", () => {
+    it("swallows a ping that fails, and keeps pinging", async () => {
+        vi.useFakeTimers();
+        try {
+            const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
+            const bridge = await freshBridge();
+            void bridge.downloadDatabase("Backup.tnbackup");
+
+            lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: true } });
+            await vi.advanceTimersByTimeAsync(25_000);
+            expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+            lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: false } });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 
@@ -677,6 +719,74 @@ describe("saveDatabase", () => {
 
         leadership.isLeader = false;
         expect(await bridge.saveDatabase("db.tnbackup")).toMatchObject({ status: "failed" });
+    });
+});
+
+class SyncMessagePort {
+    onmessage: ((event: { data: unknown }) => void) | null = null;
+    peer: SyncMessagePort | null = null;
+    postMessage(data: unknown) { this.peer?.onmessage?.({ data }); }
+    close() {}
+}
+
+class SyncMessageChannel {
+    port1 = new SyncMessagePort();
+    port2 = new SyncMessagePort();
+    constructor() {
+        this.port1.peer = this.port2;
+        this.port2.peer = this.port1;
+    }
+}
+
+describe("saveDatabase stream failures", () => {
+    function backupPort(worker: MockWorker): MessagePort {
+        const port = worker.postMessage.mock.calls
+            .map(([ message ]) => message as { type: string; port?: MessagePort })
+            .find((message) => message.type === "BACKUP_STREAM")?.port;
+        if (!port) {
+            throw new Error("no BACKUP_STREAM sent");
+        }
+        return port;
+    }
+
+    async function saveWith(messages: unknown[]) {
+        // Delivers synchronously, so every message after the first arrives while the bridge has
+        // not yet asked for it and has to wait in its queue.
+        vi.stubGlobal("MessageChannel", SyncMessageChannel);
+        try {
+            const bridge = await freshBridge();
+            const pending = bridge.saveDatabase("db.tnbackup");
+            await vi.waitFor(() => backupPort(lastWorker()));
+            const port = backupPort(lastWorker());
+            for (const message of messages) {
+                port.postMessage(message);
+            }
+            return await pending;
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    }
+
+    it("saves chunks that arrived before they were asked for", async () => {
+        const result = await saveWith([
+            { type: "begin", byteSize: 2 },
+            { type: "chunk", data: Uint8Array.from([ 1 ]).buffer },
+            { type: "chunk", data: Uint8Array.from([ 2 ]).buffer },
+            { type: "end" }
+        ]);
+        expect(result).toMatchObject({ status: "done" });
+        expect(saved.chunks).toEqual([ Uint8Array.from([ 1 ]), Uint8Array.from([ 2 ]) ]);
+    });
+
+    it("fails with the worker's message, or a generic one, when the stream breaks or never begins", async () => {
+        expect(await saveWith([ { type: "begin", byteSize: 1 }, { type: "error", message: "disk full" } ]))
+            .toMatchObject({ status: "failed", message: "disk full" });
+        expect(await saveWith([ { type: "begin", byteSize: 1 }, { type: "chunk" } ]))
+            .toMatchObject({ status: "failed", message: "The backup stream failed." });
+        expect(await saveWith([ { type: "begin", byteSize: 1 }, null ]))
+            .toMatchObject({ status: "failed", message: "The backup stream failed." });
+        expect(await saveWith([ { type: "ready" } ]))
+            .toMatchObject({ status: "failed", message: "The backup stream did not start." });
     });
 });
 
@@ -934,6 +1044,30 @@ describe("security settings", () => {
         }
     });
 
+    it("ignores other messages on the security port", async () => {
+        const bridge = await freshBridge();
+        const port = securityPort(bridge.startLocalServerWorker() as unknown as MockWorker);
+        const seen = changesSentTo(port);
+        const change = bridge.requestSecurityChange("backendScriptingEnabled", true);
+        const [ sent ] = await seen;
+
+        port.postMessage({ type: "SOMETHING_ELSE", id: sent.id, written: true });
+        port.postMessage({ type: "SECURITY_SET_RESULT", id: sent.id, written: false });
+        await expect(change).resolves.toBe(false);
+    });
+
+    it("answers no when the worker started without its security channel", async () => {
+        const bridge = await freshBridge();
+        vi.stubGlobal("MessageChannel", class { constructor() { throw new Error("no channels"); } });
+        try {
+            expect(() => bridge.startLocalServerWorker()).toThrow("no channels");
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        await expect(bridge.requestSecurityChange("backendScriptingEnabled", true)).resolves.toBe(false);
+    });
+
     it("a follower writes nothing, since the file belongs to the leader's worker", async () => {
         const bridge = await freshBridge();
         leadership.isLeader = false;
@@ -948,20 +1082,24 @@ describe("security settings", () => {
 describe("cross-tab ws relay", () => {
     it("relays the worker's ws messages to the other tabs", async () => {
         const posted: unknown[] = [];
+        let instances = 0;
         class MockBroadcastChannel {
             onmessage: ((e: { data: unknown }) => void) | null = null;
             postMessage = vi.fn((m: unknown) => { posted.push(m); });
             close = vi.fn();
+            constructor() { instances++; }
         }
         vi.stubGlobal("BroadcastChannel", MockBroadcastChannel);
 
         const bridge = await freshBridge();
         bridge.startLocalServerWorker();
         lastWorker().onmessage?.({ data: { type: "WS_MESSAGE", message: { kind: "entity-change" } } });
+        lastWorker().onmessage?.({ data: { type: "WS_MESSAGE", message: { kind: "second" } } });
 
         // Only the leader has a worker, so without this relay a follower would
-        // never learn the entity changed.
-        expect(posted).toEqual([{ kind: "entity-change" }]);
+        // never learn the entity changed. Both go over the one channel.
+        expect(posted).toEqual([{ kind: "entity-change" }, { kind: "second" }]);
+        expect(instances).toBe(1);
         vi.unstubAllGlobals();
     });
 

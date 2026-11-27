@@ -69,6 +69,11 @@ export default class App {
                 value: isMobile ? "mobile" : "desktop"
             }
         ]);
+        // The default 1280x720 lays the mobile layout out as a tablet, with the tree docked
+        // (`STACKED_TREE_LAYOUT`), so mobile tests run at a phone's size.
+        if (isMobile) {
+            await this.page.setViewportSize({ width: 390, height: 844 });
+        }
 
         if (!url) {
             url = "/";
@@ -167,6 +172,11 @@ export default class App {
         // Page in Playwright is not updated somehow, need to click on the tab to make sure it's rendered
         const tab = await this.getTab(0);
         await tab.click();
+        // The tabs are saved a second after they change, so a test that ends sooner would leave
+        // its tabs to the next one.
+        await this.page.evaluate(async () => {
+            await (window as any).glob.appContext.tabManager.tabsUpdate.updateNowIfNecessary();
+        });
     }
 
     /**

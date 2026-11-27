@@ -13,7 +13,7 @@
     background-color: var(--chip-bg, rgba(0, 0, 0, 0.08));
     color: var(--chip-fg, inherit);
     border: 1px solid var(--chip-border, rgba(0, 0, 0, 0.15));
-    font-size: 12px;
+    font-size: .75rem;
     line-height: 1.2;
 }
 

@@ -335,9 +335,11 @@ function indexOfBytes(bytes: Uint8Array, text: string) {
 
 /** The big-endian unsigned number of `length` bytes at `offset`, or 0 past the end of `bytes`. */
 function readUint(bytes: Uint8Array, offset: number, length: number) {
+    /* v8 ignore start -- every caller bounds its read by `bytes.length` already; kept as a guard */
     if (offset < 0 || offset + length > bytes.length) {
         return 0;
     }
+    /* v8 ignore stop */
 
     let value = 0;
     for (let index = 0; index < length; index++) {

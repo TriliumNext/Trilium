@@ -15,17 +15,17 @@
     "postinstall": "wxt prepare"
   },
   "keywords": [],
-  "packageManager": "pnpm@12.18.0",
+  "packageManager": "pnpm@12.22.0",
   "devDependencies": {
     "@triliumnext/client": "workspace:*",
-    "@wxt-dev/auto-icons": "1.1.2",
+    "@wxt-dev/auto-icons": "2.0.0",
     "jszip": "3.10.2",
     "web-ext": "^10.7.0",
     "wxt": "0.21.5"
   },
   "dependencies": {
     "@boxicons/js": "1.0.1",
-    "defuddle": "0.19.6",
-    "preact": "11.1.1"
+    "defuddle": "0.19.13",
+    "preact": "11.2.0"
   }
 }

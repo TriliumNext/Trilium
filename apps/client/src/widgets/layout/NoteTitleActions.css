@@ -17,7 +17,8 @@
         margin-inline: auto;
     }
 
-    &:not(:empty) {
+    &:not(:empty),
+    .note-split.type-text.view-mode-default & {
         padding-block: 0.75em;
     }
 

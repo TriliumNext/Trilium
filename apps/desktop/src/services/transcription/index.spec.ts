@@ -254,6 +254,30 @@ describe("transcription IPC", () => {
         expect(h.levels).toEqual([ [ "system", 0.125 ], [ "system", 0.125 ] ]);
     });
 
+    it("passes on levels while the capture starts, and ignores them once stopped", async () => {
+        const invoke = await loadService();
+        let startCapture = (_sources: string[]) => {};
+        h.capture.start.mockImplementationOnce(() => new Promise<string[]>((resolve) => {
+            startCapture = resolve;
+        }));
+        const started = invoke("transcription-start", "meeting");
+        await vi.waitFor(() => expect(h.capture.start).toHaveBeenCalledOnce());
+
+        // A level from a source the capture does not report is heard, though never loud.
+        h.listeners?.onLevel("system", 0);
+        expect(h.levels).toEqual([ [ "system", 0 ], [ "system", 0 ] ]);
+        expect(h.broadcast.at(-1)?.status).toBe("starting");
+        startCapture([ "microphone" ]);
+        expect(await started).toBe("");
+        expect(await invoke("transcription-get-state")).toEqual({
+            status: "recording", noteId: "meeting", pendingSources: [], startedAt: STARTED_AT
+        });
+
+        await invoke("transcription-stop");
+        h.listeners?.onLevel("system", 0.5);
+        expect(h.levels).toHaveLength(2);
+    });
+
     it("flags a source no audio has come from for 10 s, until it comes again", async () => {
         const invoke = await loadService();
         vi.useFakeTimers();
@@ -382,6 +406,13 @@ describe("transcription IPC", () => {
         h.listeners?.onUtterance({ source: "system", offsetMs: 0, text: "Hi" });
         expect(h.broadcast.at(-1)?.error)
             .toBe(`transcription.save-failed {"message":"disk full"}`);
+        h.listeners?.onUtterance({ source: "system", offsetMs: 1000, text: "Hello" });
+        h.sink.write.mockImplementationOnce(() => {
+            throw "quota exceeded";
+        });
+        h.listeners?.onUtterance({ source: "system", offsetMs: 3000, text: "again" });
+        expect(h.broadcast.at(-1)?.error)
+            .toBe(`transcription.save-failed {"message":"quota exceeded"}`);
         await invoke("transcription-stop");
 
         h.sink.save.mockImplementationOnce(() => {
@@ -528,8 +559,14 @@ describe("transcription IPC", () => {
         expect(await invoke("transcription-start", "meeting"))
             .toBe(`transcription.start-failed {"message":"No audio source could be captured."}`);
 
-        expect(h.worker.kill).toHaveBeenCalledTimes(2);
-        expect(h.capture.stop).toHaveBeenCalledTimes(2);
+        h.worker.start.mockRejectedValueOnce("utility process failed");
+        expect(await invoke("transcription-start", "meeting"))
+            .toBe(`transcription.start-failed {"message":"utility process failed"}`);
+        expect(h.log.error).toHaveBeenLastCalledWith(
+            "Transcription did not start: utility process failed");
+
+        expect(h.worker.kill).toHaveBeenCalledTimes(3);
+        expect(h.capture.stop).toHaveBeenCalledTimes(3);
         expect(await invoke("transcription-get-state")).toEqual(IDLE);
         await invoke("transcription-stop");
         expect(h.worker.stop).not.toHaveBeenCalled();

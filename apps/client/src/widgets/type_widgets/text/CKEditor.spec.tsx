@@ -18,13 +18,27 @@ const mocks = vi.hoisted(() => ({
     reportingEditor: undefined as unknown,
     note: undefined as { noteId: string; title: string } | undefined,
     getHeadings: vi.fn((_editor: unknown): DocumentHeading[] => []),
-    assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new")
+    assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new"),
+    vimConfig: { host: {} },
+    buildVimConfig: vi.fn(),
+    useVimMode: vi.fn(),
+    changeListeners: new Set<() => void>(),
+    isRedrawOnly: vi.fn((_document: unknown) => false)
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
     class MockEditor {
         plugins = { has: () => false };
-        model = { document: { on() {}, off() {} } };
+        model = {
+            document: {
+                on(name: string, listener: () => void) {
+                    if (name === "change:data") mocks.changeListeners.add(listener);
+                },
+                off(_name: string, listener: () => void) {
+                    mocks.changeListeners.delete(listener);
+                }
+            }
+        };
 
         static async create() {
             await mocks.create();
@@ -42,6 +56,7 @@ vi.mock("@triliumnext/ckeditor5", () => {
         PopupEditor: MockEditor,
         getHeadings: mocks.getHeadings,
         assignBlockId: mocks.assignBlockId,
+        isRedrawOnly: mocks.isRedrawOnly,
         onTextEditorError: (editor: unknown, callback: (error: Error) => void) => {
             mocks.reportingEditor = editor;
             mocks.reportError = callback;
@@ -50,17 +65,24 @@ vi.mock("@triliumnext/ckeditor5", () => {
     };
 });
 
-vi.mock("../../react/hooks", () => ({
-    useKeyboardShortcuts: () => {},
+vi.mock("../../react/hooks/dom", () => ({
+    useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue)
+}));
+vi.mock("../../react/hooks/options", () => ({
+    useTriliumOption: (name: string) => [ String(mocks.options[name] ?? ""), vi.fn() ],
+    useTriliumOptionBool: (name: string) => [ mocks.options[name] === true, vi.fn() ]
+}));
+vi.mock("../../react/hooks/note_context", () => ({
     useNoteContext: () => ({
         parentComponent: undefined,
         ntxId: undefined,
         note: mocks.note,
-        notePath: undefined
-    }),
-    useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue),
-    useTriliumOption: (name: string) => [ String(mocks.options[name] ?? ""), vi.fn() ],
-    useTriliumOptionBool: (name: string) => [ mocks.options[name] === true, vi.fn() ]
+        notePath: undefined,
+        noteContext: mocks.note && { ntxId: "context1" }
+    })
+}));
+vi.mock("../../react/hooks/shortcuts", () => ({
+    useKeyboardShortcuts: () => {}
 }));
 
 vi.mock("./ai_quick_actions", () => ({
@@ -69,6 +91,10 @@ vi.mock("./ai_quick_actions", () => ({
 }));
 
 vi.mock("./config", () => ({ buildConfig: vi.fn() }));
+vi.mock("./vim_mode", () => ({
+    buildVimConfig: mocks.buildVimConfig.mockImplementation(() => mocks.vimConfig),
+    useVimMode: mocks.useVimMode
+}));
 
 let host: HTMLElement;
 
@@ -82,6 +108,8 @@ beforeEach(() => {
     mocks.reportingEditor = undefined;
     mocks.getHeadings.mockReset();
     mocks.assignBlockId.mockReset();
+    mocks.changeListeners.clear();
+    mocks.isRedrawOnly.mockReset().mockReturnValue(false);
     host = document.body.appendChild(document.createElement("div"));
 });
 
@@ -94,6 +122,31 @@ afterEach(async () => {
 });
 
 describe("CKEditor", () => {
+    it("reports a change of the content, and no redraw of an element", async () => {
+        const props = {
+            contentLanguage: null,
+            editorRef: createRef<CKTextEditor>(),
+            onChange: vi.fn(),
+            editorApi: createRef<CKEditorApi>(),
+            templates: []
+        };
+        await act(async () => {
+            render(<CKEditor {...props} />, host);
+        });
+        await vi.waitFor(() => expect(mocks.changeListeners.size).toBe(1));
+        const [ listener ] = mocks.changeListeners;
+
+        listener();
+        expect(props.onChange).toHaveBeenCalledOnce();
+
+        // `reconvertItem()` draws a reference link again with the new title of its note.
+        mocks.isRedrawOnly.mockReturnValueOnce(true);
+        listener();
+        expect(props.onChange).toHaveBeenCalledOnce();
+        expect(mocks.isRedrawOnly)
+            .toHaveBeenLastCalledWith(props.editorRef.current?.model.document);
+    });
+
     it("rebuilds an open editor when the MathLive option changes", async () => {
         const props = {
             contentLanguage: null,
@@ -193,14 +246,21 @@ describe("CKEditor", () => {
         const opts = vi.mocked(buildConfig).mock.lastCall?.[0];
         expect(opts?.getNoteId?.()).toBe("host1");
         expect(opts?.isExcerpt?.()).toBe(false);
+        expect(opts?.vim).toBe(mocks.vimConfig);
+        await vi.waitFor(() => expect(mocks.useVimMode).toHaveBeenLastCalledWith(
+            props.editorRef.current, mocks.note, { ntxId: "context1" }, undefined));
+        expect(props.editorRef.current).not.toBeNull();
+        expect(mocks.buildVimConfig.mock.lastCall?.[0].getContainer()).toBe(host.firstChild);
 
         mocks.note = { noteId: "host2", title: "Other" };
         await act(async () => {
-            render(<CKEditor {...props} className="force-rerender" isExcerpt />, host);
+            render(<CKEditor {...props} className="force-rerender" isExcerpt isVisible={false} />,
+                host);
         });
 
         expect(opts?.getNoteId?.()).toBe("host2");
         expect(opts?.isExcerpt?.()).toBe(true);
+        expect(mocks.useVimMode.mock.lastCall?.[3]).toBe(false);
     });
 
     it("lists the headings of its editor and gives one a block id, while it has one", async () => {

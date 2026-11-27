@@ -5,7 +5,7 @@ import { ComponentChildren, createContext } from "preact";
 import { useContext, useEffect } from "preact/hooks";
 
 import HelpButton from "../../../react/HelpButton";
-import { useNoteContext } from "../../../react/hooks";
+import { useNoteContext } from "../../../react/hooks/note_context";
 
 /**
  * Where a page's help mark goes when the banner is no place for it: the phone's master-detail flow,

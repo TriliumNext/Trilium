@@ -145,8 +145,8 @@
     }
 }
 
-.about-dialog-brief-history-tooltip {
-    --main-font-size: .9em;
+.tooltip.about-dialog-brief-history-tooltip {
+    font-size: .9rem !important;
     padding-inline: 30px;
 
     .tooltip-inner {

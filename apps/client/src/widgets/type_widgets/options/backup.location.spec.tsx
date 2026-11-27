@@ -10,8 +10,8 @@ const mocks = vi.hoisted(() => ({
 
 // Partial-mock so sibling components (e.g. `useUniqueName` in OptionCardSection) keep their real
 // implementation.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: () => [mocks.customDir, mocks.setCustomDir]
 }));
 
@@ -52,15 +52,16 @@ function button(name: string) {
     return container?.querySelector<HTMLButtonElement>(`button[name="${name}"]`);
 }
 
-function setPickDirectory(pickDirectory: unknown) {
-    (window as unknown as { electronApi?: unknown }).electronApi = pickDirectory ? { dialog: { pickDirectory } } : undefined;
+function setBackupLocation(choose: unknown, reset: unknown = vi.fn(async () => {})) {
+    const host = window as unknown as { electronApi?: unknown };
+    host.electronApi = { backupLocation: { choose, reset } };
 }
 
 beforeEach(() => {
     vi.clearAllMocks();
     mocks.customDir = "";
     mocks.isElectron.mockReturnValue(true);
-    setPickDirectory(vi.fn(async () => ({ status: "selected", path: CUSTOM_DIR })));
+    setBackupLocation(vi.fn(async () => ({ status: "selected", path: CUSTOM_DIR })));
 });
 
 function cleanup() {
@@ -107,32 +108,34 @@ describe("BackupLocation", () => {
         expect(container?.querySelector(".directory-location-path")?.textContent).toBe(DEFAULT_DIR);
     });
 
-    it("stores the chosen directory and refreshes, opening the picker at the current location", async () => {
-        const pickDirectory = vi.fn(async () => ({ status: "selected", path: CUSTOM_DIR }));
-        setPickDirectory(pickDirectory);
+    it("leaves the folder to the main process and refreshes once one is chosen", async () => {
+        const choose = vi.fn(async () => ({ status: "selected", path: CUSTOM_DIR }));
+        setBackupLocation(choose);
 
         renderLocation();
         button("select-backup-location-button")?.click();
 
-        expect(pickDirectory).toHaveBeenCalledWith({ defaultPath: DEFAULT_DIR });
-        await vi.waitFor(() => expect(mocks.setCustomDir).toHaveBeenCalledWith(CUSTOM_DIR));
         await vi.waitFor(() => expect(refreshCallback).toHaveBeenCalled());
+        expect(choose).toHaveBeenCalledWith();
+        // The options route refuses the folder, so the page never writes it.
+        expect(mocks.setCustomDir).not.toHaveBeenCalled();
     });
 
-    it("leaves the option alone when the picker is dismissed", async () => {
-        const pickDirectory = vi.fn(async () => ({ status: "cancelled" }));
-        setPickDirectory(pickDirectory);
+    it("does not refresh when the picker is dismissed", async () => {
+        const choose = vi.fn(async () => ({ status: "cancelled" }));
+        setBackupLocation(choose);
 
         renderLocation();
         button("select-backup-location-button")?.click();
         await settle();
 
-        expect(pickDirectory).toHaveBeenCalled();
-        expect(mocks.setCustomDir).not.toHaveBeenCalled();
+        expect(choose).toHaveBeenCalled();
         expect(refreshCallback).not.toHaveBeenCalled();
     });
 
-    it("clears the option on a confirmed reset, and only then", async () => {
+    it("resets the folder through the main process once the reset is confirmed", async () => {
+        const reset = vi.fn(async () => {});
+        setBackupLocation(vi.fn(), reset);
         mocks.customDir = CUSTOM_DIR;
         mocks.confirm.mockResolvedValue(false);
 
@@ -141,12 +144,13 @@ describe("BackupLocation", () => {
         await settle();
 
         expect(mocks.confirm).toHaveBeenCalled();
-        expect(mocks.setCustomDir).not.toHaveBeenCalled();
+        expect(reset).not.toHaveBeenCalled();
 
         mocks.confirm.mockResolvedValue(true);
         button("reset-backup-location-button")?.click();
-        await vi.waitFor(() => expect(mocks.setCustomDir).toHaveBeenCalledWith(""));
         await vi.waitFor(() => expect(refreshCallback).toHaveBeenCalled());
+        expect(reset).toHaveBeenCalledOnce();
+        expect(mocks.setCustomDir).not.toHaveBeenCalled();
     });
 });
 

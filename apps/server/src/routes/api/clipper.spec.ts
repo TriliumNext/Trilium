@@ -1,4 +1,4 @@
-import { BBranch, becca, becca_easy_mocking, BNote, branches, cls, options } from "@triliumnext/core";
+import { BBranch, becca, becca_easy_mocking, BNote, branches, cls, note_service as noteService, options, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -15,6 +15,21 @@ vi.mock("@triliumnext/core", async (importOriginal) => ({
     resolveYouTubePreview,
     storeFavicon
 }));
+
+const electron = vi.hoisted(() => ({ isElectron: false }));
+
+vi.mock("../../services/utils.js", async (importOriginal) => {
+    const actual = await importOriginal<{ default: object }>();
+    return {
+        ...actual,
+        default: {
+            ...actual.default,
+            get isElectron() {
+                return electron.isElectron;
+            }
+        }
+    };
+});
 
 vi.mock("../../services/image.js", () => ({
     default: {
@@ -110,6 +125,15 @@ describe("processContent", () => {
         expect(processed).toStrictEqual(`<p>Watch:</p><section class="link-embed"`
             + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" data-embed-type="youtube"></section>`);
     });
+
+    it("drops an embedded player without a source", async () => {
+        resolveYouTubePreview.mockClear();
+
+        const processed = await cls.init(() => processContent([], note, `<p>Watch:</p><iframe></iframe>`));
+
+        expect(processed).toStrictEqual("<p>Watch:</p>");
+        expect(resolveYouTubePreview).not.toHaveBeenCalled();
+    });
 });
 
 // These exercise the route handlers against the real in-memory DB.
@@ -120,9 +144,58 @@ describe("clipper route handlers", () => {
         expect(result.protocolVersion).toBeTruthy();
     });
 
-    it("reports open-in-browser when not running under Electron", () => {
+    it("reports open-in-browser when not running under Electron, and opens the note under it", () => {
         const req = { params: { noteId: "root" } } as unknown as Request<{ noteId: string }>;
-        expect(clipperRoute.openNote(req)).toEqual({ result: "open-in-browser" });
+        const send = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+        try {
+            expect(clipperRoute.openNote(req)).toEqual({ result: "open-in-browser" });
+            expect(send).not.toHaveBeenCalled();
+
+            electron.isElectron = true;
+            expect(clipperRoute.openNote(req)).toEqual({ result: "ok" });
+            expect(send).toHaveBeenCalledExactlyOnceWith({ type: "openNote", noteId: "root" });
+        } finally {
+            electron.isElectron = false;
+            send.mockRestore();
+        }
+    });
+
+    it("titles a clipped note after its page without a usable title, and appends to it later", async () => {
+        const pageUrl = "https://example.com/untitled";
+        const clip = (title: unknown, content: string) => cls.init(() => clipperRoute.createNote({
+            body: { title, content, images: [], clipType: "note", pageUrl }
+        } as unknown as Request));
+
+        const first = await clip(undefined, "<p>first</p>");
+        const second = await clip("   ", "<p>second</p>");
+
+        expect(second.noteId).toBe(first.noteId);
+        const clipped = becca.getNoteOrThrow(first.noteId);
+        expect(clipped.title).toBe(`Clipped note from ${pageUrl}`);
+        expect(clipped.getContent()).toBe("<p>first</p><br/><p>second</p>");
+    });
+
+    it("refuses to add a clipping to a matching note whose content is binary", async () => {
+        const pageUrl = "https://example.com/binary";
+        const binary = cls.init(() => {
+            const { note } = noteService.createNewNote({
+                parentNoteId: "root", title: "Binary", type: "file", mime: "application/octet-stream",
+                content: new Uint8Array([ 0, 1, 2 ])
+            });
+            note.setLabel("pageUrl", pageUrl);
+            note.setLabel("clipType", "clippings");
+            return note;
+        });
+
+        await expect(cls.init(() => clipperRoute.addClipping({
+            body: { title: "x", content: "<p>x</p>", images: [], pageUrl }
+        } as unknown as Request))).rejects.toThrow("Invalid note content type.");
+
+        cls.init(() => binary.setLabel("clipType", "note"));
+        await expect(cls.init(() => clipperRoute.createNote({
+            body: { title: "x", content: "<p>x</p>", images: [], clipType: "note", pageUrl }
+        } as unknown as Request))).rejects.toThrow("Invalid note content type.");
+        expect(Buffer.from(binary.getContent())).toEqual(Buffer.from([ 0, 1, 2 ]));
     });
 
     it("creates a clipping note, then appends to it when clipped from the same URL", async () => {
@@ -157,6 +230,10 @@ describe("clipper route handlers", () => {
 
         await clip();
         expect(clipping.getLabelValue("pageDescription")).toBe("Updated");
+
+        await clip({ pageDescription: { toString: () => "<b>object</b>" }, pageAuthor: 42 } as unknown as Record<string, string>);
+        expect(clipping.getLabelValue("pageDescription")).toBe("Updated");
+        expect(clipping.hasLabel("pageAuthor")).toBe(false);
     });
 
     it("appends to a clipping note moved out of the inbox without cloning it back", async () => {
@@ -275,6 +352,33 @@ describe("clipper route handlers", () => {
             expect(note.hasLabel("originalFileName")).toBe(false);
         });
 
+        it("saves a file that names no page without a page label", async () => {
+            const dataUrl = `data:application/pdf;base64,${PDF.toString("base64")}`;
+            const { noteId } = await createFile({ fileName: "loose.pdf", dataUrl });
+
+            const note = becca.getNoteOrThrow(noteId);
+            expect(note.title).toBe("loose.pdf");
+            expect(note.hasLabel("pageUrl")).toBe(false);
+        });
+
+        it("stores a script or a web page as an opaque file, and drops labels the extension never sends", async () => {
+            for (const mime of [ "application/javascript", "application/x-javascript", "text/javascript", "text/jsx", "text/html", "application/xhtml+xml",
+                "application/javascript+x", "application/javascript-foo", "Application/JavaScript.foo" ]) {
+                const { noteId } = await createFile({
+                    title: "Clipped",
+                    dataUrl: `data:${mime};base64,${Buffer.from("window.__pwned = 1;").toString("base64")}`,
+                    labels: { run: "frontendStartup", widget: "", pageAuthor: "Ann" }
+                });
+
+                const note = becca.getNoteOrThrow(noteId);
+                expect(note.mime).toBe("application/octet-stream");
+                expect(note.isJavaScript()).toBe(false);
+                expect(note.hasLabel("run")).toBe(false);
+                expect(note.hasLabel("widget")).toBe(false);
+                expect(note.getLabelValue("pageAuthor")).toBe("Ann");
+            }
+        });
+
         it("rejects a file that is not a base64 data URL", async () => {
             await expect(createFile({ title: "x", dataUrl: "https://example.com/report.pdf" }))
                 .rejects.toThrow("The file must be sent as a base64 data URL.");
@@ -282,7 +386,7 @@ describe("clipper route handlers", () => {
         });
     });
 
-    it("creates a standalone note with labels", async () => {
+    it("creates a standalone note with the labels the extension sends", async () => {
         const result = await cls.init(() => clipperRoute.createNote({
             body: {
                 title: "Clipped",
@@ -292,13 +396,21 @@ describe("clipper route handlers", () => {
                 pageUrl: "https://example.com/page",
                 labels: {
                     source: "web",
-                    pageDescription: "Tom & <b>Jerry</b><script>alert(1)</script>"
+                    run: "frontendStartup",
+                    pageDescription: "Tom & <b>Jerry</b><script>alert(1)</script>",
+                    pageAuthor: "Ann",
+                    publishedDate: "2026-01-02",
+                    modifiedDate: "2026-01-03"
                 }
             }
         } as unknown as Request));
         const note = becca.getNoteOrThrow(result.noteId);
-        expect(note.getLabelValue("source")).toBe("web");
+        expect(note.hasLabel("source")).toBe(false);
+        expect(note.hasLabel("run")).toBe(false);
         expect(note.getLabelValue("pageDescription")).toBe("Tom & Jerry");
+        expect(note.getLabelValue("pageAuthor")).toBe("Ann");
+        expect(note.getLabelValue("publishedDate")).toBe("2026-01-02");
+        expect(note.getLabelValue("modifiedDate")).toBe("2026-01-03");
     });
 
     it("clips to the top level when there is no clipper inbox and no journal", async () => {
@@ -348,5 +460,21 @@ describe("clipper route handlers", () => {
     it("returns a null noteId for an empty URL", async () => {
         const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: "" } } as unknown as Request<{ noteUrl: string }>));
         expect(found.noteId).toBeNull();
+    });
+
+    it("clips into the note labeled as the clipper inbox", async () => {
+        const inbox = cls.init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Inbox", type: "text", content: ""
+        }).note);
+        cls.init(() => inbox.setLabel("clipperInbox"));
+        try {
+            const result = await cls.init(() => clipperRoute.createNote({
+                body: { title: "Into inbox", content: "<p>x</p>", images: [], clipType: "note", pageUrl: "https://example.com/inbox" }
+            } as unknown as Request));
+
+            expect(becca.getNoteOrThrow(result.noteId).getParentNotes().map((p) => p.noteId)).toEqual([ inbox.noteId ]);
+        } finally {
+            cls.init(() => inbox.removeLabel("clipperInbox"));
+        }
     });
 });

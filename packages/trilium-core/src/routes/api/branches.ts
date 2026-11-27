@@ -165,12 +165,12 @@ function setExpanded(req: Request<{ branchId: string, expanded: string }>) {
 
         if (branch) {
             branch.isExpanded = !!expanded;
-        }
 
-        eventService.emit(eventService.ENTITY_CHANGED, {
-            entityName: "branches",
-            entity: branch
-        });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "branches",
+                entity: branch
+            });
+        }
     }
 }
 
@@ -193,6 +193,7 @@ function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string
         if (!visitedNoteIds.has(branch.noteId)) {
             visitedNoteIds.add(branch.noteId);
             for (const childBranch of branch.childNote.getChildBranches()) {
+                /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
                 if (childBranch) {
                     pending.push(childBranch);
                 }
@@ -214,51 +215,6 @@ function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string
     };
 }
 
-/**
- * @swagger
- * /api/branches/{branchId}:
- *   delete:
- *     summary: Delete branch (note clone)
- *     operationId: branches-delete
- *     parameters:
- *       - name: branchId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/BranchId"
- *       - name: taskId
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *         description: Task group identifier
- *       - name: eraseNotes
- *         in: query
- *         schema:
- *           type: boolean
- *         required: false
- *         description: Whether to erase the note immediately
- *       - name: last
- *         in: query
- *         schema:
- *           type: boolean
- *         required: true
- *         description: Whether this is the last request of this task group
- *     responses:
- *       '200':
- *         description: Branch successfully deleted
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 noteDeleted:
- *                   type: boolean
- *                   description: Whether the last note clone was deleted
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function deleteBranch(req: Request<{ branchId: string }>) {
     const last = req.query.last === "true";
     const eraseNotes = req.query.eraseNotes === "true";

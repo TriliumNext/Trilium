@@ -10,8 +10,9 @@ import type FNote from "../../../entities/fnote";
 import mime_types from "../../../services/mime_types.js";
 import {
     buildCodeFenceOptions, buildMarkdownCommands, buildTaskItemInsert, codeFenceCompletionSource,
-    isClosingFence, markdownCompletionAt, parseCodeFencePrefix
+    isClosingFence, linkToNote, markdownCompletionAt, parseCodeFencePrefix
 } from "./completions";
+import { type OwnLinkTargetReader, registerOwnLinkTargets } from "./editor_utils";
 
 const editorUtils = vi.hoisted(() => ({
     uploadImageAndInsert: vi.fn(),
@@ -209,6 +210,45 @@ describe("markdownCompletionAt", () => {
     });
 });
 
+describe("linkToNote", () => {
+    /**
+     * Links the note at `notePath` in place of `doc` from `from` to `to`, with the targets of the
+     * document that `reader` lists, and returns the text and the caret.
+     */
+    function link(
+        notePath: string, doc: string, from: number, to: number, reader?: OwnLinkTargetReader
+    ) {
+        const editor = new VanillaCodeMirror({ parent: document.createElement("div") });
+        editor.dispatch({ changes: { from: 0, insert: doc } });
+        if (reader) {
+            registerOwnLinkTargets(editor, reader);
+        }
+        linkToNote(notePath)(editor, from, to);
+        const result = [ editor.state.doc.toString(), editor.state.selection.main.head ];
+        editor.destroy();
+        return result;
+    }
+
+    it("links the note with its heading or anchor, and takes the rest of a Wikilink only while one is typed", () => {
+        expect(link("root/abc", "see @Al x", 4, 7)).toEqual([ "see [[abc]] x", 11 ]);
+        expect(link("root/abc", "see [[Al]] x", 4, 8)).toEqual([ "see [[abc]] x", 11 ]);
+        // A link to a heading replaces the link and the text typed after it, and leaves a later `]]`.
+        expect(link("root/abc?block=h1", "see [[abc]]In x]]", 4, 13))
+            .toEqual([ "see [[abc?block=h1]] x]]", 20 ]);
+    });
+
+    it("leaves the typed text when the pick of a heading of the note was declined", () => {
+        const takePendingMarker = vi.fn(() => null);
+        const reader: OwnLinkTargetReader = {
+            read: () => ({ headings: [], anchors: [], getRange: () => null }),
+            takePendingMarker
+        };
+
+        expect(link("root/abc?block=h1", "see @In x", 4, 7, reader)[0]).toBe("see @In x");
+        expect(takePendingMarker).toHaveBeenCalledOnce();
+    });
+});
+
 describe("buildMarkdownCommands", () => {
     let editor: VanillaCodeMirror;
 
@@ -222,6 +262,7 @@ describe("buildMarkdownCommands", () => {
     afterEach(() => editor.destroy());
 
     let currentNote: FNote | null = { noteId: "first" } as FNote;
+    let editedNote: FNote | null = null;
 
     const todo = (name: string, markdownSymbol: string): TaskStateDef => ({ name, title: name, markdownSymbol, isCompleted: false, icon: `bx bx-${name}` });
 
@@ -229,13 +270,20 @@ describe("buildMarkdownCommands", () => {
         return buildMarkdownCommands({
             editorView: editor,
             getOwnerNote: () => currentNote,
+            getEditedNote: () => editedNote,
             taskStates
         });
     }
 
-    /** Puts `doc` in the editor and runs the command `id` on the command typed at its end. */
-    function run(id: string, doc: string, taskStates: TaskStateDef[] = []) {
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: doc }, selection: { anchor: doc.length } });
+    /**
+     * Puts `doc` in the editor, followed by `after`, and runs the command `id` on the command
+     * typed at the end of `doc`.
+     */
+    function run(id: string, doc: string, taskStates: TaskStateDef[] = [], after = "") {
+        editor.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: doc + after },
+            selection: { anchor: doc.length }
+        });
         const entry = commands(taskStates).find((candidate) => candidate.id === id);
         if (!entry) throw new Error(`no command ${id}`);
         entry.apply(editor, doc.lastIndexOf("/"), doc.length);
@@ -291,6 +339,24 @@ describe("buildMarkdownCommands", () => {
         expect(run("tabs", "Intro /tabs")).toBe(`Intro\n\n${tabs}`);
     });
 
+    it("inserts an aside on lines of its own, a blank line from the text after it", () => {
+        const text = "markdown_slash_commands.placeholders.aside";
+        const aside = `<aside>\n\n${text}\n\n</aside>`;
+        expect(commands().find((entry) => entry.id === "aside")).toMatchObject({
+            title: "markdown_slash_commands.titles.aside",
+            aliases: expect.arrayContaining([ "aside", "sidebar", "side note" ])
+        });
+
+        const textsAfter = [ "", "\nNext", "\n\nNext", "\n\n\nNext", " more" ];
+        expect(textsAfter.map((after) => run("aside", "/aside", [], after))).toEqual([
+            aside, `${aside}\n\nNext`, `${aside}\n\nNext`, `${aside}\n\n\nNext`, `${aside}\n\n more`
+        ]);
+
+        expect(run("aside", "Intro /aside")).toBe(`Intro\n\n${aside}`);
+        const { from, to } = editor.state.selection.main;
+        expect(editor.state.sliceDoc(from, to)).toBe(text);
+    });
+
     it("uploads an image picked to the note shown once the file arrives", () => {
         let picker: HTMLInputElement | undefined;
         const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(function (this: HTMLInputElement) { picker = this; });
@@ -319,8 +385,16 @@ describe("buildMarkdownCommands", () => {
         expect(run("link", "See /link")).toBe("See ");
         expect(run("include", "/include")).toBe("");
         const { insertDateTime, showEditLinkDialog, showIncludeNoteDialog } = editorUtils;
-        for (const action of [ insertDateTime, showEditLinkDialog, showIncludeNoteDialog ]) {
+        for (const action of [ insertDateTime, showIncludeNoteDialog ]) {
             expect(action).toHaveBeenCalledExactlyOnceWith(editor);
         }
+        expect(showEditLinkDialog).toHaveBeenCalledExactlyOnceWith(editor, undefined);
+
+        // The dialog lists the headings of the note being edited.
+        editedNote = { noteId: "edited", getBestNotePathString: () => "root/edited" } as FNote;
+        run("link", "/link");
+        expect(showEditLinkDialog)
+            .toHaveBeenLastCalledWith(editor, { noteId: "edited", notePath: "root/edited" });
+        editedNote = null;
     });
 });

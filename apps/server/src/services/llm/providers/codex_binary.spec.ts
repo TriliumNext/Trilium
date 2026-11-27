@@ -20,8 +20,12 @@ describe("resolveCodexBinaryPath", () => {
     const originalOverride = process.env.TRILIUM_CODEX_PATH;
     const originalPath = process.env.PATH;
     const originalShell = process.env.SHELL;
+    const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
 
     beforeEach(() => {
+        // The PATH search probes the candidates of the platform it runs on (`codex.cmd` on
+        // Windows, which binary_lookup.spec.ts covers), so every host probes the POSIX ones here.
+        Object.defineProperty(process, "platform", { ...originalPlatform, value: "linux" });
         resetCodexBinaryCache();
         resetLoginShellPathCache();
         // No $SHELL: the login-shell fallback is a no-op (binary_lookup.spec.ts covers it).
@@ -34,6 +38,9 @@ describe("resolveCodexBinaryPath", () => {
     });
 
     afterEach(() => {
+        if (originalPlatform) {
+            Object.defineProperty(process, "platform", originalPlatform);
+        }
         for (const [ name, value ] of [ [ "TRILIUM_CODEX_PATH", originalOverride ], [ "PATH", originalPath ], [ "SHELL", originalShell ] ] as const) {
             if (value === undefined) {
                 delete process.env[name];
@@ -67,6 +74,9 @@ describe("resolveCodexBinaryPath", () => {
 
         probe("usage: codex [OPTIONS]\n");
         await expect(resolveCodexBinaryPath()).rejects.toThrow(/did not report a version \(it printed: usage: codex \[OPTIONS\]\)/);
+
+        probe("");
+        await expect(resolveCodexBinaryPath()).rejects.toThrow(/did not report a version\. Install it/);
 
         probe("codex-cli 0.146.0\n");
         await expect(resolveCodexBinaryPath()).resolves.toBe("/opt/codex/codex");

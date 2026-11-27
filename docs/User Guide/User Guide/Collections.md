@@ -7,31 +7,31 @@ Collections are a unique type of note that don't have content, but instead displ
 
     <a class="reference-link" href="Collections/Calendar.md">Calendar</a> displays a week, month or year calendar with the notes being shown as events. New events can be added easily by dragging across the calendar.
 
-    <figure class="image"><img style="aspect-ratio:1651/810;" src="Collections_collection_calendar.webp" width="1651" height="810"></figure>
+    <figure class="image"><img style="aspect-ratio:1152/720;" src="Collections_collection_calendar.webp" width="1152" height="720"></figure>
 
 === "<span class="tn-icon bx bx-table"></span> Table"
 
     <a class="reference-link" href="Collections/Table.md">Table</a> displays each note as a row in a table, with <a class="reference-link" href="Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> being shown as well. This makes it easy to visualize attributes of notes, as well as making them easily editable.
 
-    <figure class="image"><img style="aspect-ratio:1643/647;" src="Collections_collection_table.webp" width="1643" height="647"></figure>
+    <figure class="image"><img style="aspect-ratio:1152/720;" src="Collections_collection_table.webp" width="1152" height="720"></figure>
 
 === "<span class="tn-icon bx bx-columns"></span> Kanban Board"
 
     <a class="reference-link" href="Collections/Kanban%20Board.md">Kanban Board</a> displays notes in columns, grouped by the value of a label. Items and columns can easily be created or dragged around to change their status.
 
-    <figure class="image"><img style="aspect-ratio:1174/850;" src="Collections_collection_board.webp" width="1174" height="850"></figure>
+    <figure class="image"><img style="aspect-ratio:1152/720;" src="Collections_collection_board.webp" width="1152" height="720"></figure>
 
 === "<span class="tn-icon bx bx-map-alt"></span> Geo Map"
 
     <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a> which displays a geographical map in which the notes are represented as pins on the map. New markers can be easily added by pointing on the map. In addition [shapes](Collections/Geo%20Map/Drawing%20shapes.md) such as paths, rectangles and circles can be added, as well as GPX tracks.
 
-    <figure class="image"><img style="aspect-ratio:844/639;" src="Collections_collection_geomap.webp" width="844" height="639"></figure>
+    <figure class="image"><img style="aspect-ratio:1152/720;" src="Collections_collection_geomap.webp" width="1152" height="720"></figure>
 
 === "<span class="tn-icon bx bx-slideshow"></span> Presentation"
 
     <a class="reference-link" href="Collections/Presentation.md">Presentation</a> which shows each note as a slide and can be presented full-screen with smooth transitions or exported to PDF for sharing.
 
-    <figure class="image"><img style="aspect-ratio:1120/763;" src="Collections_collection_presentation.webp" width="1120" height="763"></figure>
+    <figure class="image"><img style="aspect-ratio:1152/720;" src="Collections_collection_presentation.webp" width="1152" height="720"></figure>
 
 ## Classic collections
 

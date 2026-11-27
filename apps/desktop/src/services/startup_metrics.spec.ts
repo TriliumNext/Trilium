@@ -1,3 +1,4 @@
+import path from "path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (...args: unknown[]) => void;
@@ -6,7 +7,8 @@ const h = vi.hoisted(() => ({
     ipcOn: new Map<string, Handler>(),
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
-    writeShouldThrow: false
+    writeShouldThrow: false,
+    procFiles: new Map<string, string>()
 }));
 
 vi.mock("electron", () => ({
@@ -22,6 +24,13 @@ vi.mock("@triliumnext/server/src/services/data_dir.js", () => ({
 vi.mock("fs", () => ({
     default: {
         mkdirSync: (...args: unknown[]) => h.mkdirSync(...args),
+        readFileSync: (file: string) => {
+            const content = h.procFiles.get(file);
+            if (content === undefined) {
+                throw new Error(`ENOENT: ${file}`);
+            }
+            return content;
+        },
         writeFileSync: (...args: unknown[]) => {
             if (h.writeShouldThrow) {
                 throw new Error("disk full");
@@ -31,7 +40,7 @@ vi.mock("fs", () => ({
     }
 }));
 
-const METRICS_PATH = ["/tmp/trilium-data/log", "startup-metrics.log"].join(process.platform === "win32" ? "\\" : "/");
+const METRICS_PATH = path.join("/tmp/trilium-data/log", "startup-metrics.log");
 
 describe("startup metrics", () => {
     let metrics: typeof import("./startup_metrics.js");
@@ -41,6 +50,7 @@ describe("startup metrics", () => {
         h.mkdirSync.mockClear();
         h.writeFileSync.mockClear();
         h.writeShouldThrow = false;
+        h.procFiles.clear();
         vi.stubEnv("TRILIUM_ENV", "dev");
         vi.resetModules();
         metrics = await import("./startup_metrics.js");
@@ -66,6 +76,72 @@ describe("startup metrics", () => {
         const content = h.writeFileSync.mock.calls[1]?.[1];
         expect(content).toContain("test-phase:");
         expect(content).toMatch(/second-phase: \+\d+ms \(\d+ms since process creation\)/);
+    });
+
+    it("measures from the start time in /proc on Linux, not from getCreationTime()", async () => {
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        vi.setSystemTime(1_000_000);
+        const platform = vi.spyOn(process, "platform", "get").mockReturnValue("linux");
+        // A creation time a second off, as Linux reports it when the boot time is rounded.
+        const restoreCreationTime = stubCreationTime(1_000_000 - 6370);
+        // A command name with spaces and a parenthesis, so the fields are counted from its end.
+        h.procFiles.set("/proc/self/stat",
+            "4242 (trilium (x) y) S 1 4242 4242 0 -1 4194304 177 0 0 0 0 0 0 0 20 0 1 0 2000 13631488 825\n");
+        h.procFiles.set("/proc/uptime", "25.37 682270.12\n");
+        try {
+            vi.resetModules();
+            metrics = await import("./startup_metrics.js");
+            metrics.markStartupMetric("test-phase");
+
+            // Started 20 s after boot, 25.37 s after boot now.
+            expect(metrics.getStartupMetrics().get("test-phase")).toBe(5370);
+        } finally {
+            platform.mockRestore();
+            restoreCreationTime();
+            vi.useRealTimers();
+        }
+    });
+
+    it("falls back to getCreationTime() where /proc has no start time, and outside Linux", async () => {
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        vi.setSystemTime(1_000_000);
+        const platform = vi.spyOn(process, "platform", "get");
+        const restoreCreationTime = stubCreationTime(1_000_000 - 250);
+        const stat = "4242 (trilium) S 1 4242 4242 0 -1 4194304 177 0 0 0 0 0 0 0 20 0 1 0 2000 13631488 825\n";
+        // The first is cut off before the `starttime` field.
+        const cases = [ [ "linux", "4242 (trilium) S 1 4242 4242 0 -1\n" ], [ "darwin", stat ] ] as const;
+        h.procFiles.set("/proc/uptime", "25.37 682270.12\n");
+        try {
+            for (const [ os, procStat ] of cases) {
+                platform.mockReturnValue(os);
+                h.procFiles.set("/proc/self/stat", procStat);
+                vi.resetModules();
+                metrics = await import("./startup_metrics.js");
+                metrics.markStartupMetric("test-phase");
+
+                expect(metrics.getStartupMetrics().get("test-phase"), os).toBe(250);
+            }
+        } finally {
+            platform.mockRestore();
+            restoreCreationTime();
+            vi.useRealTimers();
+        }
+    });
+
+    it("falls back to getCreationTime() where /proc cannot be read", async () => {
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        vi.setSystemTime(1_000_000);
+        const restoreCreationTime = stubCreationTime(1_000_000 - 250);
+        try {
+            vi.resetModules();
+            metrics = await import("./startup_metrics.js");
+            metrics.markStartupMetric("test-phase");
+
+            expect(metrics.getStartupMetrics().get("test-phase")).toBe(250);
+        } finally {
+            restoreCreationTime();
+            vi.useRealTimers();
+        }
     });
 
     it("keeps the metric available even when the file write fails", () => {
@@ -110,3 +186,9 @@ describe("startup metrics", () => {
         expect(metrics.getStartupMetrics().has("client-full-render")).toBe(true);
     });
 });
+
+/** Electron's `process.getCreationTime()`, which plain Node, where these tests run, does not have. */
+function stubCreationTime(epochMs: number) {
+    Object.defineProperty(process, "getCreationTime", { configurable: true, value: () => epochMs });
+    return () => Reflect.deleteProperty(process, "getCreationTime");
+}

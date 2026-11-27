@@ -169,6 +169,17 @@ describe("transcription process", () => {
         parent.send(START);
         expect(await parent.next("failed"))
             .toEqual({ type: "failed", message: "Protobuf parsing failed" });
+
+        h.loadEngine.mockRejectedValueOnce(null);
+        const nullFailure = await startWorker();
+        nullFailure.send(START);
+        expect(await nullFailure.next("failed")).toEqual({ type: "failed", message: "null" });
+    });
+
+    it("stops at once when no recording started", async () => {
+        const parent = await startWorker();
+        parent.send({ type: "stop" });
+        expect(await parent.next("stopped")).toEqual({ type: "stopped" });
     });
 
     it("answers a probe with the engine's version, or why it did not load", async () => {
@@ -183,6 +194,11 @@ describe("transcription process", () => {
         failing.send({ type: "probe" });
         expect(await failing.next("probed"))
             .toEqual({ type: "probed", error: "Could not find sherpa-onnx-node." });
+
+        h.probe.mockRejectedValueOnce("no binding");
+        const stringFailure = await startWorker();
+        stringFailure.send({ type: "probe" });
+        expect(await stringFailure.next("probed")).toEqual({ type: "probed", error: "no binding" });
     });
 
     it("stops regardless when the capture page never posts its end", async () => {

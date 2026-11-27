@@ -38,6 +38,7 @@ const serverModule = (await vi.importActual("./server.js")) as {
     default: typeof import("./server.js").default;
 };
 const server = serverModule.default;
+const { requestStartupData } = await import("./startup_requests.js");
 
 type AjaxOptions = JQueryAjaxSettings & {
     success: (body: unknown, textStatus: string, jqXhr: any) => void;
@@ -222,7 +223,22 @@ describe("ajax error handling", () => {
         };
         await expect(server.postWithTimeout("url", 1000, {}, undefined, { silentBadRequest: true }))
             .rejects.toBe(JSON.stringify({ message: "CLI not found" }));
+        await expect(server.get("url", undefined, true, { silentBadRequest: true }))
+            .rejects.toBe(JSON.stringify({ message: "CLI not found" }));
         expect(toastMock.showError).not.toHaveBeenCalled();
+    });
+
+    it("stays silent on 409 from postWithSilentErrors, still rejecting with the body", async () => {
+        const responseText = JSON.stringify({ message: "The headings changed" });
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            opts.error({ status: 409, responseText });
+        };
+        await expect(server.postWithSilentErrors("url", {})).rejects.toBe(responseText);
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
+        expect((window as any).logError).not.toHaveBeenCalled();
+
+        await expect(server.post("url", {})).rejects.toBe(responseText);
+        expect(toastMock.showErrorTitleAndMessage).toHaveBeenCalledOnce();
     });
 
     it("reports validation errors (400) and still rejects when reportError throws", async () => {
@@ -496,7 +512,11 @@ describe("localFetch transport", () => {
         answerWith("The OneNote connection was lost.", { status: 401 });
         await expect(server.getWithSilentUnauthorized("url")).rejects.toBe("The OneNote connection was lost.");
 
+        answerWith("The headings changed", { status: 409 });
+        await expect(server.postWithSilentErrors("url", {})).rejects.toBe("The headings changed");
+
         expect(toastMock.showError).not.toHaveBeenCalled();
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
         expect((window as any).logError).not.toHaveBeenCalled();
     });
 
@@ -684,5 +704,93 @@ describe("uploadForm", () => {
         });
         expect((opts.data as FormData).get("upload")).toBeInstanceOf(File);
         expect((opts.data as FormData).get("taskId")).toBe("t1");
+    });
+});
+
+describe("requests started at startup", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    function stubFetch(responses: Record<string, Response>) {
+        const fetchSpy = vi.fn(async (url: string, _init?: RequestInit) => responses[url] ?? new Response("{}"));
+        vi.stubGlobal("fetch", fetchSpy);
+        return fetchSpy;
+    }
+
+    it("sends the startup GETs with the session's headers, and hands each response to the first get()", async () => {
+        const fetchSpy = stubFetch({
+            "/api/options": new Response(JSON.stringify({ theme: "next" }), {
+                headers: { "content-type": "application/json", "trilium-max-entity-change-id": "4242" }
+            })
+        });
+        const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ theme: "from ajax" }, "success", fakeJqXhr("")));
+        (window as any).$.ajax = ajaxSpy;
+
+        requestStartupData();
+        expect(fetchSpy.mock.calls.map(([ url ]) => url)).toEqual([ "/api/options", "/api/tree", "/api/keyboard-actions" ]);
+        expect(fetchSpy.mock.calls[0][1]).toMatchObject({
+            headers: { "trilium-component-id": "comp-glob", "x-csrf-token": "csrf-1" }
+        });
+
+        expect(await server.get("options")).toEqual({ theme: "next" });
+        expect(ajaxSpy).not.toHaveBeenCalled();
+        expect(server.getMaxKnownEntityChangeId()).toBeGreaterThanOrEqual(4242);
+
+        // Taken once: a later call asks again.
+        expect(await server.get("options")).toEqual({ theme: "from ajax" });
+        expect(ajaxSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves out the options when /bootstrap brought them", () => {
+        const fetchSpy = stubFetch({});
+        (window as any).glob.options = { theme: "next" };
+
+        requestStartupData();
+        expect(fetchSpy.mock.calls.map(([ url ]) => url)).toEqual([ "/api/tree", "/api/keyboard-actions" ]);
+    });
+
+    it("sends the request itself when the startup one failed, or a caller asks for more than its body", async () => {
+        stubFetch({
+            "/api/options": new Response("boom", { status: 500 }),
+            "/api/tree": new Response(JSON.stringify({ notes: [] }), { headers: { "content-type": "application/json" } })
+        });
+        const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ from: "ajax" }, "success", fakeJqXhr("")));
+        (window as any).$.ajax = ajaxSpy;
+
+        requestStartupData();
+        expect(await server.get("options")).toEqual({ from: "ajax" });
+        expect(ajaxSpy.mock.calls[0][0].url).toBe("/api/options");
+
+        // A raw read wants the text as is, which only the ordinary request gives it.
+        expect(await server.get("tree", undefined, true)).toEqual({ from: "ajax" });
+        expect(ajaxSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives up on a stalled startup request after a minute and sends it again", async () => {
+        vi.useFakeTimers();
+        try {
+            // A real fetch rejects once its signal aborts, whether it waits on the response or the body.
+            const signals: AbortSignal[] = [];
+            vi.stubGlobal("fetch", vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+                const signal = init?.signal;
+                if (signal) signals.push(signal);
+                signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+            })));
+            const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ from: "ajax" }, "success", fakeJqXhr("")));
+            (window as any).$.ajax = ajaxSpy;
+
+            requestStartupData();
+            const tree = server.get("tree");
+            await vi.advanceTimersByTimeAsync(59_000);
+            expect(ajaxSpy).not.toHaveBeenCalled();
+            await vi.advanceTimersByTimeAsync(1_000);
+            expect(await tree).toEqual({ from: "ajax" });
+            expect(ajaxSpy.mock.calls[0][0].url).toBe("/api/tree");
+            expect(signals.length).toBeGreaterThan(0);
+            expect(signals.every((signal) => signal.aborted)).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

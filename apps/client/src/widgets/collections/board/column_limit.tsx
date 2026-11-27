@@ -36,6 +36,7 @@ export default function ColumnLimitDialog({ api, column, onClose }: {
     return (
         <Modal
             className="board-column-limit-dialog"
+            portal
             title={t("board_view.set-limit")}
             size="md"
             // Raised the way every dialog opened from a context menu is: the menu's own backdrop

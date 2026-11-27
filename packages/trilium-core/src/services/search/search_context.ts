@@ -2,6 +2,7 @@
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 
+import type BNote from "../../becca/entities/bnote.js";
 import hoistedNoteService from "../hoisted_note.js";
 import optionService from "../options.js";
 import { betterQuality, type ContentMatchQuality } from "./match_quality.js";
@@ -28,6 +29,8 @@ class SearchContext {
     rankInTwoPasses: boolean;
     /** Whether the query can use the `%=` regex operator. */
     allowRegex: boolean;
+    /** See {@link SearchParams.noteFilter}. */
+    noteFilter?: (note: BNote) => boolean;
     highlightedTokens: string[];
     /**
      * Subset of {@link highlightedTokens} that came from the `%=` (regex) operator
@@ -67,6 +70,7 @@ class SearchContext {
         this.autocomplete = !!params.autocomplete;
         this.rankInTwoPasses = !!params.rankInTwoPasses;
         this.allowRegex = params.allowRegex ?? true;
+        this.noteFilter = params.noteFilter;
         let fuzzyMatchingEnabled: boolean;
         try {
             fuzzyMatchingEnabled = optionService.getOptionBool("searchEnableFuzzyMatching");
@@ -105,6 +109,16 @@ class SearchContext {
             token,
             type: this.regexTokens.has(token) ? "regex" : "plain"
         }));
+    }
+
+    /** Whether the query can read `note`, as {@link noteFilter} decides. */
+    canRead(note: BNote) {
+        return !this.noteFilter || this.noteFilter(note);
+    }
+
+    /** The notes of `notes` the query can read. */
+    readable(notes: BNote[]) {
+        return this.noteFilter ? notes.filter(this.noteFilter) : notes;
     }
 
     addError(error: string) {

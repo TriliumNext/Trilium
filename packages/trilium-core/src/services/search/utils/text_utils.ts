@@ -85,8 +85,9 @@ export function calculateOptimizedEditDistance(str1: string, str2: string, maxDi
     }
 
     // Handle edge cases
-    if (len1 === 0) return len2 <= maxDistance ? len2 : maxDistance + 1;
-    if (len2 === 0) return len1 <= maxDistance ? len1 : maxDistance + 1;
+    // The length check above already bounds the other string by maxDistance.
+    if (len1 === 0) return len2;
+    if (len2 === 0) return len1;
 
     // Use single array optimization for better memory usage
     let previousRow = Array.from({ length: len2 + 1 }, (_, i) => i);
@@ -215,44 +216,39 @@ export function validateAndPreprocessContent(content: string, noteId?: string): 
         return null;
     }
 
+    const noteLabel = noteId || "unknown";
+
     // Only block content that could actually crash the system (100MB+)
     if (content.length > FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_CONTENT_SIZE) {
-        console.error(`Content size exceeds absolute system limit for note ${noteId || 'unknown'}: ${content.length} bytes - this could cause system instability`);
+        console.error(`Content size exceeds absolute system limit for note ${noteLabel}: ${content.length} bytes - this could cause system instability`);
         // Only in truly extreme cases, truncate to prevent system crash
         return content.substring(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_CONTENT_SIZE);
     }
 
     // Warn about very large content but still process it
     if (content.length > FUZZY_SEARCH_CONFIG.PERFORMANCE_WARNING_SIZE) {
-        console.info(`Large content for note ${noteId || 'unknown'}: ${content.length} bytes - processing may take time but will attempt full search`);
+        console.info(`Large content for note ${noteLabel}: ${content.length} bytes - processing may take time but will attempt full search`);
     }
 
     // For word count, be even more permissive - only block truly extreme cases
     const wordCount = content.split(/\s+/).length;
     if (wordCount > FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT) {
-        console.error(`Word count exceeds absolute system limit for note ${noteId || 'unknown'}: ${wordCount} words - this could cause system instability`);
+        console.error(`Word count exceeds absolute system limit for note ${noteLabel}: ${wordCount} words - this could cause system instability`);
         // Only in truly extreme cases, truncate to prevent system crash
         return content.split(/\s+/).slice(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT).join(' ');
     }
 
     // Warn about high word counts but still process them
     if (wordCount > FUZZY_SEARCH_CONFIG.PERFORMANCE_WARNING_WORDS) {
-        console.info(`High word count for note ${noteId || 'unknown'}: ${wordCount} words - phrase matching may take time but will attempt full search`);
+        console.info(`High word count for note ${noteLabel}: ${wordCount} words - phrase matching may take time but will attempt full search`);
     }
 
     // Progressive processing warning for very large content
     if (content.length > FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_SIZE || wordCount > FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_WORDS) {
-        console.info(`Very large content for note ${noteId || 'unknown'} - using progressive processing to maintain responsiveness`);
+        console.info(`Very large content for note ${noteLabel} - using progressive processing to maintain responsiveness`);
     }
 
     return content;
-}
-
-/**
- * Escapes special regex characters in a string for use in RegExp constructor
- */
-function escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

@@ -602,6 +602,13 @@ describe("ContentEmbed", () => {
         expect(button("include-note-edit").disabled).toBe(true);
     });
 
+    it("shows no edit button on an excerpt of a note that is not a text note", () => {
+        renderBox({ boxSize: "full", isExcerpt: true, contentType: "markdown" });
+
+        expect(container.querySelector(".include-note-badges")?.children.length).toBe(1);
+        expect(container.querySelector(".include-note-edit")).toBeNull();
+    });
+
     it("opens an expandable excerpt to edit it, and focuses it once shown", () => {
         placeInHostEditor();
         const { content } = renderBox({ boxSize: "expandable", isExcerpt: true });
@@ -942,6 +949,21 @@ describe("ContentEmbed focused on mount", () => {
 
         act(() => render(null, container));
         renderBox({ isFocusedOnMount: true });
+        expect(document.activeElement).toBe(contentBox());
+    });
+
+    it("gives the focus to the target that its content names, or to the box until it renders", () => {
+        const content = element(`<div class="rendered-content">`
+            + `<div data-embed-focus-target=".target">`
+            + `<div class="cm-scroller" tabindex="-1"><div class="target" tabindex="-1"></div></div>`
+            + `<button>Copy</button></div></div>`);
+        renderBox({ content, isFocusedOnMount: true });
+        expect(document.activeElement).toBe(content.querySelector(".target"));
+
+        act(() => render(null, container));
+        const loading = element(`<div class="rendered-content">`
+            + `<div data-embed-focus-target=".target"><button>Copy</button></div></div>`);
+        renderBox({ content: loading, isFocusedOnMount: true });
         expect(document.activeElement).toBe(contentBox());
     });
 

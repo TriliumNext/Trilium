@@ -69,17 +69,29 @@ vi.mock("../../../services/toast", () => ({
 }));
 
 // useNoteTitle names the font a font option points at; the listing above is what the picker lists.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
-    useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title,
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),
         async (value: string) => void mocks.saved.push([ name, value ])
     ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
+vi.mock("../../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tree")>()),
+    useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title
+}));
 
+import { STACKED_TREE_LAYOUT } from "../../../services/utils";
+import { buildNote } from "../../../test/easy-froca";
 import Fonts from "./appearance_fonts";
+
+// The tree preview shows the first notes under the root, which froca serves without the server.
+buildNote({
+    id: "root",
+    title: "root",
+    children: [ { title: "Projects", children: [ { title: "Roadmap" } ] } ]
+});
 
 let host: HTMLElement;
 
@@ -441,6 +453,29 @@ describe("the font settings", () => {
         expect(box?.step).toBe(slider?.step);
     });
 
+    it("draws each specimen at the size its area is drawn at, whatever size the card is at", async () => {
+        mocks.stored = {
+            overrideThemeFonts: true, mainFontSize: "175", treeFontSize: "120", detailFontSize: "130",
+            monospaceFontSize: "90"
+        };
+        open();
+        await act(async () => {});
+
+        // The card is drawn at the document size, so a percentage would be one of that size.
+        // Code is drawn inside the document, so the monospace size is a percentage of it.
+        const specimenSizes = fontRows().map((row) => row.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize);
+        expect(specimenSizes).toEqual([ "1rem", "1.2rem", "1.3rem", "1.17rem" ]);
+
+        await openFirstRow();
+        const preview = () => document.querySelector<HTMLElement>(".font-picker-modal .font-preview-text");
+        const previewSizes: (string | undefined)[] = [];
+        for (const target of pickerTargets()) {
+            await act(async () => target.click());
+            previewSizes.push(preview()?.style.fontSize);
+        }
+        expect(previewSizes).toEqual(specimenSizes);
+    });
+
     it("shows the interface on the components the interface is made of", async () => {
         // The picker opens on the interface font, so this is what it lands on.
         await openPicker();
@@ -471,13 +506,27 @@ describe("the font settings", () => {
         expect(sample?.textContent).toContain("<=");
     });
 
-    it("leaves the preview out on mobile, where the font list needs the room", async () => {
+    it("leaves the preview out on a phone, where the font list needs the room, but not on a tablet", async () => {
         mocks.mobile = true;
+        const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+            matches: query === STACKED_TREE_LAYOUT,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        }) as unknown as MediaQueryList);
         await openPicker();
 
         expect(document.querySelector(".font-picker-modal .font-size-control")).not.toBeNull();
         expect(listedFonts()).toEqual(expect.arrayContaining(GENERIC_LABELS));
         expect(document.querySelector(".font-picker-modal .font-preview")).toBeNull();
+
+        // happy-dom's window is a tablet's.
+        matchMedia.mockRestore();
+        act(() => render(null, host));
+        document.body.innerHTML = "";
+        host = document.body.appendChild(document.createElement("div"));
+        await openPicker();
+        expect(document.querySelector(".font-picker-modal .font-preview")).toBeInstanceOf(HTMLElement);
     });
 
     it("leaves ligatures alone, since they come from the theme's own font", () => {

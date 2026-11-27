@@ -17,14 +17,13 @@
         flex: 1;
     }
 
-    /* Format name + "Recommended" badge sitting inline on the tile. */
     .export-format-heading {
         display: inline-flex;
         align-items: center;
         gap: 0.5em;
     }
 
-    .export-recommended-badge {
+    .export-format-badge {
         --color: var(--link-color, var(--main-text-color));
     }
 }

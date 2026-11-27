@@ -1,6 +1,7 @@
 import "./content_embed.css";
 
-import { BOX_SIZES, type BoxSize, hasCompactContent } from "@triliumnext/commons";
+import type { BoxSize } from "@triliumnext/commons";
+import { BOX_SIZES, hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
 import clsx from "clsx";
 import type { JSX } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
@@ -14,7 +15,8 @@ import tree from "../../services/tree";
 import Button from "../react/Button";
 import { Card, OptionCardSection } from "../react/Card";
 import HelpButton from "../react/HelpButton";
-import { useNote, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNote } from "../react/hooks/note";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";

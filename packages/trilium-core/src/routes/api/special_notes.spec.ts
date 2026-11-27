@@ -27,6 +27,13 @@ describe("Special notes API (core)", () => {
     });
 
     describe("date notes", () => {
+        it("returns the inbox target", async () => {
+            const res = await api.get<{ kind: string; noteId?: string }>("/api/special-notes/inbox-target");
+            expect(res.status).toBe(200);
+            expect(res.body.kind).toBeTruthy();
+            expect(res.body.noteId).toBeTruthy();
+        });
+
         it("returns the inbox note for a date", async () => {
             const res = await api.get<NotePojo>("/api/special-notes/inbox/2025-01-01");
             expect(res.status).toBe(200);
@@ -134,6 +141,11 @@ describe("Special notes API (core)", () => {
             expect(saved.body.branchId).toBeTruthy();
         });
 
+        it("500s when saving a chat without a body", async () => {
+            const res = await api.post("/api/special-notes/save-llm-chat");
+            expect(res.status).toBe(500);
+        });
+
         it("500s when saving a non-existent SQL console note", async () => {
             const res = await api.post("/api/special-notes/save-sql-console", {
                 body: { sqlConsoleNoteId: "missingSqlConsole123" }
@@ -184,6 +196,12 @@ describe("Special notes API (core)", () => {
             title: string;
             dateModified: string;
         }
+
+        it("returns null as the most recent chat while there is none", async () => {
+            const recent = await api.get<NotePojo | null>("/api/special-notes/most-recent-llm-chat");
+            expect(recent.status).toBe(200);
+            expect(recent.body).toBeNull();
+        });
 
         it("creates a chat, then returns it as the most recent one", async () => {
             const created = await api.post<NotePojo>("/api/special-notes/llm-chat");

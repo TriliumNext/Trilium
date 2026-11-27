@@ -29,6 +29,7 @@ import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/scrollable_bar.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
+import "@triliumnext/ckeditor5/src/theme/aside.css";
 import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
 import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
 import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
@@ -159,8 +160,15 @@ function setupTabs() {
         });
     }
 
-    // The browser does not scroll to a fragment inside a hidden panel.
-    const showFragment = () => revealFragment(location.hash)?.scrollIntoView();
+    // The browser does not scroll to a fragment inside a hidden panel or a closed `<details>`.
+    const showFragment = () => {
+        const target = revealFragment(location.hash);
+        for (let details = target?.closest("details"); details;
+            details = details.parentElement?.closest("details")) {
+            details.open = true;
+        }
+        target?.scrollIntoView();
+    };
     showFragment();
     window.addEventListener("hashchange", showFragment);
 }

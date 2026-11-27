@@ -30,12 +30,18 @@ async function renderWith(attachments: FAttachment[]) {
     return container;
 }
 
+/** Waits for a pinned section, whose view loads with the first attachment of its role. */
+function waitForSection(container: HTMLElement) {
+    return vi.waitFor(() => expect(container.querySelector(".pinned-attachment")).not.toBeNull());
+}
+
 describe("PinnedAttachments", () => {
     it("shows the attachments of a pinned role, expanded and titled, and no others", async () => {
         const container = await renderWith([
             attachment("image1", "image", "photo.png"),
             attachment("transcript1", "transcript", "Transcript")
         ]);
+        await waitForSection(container);
 
         const sections = container.querySelectorAll(".pinned-attachment");
         expect(sections).toHaveLength(1);
@@ -50,6 +56,7 @@ describe("PinnedAttachments", () => {
         const container = await renderWith([
             attachment("transcript1", "transcript", "Transcript")
         ]);
+        await waitForSection(container);
         const levels = () => container.querySelector(".collapsible-header .levels-stub");
         const title = container.querySelector<HTMLButtonElement>(".collapsible-title");
 

@@ -1,0 +1,143 @@
+@property --scroll-rail-gap {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 8px;
+}
+
+:where(:root) {
+    --scroll-rail-width: 12px;
+    --scroll-rail-gap: var(--scrollbar-start-end-gap);
+    --scroll-rail-background-color: var(--scrollbar-background-color);
+
+    --scroll-rail-handle-thickness: var(--scrollbar-thumb-thickness);
+    --scroll-rail-handle-hover-thickness: var(--scrollbar-thumb-hover-thickness);
+    --scroll-rail-handle-color: var(--scrollbar-thumb-color);
+    --scroll-rail-handle-hover-color: var(--scrollbar-thumb-hover-color);
+
+    --scroll-rail-find-color: #d9730d;
+    --scroll-rail-find-emphasis-color:
+        color-mix(in srgb, var(--scroll-rail-find-color), var(--main-text-color) 35%);
+}
+
+.scroll-rail-host {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    flex-shrink: 0;
+    height: 0;
+    overflow-anchor: none;
+}
+
+.shows-scroll-rail-handle::-webkit-scrollbar:vertical {
+    display: none;
+}
+
+/* `scrollbar-width` also hides the horizontal bar, so only engines without `::-webkit-scrollbar`
+   take it. */
+@supports not (-webkit-box-reflect: below) {
+    .shows-scroll-rail-handle {
+        scrollbar-width: none;
+    }
+}
+
+.note-split:not(.type-book) > .scrolling-container.has-scroll-rail.detail-has-end-margin
+    > .note-list-widget.full-height {
+    margin-inline-end: var(--scroll-rail-width);
+    width: auto;
+}
+
+.scroll-rail-host > .scroll-rail {
+    position: absolute;
+    top: var(--scroll-rail-top, 0);
+    inset-inline-end: 0;
+    width: var(--scroll-rail-width);
+    height: var(--scroll-rail-height, 0);
+    background-color: var(--scroll-rail-background-color);
+    contain: strict;
+    touch-action: none;
+    user-select: none;
+
+    &.is-over-line {
+        cursor: pointer;
+    }
+
+    > canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    > .scroll-rail-handle {
+        --scroll-rail-stripe-thickness: var(--scroll-rail-handle-thickness);
+        --scroll-rail-stripe-color: var(--scroll-rail-handle-color);
+
+        position: absolute;
+        top: 0;
+        inset-inline: 0;
+        height: var(--scroll-rail-handle-height, 0);
+
+        /* The thumb of `::-webkit-scrollbar-thumb` in `style.css`, in a box as wide as the other
+           scrollbars. */
+        &::before {
+            --scroll-rail-stripe-start:
+                calc((var(--scrollbar-thickness) - var(--scroll-rail-stripe-thickness)) / 2);
+            --scroll-rail-stripe-end:
+                calc(var(--scroll-rail-stripe-start) + var(--scroll-rail-stripe-thickness));
+
+            content: "";
+            position: absolute;
+            inset: 0;
+            margin-inline: auto;
+            border-radius: calc(var(--scrollbar-thickness) / 2);
+            width: var(--scrollbar-thickness);
+            background: linear-gradient(90deg,
+                transparent, transparent var(--scroll-rail-stripe-start),
+                var(--scroll-rail-stripe-color) 0px,
+                var(--scroll-rail-stripe-color) var(--scroll-rail-stripe-end),
+                transparent 0);
+        }
+
+        &:hover {
+            --scroll-rail-stripe-thickness: var(--scroll-rail-handle-hover-thickness);
+            --scroll-rail-stripe-color: var(--scroll-rail-handle-hover-color);
+        }
+    }
+
+    &.is-handle-held > .scroll-rail-handle {
+        --scroll-rail-stripe-thickness: var(--scroll-rail-handle-hover-thickness);
+        --scroll-rail-stripe-color: var(--scroll-rail-handle-hover-color);
+    }
+}
+
+/* Longhands only: Lightning CSS expands the `animation` shorthand with a `0s` duration, which ends
+   a scroll-driven animation at once. */
+@supports (animation-timeline: scroll()) {
+    .scroll-rail-host > .scroll-rail > .scroll-rail-handle {
+        animation-name: scroll-rail-handle;
+        animation-duration: auto;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(nearest block);
+    }
+
+    /* The handle shows the scroll position, so "motion disabled" keeps it. */
+    body#trilium-app.motion-disabled .scroll-rail-host > .scroll-rail > .scroll-rail-handle {
+        animation-name: scroll-rail-handle !important;
+        animation-duration: auto !important;
+        animation-timing-function: linear !important;
+        animation-fill-mode: both !important;
+        animation-timeline: scroll(nearest block) !important;
+    }
+}
+
+@keyframes scroll-rail-handle {
+    from {
+        translate: 0 0;
+    }
+
+    to {
+        translate: 0 var(--scroll-rail-handle-travel, 0);
+    }
+}

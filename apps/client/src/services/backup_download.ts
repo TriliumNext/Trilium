@@ -1,4 +1,6 @@
-import { asFileName, defaultBackupName, type StandaloneDownloadResult } from "@triliumnext/commons";
+import type { StandaloneDownloadResult } from "@triliumnext/commons";
+import { defaultBackupName } from "@triliumnext/commons/src/lib/backup_name.js";
+import { asFileName } from "@triliumnext/commons/src/lib/filesystem_name.js";
 
 /**
  * Backing up by download, which is the standalone platform's one and only backup.

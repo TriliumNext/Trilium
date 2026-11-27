@@ -1,4 +1,6 @@
 # Kanban Board
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Kanban Board_demo.webp" width="1152" height="720"></figure>
+
 The Board view lets you arrange subnotes as cards on a [Kanban board](https://en.wikipedia.org/wiki/Kanban_board).
 
 ## Creating a Kanban board

@@ -3,9 +3,10 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { FindTarget } from "../../merged_find";
 import {
-    type ContentEmbedToolProvider, registerContentEmbedTools, useContentEmbedDisplayMode,
-    watchContentEmbedTools
+    type ContentEmbedToolProvider, registerContentEmbedTools, registerEmbedFindTarget,
+    useContentEmbedDisplayMode, watchContentEmbedTools, watchEmbedFindTargets
 } from "./content_embed_tools";
 
 const containers: HTMLElement[] = [];
@@ -35,6 +36,34 @@ describe("watchContentEmbedTools", () => {
 
         unregister();
         expect(callback).toHaveBeenCalledTimes(2);
+        stopWatching();
+    });
+});
+
+describe("watchEmbedFindTargets", () => {
+    it("tells a target added or removed apart from a change of the content it searches", () => {
+        const container = document.createElement("div");
+        const outside = document.createElement("div");
+        document.body.append(container, outside);
+        containers.push(container, outside);
+        const callback = vi.fn();
+        const stopWatching = watchEmbedFindTargets(container, callback);
+        let changeContent: () => void = () => {};
+        const target = {
+            watchContent: (onChange: () => void) => {
+                changeContent = onChange;
+                return () => {};
+            }
+        } as unknown as FindTarget;
+
+        const content = container.appendChild(document.createElement("div"));
+        const unregister = registerEmbedFindTarget(content, target);
+        changeContent();
+        unregister();
+        expect(callback.mock.calls).toEqual([ [ "targets" ], [ "content" ], [ "targets" ] ]);
+
+        registerEmbedFindTarget(outside.appendChild(document.createElement("div")), target)();
+        expect(callback).toHaveBeenCalledTimes(3);
         stopWatching();
     });
 });

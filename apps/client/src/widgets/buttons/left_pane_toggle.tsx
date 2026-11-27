@@ -1,32 +1,37 @@
 import "./left_pane_toggle.css";
 
 import clsx from "clsx";
-import { useCallback, useContext, useState } from "preact/hooks";
+import { useCallback, useContext, useRef, useState } from "preact/hooks";
 
-import { showLaunchBarManagementContextMenu } from "../../menus/launcher_button_context_menu";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
+import { showLauncherContextMenu } from "../launch_bar/launch_bar_widgets";
 import ActionButton from "../react/ActionButton";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import type { PaneMode } from "../react/peek_pane";
 import PeekPaneButton from "../react/PeekPaneButton";
 import { ParentComponent } from "../react/react_utils";
 
 export default function LeftPaneToggle({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const isDocked = useLeftPaneMode() === "docked";
+    // The icon's rotation is a CSS animation, which would also play when the button mounts.
+    const initiallyDocked = useRef(isDocked);
+    const hasToggled = useRef(false);
+    hasToggled.current ||= isDocked !== initiallyDocked.current;
 
     return (
         <ActionButton
             className={clsx(
                 isHorizontalLayout ? "toggle-button" : "launcher-button",
                 "left-pane-toggle-button",
-                isDocked ? "action-collapse" : "action-expand"
+                isDocked ? "action-collapse" : "action-expand",
+                hasToggled.current && "animated"
             )}
             text={t("left_pane_toggle.toggle")}
             titlePosition={isHorizontalLayout ? "bottom" : "right"}
             triggerCommand={isDocked ? "hideLeftPane" : "showLeftPane"}
             icon={isHorizontalLayout ? "bx bx-sidebar" : "bx bx-chevrons-left"}
-            onContextMenu={showLaunchBarManagementContextMenu}
+            onContextMenu={(e) => void showLauncherContextMenu(null, e)}
         />
     );
 }
@@ -53,7 +58,7 @@ export function LeftPanePeekButton() {
     );
 }
 
-/** The mode `LeftPaneContainer` reports for the left pane. */
+/** The mode `useLeftPane()` reports for the left pane. */
 function useLeftPaneMode() {
     const [ mode, setMode ] = useState<PaneMode>(() => options.is("leftPaneVisible") ? "docked" : "closed");
     useTriliumEvent("paneModeChanged", (data) => {

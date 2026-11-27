@@ -1,0 +1,134 @@
+#mobile-sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    contain: content;
+
+    .mobile-sidebar-content {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
+    }
+}
+
+/* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+    #mobile-rest-container {
+        overflow: clip;
+        position: relative;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper {
+        position: absolute;
+        top: 0;
+        inset-inline-start: 0;
+        height: 100%;
+        width: 100%;
+        transition: transform 250ms ease-in-out;
+        background: var(--main-background-color);
+
+        &:not(.show, .dragging) {
+            visibility: hidden;
+            transition: transform 250ms ease-in-out, visibility 0s 250ms;
+        }
+    }
+
+    #detail-container {
+        position: relative;
+        width: 100%;
+        background: var(--main-background-color);
+        transition: transform 250ms ease-in-out;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            inset-inline-end: 100%;
+            width: 24px;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.12), transparent);
+            pointer-events: none;
+            transition: opacity 250ms ease-in-out;
+        }
+    }
+
+    body.mobile-sidebar-open #detail-container::before {
+        opacity: 0;
+    }
+
+    #mobile-rest-container.instant-screen-change {
+        > #mobile-sidebar-wrapper,
+        > #mobile-rest-pane > #detail-container,
+        > #mobile-rest-pane > #detail-container::before {
+            transition: none !important;
+        }
+    }
+
+    body[dir="rtl"] #detail-container::before {
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
+    }
+}
+
+@media (min-width: 744px) and (min-device-width: 600px) and (min-device-height: 600px) {
+    #mobile-sidebar-wrapper {
+        --navigator-backdrop: var(--left-pane-background-color);
+        flex-shrink: 0;
+        width: clamp(200px, var(--mobile-sidebar-width, max(25%, 280px)), 60%);
+        transform: none !important;
+        background-color: var(--navigator-backdrop) !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
+        display: none !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper:is(.left-pane-hidden, .peek) ~ #mobile-rest-pane {
+        width: 100%;
+    }
+
+    #mobile-rest-container {
+        --mobile-peek-button-width: 16px;
+        position: relative;
+
+        &:has(> #launcher-pane.vertical) {
+            --mobile-rail-width: var(--launcher-pane-vert-size, var(--launcher-pane-size));
+        }
+
+        > .left-pane-peek-button {
+            --peek-pane-button-width: var(--mobile-peek-button-width);
+            --peek-button-expand-background-color: transparent;
+            position: relative;
+            flex: none;
+        }
+
+        > #mobile-sidebar-wrapper.peek {
+            --peek-pane-shadow-offset: var(--peek-pane-shadow-depth);
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: calc(var(--mobile-rail-width, 0px) + var(--mobile-peek-button-width));
+            z-index: 15;
+            box-shadow: var(--peek-pane-shadow-offset) 0 var(--peek-pane-shadow-depth)
+                calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color);
+            animation: peek-pane-in 200ms ease-out;
+
+            body[dir=rtl] & {
+                --peek-pane-shadow-offset: calc(-1 * var(--peek-pane-shadow-depth));
+            }
+        }
+    }
+}
+
+.mobile-sidebar-gutter {
+    position: relative;
+    flex-shrink: 0;
+    width: 5px;
+    touch-action: none;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset-block: 0;
+        inset-inline: -8px;
+        z-index: 1;
+    }
+}

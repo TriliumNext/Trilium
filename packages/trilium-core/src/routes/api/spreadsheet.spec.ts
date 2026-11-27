@@ -1,7 +1,9 @@
 import ExcelJS from "exceljs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { decodeBase64 } from "../../services/utils/binary";
+import becca from "../../becca/becca";
+import BAttachment from "../../becca/entities/battachment";
+import { decodeBase64, encodeUtf8 } from "../../services/utils/binary";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -20,6 +22,10 @@ const PIXEL_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA"
 describe("Spreadsheet API (core)", () => {
     beforeAll(() => {
         api = CoreApiTester.build();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it("renders the note's stored workbook to a readable xlsx", async () => {
@@ -59,12 +65,64 @@ describe("Spreadsheet API (core)", () => {
         expect(wb.model.media[0]?.extension).toBe("png");
     });
 
+    it("refuses a protected note outside a protected session", async () => {
+        const noteId = await createSpreadsheetNote("Secret ledger", workbookJson({}));
+        vi.spyOn(becca.getNoteOrThrow(noteId), "isContentAvailable").mockReturnValue(false);
+
+        const res = await api.get(`/api/spreadsheet/${noteId}/xlsx`);
+        expect(res.status).toBe(401);
+    });
+
+    it("renders a workbook whose stored content comes back as bytes", async () => {
+        const json = workbookJson({ 0: { 0: { v: "Bytes", t: 1 } } });
+        const noteId = await createSpreadsheetNote("Byte ledger", json);
+        vi.spyOn(becca.getNoteOrThrow(noteId), "getContent").mockReturnValue(encodeUtf8(json));
+
+        const res = await api.get<Uint8Array>(`/api/spreadsheet/${noteId}/xlsx`);
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(new Uint8Array(res.body).buffer);
+        expect(wb.getWorksheet("Ledger")?.getCell("A1").value).toBe("Bytes");
+    });
+
+    it("embeds JPEG and GIF data URLs under their own extensions", async () => {
+        const cases = [
+            [ "image/jpeg", "jpeg" ], [ "IMAGE/JPG", "jpeg" ], [ "image/gif", "gif" ]
+        ];
+
+        for (const [ mime, extension ] of cases) {
+            const source = `data:${mime};base64,${PIXEL_PNG_BASE64}`;
+            const wb = await renderWorkbook(workbookJson(cellWithDrawing(source)));
+            expect(wb.model.media[0]?.extension, mime).toBe(extension);
+        }
+    });
+
+    it("skips an attachment it cannot embed or cannot read", async () => {
+        const { noteId } = await createTextNote(api, { title: "Holder" });
+        await api.post(`/api/notes/${noteId}/attachments`, {
+            body: { role: "image", mime: "image/webp", title: "pic.webp", content: "webp" }
+        });
+        const webp = becca.getNoteOrThrow(noteId).getAttachmentByTitle("pic.webp");
+        const webpSource = `api/attachments/${webp?.attachmentId}/image/pic.webp`;
+        let wb = await renderWorkbook(workbookJson(cellWithDrawing(webpSource)));
+        expect(wb.worksheets[0].getImages().length).toBe(0);
+
+        const pngSource = await uploadPixelPng("Unreadable attachment");
+        // becca loads attachments from the database on each lookup, so the prototype is spied on.
+        vi.spyOn(BAttachment.prototype, "getContent").mockImplementation(() => {
+            throw new Error("protected");
+        });
+        wb = await renderWorkbook(workbookJson(cellWithDrawing(pngSource)));
+        expect(wb.worksheets[0].getImages().length).toBe(0);
+    });
+
     it("skips a drawing it can't turn into embeddable bytes", async () => {
         // A vanished attachment, a format exceljs can't embed, and a source that is neither an
         // attachment URL nor a data URL.
         const sources = [
             "api/attachments/nosuchattachment/image/x.png",
             "data:image/svg+xml;base64,PHN2Zy8+",
+            "data:image/png;base64",
+            "data:image/png,not-base64",
             "https://example.com/photo.png"
         ];
 

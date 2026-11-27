@@ -82,6 +82,22 @@ describe("OCR text API (core)", () => {
         expect(locked.body).toEqual({ success: true, text: "", hasOcr: false });
     });
 
+    it("reports no text for a note without a blob, or whose blob row is gone", async () => {
+        const { noteId } = await createTextNote(api, { content: "<p>no blob</p>" });
+        const note = becca.getNoteOrThrow(noteId);
+        const blobId = note.blobId;
+
+        try {
+            for (const missing of [ undefined, "missingBlob1234567890" ]) {
+                note.blobId = missing;
+                const res = await api.get<TextRepresentationResponse>(`/api/ocr/notes/${noteId}/text`);
+                expect(res.body).toEqual({ success: true, text: "", hasOcr: false });
+            }
+        } finally {
+            note.blobId = blobId;
+        }
+    });
+
     it("404s for a missing note or attachment", async () => {
         const note = await api.get<TextRepresentationResponse>("/api/ocr/notes/missingNote123/text");
         expect(note.status).toBe(404);

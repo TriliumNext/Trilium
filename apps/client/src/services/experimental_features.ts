@@ -17,8 +17,8 @@ export const experimentalFeatures = [
     {
         id: "extendedCodeBlocks",
         name: "Extended code blocks",
-        description: "A faster code block with a more advanced syntax highlighting engine and "
-            + "code folding."
+        description: "Replaces the code blocks of text notes with a faster code block, which has "
+            + "a more advanced syntax highlighting engine and code folding."
     },
     {
         id: "sortSelection",

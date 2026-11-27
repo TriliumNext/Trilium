@@ -1,8 +1,9 @@
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { type ExportedIcon, renderExportedIcons } from "./icons";
 import { loadImageData } from "./images";
+import { createSvgText, exportMindMapSvg } from "./svg_exporter";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -10,9 +11,9 @@ const XLINK_NS = "http://www.w3.org/1999/xlink";
 
 /**
  * Renders the mind map to an SVG string for the preview attachment (share pages,
- * include-note, `api/images`) using mind-elixir's native exporter.
+ * include-note, `api/images`) using the SVG exporter in svg_exporter.ts.
  *
- * The native exporter clones the map's SVG layers directly, which makes it orders of
+ * The exporter clones the map's SVG layers directly, which makes it orders of
  * magnitude faster than a DOM screenshot library (~7ms vs ~1100ms with snapdom for the
  * demo map, see #10478) — but it has one known gap: labels of arrows ("custom links")
  * and summaries live in an HTML overlay (`.label-container`) rather than in the SVG
@@ -21,22 +22,13 @@ const XLINK_NS = "http://www.w3.org/1999/xlink";
  * relaxes the exporter's exact-fit text boxes so rasterization cannot clip them. It also
  * carries in the node icons, which are a font the export is given none of (see icons.ts).
  *
- * Note that upstream considers `exportSvg()` deprecated in favor of DOM screenshot
- * libraries and will not fix the label gap (see
- * https://github.com/SSShooter/mind-elixir-core/issues/359) — but a screenshot pass is
- * far too slow to run on every save (it once did, via snapdom — see #10478), so Trilium
- * deliberately uses the native exporter everywhere: this helper also feeds the
- * user-triggered SVG/PNG export actions in MindMap.tsx. If a future mind-elixir release
- * removes `exportSvg()` (a loud, type-level break), vendor the exporter instead of
- * switching back to a screenshot library.
+ * A screenshot pass is far too slow to run on every save (it once did, via snapdom — see
+ * #10478), so Trilium uses this exporter everywhere: this helper also feeds the
+ * user-triggered SVG/PNG export actions in MindMap.tsx.
  */
 export async function renderMindMapPreviewSvg(mind: MindElixirInstance): Promise<string> {
-    const [ svgText, icons ] = await Promise.all([
-        mind.exportSvg().text(),
-        // Drawn alongside the export rather than after it: each is a drawing of its own, and the
-        // first of them may have a font to wait on before there is anything to draw with.
-        renderExportedIcons(mind.nodes)
-    ]);
+    const svgText = exportMindMapSvg(mind);
+    const icons = await renderExportedIcons(mind.nodes);
     return inlineExportedImages(postProcessExportedSvg(mind, svgText, icons));
 }
 
@@ -95,21 +87,22 @@ const SIZE_SLACK_RATIO = 1.02;
 const SIZE_SLACK_PX = 2;
 
 /**
- * Post-processes mind-elixir's `exportSvg()` output to make it robust and complete:
+ * Post-processes the output of `exportMindMapSvg()` to make it robust and complete:
  *
  * - Re-adds the arrow/summary labels the exporter misses. Labels are absolutely
  *   positioned `div.svg-label` elements inside `mind.nodes` (their offset parent is the
- *   `position: relative` `me-nodes` element), so their `offsetLeft`/`offsetTop` are in
+ *   `position: relative` `.me-nodes` element), so their `offsetLeft`/`offsetTop` are in
  *   the same coordinate space as the exported SVG layers. Each label is appended to the
- *   exporter's inner `<svg>` (the one holding the map layers) as a `<foreignObject>`
- *   replicating the label's box and text style.
+ *   exporter's inner `<svg>` (the one holding the map layers): a plain-text label as a box
+ *   and SVG text, a label holding markup as a `<foreignObject>` replicating its box and
+ *   text style.
  * - Adds slack to every `<foreignObject>`'s exact-fit size so text is not clipped when
  *   the SVG is rasterized with slightly different font metrics (see the slack constants).
  * - Backs translucent node boxes with the canvas color (see {@link backTranslucentNodeBoxes}).
  * - Writes in the node icons the exporter cannot draw (see {@link placeExportedIcons}).
  *
  * @param mind the live mind map instance the SVG was exported from.
- * @param svgText the output of `mind.exportSvg().text()`.
+ * @param svgText the output of `exportMindMapSvg()`.
  * @param icons the drawings of the map's icons, as `renderExportedIcons` made them.
  * @returns the post-processed SVG, or the input unchanged if it cannot be parsed.
  */
@@ -134,7 +127,8 @@ export function postProcessExportedSvg(mind: MindElixirInstance, svgText: string
 
     const labels = mind.nodes.querySelectorAll<HTMLElement>(".svg-label");
     for (const label of Array.from(labels)) {
-        contentSvg.appendChild(doc.importNode(buildLabelForeignObject(label), true));
+        const exported = label.childElementCount ? buildLabelForeignObject(label) : buildLabelText(label);
+        contentSvg.appendChild(doc.importNode(exported, true));
     }
 
     for (const foreignObject of Array.from(doc.querySelectorAll("foreignObject"))) {
@@ -300,6 +294,34 @@ function addSizeSlack(element: Element, attribute: "width" | "height") {
         return;
     }
     element.setAttribute(attribute, String(Math.ceil(value * SIZE_SLACK_RATIO + SIZE_SLACK_PX)));
+}
+
+/**
+ * Builds the box and the SVG text of a `.svg-label` holding plain text, which image viewers draw
+ * where they skip a `<foreignObject>` (see `createSvgText()`).
+ */
+function buildLabelText(label: HTMLElement): SVGElement {
+    const style = getComputedStyle(label);
+    const offset = { offsetLeft: label.offsetLeft, offsetTop: label.offsetTop };
+
+    const group = document.createElementNS(SVG_NS, "g");
+    const box = document.createElementNS(SVG_NS, "rect");
+    const attributes: Record<string, string> = {
+        x: String(offset.offsetLeft),
+        y: String(offset.offsetTop),
+        width: String(Number.parseFloat(style.width) || label.offsetWidth),
+        height: String(Number.parseFloat(style.height) || label.offsetHeight),
+        rx: style.borderRadius,
+        fill: style.backgroundColor
+    };
+    for (const [ name, value ] of Object.entries(attributes)) {
+        if (value) {
+            box.setAttribute(name, value);
+        }
+    }
+    group.appendChild(box);
+    group.appendChild(createSvgText(label, style, offset));
+    return group;
 }
 
 /**

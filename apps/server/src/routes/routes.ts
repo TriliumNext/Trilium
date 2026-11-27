@@ -13,6 +13,7 @@ import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import auth from "../services/auth.js";
+import { desktopClipperAuth } from "../services/desktop_network_gate.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
@@ -32,14 +33,12 @@ import resourcesRoute from "./api/resources.js";
 import senderRoute from "./api/sender.js";
 import setupRestoreRoute from "./api/setup_restore.js";
 import shareTargetRoute from "./api/share_target.js";
-import systemInfoRoute from "./api/system_info.js";
+import systemInfoRoute, { checkCpuArchMismatch } from "./api/system_info.js";
 import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
-// page routes
-import setupRoute from "./setup.js";
 
 const GET = "get",
     PST = "post",
@@ -56,7 +55,6 @@ function register(app: express.Application) {
     asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login, null);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     asyncRoute(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword, null);
-    route(GET, "/setup", [], setupRoute.setupPage);
 
     // Restoring a backup, which only the setup screen offers: `checkAppNotInitialized` is what keeps
     // it from ever running against a live database, since before the database exists there is no
@@ -123,7 +121,7 @@ function register(app: express.Application) {
         mediaProxyRoute.streamProxy, null);
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
-    apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
+    asyncApiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
     apiRoute(GET, "/api/network-addresses", systemInfoRoute.getNetworkAddresses);
 
     // docker health check
@@ -137,8 +135,8 @@ function register(app: express.Application) {
     apiRoute(PATCH, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.patchToken);
     apiRoute(DEL, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.deleteToken);
 
-    // in case of local electron, local calls are allowed unauthenticated, for server they need auth
-    const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];
+    // The desktop clipper serves the extension on this computer without a token; a server needs one.
+    const clipperMiddleware = isElectron ? [desktopClipperAuth] : [auth.checkEtapiToken];
 
     route(GET, "/api/clipper/handshake", clipperMiddleware, clipperRoute.handshake, apiResultHandler);
     asyncRoute(PST, "/api/clipper/clippings", clipperMiddleware, clipperRoute.addClipping, apiResultHandler);
@@ -216,6 +214,10 @@ function register(app: express.Application) {
     asyncApiRoute(DEL, "/api/resources/:id", resourcesRoute.deleteResource);
 
     app.use("", router);
+
+    // Started once the startup work in progress has run, so that `/bootstrap` can pass the result on
+    // without a request of its own, and nothing on the way to the first page waits for `sysctl`.
+    setTimeout(() => void checkCpuArchMismatch());
 }
 
 export default {

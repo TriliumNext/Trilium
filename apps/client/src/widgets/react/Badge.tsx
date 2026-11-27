@@ -8,7 +8,7 @@ import { isDefinitionName } from "../../entities/fattribute";
 import { escapeHtml } from "../../services/utils";
 import { attributeKindIcon } from "../attribute_widgets/attribute_types";
 import Dropdown, { DropdownPanel, DropdownPanelProps } from "./Dropdown";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Icon from "./Icon";
 import RawHtml from "./RawHtml";
 
@@ -76,26 +76,46 @@ export function AttributeSnippetBadges({ snippet, className }: { snippet: string
                 }
 
                 return (
-                    <Badge
+                    <AttributeBadge
                         key={index}
-                        outline
-                        className={clsx("attribute-badge", { "has-value": !!attribute.value })}
-                        text={<>
-                            {/* The icon goes with the name, the two sharing the key's shading. */}
-                            <span className="attribute-badge-key">
-                                <Icon icon={attribute.icon} />
-                                <RawHtml className="attribute-badge-name" html={attribute.name} />
-                            </span>
-                            {attribute.value && (
-                                // The segment spans the badge's height; the text in it can end in an
-                                // ellipsis, which a flex container's own text cannot.
-                                <span className="attribute-badge-value"><RawHtml html={attribute.value} /></span>
-                            )}
-                        </>}
+                        icon={attribute.icon}
+                        name={<RawHtml className="attribute-badge-name" html={attribute.name} />}
+                        value={attribute.value && <RawHtml html={attribute.value} />}
                     />
                 );
             })}
         </div>
+    );
+}
+
+/**
+ * One attribute as an outline badge: its kind's icon and its name in a shaded key, then its value, if
+ * any, in a segment of its own.
+ */
+export function AttributeBadge({ icon, name, value }: {
+    icon: string;
+    name: ComponentChildren;
+    value?: ComponentChildren;
+}) {
+    return (
+        <Badge
+            outline
+            className={clsx("attribute-badge", { "has-value": !!value })}
+            text={<>
+                {/* The icon goes with the name, the two sharing the key's shading. */}
+                <span className="attribute-badge-key">
+                    <Icon icon={icon} />
+                    {typeof name === "string" ? <span className="attribute-badge-name">{name}</span> : name}
+                </span>
+                {value && (
+                    // The segment spans the badge's height; the text in it can end in an ellipsis,
+                    // which a flex container's own text cannot.
+                    <span className="attribute-badge-value">
+                        {typeof value === "string" ? <span>{value}</span> : value}
+                    </span>
+                )}
+            </>}
+        />
     );
 }
 

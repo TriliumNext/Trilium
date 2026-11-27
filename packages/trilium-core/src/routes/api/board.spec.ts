@@ -48,6 +48,39 @@ describe("Board API (core)", () => {
         expect(statuses(board.noteId)).toEqual([ "Alpha" ]);
     });
 
+    it("refuses a rename that does not name the attribute the board groups by", async () => {
+        const board = await buildBoard([ "Alpha" ]);
+
+        for (const attribute of [ undefined, " " ]) {
+            const res = await api.put(`/api/notes/${board.noteId}/board/rename-column`,
+                { body: { attribute, oldValue: "Alpha", newValue: "Beta" } });
+            expect(res.status).toBe(400);
+        }
+        expect(statuses(board.noteId)).toEqual([ "Alpha" ]);
+    });
+
+    it("renames the cards of a board with no stored configuration or an unreadable one", async () => {
+        for (const content of [ undefined, "{ truncated" ]) {
+            const board = await createTextNote(api, { title: "Board" });
+            const card = await createTextNote(api, { parentNoteId: board.noteId, title: "Card" });
+            await api.put(`/api/notes/${card.noteId}/set-attribute`,
+                { body: { type: "label", name: "status", value: "Alpha" } });
+            if (content !== undefined) {
+                await api.post(`/api/notes/${board.noteId}/attachments`, {
+                    body: { title: "board.json", role: "viewConfig", mime: "application/json", content }
+                });
+            }
+
+            const res = await api.put<{ cards: number }>(
+                `/api/notes/${board.noteId}/board/rename-column`,
+                { body: { attribute: "status", oldValue: "Alpha", newValue: "Beta" } });
+
+            expect(res.body.cards, String(content)).toBe(1);
+            expect(statuses(board.noteId)).toEqual([ "Beta" ]);
+            expect(attachmentOf(board.noteId)).toBe(content);
+        }
+    });
+
     it("does nothing at all for a column renamed to the name it already has", async () => {
         const board = await buildBoard([ "Alpha" ]);
 
@@ -149,6 +182,37 @@ describe("Board API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({ id: "colFirst0001", stored: true });
             expect(configOf(board.noteId).columns?.[0].id).toBe("colFirst0001");
+        });
+
+        it("creates the configuration for a board that has none", async () => {
+            const board = await createTextNote(api, { title: "Board" });
+
+            const res = await api.put<{ id: string, stored: boolean }>(
+                `/api/notes/${board.noteId}/board/column-id`,
+                { body: { value: "Alpha", id: "colAlpha0001" } });
+
+            expect(res.body).toMatchObject({ id: "colAlpha0001", stored: true });
+            const attachment = becca.getNoteOrThrow(board.noteId).getAttachmentByTitle("board.json");
+            expect(attachment?.role).toBe("viewConfig");
+            expect(attachment?.mime).toBe("application/json");
+            expect(configOf(board.noteId).columns).toEqual([ { value: "Alpha", id: "colAlpha0001" } ]);
+        });
+
+        it("replaces an empty stored id with the one offered", async () => {
+            const board = await createTextNote(api, { title: "Board" });
+            await api.post(`/api/notes/${board.noteId}/attachments`, {
+                body: {
+                    title: "board.json", role: "viewConfig", mime: "application/json",
+                    content: JSON.stringify({ columns: [ { value: "Alpha", id: "" } ] })
+                }
+            });
+
+            const res = await api.put<{ id: string, stored: boolean }>(
+                `/api/notes/${board.noteId}/board/column-id`,
+                { body: { value: "Alpha", id: "colAlpha0001" } });
+
+            expect(res.body).toMatchObject({ id: "colAlpha0001", stored: true });
+            expect(configOf(board.noteId).columns).toEqual([ { value: "Alpha", id: "colAlpha0001" } ]);
         });
 
         /** A column drawn from the definition or from its cards has no stored entry to hold an id. */

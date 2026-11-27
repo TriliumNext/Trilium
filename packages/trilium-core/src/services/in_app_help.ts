@@ -81,8 +81,8 @@ export function initInAppHelp(p: InAppHelpProvider) {
             ];
         },
         getContent(noteId: string) {
-            const page = provider?.getHelpContent()[noteId];
-            return page?.replaceAll(HELP_ASSET_TOKEN, provider?.getHelpAssetBase() ?? "");
+            const page = p.getHelpContent()[noteId];
+            return page?.replaceAll(HELP_ASSET_TOKEN, p.getHelpAssetBase());
         },
         getAssets: (noteId) => getHelpPageAssets(p, noteId)
     });
@@ -105,7 +105,7 @@ function getHelpPageAssets(p: InAppHelpProvider, noteId: string): VirtualNoteAss
 
     return [ ...encodedPaths ].map((encodedPath, index) => {
         const assetPath = decodeURIComponent(encodedPath);
-        const title = assetPath.split("/").pop() ?? assetPath;
+        const title = assetPath.slice(assetPath.lastIndexOf("/") + 1);
         return {
             id: `${noteId}_a${index + 1}`,
             url: `${p.getHelpAssetBase()}/${encodedPath}`,

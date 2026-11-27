@@ -37,6 +37,7 @@ export class DbLock {
             await this.exclusive;
         }
 
+        /* v8 ignore next -- placeholder; the Promise executor below replaces it synchronously */
         let release: () => void = () => {};
         this.exclusive = new Promise<void>((resolve) => {
             release = resolve;

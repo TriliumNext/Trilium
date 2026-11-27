@@ -6,14 +6,14 @@ For debugging a red **Release** run. Everything here is `.github/workflows/relea
 
 ```
 sanity-check ──┬──> make-electron  (matrix: 6 builds)  ──┐
-               └──> build_server   (matrix: 2 builds)  ──┴──> publish_release
-                                                              │
-                                              (on release: published)
-                                                              ▼
-                                                       release-winget.yml
+               ├──> build_server   (matrix: 2 builds)  ──┼──> publish_docker ──> publish_release
+               └──> build_docker   (main-docker.yml)   ──┘                             │
+                                                                     (on release: published)
+                                                                                       ▼
+                                                                                release-winget.yml
 ```
 
-`make-electron` and `build_server` both `needs: sanity-check` (lines 34, 103). `publish_release` `needs: [make-electron, build_server]` (lines 133-135), so it runs only after every build artifact exists.
+`make-electron`, `build_server` and `build_docker` all `needs: sanity-check`. `publish_docker` needs all three, and `publish_release` needs `publish_docker`, so a failed desktop, server or Docker build publishes nothing: no Docker tag moves and no GitHub release is created. Docker is published before the GitHub release because the release triggers the downstream workflows (winget, Flathub).
 
 ## Job 1 — `sanity-check` (the version gate)
 
@@ -35,7 +35,14 @@ sanity-check ──┬──> make-electron  (matrix: 6 builds)  ──┐
 - Matrix `arch: [x64, arm64]` on `ubuntu-22.04` / `ubuntu-24.04-arm` (lines 105-114), `./.github/actions/build-server` (line 119).
 - Uploads `release-server-linux-${arch}` from `upload/*.*` (lines 124-128).
 
-## Job 4 — `publish_release`
+## Job 4 — `build_docker` and `publish_docker`
+
+- `build_docker` calls `main-docker.yml` with `release: true`: `test_docker` (builds both Dockerfiles, runs the Playwright suite against the container) and `build` (pushes each platform image to GHCR **by digest only**, no tag). Its own `publish` job is skipped under `release: true`.
+- `publish_docker` calls `docker-publish.yml`, which assembles the digests into `v<version>`, `stable` and `latest` on GHCR and Docker Hub, then mirrors to the legacy repositories (`mirror-legacy-docker.yml`). Pushes to `main` reach the same workflow through `main-docker.yml`'s `publish` job.
+- `main-docker.yml` no longer triggers on `v*` tags itself; a release's images come only from this run.
+- **Fails when:** the container fails its healthcheck or e2e tests (`test_docker`), a platform build fails, or the GHCR/Docker Hub logins fail in `publish_docker`. If `publish_docker` fails after pushing some tags, re-run the failed jobs; the copy is idempotent.
+
+## Job 5 — `publish_release`
 
 - `mkdir upload` (137); sparse-checkout of just `docs/Release Notes` (lines 139-142); downloads **all** `release-*` artifacts merged into `upload/` (`download-artifact`, `pattern: release-*`, `merge-multiple: true`, lines 144-149); then `softprops/action-gh-release@v3.0.0` (line 152).
 - The release-body / labeling / token fields are the hard-fail surface — table below.
@@ -61,6 +68,7 @@ Separate workflow, fires on `release: types: [published]` (lines 2-4) — i.e. a
 | `Version mismatch in <file>` | sanity-check | one of the 5 checked files is stale; re-bump from root. Run the pre-flight to also catch the 4 it *doesn't* check. |
 | Release created with wrong/empty notes, or `ENOENT` on body | publish_release | release-notes file missing/misnamed at `docs/Release Notes/Release Notes/<tag>.md` |
 | `make_latest`/prerelease wrong | publish_release | tag's `rc` substring (or absence) — only `rc` flips it; rename the tag |
+| `publish_release` skipped | publish_docker / a build | a desktop, server or Docker build failed, or Docker publishing did — open the red job |
 | `fail_on_unmatched_files` / no artifacts | publish_release | an upstream `make-electron` / `build_server` matrix leg failed — open that job |
 | 403 / can't create discussion | publish_release | `RELEASE_PAT` (not `GITHUB_TOKEN`) missing or under-scoped |
 | GitHub release fine, winget never updates | release-winget | `WINGET_PAT` problem; re-run `release-winget.yml` via dispatch with the tag |

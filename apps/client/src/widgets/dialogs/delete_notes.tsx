@@ -9,7 +9,7 @@ import server from "../../services/server.js";
 import Button from "../react/Button.jsx";
 import { Card, CardSection } from "../react/Card.js";
 import FormToggle from "../react/FormToggle.js";
-import { useTriliumEvent } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
 import Modal from "../react/Modal.js";
 import NoteChips from "../react/NoteChips.js";
 import NoteLink from "../react/NoteLink.js";

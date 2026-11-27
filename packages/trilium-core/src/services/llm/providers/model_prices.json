@@ -10,6 +10,11 @@
       "output": 50,
       "ctx": 1000000
     },
+    "claude-fable-5-2": {
+      "input": 8,
+      "output": 40,
+      "ctx": 1000000
+    },
     "claude-haiku-4-5": {
       "input": 1,
       "output": 5,
@@ -33,6 +38,11 @@
     "claude-mythos-5-1": {
       "input": 10,
       "output": 50,
+      "ctx": 1000000
+    },
+    "claude-mythos-5-2": {
+      "input": 8,
+      "output": 40,
       "ctx": 1000000
     },
     "claude-mythos-preview": {
@@ -252,7 +262,7 @@
     "gemini-omni-flash-preview": {
       "input": 1.5,
       "output": 9,
-      "ctx": 1048576
+      "ctx": 131072
     },
     "gemini-pro-latest": {
       "input": 2,
@@ -552,7 +562,7 @@
     "gpt-5.6-cyber": {
       "input": 12.5,
       "output": 75,
-      "ctx": 400000
+      "ctx": 272000
     },
     "gpt-5.6-luna": {
       "input": 0.2,
@@ -579,14 +589,19 @@
       "output": 50,
       "ctx": 922000
     },
+    "gpt-6-cyber": {
+      "input": 20,
+      "output": 100,
+      "ctx": 922000
+    },
     "gpt-6-luna": {
       "input": 0.1,
       "output": 0.5,
       "ctx": 922000
     },
     "gpt-6-rosalind": {
-      "input": 15,
-      "output": 75,
+      "input": 10,
+      "output": 50,
       "ctx": 922000
     },
     "gpt-6-sol": {
@@ -602,6 +617,21 @@
     "gpt-6.1-terra": {
       "input": 1,
       "output": 5,
+      "ctx": 922000
+    },
+    "gpt-6.2-astra": {
+      "input": 8,
+      "output": 40,
+      "ctx": 922000
+    },
+    "gpt-6.2-astra-law": {
+      "input": 8,
+      "output": 40,
+      "ctx": 922000
+    },
+    "gpt-6.2-sol": {
+      "input": 2,
+      "output": 10,
       "ctx": 922000
     },
     "gpt-audio": {

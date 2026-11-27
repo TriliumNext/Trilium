@@ -39,9 +39,9 @@ Interaction:
 
 See the dedicated <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> page.
 
-## Extended code block
+## Aside blocks
 
-Choose <span class="tn-icon bx bx-code-block"></span> _Extended code block_ to insert a code block that is edited as a code note. This entry is experimental and is shown only once it is turned on. See _Extended code blocks_ in <a class="reference-link" href="Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>.
+See the dedicated <a class="reference-link" href="Aside%20blocks.md">Aside blocks</a> page.
 
 ## Math equations
 
@@ -57,7 +57,7 @@ Press the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> button t
 
 This feature is quite similar to the <a class="reference-link" href="../Mermaid%20Diagrams.md">Mermaid Diagrams</a> note types and is meant as an alternative to it for simple diagrams. For more complex diagrams, use the <a class="reference-link" href="Include%20Note.md">Include Note</a> feature for a dedicated Mermaid note.
 
-<figure class="image"><img style="aspect-ratio:1174/358;" src="2_Insert buttons_image.png" width="1174" height="358"></figure>
+<figure class="image"><img style="aspect-ratio:1174/358;" src="1_Insert buttons_image.png" width="1174" height="358"></figure>
 
 A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Resizable_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
 
@@ -82,13 +82,11 @@ Choose <span class="tn-icon bx bx-movie-play"></span> _Audio/video embed_ to ins
 
 This feature will display a horizontal line, generally useful to separate different sections of the text. To do so, press the <span class="tn-icon cke cke-horizontal-line"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>.
 
-<img src="1_Insert buttons_image.png" width="502" height="95">
-
 Alternatively, it's possible to insert a horizontal ruler by typing `---`.
 
 ## Page break
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="3_Insert buttons_image.png" width="371" height="79"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="2_Insert buttons_image.png" width="371" height="79"></figure>
 
 Page breaks provide a way to force the next paragraph or block (table, image, etc.) to be displayed onto the next page when printing (either to a real printer to [when exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md)).
 

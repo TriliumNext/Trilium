@@ -69,6 +69,25 @@ export function createWindowStateKeeper(defaults: { defaultWidth: number; defaul
     return { x: state.x, y: state.y, width: state.width, height: state.height, manage };
 }
 
+/**
+ * Moves `win` back inside the work area of the display it mostly covers, such as a window that
+ * `window.open` placed by a screen edge. A window larger than the work area keeps its top-left
+ * corner inside it.
+ */
+export function keepInsideWorkArea(win: BrowserWindow) {
+    const bounds = win.getBounds();
+    const { workArea } = screen.getDisplayMatching(bounds);
+    const x = clamp(bounds.x, workArea.x, workArea.x + workArea.width - bounds.width);
+    const y = clamp(bounds.y, workArea.y, workArea.y + workArea.height - bounds.height);
+    if (x !== bounds.x || y !== bounds.y) {
+        win.setPosition(x, y);
+    }
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(value, max));
+}
+
 function readState(stateFile: string): WindowState | null {
     let parsed: Partial<Record<keyof WindowState, unknown>>;
     try {

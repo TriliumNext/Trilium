@@ -11,9 +11,12 @@ import { t } from "../../services/i18n";
 import { RENDER_SCOPE_CLASS } from "../../services/render_css_scope";
 import { onSystemBack } from "../../services/system_back";
 import { openInAppHelpFromUrl } from "../../services/utils";
-import { useSyncedRef } from "./hooks";
-import { suspendModalFocusTraps } from "./modal_focustrap";
+import { useSyncedRef } from "./hooks/dom";
+import { setBootstrapModal, suspendModalFocusTraps } from "./modal_focustrap";
 import { ContainerVisibilityContext } from "./react_utils";
+
+// `openDialog()` then shows a dialog of this component without waiting for Bootstrap to load.
+setBootstrapModal(BootstrapModal);
 
 interface CustomTitleBarButton {
     title: string;
@@ -51,6 +54,8 @@ export interface ModalProps {
     onSubmit?: () => void;
     /** Called when the modal is shown. */
     onShown?: () => void;
+    /** Called when the modal starts to hide, before its fade-out and `onHidden`. */
+    onHide?: () => void;
     /**
      * Called when the modal is hidden, either via close button, backdrop click or submit.
      *
@@ -107,9 +112,15 @@ export interface ModalProps {
      * announced as nothing but "dialog".
      */
     ariaLabel?: string;
+    /**
+     * Renders the dialog on `document.body` rather than where it is used, for a dialog opened from
+     * inside a note: the note's container (`#center-pane`, or `#detail-container` on a tablet) keeps
+     * its layers to itself, which would leave the dialog under Bootstrap's backdrop on the body.
+     */
+    portal?: boolean;
 }
 
-export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {
+export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onHide, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel, portal }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal | undefined>(undefined);
     const elementToFocus = useRef<Element | null | undefined>(undefined);
@@ -155,6 +166,7 @@ export default function Modal({ children, className = "", size, title, customTit
         };
 
         const onModalShown = onShown && ownEvent(onShown);
+        const onModalHide = onHide && ownEvent(onHide);
         const onModalHidden = ownEvent(() => {
             onHidden();
             if (elementToFocus.current && "focus" in elementToFocus.current) {
@@ -165,14 +177,20 @@ export default function Modal({ children, className = "", size, title, customTit
         if (onModalShown) {
             modalElement.addEventListener("shown.bs.modal", onModalShown);
         }
+        if (onModalHide) {
+            modalElement.addEventListener("hide.bs.modal", onModalHide);
+        }
         modalElement.addEventListener("hidden.bs.modal", onModalHidden);
         return () => {
             if (onModalShown) {
                 modalElement.removeEventListener("shown.bs.modal", onModalShown);
             }
+            if (onModalHide) {
+                modalElement.removeEventListener("hide.bs.modal", onModalHide);
+            }
             modalElement.removeEventListener("hidden.bs.modal", onModalHidden);
         };
-    }, [ onShown, onHidden ]);
+    }, [ onShown, onHide, onHidden ]);
 
     // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
     // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
@@ -282,7 +300,7 @@ export default function Modal({ children, className = "", size, title, customTit
     const [ dialogElement, setDialogElement ] = useState<HTMLDivElement | null>(null);
     const isTall = useIsTallerThanHalfScreen(dialogElement);
 
-    return (
+    const dialog = (
         <div className={renderedClassName.current} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
             {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar, "modal-dialog-tall": isTall})} style={documentStyle} role="document" ref={setDialogElement}>
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
@@ -337,6 +355,7 @@ export default function Modal({ children, className = "", size, title, customTit
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+    return portal ? createPortal(dialog, document.body) : dialog;
 }
 
 /** Mounts a script modal beside Bootstrap's body-level backdrop while retaining its source context. */

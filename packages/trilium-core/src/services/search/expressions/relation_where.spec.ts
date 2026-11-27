@@ -7,10 +7,10 @@ import BNote from "../../../becca/entities/bnote.js";
 import { id, note, NoteBuilder } from "../../../test/becca_mocking.js";
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
+import SearchContext from "../search_context.js";
 import RelationWhereExp from "./relation_where.js";
 
-// SearchContext-like argument is unused by execute(), so we pass an empty object.
-const dummySearchContext = {} as any;
+const searchContext = new SearchContext({ ignoreHoistedNote: true });
 
 /** Build a NoteSet that contains every note currently registered in becca. */
 function allNotesSet() {
@@ -18,7 +18,7 @@ function allNotesSet() {
 }
 
 function execute(exp: RelationWhereExp, inputNoteSet = allNotesSet()) {
-    return exp.execute(inputNoteSet, {}, dummySearchContext);
+    return exp.execute(inputNoteSet, {}, searchContext);
 }
 
 function noteIds(noteSet: NoteSet) {
@@ -87,7 +87,7 @@ describe("RelationWhereExp", () => {
         rootNote.child(target).child(source);
 
         const stub = matchAll();
-        new RelationWhereExp("author", stub).execute(allNotesSet(), {}, dummySearchContext);
+        new RelationWhereExp("author", stub).execute(allNotesSet(), {}, searchContext);
 
         expect(stub.received).toHaveLength(1);
         expect(noteIds(stub.received[0])).toEqual([target.note.noteId]);

@@ -10,7 +10,7 @@ This can be useful for a few things:
 
 For shorter snippets of code that can be embedded in [Text](Text.md) notes, see [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md).
 
-![](Code_image.jpg)
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Code_demo.webp" width="1152" height="720"></figure>
 
 ## Creating a code note
 
@@ -101,6 +101,15 @@ The commands of the first two groups change every line that the selection touche
 *   _To sentence case_ lowercases the text and capitalizes the first word of each sentence and of each line. _To title case_ capitalizes every word except minor words such as "of" and "the", which stay lowercase unless they start or end a sentence.
 *   _Remove diacritics_ turns letters such as `é`, `ș` and `ł` into `e`, `s` and `l`, and removes the vowel points of Hebrew and Arabic. Letters such as `ß` and `æ` stay as they are.
 *   Sorting and the case changes follow the language set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Default content language_. In Turkish, for example, an uppercase `i` is `İ`.
+
+## Vim keybindings
+
+Code notes can be edited with Vim-style keybindings, which imitate the keys of the [Vim](https://www.vim.org/) text editor. To turn them on, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ and turn on _Vim keybindings_. The option applies to the current device only.
+
+*   If you are new to Vim, start with the <a class="reference-link" href="Text/Vim%20mode/Vim%20beginner%20guide.md">Vim beginner guide</a>.
+*   For the keys and commands, see the <a class="reference-link" href="Text/Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>. Its rows marked **Text notes only** do not apply to code notes.
+
+Text notes have a Vim mode of their own, with its own option and settings: see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
 
 ## Color schemes
 

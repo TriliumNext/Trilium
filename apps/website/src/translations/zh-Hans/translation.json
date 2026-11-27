@@ -4,7 +4,11 @@
         "architecture": "架构：",
         "title": "开始使用",
         "older_releases": "查看历史版本",
-        "server_title": "设置服务器以供多台设备访问"
+        "server_title": "设置服务器以供多台设备访问",
+        "nightly_title": "试试每日构建版",
+        "nightly_subtitle": "每天从主分支构建，包含尚未正式发布的最新功能和修复。每日构建版的安装程序会取代你现有的稳定版安装，并打开同一批笔记。如果每日构建版改动了数据库，想回到稳定版就得以恢复备份的方式实现。",
+        "nightly_all_downloads": "全部每日构建版下载",
+        "nightly_learn_more": "关于每日构建版"
     },
     "organization_benefits": {
         "hoisting_description": "通过将笔记分组到工作区下，轻松分离你的个人笔记和工作笔记——工作区会将笔记树聚焦为仅显示特定的一组笔记。",
@@ -83,12 +87,12 @@
         "download_flathub": "Flathub"
     },
     "hero_section": {
-        "title": "整理你的思路。建立你的个人知识库。",
-        "subtitle": "Trilium 是一款开源的笔记工具，用于记录和整理个人知识库。你可以在本地桌面使用它，或将其与自建服务器同步，让笔记随行随记。",
+        "title": "培育你的个人知识库。",
+        "subtitle": "把你知道的一切都放进同一棵笔记树里，需要多深就有多深。在电脑和手机上写作、画草图、做规划，再通过你自建的服务器同步，就能在任意浏览器中打开笔记。",
         "get_started": "开始使用",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes 桌面应用程序的屏幕截图",
+        "screenshot_alt": "Trilium Notes 桌面应用程序：笔记树旁边打开着一篇文本笔记",
         "tagline_license": "AGPL-3.0 许可",
         "tagline_no_account": "无需账号",
         "tagline_cross_platform": "支持离线"
@@ -132,7 +136,7 @@
         "more_questions": "还有疑问？<0>来社区问问</0>"
     },
     "final_cta": {
-        "title": "开始构建你的知识库",
+        "title": "开始培育你的知识库",
         "description": "在一个开源应用中整理一切：层级清晰的笔记、强大的搜索，以及同步到你完全掌控的服务器。",
         "get_started": "开始使用"
     },
@@ -283,5 +287,15 @@
         "render_description": "构建交互式仪表板和小型应用，直接在笔记中渲染出来，就像此处展示的时钟一样。",
         "api_title": "脚本 API",
         "api_description": "一个用于笔记、分支、属性和搜索的类型化API，可用于前端和后端脚本。"
+    },
+    "download_helper_nightly": {
+        "desktop_description": "适用于本机的最新桌面版本。用上方的架构切换可取得另一个版本。",
+        "download_flatpak": ".flatpak",
+        "android_title": "Android",
+        "android_description": "移动应用会在手机上保留一份完整的笔记副本，可离线使用，并与你的服务器同步。",
+        "download_apk": "下载 APK（.apk）",
+        "server_title": "服务器",
+        "server_description": "最新的服务器版本，以 Docker 镜像或 Linux 软件包形式提供。",
+        "server_quick_start": "用 Docker 运行："
     }
 }

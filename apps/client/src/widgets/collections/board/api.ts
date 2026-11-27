@@ -1,4 +1,5 @@
-import { BulkAction, type DefinitionObject, promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import type { BulkAction, DefinitionObject } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";

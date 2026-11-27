@@ -34,13 +34,12 @@ import { getSql } from "../services/sql/index";
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
 type Handler = (req: ApiRequest, res?: MockResponse) => unknown;
-type ResultHandler = (req: ApiRequest, res: CaptureResponse, result: unknown) => void;
 
 interface ApiRequest {
     params: Record<string, string>;
     query: Record<string, string | undefined>;
     body: unknown;
-    headers: Record<string, string>;
+    headers: Record<string, string | string[]>;
     method: string;
     file?: unknown;
     originalUrl: string;
@@ -59,8 +58,6 @@ export interface TestResponse<T = unknown> {
     status: number;
     headers: Record<string, string>;
     body: T;
-    /** The file a handler asked Express to send rather than write itself, if it did. */
-    sentFile?: string;
     /** What an `apiRoute` handler left in `res.locals`. */
     locals?: ResponseLocals;
 }
@@ -68,7 +65,8 @@ export interface TestResponse<T = unknown> {
 export interface RequestOptions {
     body?: unknown;
     query?: Record<string, string | number | boolean | undefined>;
-    headers?: Record<string, string>;
+    /** A header sent more than once is an array, as Node delivers it. */
+    headers?: Record<string, string | string[]>;
     /**
      * A fake uploaded file, mirroring the `req.file` that the Express multipart
      * middleware would populate. Lets handlers that read `req.file` (image
@@ -116,21 +114,9 @@ function formatApiResult(result: unknown): TestResponse {
     return { status: 200, headers, body: jsonRoundTrip(pojo) };
 }
 
-/** Captures what a result handler writes, for the `route(..., resultHandler)` path. */
-interface CaptureResponse {
-    captured?: TestResponse;
-    setHeader(name: string, value: string): void;
-}
-
-/** Preserves strings and raw bytes as-is; JSON round-trips everything else. */
+/** Copies raw bytes into a `Buffer`; the strings and bytes handlers send pass through otherwise. */
 function normalizeResponseBody(body: unknown): unknown {
-    if (body === undefined || typeof body === "string") {
-        return body;
-    }
-    if (Buffer.isBuffer(body) || body instanceof Uint8Array) {
-        return Buffer.from(body as Uint8Array);
-    }
-    return jsonRoundTrip(body);
+    return body instanceof Uint8Array ? Buffer.from(body) : body;
 }
 
 /**
@@ -154,8 +140,6 @@ class MockResponse extends Writable {
     headers: Record<string, string> = {};
     locals: ResponseLocals = {};
 
-    sentFile?: string;
-
     private chunks: Buffer[] = [];
     private sendBody: unknown;
     private hasSendBody = false;
@@ -163,35 +147,27 @@ class MockResponse extends Writable {
     status(code: number) { this.statusCode = code; return this; }
     set(name: string, value: string) { this.headers[name] = value; return this; }
     setHeader(name: string, value: string) { this.headers[name] = value; return this; }
-    removeHeader(name: string) { delete this.headers[name]; return this; }
+    removeHeader(name: string) { delete this.headers[name]; }
     send(body: unknown) { this.used = true; this.hasSendBody = true; this.sendBody = body; return this; }
-    /**
-     * Express sends the file itself from here, so nothing passes through this object. Recorded
-     * rather than read, which is the whole point of a handler choosing this over `send`.
-     */
-    download(filePath: string, fileName?: string) {
-        this.used = true;
-        this.sentFile = filePath;
-        this.headers["Content-Disposition"] = `attachment; filename="${fileName ?? filePath}"`;
-        return this;
-    }
-    json(body: unknown) { return this.send(body); }
     sendStatus(code: number) { this.used = true; this.statusCode = code; return this; }
 
-    override _write(chunk: Buffer | Uint8Array | string, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
+    // `decodeStrings` is on, so `Writable` hands every chunk over as a `Buffer`.
+    override _write(chunk: Buffer, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
         this.used = true;
-        this.chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array));
+        this.chunks.push(chunk);
         callback();
     }
 
     snapshot(): TestResponse {
         let body: unknown;
         if (this.chunks.length > 0) {
-            body = Buffer.concat(this.chunks);
+            // A client reads a text body as text, whether it was sent whole or written in chunks.
+            const bytes = Buffer.concat(this.chunks);
+            body = this.headers["Content-Type"]?.startsWith("text/") ? bytes.toString("utf8") : bytes;
         } else if (this.hasSendBody) {
             body = normalizeResponseBody(this.sendBody);
         }
-        return { status: this.statusCode, headers: this.headers, body, sentFile: this.sentFile };
+        return { status: this.statusCode, headers: this.headers, body };
     }
 
 }
@@ -241,8 +217,7 @@ export class CoreApiTester {
                 method: HttpMethod,
                 path: string,
                 _mw: unknown[],
-                handler: Handler,
-                resultHandler?: ResultHandler | null
+                handler: Handler
             ) =>
                 this.add(method, path, async (req) => {
                     const mockRes = createMockResponse();
@@ -257,24 +232,12 @@ export class CoreApiTester {
                             return await invoke();
                         });
 
-                    if (mockRes.used) {
-                        return mockRes.snapshot();
-                    }
-                    if (resultHandler) {
-                        const captureHeaders: Record<string, string> = {};
-                        const capture: CaptureResponse = {
-                            setHeader(name, value) { captureHeaders[name] = value; }
-                        };
-                        resultHandler(req, capture, result);
-                        const base = capture.captured ?? formatApiResult(result);
-                        return { ...base, headers: { ...captureHeaders, ...base.headers } };
-                    }
-                    return formatApiResult(result);
+                    // A route either writes its response or passes `apiResultHandler`, which formats
+                    // the handler's return value the way `formatApiResult()` does.
+                    return mockRes.used ? mockRes.snapshot() : formatApiResult(result);
                 });
 
-        const apiResultHandler: ResultHandler = (_req, res, result) => {
-            res.captured = formatApiResult(result);
-        };
+        /* v8 ignore next -- the route builders above never call the middleware they are given */
         const noop = () => {};
 
         routes.buildSharedApiRoutes({
@@ -283,7 +246,7 @@ export class CoreApiTester {
             asyncRouteWithoutTransaction: buildRoute(false),
             apiRoute,
             asyncApiRoute,
-            apiResultHandler,
+            apiResultHandler: noop,
             checkApiAuth: noop,
             checkApiAuthOrElectron: noop,
             checkAppNotInitialized: noop,
@@ -331,7 +294,7 @@ export class CoreApiTester {
             const headers = opts.headers ?? {};
             const lowerHeaders: Record<string, string> = {};
             for (const [ key, value ] of Object.entries(headers)) {
-                lowerHeaders[key.toLowerCase()] = value;
+                lowerHeaders[key.toLowerCase()] = Array.isArray(value) ? value.join(", ") : value;
             }
 
             const req: ApiRequest = {
@@ -349,6 +312,7 @@ export class CoreApiTester {
                 return (await route.run(req)) as TestResponse<T>;
             } catch (e) {
                 const status = e instanceof HttpError ? e.statusCode : 500;
+                /* v8 ignore next -- route handlers throw Error instances */
                 const message = e instanceof Error ? e.message : String(e);
                 return { status, headers: {}, body: { message } as T };
             }

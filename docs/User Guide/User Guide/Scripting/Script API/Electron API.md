@@ -22,6 +22,7 @@ The runtime value lives in `apps/desktop/src/preload.ts`; this interface is the 
 | `ws` | [`WsApi`](#type-WsApi)  <br>In-process bridge that replaces the renderer↔server WebSocket. |
 | `security` | [`SecurityApi`](#type-SecurityApi)  <br>Security settings (backend scripting, SQL console) stored outside the DB. |
 | `backupPassphrase` | [`BackupPassphraseApi`](#type-BackupPassphraseApi)  <br>Write-only access to the backup passphrase, kept in the OS keyring. |
+| `backupLocation` | [`BackupLocationApi`](#type-BackupLocationApi)  <br>The backup folder, which only the main process stores. |
 | `onenote` | [`OneNoteApi`](#type-OneNoteApi)  <br>OneNote importer sign-in via a loopback OAuth redirect (desktop only). |
 | `nativeExport` | [`NativeExportApi`](#type-NativeExportApi)  <br>Desktop-native subtree export that streams a `.zip` straight to a file. |
 | `nativeImport` | [`NativeImportApi`](#type-NativeImportApi)  <br>Desktop-native large-`.zip` import that reads the user's file in place via a capability token. |
@@ -114,14 +115,6 @@ Window-level controls: zoom, theme, title bar, full screen, lifecycle, and a han
             <td><pre><code class="language-application-typescript">isDevToolsDocked(): boolean</code></pre><p>Synchronously returns whether DevTools is currently open and docked into this window (as opposed to detached into a separate window).</p></td>
         </tr>
         <tr>
-            <td><code>setBackgroundMaterial</code></td>
-            <td><pre><code class="language-application-typescript">setBackgroundMaterial(material: string): void</code></pre><p>Sets the Windows 11 backdrop material applied behind the window contents. No-op on other platforms.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>material</code></td><td><code>string</code><br>The material, such as <code>"mica"</code>, <code>"acrylic"</code>, <code>"tabbed"</code> or <code>"none"</code>.</td></tr></tbody></table></figure></td>
-        </tr>
-        <tr>
-            <td><code>setVibrancy</code></td>
-            <td><pre><code class="language-application-typescript">setVibrancy(vibrancy: string): void</code></pre><p>Sets the macOS vibrancy effect applied behind the window contents. No-op on other platforms.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>vibrancy</code></td><td><code>string</code><br>The effect, such as <code>"sidebar"</code>, <code>"under-window"</code> or <code>"fullscreen-ui"</code>.</td></tr></tbody></table></figure></td>
-        </tr>
-        <tr>
             <td><code>reloadAllWindows</code></td>
             <td><pre><code class="language-application-typescript">reloadAllWindows(): void</code></pre><p>Triggers a hard reload of every open Trilium window.</p></td>
         </tr>
@@ -140,6 +133,10 @@ Window-level controls: zoom, theme, title bar, full screen, lifecycle, and a han
         <tr>
             <td><code>showWindow</code></td>
             <td><pre><code class="language-application-typescript">showWindow(): void</code></pre><p>Brings the main window to the foreground, restoring it if minimized.</p></td>
+        </tr>
+        <tr>
+            <td><code>releaseFirstPaint</code></td>
+            <td><pre><code class="language-application-typescript">releaseFirstPaint(): void</code></pre><p>Lets the window paint for the first time. The main process holds the first paint of a starting main or extra window, and with it the reveal of the window, until the client has rendered its interface, so that the window never shows a half-built one. No-op for other windows and once released.</p></td>
         </tr>
         <tr>
             <td><code>reportStartupMetric</code></td>
@@ -207,7 +204,7 @@ Every method here is validated in the main process before dispatch — see `apps
         </tr>
         <tr>
             <td><code>openPath</code></td>
-            <td><pre><code class="language-application-typescript">openPath(path: string): Promise&lt;string&gt;</code></pre><p>Opens a local path with its default OS handler.</p><p><strong>Security:</strong> the path is canonicalized and must resolve to either the Trilium data directory (or a descendant) or the Trilium tmp directory (or a descendant). Anything else — absolute paths elsewhere on disk, traversal attempts, UNC paths that don't normalize under those roots — is rejected. Null bytes, empty strings, and non-existent files are also rejected.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>path</code></td><td><code>string</code><br>A file in the Trilium data or tmp directory.</td></tr></tbody></table></figure><p><strong>Returns</strong> <code>Promise&lt;string&gt;</code>: An empty string on success, or an error message on failure.</p></td>
+            <td><pre><code class="language-application-typescript">openPath(path: string): Promise&lt;string&gt;</code></pre><p>Opens a local path with its default OS handler.</p><p><strong>Security:</strong> the path is canonicalized and must resolve to either the Trilium data directory (or a descendant) or the Trilium tmp directory (or a descendant). Anything else — absolute paths elsewhere on disk, traversal attempts, UNC paths that don't normalize under those roots — is rejected. Null bytes, empty strings, and non-existent files are also rejected, and so is a file whose extension makes the OS run it as a program (<code>.exe</code>, <code>.bat</code>, <code>.ps1</code>, <code>.lnk</code>, <code>.hta</code>, <code>.app</code>, <code>.command</code>, <code>.desktop</code>, an extension in <code>PATHEXT</code>, …): the file was written from a note, which chose its name and content.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>path</code></td><td><code>string</code><br>A file in the Trilium data or tmp directory.</td></tr></tbody></table></figure><p><strong>Returns</strong> <code>Promise&lt;string&gt;</code>: An empty string on success, or an error message on failure.</p></td>
         </tr>
         <tr>
             <td><code>showItemInFolder</code></td>
@@ -215,7 +212,7 @@ Every method here is validated in the main process before dispatch — see `apps
         </tr>
         <tr>
             <td><code>openFileUrl</code></td>
-            <td><pre><code class="language-application-typescript">openFileUrl(fileUrl: string): Promise&lt;string&gt;</code></pre><p>Opens a <code>file://</code> URL with its default OS handler. Exists as a separate channel from <code>openExternal</code> because neither Electron API opens every target correctly on Windows: <code>shell.openExternal</code> mishandles Unicode characters in <code>file:</code> URLs, while <code>shell.openPath</code> opens a directory with the Explorer-specific <code>explore</code> verb, bypassing the user's file manager. The main process picks between them per target.</p><p><strong>Security:</strong> the URL must use the <code>file:</code> scheme and must have an empty hostname. UNC paths (<code>file://attacker.example/share/x</code>) are explicitly blocked because Windows would otherwise resolve them to <code>\\attacker.example\share\x</code> and leak the user's NTLM hash via SMB authentication. Drive-letter-as-host malformations like <code>file://C:/path</code> are normalized to <code>file:///C:/path</code> before parsing.</p><p>Note: unlike <code>openPath</code>, the resolved path is NOT confined to the Trilium data / tmp directories — this channel handles user-clicked <code>file://</code> links inside note content, which routinely reference arbitrary locations on disk (<code>file:///C:/Users/me/Documents/contract.pdf</code> and similar). Equivalent to a browser following a <code>file:</code> link the user clicked. Treat clicks on attacker-influenced note content accordingly.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>fileUrl</code></td><td><code>string</code><br>A <code>file:</code> URL with an empty hostname.</td></tr></tbody></table></figure><p><strong>Returns</strong> <code>Promise&lt;string&gt;</code>: An empty string on success, or an error message on failure.</p></td>
+            <td><pre><code class="language-application-typescript">openFileUrl(fileUrl: string): Promise&lt;string&gt;</code></pre><p>Opens a <code>file://</code> URL with its default OS handler. Exists as a separate channel from <code>openExternal</code> because neither Electron API opens every target correctly on Windows: <code>shell.openExternal</code> mishandles Unicode characters in <code>file:</code> URLs, while <code>shell.openPath</code> opens a directory with the Explorer-specific <code>explore</code> verb, bypassing the user's file manager. The main process picks between them per target.</p><p><strong>Security:</strong> the URL must use the <code>file:</code> scheme and must have an empty hostname. UNC paths (<code>file://attacker.example/share/x</code>) are explicitly blocked because Windows would otherwise resolve them to <code>\\attacker.example\share\x</code> and leak the user's NTLM hash via SMB authentication. Drive-letter-as-host malformations like <code>file://C:/path</code> are normalized to <code>file:///C:/path</code> before parsing.</p><p>Note: unlike <code>openPath</code>, the resolved path is NOT confined to the Trilium data / tmp directories — this channel handles user-clicked <code>file://</code> links inside note content, which routinely reference arbitrary locations on disk (<code>file:///C:/Users/me/Documents/contract.pdf</code> and similar). Equivalent to a browser following a <code>file:</code> link the user clicked. A target that would run as a program — an executable extension as refused by <code>openPath</code>, or outside Windows a file with an execute bit — opens only after the user confirms it in a native dialog that defaults to Cancel. One such dialog is shown at a time; a cancel resolves to an empty string.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>fileUrl</code></td><td><code>string</code><br>A <code>file:</code> URL with an empty hostname.</td></tr></tbody></table></figure><p><strong>Returns</strong> <code>Promise&lt;string&gt;</code>: An empty string on success, or an error message on failure.</p></td>
         </tr>
         <tr>
             <td><code>downloadURL</code></td>
@@ -496,6 +493,29 @@ Both changes are also gated on a native OS confirmation, which a script can requ
     </tbody>
 </table>
 
+## <a id="type-BackupLocationApi"></a>`BackupLocationApi`
+
+The folder that backups are written to. The main process stores it from the folder that the user accepts in the OS dialog, and the options API does not write it, so a frontend script cannot choose where backups go or which folder the backup download reads.
+
+<table>
+    <thead>
+        <tr>
+            <th>Member</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>choose</code></td>
+            <td><pre><code class="language-application-typescript">choose(): Promise&lt;NativeDirectoryPickResult&gt;</code></pre><p>Prompts the native folder picker at the current backup folder and, once the user accepts a folder, writes later backups there.</p></td>
+        </tr>
+        <tr>
+            <td><code>reset</code></td>
+            <td><pre><code class="language-application-typescript">reset(): Promise&lt;void&gt;</code></pre><p>Writes later backups to the default folder again.</p></td>
+        </tr>
+    </tbody>
+</table>
+
 ## <a id="type-OneNoteApi"></a>`OneNoteApi`
 
 Desktop-only OneNote importer sign-in, driven from the main process via a loopback OAuth redirect.
@@ -692,6 +712,15 @@ What became of a request to change the stored backup passphrase.
 | `"cancelled"` | The user declined the OS confirmation, so nothing changed. |
 | `"unavailable"` | There is no keyring on this system to keep a passphrase in. |
 
+### <a id="type-NativeDirectoryPickResult"></a>`NativeDirectoryPickResult`
+
+Outcome of [`DialogApi.pickDirectory`](#type-DialogApi) and [`BackupLocationApi.choose`](#type-BackupLocationApi).
+
+| Property | Description |
+| --- | --- |
+| `status` | `"cancelled" \| "selected"` |
+| `path`  <br>_optional_ | `string`  <br>Absolute path of the chosen directory (when `status === "selected"`). |
+
 ### <a id="type-OneNoteLoginResult"></a>`OneNoteLoginResult`
 
 Outcome of a [`OneNoteApi.login`](#type-OneNoteApi) attempt.
@@ -744,15 +773,6 @@ Outcome of [`NativeImportApi.importFromToken`](#type-NativeImportApi).
 | `status` | `"error" \| "imported"` |
 | `importedNoteId`  <br>_optional_ | `string`  <br>Root note of the import (when `status === "imported"`). |
 | `message`  <br>_optional_ | `string`  <br>Failure detail (when `status === "error"`). |
-
-### <a id="type-NativeDirectoryPickResult"></a>`NativeDirectoryPickResult`
-
-Outcome of [`DialogApi.pickDirectory`](#type-DialogApi).
-
-| Property | Description |
-| --- | --- |
-| `status` | `"cancelled" \| "selected"` |
-| `path`  <br>_optional_ | `string`  <br>Absolute path of the chosen directory (when `status === "selected"`). |
 
 ### <a id="type-NativeBackupPickResult"></a>`NativeBackupPickResult`
 

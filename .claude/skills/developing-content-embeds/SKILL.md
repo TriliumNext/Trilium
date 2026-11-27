@@ -84,9 +84,9 @@ the element to the figure (`moveBoxToCaptionedFigure()`), which the share CSS pl
 export keeps the figure as raw HTML.
 
 **An embed whose caption has the selection looks selected**, as one whose player or editor has
-the focus (which selects it): `markEmbedOfSelectedCaption()` adds `ck-widget_selected` after
-`Widget` marks the selection and takes it away on `cleanSelection`. `Widget` itself marks only
-widgets inside the selection.
+the focus (which selects it): `markWidgetOfSelection()` (`widget_utils.ts`, shared with the aside)
+adds `ck-widget_selected` after `Widget` marks the selection and takes it away on
+`cleanSelection`. `Widget` itself marks only widgets inside the selection.
 
 - **Inline source** (`inline_source.ts`, `ContentEmbedInlineSource`) keeps the document readable
   elsewhere: the note exports to Markdown as a fenced `mermaid` block, other apps render it, and
@@ -96,24 +96,52 @@ widgets inside the selection.
   its history. It is converted only for languages in
   `contentEmbed.inlineLanguages`, which `buildConfig()` in `text/config.ts` derives from
   `SOURCE_EMBED_TYPES` (`services/source_embeds.ts`); a code block of another language stays a
-  code block.
+  code block, unless it is an extended code block (below). The block ID is saved on the `<code>`,
+  where a code block of CKEditor keeps it and where `BlockReferenceEditing` reads it; one that an
+  earlier version saved on the `<pre>` is read too.
+- **Extended code blocks** (`extended_code_block.ts`, `isExtendedCodeBlock()`) are inline sources
+  of a language that is no diagram, shown in the code editor (`InlineCodeEmbed`). A `<pre>` with
+  the `extended-code-block` class is one. While the experimental feature `extendedCodeBlocks` is
+  on, the host sets `contentEmbed.isCodeBlockExtended`, and they replace the code blocks of
+  CKEditor: every `<pre><code>` loads as one, also in read-only content
+  (`prepareSourceEmbeds()`), and one at its defaults (Full, editable) is saved as the bare
+  `<pre><code class="language-…">` that CKEditor saves, without the class, so the note reads
+  the same with the feature off. The plugin stops the `execute` event of the `codeBlock` command
+  and turns the selected text blocks into blocks instead, so the button, the Markdown fence
+  autoformat, the slash command and Vim all make one; the command of CKEditor still runs for a
+  `codeBlock` element, which loads where the schema allows no embed. A block takes the list
+  attributes (`$listItem`), so it stays in its list item, and no other embed does. In the
+  editor, a block saved as `MIME_TYPE_AUTO`, or in no language of `MIME_TYPES_DICT`, takes the
+  language of `contentEmbed.detectLanguage()` (highlight.js, `detectCodeLanguage()`), written
+  outside the undo stack; a read-only box detects the language of a `MIME_TYPE_AUTO` block each
+  time. Only an editor whose host has content embed handlers gets the replacement: the chat
+  input and the mind map memo keep their code blocks. Where a text note renders without embed
+  boxes (tooltips, collection previews, text notes on a canvas or a slide),
+  `renderCodeBlockPreviews()` (`content_renderer_text.ts`) fills the `<pre>` and `<code>` of each
+  block with the static HTML of `renderCodeNotePreview()`, CodeMirror's highlighter in the code
+  note theme, and marks the `<pre>` `code-block-preview`; `formatCodeBlocks()` skips
+  `code.code-preview-content`. Print, Markdown notes and content that changes as it is typed
+  keep highlight.js.
 - **Media** (`media_embed.ts`, `ContentEmbedMedia`) is the _Embed_ display mode of a link
   preview that plays something (`getLinkPreviewPlayer()` in commons): a YouTube video
   (`embedType` `youtube`), or the video or audio file at its URL (`video`, `audio`). It keeps the
   saved form of the link preview, so released versions show a YouTube video as a player and a
   file as a card, and adds `data-box-size`, `data-hide-title`, `data-position` and
-  `--include-note-width`. A video has Medium and Full, an audio file Small alone
-  (`getMediaEmbedBoxSizes()`; the ⋮ menu drops a one-size submenu). `readMediaEmbedBox()` reads a
-  YouTube video saved before as Full and untitled, and `createMediaEmbed()` makes a new video
-  Medium and untitled at `getVideoMediumWidth()` (20em high), which the box size command sets
-  again, and an audio file Small and untitled. Height follows width for a video and the controls
-  for audio (`isHeightResizable` is per element). A size change only restyles the figure: the
+  `--include-note-width`. A video has Compact (its title row alone, which
+  `renderLinkEmbedBoxHtml()` draws as a mention outside the editor), Resizable and Full; an audio
+  file has Compact (a row of controls) and Resizable (`getMediaEmbedBoxSizes()`).
+  `readMediaEmbedBox()` reads a YouTube video saved before as Full and untitled, and an audio
+  file saved as `small` as Compact. `createMediaEmbed()` makes a new video Resizable and untitled
+  at `getVideoDefaultWidth()` (20em high in the shape of the video), which the box size command
+  sets again (`getDefaultEmbedBox()`), and an audio file Compact and untitled. A video still at
+  the default width takes the width of its shape once `captureThumbnail()` learns it. Height
+  follows width for a video and the controls for audio (`isHeightResizable` is per element). A size change only restyles the figure: the
   `attribute:boxSize` converter skips `reloadEmbeddedContent()` for media, since a new player
   stops the playback. The box carries `media-embed` and `video-embed` or `audio-embed`
   (`getMediaEmbedClasses()`). `LinkEmbed.css` rounds a video file's player and placeholder as
   `.link-embed-video` is, and lifts `--include-note-media-max-height` off its `.video-preview`,
-  which would keep the video of a wider player at 20em, at the top. An audio box keeps the Small
-  rules of an audio attachment and drops only the 8rem floor of `.rendered-media`.
+  which would keep the video of a wider player at 20em, at the top. An audio box keeps the rules
+  of an audio attachment and drops only the 8rem floor of `.rendered-media`.
   A file plays in Trilium's `MediaPreview` with a `MediaSource` from `getExternalMediaSource()`
   (`isExternal`, `poster`): a video waits behind `MediaProxy` and its thumbnail, audio mounts with
   `preload="none"`, and neither reads the waveform or taps the visualizer's analyser, through
@@ -143,7 +171,7 @@ widgets inside the selection.
   answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
   editing figure, `prepareMediaEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
   `setMediaBox()`) writes it as `--video-aspect-ratio`, which the player's `aspect-ratio` and the
-  70vh cap of Full read. Only Full is capped; Medium keeps its saved width. `setMediaBox()` also
+  70vh cap of Full read. Only Full is capped; Resizable keeps its saved width. `setMediaBox()` also
   writes `data-box-size` on the shared section, Full for a video saved before box sizes. A
   preview without one is 16:9. A new link preview field goes into `LINK_PREVIEW_DATA_ATTRIBUTES`
   and `readLinkPreviewData()`, both `LinkEmbedMetadata` types (commons and the editor's
@@ -183,7 +211,7 @@ widgets inside the selection.
   it waits and shows an error toast when it rejects.
 - **Legacy blocks** — a `<pre>` without `data-box-size` predates the embed (the old Mermaid
   plugin). `getModeOfSavedView()` loads it editable, in the view of its
-  `data-trilium-display-mode` or split, at Medium. A saved embed keeps exactly what it has.
+  `data-trilium-display-mode` or split, at Resizable. A saved embed keeps exactly what it has.
 - **Later kind** (`CONTENT_EMBED_KIND_ATTRIBUTE` in `packages/commons/src/lib/content_embeds.ts`)
   is the form for any new kind that is neither a note/attachment reference nor a code block, so
   that an older version keeps it instead of dropping it on save, without a sync version bump.
@@ -256,7 +284,7 @@ A change to a storage form reaches every reader, most of them outside the client
    `contentEmbedDisplayMode`, `contentEmbedPosition`, `setContentEmbedCodeView`,
    `convertLinkToEmbed`, `convertEmbedToLink`, `deleteContentEmbed`), the box-size rules and
    observables such as `isSelectedEmbedInline` and `selectedEmbedTools`. `inline_source.ts` adds
-   `insertInlineEmbed` and `extended_code_block.ts` `insertExtendedCodeBlock`.
+   `insertInlineEmbed`; `extended_code_block.ts` adds no command and redirects `codeBlock`.
    `deleteContentEmbed` serves any kind: `getDeleteAndConvertGroup()` in
    `apps/client/src/menus/link_context_menu.ts` ends the ⋮ menu of a note, an attachment, a video
    and an extended code block with it as _Delete block_, with a neutral icon, so it reads apart
@@ -278,7 +306,8 @@ A change to a storage form reaches every reader, most of them outside the client
    `buildConfig()` through a getter, and `bindContentEmbedHandlers()` in `text/config.ts` forwards
    each one **by name**: a member missing there is never called, and nothing fails.
    `buildConfig()` sets the rest itself: `pickNote()`, `inlineLanguages`,
-   `renderInlinePreview()`, `sanitizeHtml()` and `captureVideoThumbnail()`. The plugin never
+   `isCodeBlockExtended`, `detectLanguage()`, `renderInlinePreview()`, `sanitizeHtml()` and
+   `captureVideoThumbnail()`. The plugin never
    imports client code.
 3. **Box** (`text/utils.ts`). `loadEmbeddedNote()` and `loadEmbeddedAttachment()` render the
    content with `content_renderer`; `loadInlineEmbed()` loads the source type's component and
@@ -296,7 +325,10 @@ A change to a storage form reaches every reader, most of them outside the client
 ## The content component contract
 
 A content component receives the content and an optional `ContentEditor`
-(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Source
+(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Content
+that records its changes since its base passes `ChangeRecordHooks` (`services/note_save.ts`) as the
+third argument of `scheduleSave()`, as `MarkdownEmbed` does with those of `useBlockMarkers()`, and
+the saves of the note bring its changes onto another writer's version before asking. Source
 embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the source has:
 `InlineSourceEmbed` and `AttachmentSourceEmbed` in `text/SourceEmbed.tsx` adapt the two.
 
@@ -362,7 +394,7 @@ embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the so
   controls live in the toolbar must show them over itself meanwhile — `MermaidDiagram` shows
   `SvgZoomControls` while `!canEdit || isFullscreen`. The box already has an exit button.
 - **Fullscreen without a title row.** The title row holds the box's fullscreen button, so an
-  untitled Medium or Full box (`needsFullscreenButton()` / `useNeedsFullscreenButton()`) needs
+  untitled Resizable or Full box (`needsFullscreenButton()` / `useNeedsFullscreenButton()`) needs
   the content to offer one: a toolbar tool while it can be edited, an `OverlayFullscreenButton`
   after the zoom buttons while read-only (no toolbar then). A read-only drawing still has none.
 
@@ -456,7 +488,7 @@ without one is skipped, and nothing reports it.
   match, and _Replace all_ skips it.
 - **Ctrl+F inside the content** does not reach the binding that opens the find bar, as the embed
   keeps its keys from the window. Content that takes the focus calls `useFindShortcut(rootRef)`
-  (`react/hooks.tsx`), as `CanvasDrawing` does.
+  (`react/hooks/shortcuts.ts`), as `CanvasDrawing` does.
 
 ## Caret navigation
 
@@ -501,9 +533,13 @@ any other block. An editor takes part by opting in; without it, the caret steps 
   `EditableEmbedContent` hides the preview while the editor shows rather than unmounting it, as
   a remount would show the disposed boxes. A key shown before renders again, as its preview
   is disposed.
-- **Tiny never renders its target.** The box shows only the title (`TinyContentEmbed`), and
-  `resolveContentEmbed()` (commons `content_embeds.ts`) makes it a link on print and share pages.
-  A new render path checks `data-box-size="tiny"` before calling `getRenderedContent()`.
+- **Compact renders its target only for compact content.** The box shows only the title
+  (`CompactContentEmbed`) unless the content has a compact form (`hasCompactContent()`: audio, a
+  row of controls), and `isEmbedShownAsLink()` (commons `content_embeds.ts`) makes it a link on
+  print and share pages. A new render path checks `data-box-size="compact"` and
+  `hasCompactContent()` before calling `getRenderedContent()`. `normalizeEmbedBox()` reads the
+  sizes of older versions first (`LEGACY_BOX_SIZES`: `tiny` as Compact, `small` and `medium` as
+  Resizable at 10em and 20em).
 - **Box sizes cap the height only.** Content with no height of its own (an iframe, a view that
   scrolls itself, absolutely positioned children) needs a height per box size. A `height: 100%`
   chain below `.include-note-content` resolves to `auto` and collapses: give the wrapper a
@@ -515,7 +551,7 @@ any other block. An editor takes part by opting in; without it, the caret steps 
   (`text/utils.ts`) lets the host skip its redraw on a save that changes only the content. A
   rename, a deletion or a static kind (image, PDF) still redraws.
 - **Hidden views** (a background tab, a collapsed box) apply changes once shown, through
-  `useWhenShown(ref)` (`react/hooks.tsx`). Only the last waiting callback runs, so check a request
+  `useWhenShown(ref)` (`react/hooks/dom.ts`). Only the last waiting callback runs, so check a request
   ID before queuing, not after.
 - **Pace the saves** of content that changes continuously: `postponeSave()` on the
   `ContentEditor` holds the scheduled save while input goes on.
@@ -558,13 +594,13 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
    view, `SplitLayout` + `useMountedPanes()` + `EmbedSourcePane` (in `code/CodeEmbedEditor.tsx`)
    give the layout, the divider, the error card, the stale badge and a source pane that stays
    mounted behind the preview and shares the note's undo history. Delay re-rendering with `useDebouncedValue()`. Give the root
-   the `include-note-box-height` class for the 10/20/50em heights per box size and full height in
-   fullscreen, and round it with `--_include-note-content-*-radius` (edge to edge) or
+   the `include-note-box-height` class for the height per box size (Resizable its saved height or
+   20em, Full 50em) and full height in fullscreen, and round it with `--_include-note-content-*-radius` (edge to edge) or
    `--_include-note-framed-*-radius` (inside the 2px frame), all in `style.css`. Content that
    draws the frame as padding of the content box sets `--_include-note-frame-height` there
    (`MermaidDiagram.css`), which `.include-note-box-height` subtracts.
 4. An insert command: `INSERT_INLINE_EMBED_COMMAND` with `{ language, source }` (see
-   `mermaid_ui.ts` and `slash_commands.ts`). New embeds are editable, untitled and Medium.
+   `mermaid_ui.ts` and `slash_commands.ts`). New embeds are editable, untitled and Resizable.
 5. The other three surfaces. `prepareSourceEmbeds()` in `text/embed_boxes.ts` picks up any language of
    `SOURCE_EMBED_TYPES`, but print, the Markdown preview, share pages and Markdown import match
    `language-mermaid` by name and show a new language as a plain code block: give each a branch
@@ -580,7 +616,8 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
    `editable`, `focusEmbed`).
 3. Persistence through the `ContentEditor` (`useAttachmentEditor()` in `text/attachment_saves.ts`
    and `bindAttachmentEditor()` in `services/content_renderer.ts` batch and retry the saves, and
-   flush them before leaving). If other
+   flush them before leaving). Each row saves through `NoteSaver.saveAttachment()` with the blob
+   it was read at, so a save over another writer's change asks the user, as a note does. If other
    places need a picture without loading the editor (share pages, previews), save one as an image
    attachment beside the content, as `persistence.ts` does under `getDrawingPictureTitle()`.
 4. An attachment detail view reusing the same editor (`CanvasDrawingDetail` in `Attachment.tsx`).
@@ -596,7 +633,7 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
 | Where | Path | What an embed gets |
 |---|---|---|
 | Read-only note, AI chat replies, tool results | `ReadOnlyTextContent` (`text/ReadOnlyText.tsx`) → `prepareEmbedBoxes()` (`text/embed_boxes.ts`) | `loadEmbedded*()`, and `loadInlineEmbed()` (`text/utils.ts`) with a fixed read-only source. Same box and component as the editor. |
-| The content of an embed box (an included text or Markdown note, a Markdown file) | `loadEmbedded*()` renders it with `embedBoxes` → `postProcessRichContent()` → `prepareEmbedBoxes(…, isNested)` | The same read-only boxes, at every depth. An embed of a note or attachment in `seenNoteIds` (the notes shown around it, and the host note) becomes a reference link, which ends a cycle. A Markdown preview passes `isChanging` and draws its diagrams in place. |
+| The content of an embed box (an included text or Markdown note, a Markdown file) | `loadEmbedded*()` renders it with `embedBoxes` → `postProcessRichContent()` → `prepareEmbedBoxes(…, isNested)` | Compact boxes: `prepareContentEmbeds()` sets every nested embed of a note or attachment to Compact, so content that holds no compact form shows its title row only. An embed of a note or attachment in `seenNoteIds` (the notes shown around it, and the host note) becomes a reference link, which ends a cycle. A Markdown preview passes `isChanging` and draws its diagrams in place. |
 | Markdown note preview, a chat reply while streaming | `ReadOnlyTextContent` with `isChanging` | Diagrams drawn in place (`rewriteMermaidDiagramsInContainer()` + `applyInlineMermaid()`), which keep the last drawing while the next renders; a box would remount on every update. |
 | Print (`glob.device === "print"`), included notes, previews | `postProcessRichContent()` in `services/content_renderer_text.ts` | Drawn in place; printing snapshots before a box would draw. |
 | Share pages | core `share/content_renderer.ts`, share theme `content/mermaid.ts` | Static: an image attachment or the drawing's saved picture as `<img>`, any other attachment as a download link; included notes through the share page's renderer of their type; Mermaid drawn over its code block; media through `setMediaBox()`. No box. |
@@ -623,8 +660,8 @@ in-place drawings replaced the code blocks the boxes need.
   `postProcessRichContent()` draws its own diagrams before `renderContentEmbeds()`, and printing
   adds no pass of its own. `trim` keeps the `<style>` inside each SVG.
 - **Keep the block ID.** A read-only view that swaps the saved element for a box copies
-  `data-trilium-block-id` onto it (on the `<pre>`, or the `<code>` of older diagrams), or links to
-  the block stop resolving.
+  `data-trilium-block-id` onto it (on the `<code>`, or the `<pre>` of blocks saved before), or
+  links to the block stop resolving.
 
 - **Content renders detached.** `loadInlineEmbed()` renders into a detached `div` before the box
   mounts it, so a hook that looks up `.closest(".include-note")` once finds nothing. Use the
@@ -647,15 +684,17 @@ in-place drawings replaced the code blocks the boxes need.
   before `CodeMirror` created the view: no find target, no `onReady`. Its effects wait for the
   `view` state that `onInitialized` sets; the content loads in a layout effect, so it paints with
   the editor.
-- **Box sizes need a title row.** Tiny and Expandable show only the title, so an untitled inline
-  embed was invisible at Tiny. `INLINE_BOX_SIZES` (Small, Medium, Full) limits the dropdown, the
-  command and the ⋮ menu (`getBoxSizes(domElement)`), and other sizes load as Medium. Give each
-  size a height in the component's CSS (`[data-box-size="small"]`, `"full"`) and `100%` under
-  `.include-note-content:fullscreen`, and size the wrapper too (`.source-embed`), or fullscreen
-  fills only part of the screen.
+- **Box sizes need a title row.** Compact and Expandable show only the title, so an untitled
+  inline embed would be invisible at either. `INLINE_BOX_SIZES` (Resizable, Full) limits the
+  dropdown, the command and the ⋮ menu (`getEmbedBoxSizes()`), and other sizes load as
+  Resizable, or Full for an extended code block. Give each size a height in the component's CSS
+  (`.include-note-box-height` gives Resizable its saved height or 20em and Full 50em) and `100%`
+  under `.include-note-content:fullscreen`, and size the wrapper too (`.source-embed`), or
+  fullscreen fills only part of the screen.
 - **Embeds nest, so scope box rules with `>`.** `.include-note[data-box-size="full"] .x` or
   `.include-note-content:not(:fullscreen) .x` also matches the content of an embed inside that
-  box: a nested Medium box took the Full height, and a nested box in fullscreen lost its height.
+  box: a nested Resizable box took the Full height, and a nested box in fullscreen lost its
+  height.
   Chain the embed's own elements, as `MarkdownEmbed.css` does: `.include-note >
   .include-note-wrapper > .include-note-body > .include-note-content > .rendered-content`.
 - **CKEditor hides a toolbar separator that is `:first-child`.** The leading separator of the
@@ -727,8 +766,7 @@ A user-facing change is documented in the same change. Where each part lives, un
 `docs/User Guide/User Guide/`:
 - `Note Types/Text/Include Note.md`: the box (sizes, resizing, positioning, caption, title),
   missing content, share pages, editing in place, included Markdown, drawing canvases.
-- `Note Types/Text/Insert buttons.md`: _Extended code block_, _Drawing canvas_, _Mermaid diagram_,
-  _Audio/video embed_.
+- `Note Types/Text/Insert buttons.md`: _Drawing canvas_, _Mermaid diagram_, _Audio/video embed_.
 - `Note Types/Text/Link Previews.md`: _Audio and video_.
 - `Basic Concepts and Features/Notes/Attachments.md`: _Embedding an attachment_, drawing pictures.
 - `Note Types/Text/Developer-specific formatting/Code blocks.md`: extended code blocks.
@@ -752,6 +790,8 @@ touches; then `docs.mjs sync` and `check`.
 - **ckeditor5-plugin-development** / **ckeditor5-testing**: editor plugin conventions and specs.
 - **building-client-ui**: `OverlayControlGroup`, `ZoomControls` and the other overlay controls.
 - **developing-mermaid-highlighting**: the CodeMirror Mermaid language the source pane uses.
+- **developing-block-references**: excerpts (embeds with `data-block`), their badge and pencil,
+  and editing a range of blocks in place.
 - **developing-share-pages**: the share theme's own rendering of embeds and diagrams.
 - **patching-excalidraw**: changes inside Excalidraw, which the drawing canvas relies on.
 - **writing-documentation**: `docs.mjs` and the User Guide house style.

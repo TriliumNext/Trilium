@@ -26,7 +26,6 @@ import {
 } from "@ckeditor/ckeditor5-icons";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
-import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
@@ -42,6 +41,7 @@ import {
     BookmarkUI, type Editor, type MentionFeedObjectItem, type ModelElement, Plugin
 } from "ckeditor5";
 
+import asideIcon from "../../icons/aside.svg?raw";
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
 import dateTimeIcon from "../../icons/date-time.svg?raw";
 import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
@@ -56,9 +56,6 @@ import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
 import { COMMAND_NAME as CHILD_NOTE_COMMAND } from "../child_note.js";
 import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
-import {
-    INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
-} from "../content_embed/extended_code_block.js";
 import { insertDrawingCanvas } from "../file_upload/file_upload_ui.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
@@ -301,6 +298,7 @@ function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
 /**
  * Ranks `definitions` against what the user typed after the `/`.
  *
+ * An exact title or alias match sorts first, so `/2` offers "Heading 2" before "2 columns layout".
  * Prefix matches sort above substring matches so that `/co` offers "Code block" before "Table of
  * contents", and title matches above alias matches so an entry is found by its own name first.
  * Ordering within a tier is the catalog order, which is deliberate: the defaults come first and the
@@ -320,14 +318,16 @@ export function matchSlashCommands(definitions: SlashCommandDefinition[], query:
         const aliases = (definition.aliases ?? []).map((alias) => alias.toLowerCase());
         let rank: number | null = null;
 
-        if (title.startsWith(needle)) {
+        if (title === needle || aliases.includes(needle)) {
             rank = 0;
-        } else if (aliases.some((alias) => alias.startsWith(needle))) {
+        } else if (title.startsWith(needle)) {
             rank = 1;
-        } else if (title.includes(needle)) {
+        } else if (aliases.some((alias) => alias.startsWith(needle))) {
             rank = 2;
-        } else if (aliases.some((alias) => alias.includes(needle))) {
+        } else if (title.includes(needle)) {
             rank = 3;
+        } else if (aliases.some((alias) => alias.includes(needle))) {
+            rank = 4;
         }
 
         if (rank !== null) {
@@ -439,16 +439,6 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
         },
         ...buildMermaidSlashCommands(editor),
         {
-            id: "extended-code-block",
-            title: t("Extended code block"),
-            description: t("Insert a code block that is edited as a code note."),
-            aliases: [ "code", "codemirror", "pre" ],
-            icon: bxCodeBlock,
-            willInsert: true,
-            commandName: INSERT_EXTENDED_CODE_BLOCK_COMMAND,
-            execute: insertExtendedCodeBlock
-        },
-        {
             id: "ai-assistant",
             title: t("AI assistant"),
             description: t("Ask AI to rewrite the selection or generate new content."),
@@ -482,6 +472,16 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             commandName: "tabs"
         },
         ...buildMulticolumnSlashCommands(editor),
+        {
+            id: "aside",
+            title: t("Aside"),
+            description: t("Insert a box of text that the main text wraps around."),
+            aliases: [ "sidebar", "side note", "margin note", "text box", "float" ],
+            icon: asideIcon,
+            willInsert: true,
+            willWrap: true,
+            commandName: "insertAside"
+        },
         {
             id: "footnote",
             title: t("Footnote"),
@@ -541,7 +541,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             id: "child-note",
             title: t("Create a new child note"),
             description: t("Create a new child note and insert a link to it"),
-            aliases: [ "new note", "subnote", "sub-note", "page" ],
+            aliases: [ "new note", "subnote", "sub-note", "new page", "subpage" ],
             icon: bxSubdirectoryRight,
             willInsert: true,
             commandName: CHILD_NOTE_COMMAND
@@ -964,7 +964,7 @@ function buildHeadingSlashCommands(editor: Editor): SlashCommandDefinition[] {
             id: option.model,
             title: t(option.title),
             description: editor.locale.t("Turn the current block into a heading."),
-            aliases: [ "title", option.model.replace("heading", "h") ],
+            aliases: [ "title", option.model.replace("heading", "h"), option.model.replace("heading", "") ],
             icon: icons[option.model] ?? IconHeading2,
             willWrap: true,
             // `heading` takes the level as an argument, so it cannot use `commandName`.

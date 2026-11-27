@@ -1,4 +1,6 @@
-import { iconFontFaceOverrides, type IconFontMetrics, IconRegistry } from "@triliumnext/commons";
+import {
+    CSS_CLASS_NAME_PATTERN, iconFontFaceOverrides, type IconFontMetrics, IconRegistry
+} from "@triliumnext/commons";
 
 import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
@@ -24,13 +26,6 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
     "font/woff2": "woff2"
 };
 
-/**
- * Character set a pack's prefix and each of its icon keys must match. Both are interpolated
- * into a CSS class selector, which takes letters, digits, `-`, `_` and any code point at or
- * above U+0080 unescaped. Anything else has to be rejected: a key holding `</style>` ends the
- * inline `<style>` element that `generateCss()` output is served in.
- */
-const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
 const MAX_LOGGED_SKIPPED_KEYS = 10;
 
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {
@@ -234,7 +229,44 @@ export function generateIconTransformCss(): string {
         .join("\n");
 }
 
-export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
+export function generateCss(iconPack: ProcessedIconPack, fontUrl: string) {
+    const glyphCss = generateIconPackGlyphCss(iconPack);
+    return glyphCss !== null ? `${generateIconPackFontCss(iconPack, fontUrl)}\n${glyphCss}` : null;
+}
+
+/** The font of an icon pack and the rule that draws its prefix in it, without any glyph. */
+export function generateIconPackFontCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
+    const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
+    const fontFace = [
+        `font-family: '${fontFamily}';`,
+        "font-weight: normal;",
+        "font-style: normal;",
+        `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
+        ...iconFontFaceOverrides(manifest.metrics)
+    ].join("\n            ");
+
+    return `\
+        @font-face {
+            ${fontFace}
+        }
+
+        .${prefix} {
+            font-family: '${fontFamily}' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-variant: normal;
+            line-height: 1;
+            text-rendering: auto;
+            display: inline-block;
+            text-transform: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    `;
+}
+
+/** The `::before` rule of each icon of a pack, which places its character. */
+export function generateIconPackGlyphCss({ manifest, prefix }: ProcessedIconPack) {
     try {
         const iconDeclarations: string[] = [];
         const skippedKeys: string[] = [];
@@ -254,35 +286,7 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
             getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
         }
 
-        const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
-        const fontFace = [
-            `font-family: '${fontFamily}';`,
-            "font-weight: normal;",
-            "font-style: normal;",
-            `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
-            ...iconFontFaceOverrides(manifest.metrics)
-        ].join("\n                ");
-
-        return `\
-            @font-face {
-                ${fontFace}
-            }
-
-            .${prefix} {
-                font-family: '${fontFamily}' !important;
-                font-weight: normal;
-                font-style: normal;
-                font-variant: normal;
-                line-height: 1;
-                text-rendering: auto;
-                display: inline-block;
-                text-transform: none;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-
-            ${iconDeclarations.join("\n")}
-        `;
+        return iconDeclarations.join("\n");
     } catch (e) {
         getLog().error(safeExtractMessageAndStackFromError(e));
         return null;

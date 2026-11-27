@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "WebWorker", "WebWorker.Iterable"],
+    "types": ["vite/client"],
+    "rootDir": "../..",
+    "outDir": "out-tsc/worker",
+    "tsBuildInfoFile": "out-tsc/worker.tsbuildinfo"
+  },
+  "include": [
+    "src/local-server-worker.ts",
+    "src/lightweight/**/*.ts",
+    "src/services/image_provider.ts",
+    "src/stubs/**/*.ts",
+    "package.json",
+    "../server/src/assets/help/help_meta.json"
+  ],
+  "exclude": ["src/**/*.spec.ts"],
+  "references": [
+    { "path": "../../packages/trilium-core/tsconfig.lib.json" },
+    { "path": "../../packages/commons/tsconfig.lib.json" },
+    { "path": "../../packages/trilium-backup-container/tsconfig.lib.json" }
+  ]
+}

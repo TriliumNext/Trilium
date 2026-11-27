@@ -99,7 +99,7 @@ function checkContentHashes(otherHashes: Record<string, SectorHash>) {
     const failedChecks: FailedCheck[] = [];
 
     for (const entityName in entityHashes) {
-        const thisSectorHashes: SectorHash = entityHashes[entityName] || {};
+        const thisSectorHashes: SectorHash = entityHashes[entityName];
         const otherSectorHashes: SectorHash = otherHashes[entityName] || {};
 
         const sectors = new Set(Object.keys(thisSectorHashes).concat(Object.keys(otherSectorHashes)));

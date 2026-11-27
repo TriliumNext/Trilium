@@ -25,6 +25,7 @@ export const ATTR_HELP: AttrHelpMap = {
         hidePromotedAttributes: t("attribute_detail.hide_promoted_attributes"),
         readOnly: t("attribute_detail.read_only"),
         autoReadOnlyDisabled: t("attribute_detail.auto_read_only_disabled"),
+        vimMode: t("attribute_detail.vim_mode"),
         appCss: t("attribute_detail.app_css"),
         appTheme: t("attribute_detail.app_theme"),
         appThemeBase: t("attribute_detail.app_theme_base"),
@@ -230,6 +231,9 @@ export const ATTR_HELP: AttrHelpMap = {
         shareJs: t("attribute_detail.share_js"),
         shareTemplate: t("attribute_detail.share_template"),
         shareFavicon: t("attribute_detail.share_favicon"),
+        docxTemplate: {
+            description: t("attribute_detail.docx_template"), helpPage: "mHbBMPDPkVV5"
+        },
         internalLink: t("attribute_detail.internal_link"),
         imageLink: t("attribute_detail.image_link"),
         relationMapLink: t("attribute_detail.relation_map_link"),

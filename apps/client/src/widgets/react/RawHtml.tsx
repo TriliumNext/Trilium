@@ -3,7 +3,8 @@ import DOMPurify from "dompurify";
 import type { CSSProperties, HTMLAttributes, RefObject } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-import { useImperativeSearchHighlighlighting } from "./hooks";
+import { getMatchText, type MatchOptions } from "../../services/highlight_matches";
+import { useImperativeSearchHighlighlighting } from "./hooks/highlight";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
@@ -12,6 +13,8 @@ interface RawHtmlProps extends Pick<HTMLAttributes<HTMLElement>, "tabindex" | "d
     html?: HTMLElementLike;
     style?: CSSProperties;
     onClick?: (e: MouseEvent) => void;
+    /** The blob that `html` renders, written as `data-blob-id` in the same render as `html`. */
+    blobId?: string;
 }
 
 export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement | null>}) {
@@ -22,14 +25,15 @@ export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containe
     return <div ref={containerRef} {...getProps(props)} />;
 }
 
-function getProps({ className, html, style, onClick, dir, tabindex }: RawHtmlProps) {
+function getProps({ className, html, style, onClick, dir, tabindex, blobId }: RawHtmlProps) {
     return {
         className,
         dangerouslySetInnerHTML: getHtml(html ?? ""),
         style,
         onClick,
         dir,
-        tabindex
+        tabindex,
+        "data-blob-id": blobId
     };
 }
 
@@ -54,6 +58,40 @@ export function HighlightedText({ className, text, highlightedTokens }: {
     useLayoutEffect(() => highlight(ref.current), [ text, highlightedTokens ]);
 
     return <span className={className} ref={ref}>{text}</span>;
+}
+
+/** How {@link HighlightedHtml} searches its markup: across inline formatting, math left out. */
+const HTML_MATCH_OPTIONS: MatchOptions = { joinTextNodes: true, exclude: [ ".math-tex" ] };
+
+interface HighlightedHtmlProps extends Omit<RawHtmlProps, "html" | "blobId"> {
+    html: string;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
+    containerRef?: RefObject<HTMLSpanElement | null>;
+}
+
+/**
+ * Renders markup with search-match highlighting, a match crossing inline formatting. Math is
+ * neither searched nor painted. Match it with {@link getHtmlMatchText}.
+ */
+export function HighlightedHtml({
+    html, highlightedTokens, containerRef, ...props
+}: HighlightedHtmlProps) {
+    const ownRef = useRef<HTMLSpanElement>(null);
+    const ref = containerRef ?? ownRef;
+    const highlight = useImperativeSearchHighlighlighting(highlightedTokens, HTML_MATCH_OPTIONS);
+
+    // See HighlightedText.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => highlight(ref.current), [ html, highlightedTokens ]);
+
+    return <RawHtml containerRef={ref} html={html} {...props} />;
+}
+
+/** The text that {@link HighlightedHtml} searches in `html`. */
+export function getHtmlMatchText(html: string) {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    return getMatchText(template.content, HTML_MATCH_OPTIONS);
 }
 
 /**

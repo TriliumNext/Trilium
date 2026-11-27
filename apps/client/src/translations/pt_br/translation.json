@@ -71,8 +71,6 @@
     "link_title": "Titulo do link",
     "button_add_link": "Inserir link",
     "edit_link": "Editar link",
-    "anchor": "Âncora (opcional)",
-    "anchor_none": "Nenhuma (link para a nota)",
     "button_edit_link": "Salvar link",
     "fix_link": "Corrigir link",
     "button_fix_link": "Corrigir link",
@@ -1778,7 +1776,6 @@
     "refresh-saved-search-results": "Atualizar resultados de pesquisa salvos",
     "create-child-note": "Criar nota filha",
     "unhoist": "Desafixar",
-    "toggle-sidebar": "Alternar barra lateral",
     "dropping-not-allowed": "Não é permitido soltar notas neste local.",
     "follow-active-note": "Seguir a nota ativa",
     "follow-active-note-title": "Rola a árvore e expande os nós pais para mostrar a nota ativa. Quando desativado, a árvore permanece no lugar e apenas o destaque de fundo é atualizado.",
@@ -3363,8 +3360,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remover da barra de lançamento",
     "configure_launch_bar": "Configurar a barra de lançamento",
-    "launch_bar_orientation": "Orientação da barra de lançamento",
-    "will_reload_frontend": "(recarregará o aplicativo)"
+    "launch_bar_orientation": "Orientação da barra de lançamento"
   },
   "link": {
     "failed_to_open": "Falha ao abrir o link '{{- href}}': {{- message}}"
@@ -3712,7 +3708,6 @@
       "markdown-import-from-clipboard": "Importação de Markdown da área de transferência",
       "math-editor-unavailable": "Editor de matemática indisponível",
       "math-equation": "Equação matemática",
-      "medium": "Médio",
       "mermaid-diagram": "Diagrama Mermaid",
       "mermaid-diagram-0": "Diagrama Mermaid: %0",
       "missing-definition": "(definição ausente)",

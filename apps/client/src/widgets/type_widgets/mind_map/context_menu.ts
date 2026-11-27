@@ -1,4 +1,4 @@
-import type { MindElixirInstance, NodeObj, Topic } from "mind-elixir";
+import type { default as MindElixirInstance, NodeObj, Topic } from "mind-elixir";
 
 import type { MenuItem } from "../../../menus/context_menu";
 import { t } from "../../../services/i18n";
@@ -122,7 +122,7 @@ export function runNodeMenuCommand(
 export function findArrowTarget(target: EventTarget | null): Topic | null {
     if (!(target instanceof Element)) return null;
 
-    const topic = target.closest("me-tpc");
+    const topic = target.closest(".me-tpc");
     // A topic carries the node it stands for; anything else wearing the tag is not one to draw to.
     return topic && "nodeObj" in topic ? topic as Topic : null;
 }

@@ -1,12 +1,15 @@
 import "./File.css";
 
-import { isFontMimeType, isOfficeMimeType } from "@triliumnext/commons";
+import { isFontMimeType } from "@triliumnext/commons/src/lib/font_mimes.js";
+import { isOfficeMimeType, XLSX_MIME } from "@triliumnext/commons/src/lib/office.js";
+import { lazy, Suspense } from "preact/compat";
+import { useState } from "preact/hooks";
 
 import { GPX_MIME } from "../../services/gpx";
 import { t } from "../../services/i18n";
 import Alert from "../react/Alert";
 import CodeBlock from "../react/CodeBlock";
-import { useNoteBlob } from "../react/hooks";
+import { useNoteBlob } from "../react/hooks/note";
 import FontPreview from "./file/FontPreview";
 import GpxPreview from "./file/GpxPreview";
 import MediaPreview from "./file/MediaPreview";
@@ -16,16 +19,30 @@ import { TypeWidgetProps } from "./type_widget";
 
 const TEXT_MAX_NUM_CHARS = 5000;
 
+const SpreadsheetFile = lazy(() =>
+    import("./spreadsheet/Spreadsheet").then((module) => ({ default: module.SpreadsheetFile })));
+
 export default function FileTypeWidget({ note, parentComponent, noteContext, isVisible }: TypeWidgetProps) {
     // Office previews are server-rendered, so don't fetch the blob for them — it would
     // download the document a second time without being used.
     const isOffice = isOfficeMimeType(note.mime);
     const blob = useNoteBlob(isOffice ? null : note, parentComponent?.componentId);
 
+    // A workbook that cannot be read as one falls back to the HTML preview until its content changes.
+    const [ workbookFailedFor, setWorkbookFailedFor ] = useState<string>();
+    const workbookKey = `${note.noteId}-${note.blobId}`;
+
     // Office formats are checked first: RTF can arrive as text/rtf (string content), which
     // would otherwise be caught by the blob.content branch below and shown as raw markup.
-    if (isOffice) {
-        return <OfficePreview note={note} />;
+    if (note.mime === XLSX_MIME && workbookFailedFor !== workbookKey) {
+        return (
+            <Suspense fallback={null}>
+                <SpreadsheetFile entity={note} noteContext={noteContext} componentId={parentComponent?.componentId}
+                    isVisible={isVisible} onError={() => setWorkbookFailedFor(workbookKey)} />
+            </Suspense>
+        );
+    } else if (isOffice) {
+        return <OfficePreview note={note} noteContext={noteContext} isVisible={isVisible} />;
     } else if (note.mime === GPX_MIME) {
         return <GpxPreview note={note} blob={blob} />;
     } else if (blob?.content) {

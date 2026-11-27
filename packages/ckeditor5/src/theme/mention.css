@@ -1,0 +1,7 @@
+/* The class `TriliumMentionUI` gives the mention that its open list follows up on. */
+.ck-content .ck-mention-follow-up::after {
+    content: "\b6";
+    display: inline-block;
+    margin-inline-start: 0.25em;
+    opacity: 0.5;
+}

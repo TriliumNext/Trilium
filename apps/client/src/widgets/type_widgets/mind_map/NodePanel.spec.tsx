@@ -1,4 +1,4 @@
-import type { MindElixirInstance, NodeObj } from "mind-elixir";
+import type { default as MindElixirInstance, NodeObj } from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { describe, expect, it, onTestFinished, vi } from "vitest";

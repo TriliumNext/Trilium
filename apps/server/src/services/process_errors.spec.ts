@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getLogMock, crashMock, sendMessageToAllClientsMock } = vi.hoisted(() => ({
     getLogMock: { error: vi.fn() },
@@ -167,3 +167,94 @@ describe("reportStdioError", () => {
         expect(sendMessageToAllClientsMock).toHaveBeenCalledWith(expect.objectContaining({ message: "write ENOSPC" }));
     });
 });
+
+describe("installProcessErrorHandlers", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("routes escaped errors and failed console writes to the reporter", async () => {
+        const { installProcessErrorHandlers, markAppReady } = await freshModule();
+        const processListeners = captureListeners(process);
+        const stdoutListeners = captureListeners(process.stdout);
+        const stderrListeners = captureListeners(process.stderr);
+
+        installProcessErrorHandlers();
+        markAppReady();
+
+        expect(Object.keys(processListeners)).toEqual([ "uncaughtException", "unhandledRejection" ]);
+        processListeners.uncaughtException(new Error("thrown from a timer"));
+        processListeners.unhandledRejection(new Error("floating promise"));
+        stdoutListeners.error(Object.assign(new Error("write EPIPE"), { code: "EPIPE" }));
+        stderrListeners.error(Object.assign(new Error("write ENOSPC"), { code: "ENOSPC" }));
+
+        expect(sendMessageToAllClientsMock.mock.calls.map(([ message ]) => message.message)).toEqual([
+            "thrown from a timer", "floating promise", "write ENOSPC"
+        ]);
+        expect(getLogMock.error.mock.calls[0][0]).toMatch(/^Uncaught exception: thrown from a timer/);
+        expect(getLogMock.error.mock.calls[1][0]).toMatch(/^Unhandled promise rejection: floating promise/);
+    });
+});
+
+describe("reportProcessError when reporting itself fails", () => {
+    let exitSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        exitSpy = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("falls back to the console and still exits on a fatal startup error", async () => {
+        const { reportProcessError, UNCAUGHT_EXCEPTION } = await freshModule();
+        crashMock.mockImplementationOnce(() => {
+            throw new Error("platform not initialized");
+        });
+
+        expect(() => reportProcessError(UNCAUGHT_EXCEPTION, new Error("migration failed"))).not.toThrow();
+
+        expect(console.error).toHaveBeenLastCalledWith("Failed to report a process-level error:", expect.objectContaining({
+            message: "platform not initialized"
+        }));
+        expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it("keeps running when the failure is not fatal, before or after startup", async () => {
+        const { markAppReady, reportProcessError, UNCAUGHT_EXCEPTION, UNHANDLED_REJECTION } = await freshModule();
+
+        // Before startup completes: a non-fatal kind whose console write throws.
+        vi.mocked(console.error).mockImplementationOnce(() => {
+            throw new Error("console closed");
+        });
+        reportProcessError(UNHANDLED_REJECTION, new Error("floating promise"));
+
+        // After startup: a fatal kind whose notification throws.
+        markAppReady();
+        sendMessageToAllClientsMock.mockImplementationOnce(() => {
+            throw new Error("socket gone");
+        });
+        reportProcessError(UNCAUGHT_EXCEPTION, new Error("background task"));
+
+        const fallbacks = vi.mocked(console.error).mock.calls
+            .filter(([ first ]) => first === "Failed to report a process-level error:")
+            .map(([ , error ]) => (error as Error).message);
+        expect(fallbacks).toEqual([ "console closed", "socket gone" ]);
+        expect(exitSpy).not.toHaveBeenCalled();
+    });
+});
+
+/** Replaces `target.on()` for the duration of a test, recording each listener by event name. */
+function captureListeners(target: { on: (...args: never[]) => unknown }) {
+    const listeners: Record<string, (arg: unknown) => void> = {};
+    vi.spyOn(target as { on: (event: string, listener: (arg: unknown) => void) => unknown }, "on")
+        .mockImplementation(function (this: unknown, event: string, listener: (arg: unknown) => void) {
+            listeners[event] = listener;
+            return this;
+        });
+    return listeners;
+}

@@ -1,0 +1,43 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "outDir": "out-tsc/spec",
+    "types": [
+      "node",
+      "express",
+      "vitest/globals"
+    ],
+    "tsBuildInfoFile": "out-tsc/spec.tsbuildinfo"
+  },
+  "include": [
+    "src/**/*.spec.ts",
+    "electron-forge/**/*.spec.ts",
+    "spec/**/*.ts",
+    "vitest.config.mts",
+    "vitest.build.config.mts",
+    "../server/src/*.d.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.forge.json"
+    },
+    {
+      "path": "../server/tsconfig.app.json"
+    },
+    {
+      "path": "../server/tsconfig.spec.json"
+    },
+    {
+      "path": "../../packages/commons/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/trilium-core/tsconfig.lib.json"
+    }
+  ]
+}

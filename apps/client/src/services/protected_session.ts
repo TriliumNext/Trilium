@@ -49,15 +49,17 @@ function enterProtectedSession() {
     return dfd.promise();
 }
 
+/** Resolves with `false` when the password is wrong, after showing an error toast. */
 async function setupProtectedSession(password: string) {
     const response = await server.post<Response>("login/protected", { password: password });
 
     if (!response.success) {
         toastService.showError(t("protected_session.wrong_password"), 3000);
-        return;
+        return false;
     }
 
     protectedSessionHolder.enableProtectedSession();
+    return true;
 }
 
 ws.subscribeToMessages(async (message) => {

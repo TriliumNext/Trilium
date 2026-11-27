@@ -14,6 +14,7 @@ import type { HTMLElement } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
 import { attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, stripUrlScheme, toAttributeName } from "../collection_utils.js";
+import { importedAttributeName } from "../utils.js";
 import type { LinkTarget, NotionProperty, ParsedPage } from "./model.js";
 import { getNotionId, stripNotionId } from "./notion_id.js";
 import { baseName, internalPageId, ownedFolderKey, parentFolderKey, removeExtension, resolveResourcePath } from "./paths.js";
@@ -369,7 +370,7 @@ function dateColumnKey(path: string, name: string): string {
  * column's files are reachable from the row's content, not only from its attachments list. Empty when the
  * row attaches no bundled file.
  */
-export function applyOwnedProperties(note: BNote, page: ParsedPage, resources: Map<string, Uint8Array>): string {
+export function applyOwnedProperties(note: BNote, page: ParsedPage, resources: Map<string, Uint8Array>, safeImport: boolean): string {
     const fileLinks: string[] = [];
     for (const property of page.properties) {
         if (property.kind === "file") {
@@ -378,7 +379,7 @@ export function applyOwnedProperties(note: BNote, page: ParsedPage, resources: M
                 fileLinks.push(`<p>${attachmentReferenceLink(note.noteId, attachment.attachmentId, attachment.title)}</p>`);
             }
         } else if (property.kind !== "relation") {
-            note.addLabel(toAttributeName(property.name), property.value);
+            note.addLabel(importedAttributeName("label", toAttributeName(property.name), safeImport), property.value);
         }
     }
     return fileLinks.join("");
@@ -388,12 +389,12 @@ export function applyOwnedProperties(note: BNote, page: ParsedPage, resources: M
  * Adds a page's relation columns as Trilium relations, resolving each target's Notion id to its note via
  * `resolve` and dropping any target that wasn't part of this import.
  */
-export function applyRelationProperties(note: BNote, page: ParsedPage, resolve: (notionId: string) => LinkTarget | null) {
+export function applyRelationProperties(note: BNote, page: ParsedPage, resolve: (notionId: string) => LinkTarget | null, safeImport: boolean) {
     for (const property of page.properties) {
         if (property.kind === "relation") {
             const target = resolve(property.value);
             if (target) {
-                note.addRelation(toAttributeName(property.name), target.noteId);
+                note.addRelation(importedAttributeName("relation", toAttributeName(property.name), safeImport), target.noteId);
             }
         }
     }

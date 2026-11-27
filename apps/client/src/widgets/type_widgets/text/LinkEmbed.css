@@ -406,6 +406,7 @@ section.link-embed:has(+ section.link-embed) {
    on the touching edges of stacked cards (above), so all surfaces round alike. Kept after the card
    rule so it outweighs that block's `all: unset` at the same specificity. */
 .ck-widget.link-embed,
+section.link-embed[style*="--tn-background"],
 .link-embed-video,
 .link-embed-video iframe,
 .link-embed-video-facade,
@@ -505,4 +506,28 @@ section.link-embed:has(+ section.link-embed) {
         width: 14px;
         height: 14px;
     }
+}
+
+/* ---------- Font color and background color ---------- */
+
+span.link-mention[style*="--tn-color"] .link-embed-mention,
+section.link-embed[style*="--tn-color"] .link-embed-card-title {
+    color: inherit;
+}
+
+section.link-embed[style*="--tn-color"] :is(.link-embed-card-description, .link-embed-card-url) {
+    color: color-mix(in srgb, currentColor 75%, transparent);
+}
+
+span.link-mention[style*="--tn-background"] {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+section.link-embed[style*="--tn-background"] {
+    background-clip: padding-box;
+}
+
+:root section.link-embed[style*="--tn-background"] a.link-embed-card {
+    background: transparent;
 }

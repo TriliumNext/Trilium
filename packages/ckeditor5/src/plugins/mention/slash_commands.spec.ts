@@ -28,9 +28,6 @@ import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TI
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import {
-    INSERT_EXTENDED_CODE_BLOCK_COMMAND
-} from "../content_embed/extended_code_block.js";
 import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
@@ -117,6 +114,18 @@ describe("matchSlashCommands", () => {
         expect(matchSlashCommands(definitions, "line").map((d) => d.id)).toEqual([ "toc" ]);
     });
 
+    it("ranks an exact title or alias match above every prefix match", () => {
+        const entries: SlashCommandDefinition[] = [
+            { id: "layout", title: "2 columns layout", icon: "" },
+            { id: "heading", title: "Heading 2", icon: "", aliases: [ "2" ] },
+            { id: "code", title: "Code", icon: "" },
+            { id: "codeBlock", title: "Code block", icon: "" }
+        ];
+
+        expect(matchSlashCommands(entries, "2").map((d) => d.id)).toEqual([ "heading", "layout" ]);
+        expect(matchSlashCommands(entries.slice().reverse(), "code").map((d) => d.id)).toEqual([ "code", "codeBlock" ]);
+    });
+
     it("matches case-insensitively and ignores surrounding whitespace", () => {
         expect(matchSlashCommands(definitions, "  BLOCK ").map((d) => d.id)).toEqual([ "quote", "codeBlock" ]);
     });
@@ -201,6 +210,16 @@ describe("TriliumSlashCommands", () => {
             // Trilium reserves heading1 for the note title, so it is absent from the options.
             expect(defaults.slice(0, 3)).toEqual([ "paragraph", "heading2", "heading3" ]);
             expect(defaults).not.toContain("heading1");
+        });
+
+        it("offers the heading for a bare level number, ahead of the layout with that many columns", () => {
+            const entries = [ ...buildDefaultSlashCommands(editor), ...buildTriliumSlashCommands(editor) ];
+
+            for (const level of [ "2", "3" ]) {
+                const ids = matchSlashCommands(entries, level).map((definition) => definition.id);
+                expect(ids[0]).toBe(`heading${level}`);
+                expect(ids).toContain(`multicolumn-layout-${level}`);
+            }
         });
 
         // The configured titles are English message ids, and CKEditor's own catalogs translate them
@@ -307,7 +326,7 @@ describe("TriliumSlashCommands", () => {
                 "bulletedList", "numberedList", "todoList",
                 "note", "tip", "important", "caution", "warning",
                 "collapsible", "tabs", "multicolumn-layout-2", "multicolumn-layout-3",
-                "multicolumn-layout-4"
+                "multicolumn-layout-4", "aside"
             ]);
             expect(flagged("willTransform")).toEqual([
                 "paragraph", "indent", "outdent",
@@ -722,9 +741,19 @@ describe("buildTriliumSlashCommands", () => {
         return found;
     }
 
+    it("offers the page break first for /page, and a child note for a new page", () => {
+        const catalog = buildTriliumSlashCommands(editor);
+        const ids = (query: string) => matchSlashCommands(catalog, query).map((entry) => entry.id);
+        expect(ids("page")[0]).toBe("page-break");
+        expect(ids("page")).toContain("child-note");
+        expect(ids("new page")[0]).toBe("child-note");
+        expect(ids("subpage")[0]).toBe("child-note");
+    });
+
     // One case per entry rather than a test each: the shape is identical, only the data differs.
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],
+        [ "aside", "Aside", "insertAside" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
         [ "web-link", "Link to a web page", INTERNAL_LINK_COMMAND ],
         [ "web-link-icon", "Link to a web page (with icon)", INTERNAL_LINK_COMMAND ],
@@ -743,8 +772,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
-        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ],
-        [ "extended-code-block", "Extended code block", INSERT_EXTENDED_CODE_BLOCK_COMMAND ]
+        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ]
     ])("defines %s, running its command with an icon and a description", (id, title, commandName) => {
         const entry = definition(id);
 
@@ -799,16 +827,6 @@ describe("buildTriliumSlashCommands", () => {
             quiet: true,
             focusEmbed: true
         });
-        expect(focus).toHaveBeenCalled();
-    });
-
-    it("inserts an extended code block as its button does, and returns the focus", () => {
-        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
-        const focus = vi.spyOn(editor.editing.view, "focus");
-
-        definition("extended-code-block").execute?.(editor);
-
-        expect(execute).toHaveBeenCalledExactlyOnceWith(INSERT_EXTENDED_CODE_BLOCK_COMMAND);
         expect(focus).toHaveBeenCalled();
     });
 
@@ -971,6 +989,15 @@ describe("buildTriliumSlashCommands", () => {
             expect(layouts(query)).toEqual(all);
         }
         expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
+    });
+
+    it("finds the aside first by the names of a box beside the text", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        const queries = [ "aside", "sidebar", "side note", "margin note", "text box", "float" ];
+        for (const query of queries) {
+            expect(matchSlashCommands(definitions, query)[0]?.id, query).toBe("aside");
+        }
     });
 
     it("lists the link entries first for /link, and finds each by the words people type", () => {

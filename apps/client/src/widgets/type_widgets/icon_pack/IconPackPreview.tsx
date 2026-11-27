@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import debounce from "../../../services/debounce";
 import { t } from "../../../services/i18n";
-import { useNoteLabel } from "../../react/hooks";
+import { useNoteLabel } from "../../react/hooks/note";
 import IsolatedFrame from "../../react/IsolatedFrame";
 import NoItems from "../../react/NoItems";
 import previewStylesheet from "./icon_pack_preview.css?raw";

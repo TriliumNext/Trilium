@@ -15,6 +15,10 @@ body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
     height: 80vh;
 }
 
+body.mobile.tablet .modal.tree-popup-editor-dialog .modal-dialog {
+    width: 90vw;
+}
+
 .modal.tree-popup-editor-dialog .modal-content {
     height: 80vh;
 
@@ -24,11 +28,11 @@ body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
 }
 
 /* Sidebar holding the hoisted note tree. */
-body.desktop .modal.tree-popup-editor-dialog .modal-sidebar {
+:is(body.desktop, body.mobile.tablet) .modal.tree-popup-editor-dialog .modal-sidebar {
     width: 300px;
 }
 
-body.mobile .modal.tree-popup-editor-dialog .modal-sidebar {
+body.mobile:not(.tablet) .modal.tree-popup-editor-dialog .modal-sidebar {
     border-top: 1px solid var(--main-border-color);
 }
 
@@ -50,4 +54,4 @@ body.mobile .modal.tree-popup-editor-dialog .modal-sidebar {
 }
 
 /* The header note title (icon + editable title) reuses the quick-edit TitleRow styling — see the
-   shared `.popup-editor-dialog, .tree-popup-editor-dialog` rules in PopupEditor.css. */
+   shared `.popup-editor-dialog, .tree-popup-editor-dialog` rules in TitleRow.css. */

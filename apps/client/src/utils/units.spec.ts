@@ -21,6 +21,12 @@ describe("formatDistance", () => {
         expect(formatDistance(1000, "metric")).toBe("gpx_preview.unit_km|1");
     });
 
+    it("turns over to kilometres when the metres round up to 1000", () => {
+        expect(formatDistance(999.4, "metric")).toBe("gpx_preview.unit_m|999");
+        expect(formatDistance(999.5, "metric")).toBe("gpx_preview.unit_km|1");
+        expect(formatDistance(999.96, "metric")).toBe("gpx_preview.unit_km|1");
+    });
+
     it("reads in miles throughout, where that is how distances are stated", () => {
         // Under a mile is still stated in miles: nobody gives a distance in feet.
         expect(formatDistance(804.672, "imperial")).toBe("gpx_preview.unit_mi|0.5");

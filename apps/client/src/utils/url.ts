@@ -1,4 +1,4 @@
-import { isHttpUrl } from "@triliumnext/commons";
+import { isHttpUrl } from "@triliumnext/commons/src/lib/link_embed.js";
 
 /**
  * A url-typed label value as the address it may be followed to, or `null` where it is not one we may

@@ -45,6 +45,20 @@ describe("the marker a start finds", () => {
         vi.restoreAllMocks();
     });
 
+    it("quotes a removal failure that is not an Error as it was thrown", async () => {
+        const { getLog } = await import("@triliumnext/core");
+        writeMarkerFile(JSON.stringify({ lang: "fr" }));
+        const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        vi.spyOn(fs, "rmSync").mockImplementation(() => {
+            throw "the file is busy";
+        });
+
+        expect(consumeSetupMarker()).toEqual({ lang: "fr" });
+        expect(error).toHaveBeenCalledWith("Could not remove the setup marker: the file is busy");
+
+        vi.restoreAllMocks();
+    });
+
     it("is removed even when it could not be read, so a bad one cannot trap the instance", () => {
         writeMarkerFile("half a file, written by a start that was interrupted");
 

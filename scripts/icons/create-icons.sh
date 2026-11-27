@@ -21,7 +21,6 @@ script_dir=$(realpath $(dirname $0))
 source_icon_dir="$script_dir/../../apps/server/src/assets/images"
 desktop_forge_dir="$script_dir/../../apps/desktop/electron-forge"
 cd "$desktop_forge_dir/app-icon"
-inkscape -w 180 -h 180 "$source_icon_dir/icon-color.svg" -o "./ios/apple-touch-icon.png"
 
 # Build PNGs
 inkscape -w 128 -h 128 "$source_icon_dir/icon-color.svg" -o "./png/128x128.png"
@@ -119,6 +118,15 @@ magick "$ios_appicon_dir/_tmp_fg.png" -background "$background_color" \
   -gravity center -extent ${ios_canvas}x${ios_canvas} -alpha remove -alpha off \
   "$ios_appicon_dir/AppIcon-512@2x.png"
 rm "$ios_appicon_dir/_tmp_fg.png"
+
+# Build the Home Screen icon of the web app (apple-touch-icon), on the same opaque background:
+# iOS fills a transparent one with black.
+touch_icon="$script_dir/../../apps/client/src/assets/apple-touch-icon.png"
+touch_canvas=180
+touch_logo=$(( touch_canvas * 2 / 3 ))
+inkscape -w $touch_logo -h $touch_logo "$source_icon_dir/icon-color.svg" -o "$touch_icon"
+magick "$touch_icon" -background "$background_color" \
+  -gravity center -extent ${touch_canvas}x${touch_canvas} -alpha remove -alpha off "$touch_icon"
 
 declare -A launcher_sizes=( [mdpi]=48 [hdpi]=72 [xhdpi]=96 [xxhdpi]=144 [xxxhdpi]=192 )
 declare -A foreground_sizes=( [mdpi]=108 [hdpi]=162 [xhdpi]=216 [xxhdpi]=324 [xxxhdpi]=432 )

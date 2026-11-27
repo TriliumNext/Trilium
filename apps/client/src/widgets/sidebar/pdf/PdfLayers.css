@@ -26,7 +26,7 @@
 
 .pdf-layer-name {
     flex: 1;
-    font-size: 13px;
+    font-size: .8rem;
     color: var(--main-text-color);
     overflow: hidden;
     text-overflow: ellipsis;

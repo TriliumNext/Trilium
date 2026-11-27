@@ -29,8 +29,8 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 }
 
 /* Bootstrap caps every `.modal-dialog` at 500px from 576px up; the quick editor is a sheet, so it
-   takes the whole width on phones and leaves the tablet rule (80%) to apply above 992px. */
-@media (max-width: 991px) {
+   takes the whole width on phones and leaves the tablet rule (80%) to apply on a tablet. */
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     body.mobile .modal.popup-editor-dialog .modal-dialog {
         max-width: none;
     }
@@ -44,40 +44,16 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
+.modal.popup-editor-dialog .modal-header .popup-editor-back {
+    margin-inline: 0 8px;
+}
+
 /* Pinned to the foot of the dialog rather than following the content, which has no room set
    aside for it. Anchored to `.modal-content`, which Bootstrap positions. */
 .modal.popup-editor-dialog .note-type-switcher {
     position: absolute;
     inset-block: auto 12px;
     inset-inline: 12px;
-}
-
-/* The note-title header (icon + editable title) is shared with the tree popup, the calendar's event
-   sheet and the map panes' sheets, which reuse the same TitleRow; keep the selectors together
-   so the dialogs stay pixel-identical. This file is loaded wherever the app is: the quick editor
-   keeps itself in the DOM and so is never lazily loaded (see layout_commons.tsx). */
-.modal.popup-editor-dialog .modal-header .title-row,
-.modal.tree-popup-editor-dialog .modal-header .title-row,
-.modal.calendar-event-sheet .modal-header .title-row,
-.modal.tn-embedded-note-sheet .modal-header .title-row {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    margin-block: 0;
-
-    .note-icon-widget {
-        display: flex;
-        align-items: center;
-        margin-inline-start: 0;
-    }
-}
-
-.modal.popup-editor-dialog .modal-header .note-title-widget,
-.modal.tree-popup-editor-dialog .modal-header .note-title-widget,
-.modal.calendar-event-sheet .modal-header .note-title-widget,
-.modal.tn-embedded-note-sheet .modal-header .note-title-widget {
-    display: flex;
-    align-items: center;
 }
 
 .modal.popup-editor-dialog .modal-header .title-row.attachment-title-row {
@@ -112,37 +88,6 @@ body.mobile .modal.popup-editor-dialog .popup-editor-scroll {
     padding-top: var(--scroll-fade-top);
 }
 
-.modal.popup-editor-dialog .title-row,
-.modal.popup-editor-dialog .modal-title,
-.modal.popup-editor-dialog .note-icon-widget,
-.modal.tree-popup-editor-dialog .title-row,
-.modal.tree-popup-editor-dialog .note-icon-widget,
-.modal.calendar-event-sheet .title-row,
-.modal.calendar-event-sheet .note-icon-widget,
-.modal.tn-embedded-note-sheet .title-row,
-.modal.tn-embedded-note-sheet .note-icon-widget {
-    height: 32px;
-    min-height: unset;
-}
-
-:root div.modal.popup-editor-dialog div.note-title-widget,
-:root div.modal.tree-popup-editor-dialog div.note-title-widget,
-:root div.modal.calendar-event-sheet div.note-title-widget,
-:root div.modal.tn-embedded-note-sheet div.note-title-widget {
-    --note-title-padding-inline: 8px;
-}
-
-.modal.popup-editor-dialog .note-icon-widget button.note-icon,
-.modal.popup-editor-dialog .note-title-widget input.note-title,
-.modal.tree-popup-editor-dialog .note-icon-widget button.note-icon,
-.modal.tree-popup-editor-dialog .note-title-widget input.note-title,
-.modal.calendar-event-sheet .note-icon-widget button.note-icon,
-.modal.calendar-event-sheet .note-title-widget input.note-title,
-.modal.tn-embedded-note-sheet .note-icon-widget button.note-icon,
-.modal.tn-embedded-note-sheet .note-title-widget input.note-title {
-    font-size: 1em;
-}
-
 .modal.popup-editor-dialog .classic-toolbar-outer-container.visible {
     --mobile-toolbar-backdrop: var(--modal-background-color);
     background-color: transparent;
@@ -163,6 +108,10 @@ body.desktop .modal.popup-editor-dialog .classic-toolbar-widget {
     align-items: flex-start;
 }
 
+body.desktop .modal.popup-editor-dialog .has-scroll-rail .classic-toolbar-widget {
+    margin-inline-end: var(--scroll-rail-width);
+}
+
 body.mobile .modal.popup-editor-dialog .modal-content:has(.classic-toolbar-outer-container.visible) .note-type-switcher {
     inset-block-end: calc(12px + var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap));
 }
@@ -173,7 +122,7 @@ body.mobile .modal.popup-editor-dialog .modal-body {
     min-height: 0;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     body.mobile:not(.keyboard-panel-open) .modal.popup-editor-dialog {
         --mobile-toolbar-clearance: calc(var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
     }

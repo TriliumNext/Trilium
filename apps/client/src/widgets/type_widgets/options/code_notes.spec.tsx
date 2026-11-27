@@ -33,8 +33,8 @@ vi.mock("@triliumnext/codemirror", () => ({
     getThemeById: (id: string) => ({ id })
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useColorScheme: () => mocks.colorScheme,
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),
@@ -44,9 +44,10 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
         mocks.stored[name] === true,
         (value: boolean) => void mocks.saved.push([ name, value ])
     ],
-    // The MIME type list at the foot of the page reads its set as JSON and hangs a delegated
-    // tooltip off it; neither is what these cases are about.
-    useTriliumOptionJson: () => [ [], vi.fn() ],
+    useTriliumOptionJson: () => [ [], vi.fn() ]
+}));
+vi.mock("../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

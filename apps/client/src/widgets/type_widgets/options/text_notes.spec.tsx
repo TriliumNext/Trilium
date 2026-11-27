@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     stored: {} as Record<string, string | boolean>,
     saved: [] as [ string, string | boolean ][],
-    colorScheme: "light" as "light" | "dark"
+    colorScheme: "light" as "light" | "dark",
+    showVimModeNotice: vi.fn()
 }));
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
@@ -24,8 +25,8 @@ vi.mock("@triliumnext/highlightjs", () => ({
     highlight: () => ({ value: "" })
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useColorScheme: () => mocks.colorScheme,
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),
@@ -39,6 +40,7 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 }));
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
+vi.mock("../text/vim_mode", () => ({ showVimModeNotice: mocks.showVimModeNotice }));
 
 import TextNoteSettings from "./text_notes";
 
@@ -128,6 +130,72 @@ describe("the editor features", () => {
             [ "textNoteLinkDetailsRetrievalEnabled", true ],
             [ "textNoteStickyTableHeadersEnabled", true ]
         ]));
+    });
+
+    it("offers the highlights on the scrollbar after content hints, writing it back", () => {
+        open();
+        const labels = optionLabels();
+        expect(labels[labels.indexOf("editorfeatures.content_hints_enabled") + 1])
+            .toBe("editorfeatures.scroll_rail_highlights_enabled");
+        act(() => toggle("scroll-rail-highlights-enabled")?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteScrollRailHighlightsEnabled", true ] ]);
+    });
+
+    it("offers heading and anchor suggestions under note auto-completion while it is on", () => {
+        open();
+        expect(optionLabels()).toContain("editorfeatures.note_completion_enabled");
+        expect(toggle("note-completion-link-targets-enabled")).toBeNull();
+
+        mocks.stored = { ...mocks.stored, textNoteCompletionEnabled: true };
+        open();
+        const labels = optionLabels();
+        expect(labels[labels.indexOf("editorfeatures.note_completion_enabled") + 1])
+            .toBe("editorfeatures.note_completion_link_targets_enabled");
+        const linkTargets = toggle("note-completion-link-targets-enabled");
+        expect(linkTargets).not.toBeNull();
+        act(() => linkTargets?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteCompletionLinkTargetsEnabled", true ] ]);
+    });
+});
+
+describe("Vim mode", () => {
+    it("explains Vim mode the first time it is turned on, and shows its settings while on", () => {
+        open();
+        expect(optionLabels()).toContain("vim_mode.option");
+        expect(optionLabels()).not.toContain("vim_mode.insert_keys");
+        act(() => toggle("vim-mode-enabled")?.click());
+        expect(mocks.saved).toEqual([
+            [ "textNoteVimModeEnabled", true ], [ "textNoteVimModeNoticeShown", true ]
+        ]);
+        expect(mocks.showVimModeNotice).toHaveBeenCalledTimes(1);
+
+        mocks.stored = { ...mocks.stored, textNoteVimModeNoticeShown: true };
+        mocks.saved = [];
+        open();
+        act(() => toggle("vim-mode-enabled")?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteVimModeEnabled", true ] ]);
+        expect(mocks.showVimModeNotice).toHaveBeenCalledTimes(1);
+
+        mocks.stored = {
+            ...mocks.stored,
+            textNoteVimModeEnabled: true,
+            textNoteVimStartupCommands: "imap jk <Esc>"
+        };
+        mocks.saved = [];
+        open();
+        act(() => toggle("vim-hints-enabled")?.click());
+        act(() => toggle("vim-insert-keys-enabled")?.click());
+        const commands = host.querySelector<HTMLTextAreaElement>("textarea.vim-startup-commands");
+        expect(commands?.value).toBe("imap jk <Esc>");
+        act(() => {
+            if (!commands) return;
+            commands.value = "nmap Y y$";
+            commands.dispatchEvent(new Event("focusout", { bubbles: true }));
+        });
+        expect(mocks.saved).toEqual([
+            [ "vimModeHintsEnabled", true ], [ "textNoteVimInsertKeysEnabled", true ],
+            [ "textNoteVimStartupCommands", "nmap Y y$" ]
+        ]);
     });
 });
 

@@ -13,15 +13,23 @@ import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
-import { useColorScheme, useEffectiveReadOnly, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
+import { useElementSize } from "../react/hooks/dom";
+import { useNoteLabel } from "../react/hooks/note";
+import { useColorScheme, useTriliumOption } from "../react/hooks/options";
+import { useEffectiveReadOnly } from "../react/hooks/note_context";
 import NoItems from "../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../react/OverlayControlGroup";
 import Slider from "../react/Slider";
 import { ZOOM_STEP } from "../react/zoom_pan";
-import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
+import {
+    loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData
+} from "./data";
 import { MapTypeOverlayButtons } from "./MapTypeSwitcher";
 import { CssData, type MapRendering, setupRendering } from "./rendering";
-import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
+import {
+    isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType,
+    usesReaderPreference
+} from "./utils";
 
 /** Maximum number of notes to render in the note map before showing a warning. */
 const MAX_NOTES_THRESHOLD = 1_000;

@@ -43,6 +43,14 @@ describe("request provider (core)", () => {
 
         await expect(requestService.fetchResource("http://localhost/p", { maxBytes: 10 })).resolves.toBe(resource);
         expect(fake.fetchResource).toHaveBeenCalledWith("http://localhost/p", { maxBytes: 10 });
+
+        const apiResponse = new Response("{}");
+        const fetchApi = vi.fn(async () => apiResponse);
+        initRequest(fakeRequestProvider({ fetchApi }));
+        const init: RequestInit = { method: "POST" };
+        await expect(requestService.fetchApi("https://api.example.com/v1", init, { allowPrivateNetwork: true }))
+            .resolves.toBe(apiResponse);
+        expect(fetchApi).toHaveBeenCalledWith("https://api.example.com/v1", init, { allowPrivateNetwork: true });
     });
 
     it("refuses an address before anything is sent to it", () => {

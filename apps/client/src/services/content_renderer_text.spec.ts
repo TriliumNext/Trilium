@@ -3,10 +3,12 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import {
-    KATEX_MACROS, MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, trimIndentation
-} from "@triliumnext/commons";
+    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import { trimIndentation } from "@triliumnext/commons/src/lib/test-utils.js";
 import DOMPurify from "dompurify";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
 import { buildNote } from "../test/easy-froca";
@@ -55,11 +57,36 @@ vi.mock("./math.js", async (importOriginal) => {
     };
 });
 
+const blockReference = vi.hoisted(() => ({ loaded: false }));
+vi.mock("./block_reference.js", async (importOriginal) => {
+    blockReference.loaded = true;
+    return await importOriginal<typeof import("./block_reference.js")>();
+});
+
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
 const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
     applyStickyTableHeaders
 }));
+
+const experimentalFeatures = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("./experimental_features.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./experimental_features.js")>(),
+    isExperimentalFeatureEnabled: (id: string) => experimentalFeatures.enabled.has(id)
+}));
+
+const detectCodeLanguage = vi.hoisted(() => vi.fn(async (_code: string) => null as string | null));
+vi.mock("./syntax_highlight.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./syntax_highlight.js")>(),
+    detectCodeLanguage
+}));
+
+const renderCodeNotePreview = vi.hoisted(() => vi.fn());
+vi.mock("./code_note_preview.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./code_note_preview.js")>();
+    renderCodeNotePreview.mockImplementation(original.renderCodeNotePreview);
+    return { ...original, renderCodeNotePreview };
+});
 
 // jsdom has no `ResizeObserver`.
 const scrollFade = vi.hoisted(() => ({ measure: vi.fn(), disconnect: vi.fn() }));
@@ -79,6 +106,17 @@ import renderText, {
 } from "./content_renderer_text";
 
 describe("Text content renderer", () => {
+    it("loads the block reference service only to highlight a block", async () => {
+        const note = buildNote({ title: "Plain", content: "<p data-trilium-block-id=\"b1\">Block</p>" });
+        await renderText(note, $(document.createElement("div")), {});
+        expect(blockReference.loaded).toBe(false);
+
+        const contentEl = document.createElement("div");
+        await renderText(note, $(contentEl), { highlightBlock: "b1" });
+        expect(blockReference.loaded).toBe(true);
+        expect(contentEl.querySelector(".block-reference-highlight")?.textContent).toBe("Block");
+    });
+
     it("renders embedded note", async () => {
         const contentEl = document.createElement("div");
         const embeddedNote = buildNote({
@@ -533,6 +571,22 @@ describe("Nested embeds (single-level display vs recursive print)", () => {
         expect(contentEl.querySelector("a.reference-link")?.getAttribute("href")).toContain("nestC");
     });
 
+    it("keeps the block id of an embed it renders as a reference link", async () => {
+        const target = buildNote({ id: "linkedTarget", title: "Target", content: "<p>body</p>" });
+        const note = buildNote({
+            id: "linkedHost",
+            title: "Host",
+            content: `<figure class="include-note" data-note-id="${target.noteId}" `
+                + `data-trilium-block-id="embed1"></figure>`
+        });
+        const contentEl = document.createElement("div");
+        await renderText(note, $(contentEl), { embedsAsReferenceLinks: true });
+
+        const link = contentEl.querySelector("a.reference-link");
+        expect(link?.getAttribute("href")).toBe(`#root/${target.noteId}`);
+        expect(link?.getAttribute("data-trilium-block-id")).toBe("embed1");
+    });
+
     it("leaves include-note sections with a missing or invalid note ID untouched when degrading to reference links", async () => {
         const note = buildNote({
             id: "badRefHost",
@@ -557,7 +611,7 @@ describe("Embed boxes", () => {
     const figure = (noteId: string) =>
         `<figure class="include-note" data-note-id="${noteId}"></figure>`;
 
-    it("shows the embeds of a box in boxes, and links to the notes shown around them", async () => {
+    it("shows the embeds of a box as title rows, and links to the notes shown around them", async () => {
         // A box shows its content in its wrapper, as `ContentEmbed` does once it mounts.
         const mountBox = vi.spyOn(content_renderer, "mountInteractiveWidget")
             .mockImplementation(async (vnode, container) => {
@@ -588,18 +642,150 @@ describe("Embed boxes", () => {
             });
 
             expect(wrapper.textContent).toContain("Child body");
-            expect(wrapper.textContent).toContain("Grandchild body");
+            expect(wrapper.textContent).not.toContain("Grandchild body");
             expect(mountBox).toHaveBeenCalledTimes(2);
-            // The grandchild links to the child and itself, the child to the parent.
+            const grandchildBox = mountBox.mock.calls[0][0].props as Record<string, unknown>;
+            expect(grandchildBox.notePath).toBe("boxGrandchild");
+            expect(grandchildBox.content).toBeUndefined();
+            expect(wrapper.querySelector("figure.include-note[data-note-id=boxGrandchild]")
+                ?.getAttribute("data-box-size")).toBe("compact");
             expect([ ...wrapper.querySelectorAll("a.reference-link") ]
                 .map((referenceLink) => referenceLink.getAttribute("href")))
-                .toEqual([ "#root/boxChild", "#root/boxGrandchild", "#root/boxParent" ]);
-            // The passes over the content of the child leave the content of its boxes alone.
-            expect(wrapper.querySelectorAll("pre .copy-button")).toHaveLength(1);
+                .toEqual([ "#root/boxParent" ]);
+            expect(wrapper.querySelector("pre")).toBeNull();
         } finally {
             wrapper.remove();
             mountBox.mockRestore();
             createLink.mockRestore();
+        }
+    });
+});
+
+describe("Code blocks as static code previews", () => {
+    const codeBlock = `<pre><code class="language-text-css">a {}</code></pre>`;
+
+    beforeEach(() => {
+        experimentalFeatures.enabled.add("extendedCodeBlocks");
+        renderCodeNotePreview.mockClear();
+        detectCodeLanguage.mockReset().mockResolvedValue(null);
+    });
+
+    afterEach(() => {
+        experimentalFeatures.enabled.clear();
+    });
+
+    it("shows each code block of a text note as CodeMirror highlights it", async () => {
+        detectCodeLanguage.mockResolvedValueOnce("text-x-python");
+        const note = buildNote({
+            title: "Code blocks",
+            content: `<pre data-code-wrap-lines="true" data-code-line-numbers="false"`
+                + ` data-code-tab-width="2"><code class="language-text-css"`
+                + ` data-trilium-block-id="b1">a {}\nb {}</code></pre>`
+                + `<pre><code class="language-text-x-trilium-auto">print(1)</code></pre>`
+                + `<pre><code class="language-text-x-trilium-auto">lorem</code></pre>`
+                + `<pre><code>plain</code></pre>`
+                + `<pre><code class="language-python">x = 1</code></pre>`
+                + `<pre><code class="language-mermaid">graph TD;</code></pre>`
+                + `<pre>no code</pre>`
+                + `<p><code>inline</code></p>`
+        });
+        const contentEl = document.createElement("div");
+
+        await renderText(note, $(contentEl), { highlightBlock: "b1" });
+
+        const lines = { isWrapped: undefined, hasLineNumbers: undefined };
+        expect(renderCodeNotePreview.mock.calls).toEqual([
+            [ "a {}\nb {}", "text/css", null, { isWrapped: true, hasLineNumbers: false } ],
+            [ "print(1)", "text/x-python", null, lines ],
+            [ "lorem", "text/plain", null, lines ],
+            [ "plain", "text/plain", null, lines ],
+            [ "x = 1", "text/plain", null, lines ]
+        ]);
+        expect(detectCodeLanguage.mock.calls).toEqual([ [ "print(1)" ], [ "lorem" ] ]);
+
+        const previews = contentEl.querySelectorAll("pre.code-preview.code-block-preview");
+        expect(previews).toHaveLength(5);
+        expect(contentEl.querySelectorAll("pre.code-block-preview > button.copy-button"))
+            .toHaveLength(5);
+        expect(contentEl.querySelector(".rendered-mermaid-diagram")).not.toBeNull();
+        expect(contentEl.querySelector("pre:not(.code-preview)")?.textContent).toBe("no code");
+        expect(contentEl.querySelector("p > code")?.classList).toContain("copyable-inline-code");
+
+        // The elements of the block stay, with what they carry.
+        const [ pre ] = previews;
+        const code = pre.querySelector<HTMLElement>(":scope > code");
+        expect([ ...pre.classList ]).toEqual(expect.arrayContaining([
+            "code-preview", "code-preview-wrap", "code-preview-no-line-numbers"
+        ]));
+        expect(pre.classList).not.toContain("hljs");
+        expect([ ...code?.classList ?? [] ]).toEqual(expect.arrayContaining([
+            "language-text-css", "code-preview-content", "block-reference-highlight"
+        ]));
+        expect(code?.dataset.triliumBlockId).toBe("b1");
+        expect(code?.style.tabSize).toBe("2");
+        expect(code?.textContent).toBe("a {}\nb {}");
+        expect(code?.querySelectorAll(".code-preview-line")).toHaveLength(2);
+    });
+
+    it("shows the code blocks of an included text note the same way", async () => {
+        const included = buildNote({ title: "Included code", content: codeBlock });
+        const note = buildNote({
+            title: "Includes code",
+            content: `<figure class="include-note" data-note-id="${included.noteId}"></figure>`
+        });
+        const contentEl = document.createElement("div");
+
+        await renderText(note, $(contentEl));
+
+        expect(contentEl.querySelector(".include-note pre.code-block-preview")).not.toBeNull();
+    });
+
+    it("keeps highlight.js while the feature is off, in print and in Markdown", async () => {
+        const render = async (prepare: () => void) => {
+            prepare();
+            const note = buildNote({ title: "Code block", content: codeBlock });
+            const contentEl = document.createElement("div");
+            await renderText(note, $(contentEl));
+            return contentEl;
+        };
+
+        const off = await render(() => experimentalFeatures.enabled.clear());
+        expect(off.querySelector("pre.code-preview")).toBeNull();
+        expect(off.querySelector("pre > button.copy-button")).not.toBeNull();
+
+        const device = glob.device;
+        try {
+            const printed = await render(() => {
+                experimentalFeatures.enabled.add("extendedCodeBlocks");
+                glob.device = "print";
+            });
+            expect(printed.querySelector("pre.code-preview")).toBeNull();
+        } finally {
+            glob.device = device;
+        }
+
+        const $markdown = $("<div>").append($("<div class=\"ck-content\">").html(codeBlock));
+        await postProcessRichContent(buildNote({ title: "Markdown" }), $markdown);
+        expect($markdown[0].querySelector("pre.code-preview")).toBeNull();
+
+        expect(renderCodeNotePreview).not.toHaveBeenCalled();
+    });
+
+    it("leaves the code blocks to the embed boxes of a box", async () => {
+        const mountBox = vi.spyOn(content_renderer, "mountInteractiveWidget")
+            .mockImplementation(async () => {});
+        const note = buildNote({ title: "Boxed code", content: codeBlock });
+        const contentEl = document.createElement("div");
+
+        try {
+            await renderText(note, $(contentEl), { embedBoxes: true });
+
+            expect(renderCodeNotePreview).not.toHaveBeenCalled();
+            expect(contentEl.querySelector("pre")).toBeNull();
+            expect(contentEl.querySelector("figure.include-note.extended-code-block"))
+                .not.toBeNull();
+        } finally {
+            mountBox.mockRestore();
         }
     });
 });

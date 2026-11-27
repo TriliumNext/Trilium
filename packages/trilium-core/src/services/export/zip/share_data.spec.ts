@@ -125,6 +125,47 @@ describe("buildShareData", () => {
         placed.mockRestore();
     });
 
+    it("leaves out what a view cannot read or a map cannot be rooted at", () => {
+        const root = buildNote({
+            id: "siteRoot",
+            children: [
+                { "id": "board", "type": "book", "content": "", "#viewType": "board", "attachments": [
+                    { id: "boardPng", title: "cover.png", role: "image", mime: "image/png" }
+                ], "children": [ { id: "card", content: "" }, { id: "lockedCard", content: "" } ] },
+                { id: "odd", type: "image", mime: "image/x-unheard-of" },
+                { "id": "lostMap", "type": "noteMap", "content": "", "#mapRootNoteId": "missing" },
+                { "id": "render", "type": "render", "content": "", "~renderNote": "missing" }
+            ]
+        });
+        becca.getNoteOrThrow("lockedCard").isProtected = true;
+        becca.getNoteOrThrow("odd").getContent = () => new Uint8Array([ 1 ]);
+        const [ png ] = becca.getNoteOrThrow("board").getAttachments();
+        png.hasStringContent = () => false;
+        const placed = vi.spyOn(getSql(), "getColumn")
+            .mockImplementation((_query, params) => params as never);
+
+        const files = buildShareData(root, {
+            getNotePath: (noteId) => noteId,
+            getAttachmentPath: () => null
+        });
+
+        expect([ ...files.keys() ].sort()).toEqual([
+            "data/blobs/notes/board.json",
+            "data/blobs/notes/card.json",
+            "data/blobs/notes/lostMap.json",
+            "data/blobs/notes/odd.json",
+            "data/blobs/notes/render.json",
+            "data/images/odd.dat",
+            "data/rows.json"
+        ]);
+
+        // A note map exported on its own has no parent to root the map at.
+        const lone = buildNote({ id: "lone", type: "noteMap", content: "" });
+        const loneFiles = buildShareData(lone, { getNotePath: () => "", getAttachmentPath: () => null });
+        expect(JSON.parse(String(loneFiles.get("data/rows.json"))).noteMaps).toEqual({});
+        placed.mockRestore();
+    });
+
     it("tells the notes a page hosts an app view for", () => {
         expect(isHostedNote(buildNote({ type: "book", "#viewType": "geoMap" }))).toBe(true);
         expect(isHostedNote(buildNote({ type: "book" }))).toBe(false);

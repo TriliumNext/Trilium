@@ -1,0 +1,66 @@
+name: Startup requests
+
+on:
+  push:
+    branches:
+      - main
+      - stable
+    paths:
+      - "apps/client/**"
+      - "apps/server/src/**"
+      - "packages/**"
+      - ".claude/skills/measure-startup-requests/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "patches/**"
+      - ".github/workflows/startup.yml"
+  pull_request:
+    paths:
+      - "apps/client/**"
+      - "apps/server/src/**"
+      - "packages/**"
+      - ".claude/skills/measure-startup-requests/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "patches/**"
+      - ".github/workflows/startup.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    name: Check the startup requests
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Check the startup of both layouts against the allowlists
+        run: pnpm dev:check-startup --out startup-captures
+
+      - name: Upload the captures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: startup captures
+          path: startup-captures

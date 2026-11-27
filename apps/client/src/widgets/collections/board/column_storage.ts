@@ -1,4 +1,4 @@
-import { boardColumnsKey, isBoardColumnsKey } from "@triliumnext/commons";
+import { boardColumnsKey, isBoardColumnsKey } from "@triliumnext/commons/src/lib/board_columns.js";
 
 import type { BoardColumnData, BoardViewData } from ".";
 

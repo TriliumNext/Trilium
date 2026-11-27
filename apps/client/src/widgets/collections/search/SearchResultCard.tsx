@@ -9,11 +9,12 @@ import { calculateHash, type ViewScope } from "../../../services/link";
 import tree from "../../../services/tree";
 import { AttributeSnippetBadges } from "../../react/Badge";
 import { CardFrame } from "../../react/Card";
-import { useNote, useNoteTitle } from "../../react/hooks";
+import { useNote } from "../../react/hooks/note";
+import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import LinkButton from "../../react/LinkButton";
 import { HighlightedText, RawHtmlBlock } from "../../react/RawHtml";
-import { NoteContent } from "../legacy/ListOrGridView";
+import { NoteContent } from "../legacy/NoteContent";
 
 interface SearchResultCardProps {
     noteId: string;

@@ -1,3 +1,5 @@
+import type BNote from "../../../becca/entities/bnote.js";
+
 export type TokenStructure = (TokenData | TokenStructure)[];
 
 export interface TokenData {
@@ -38,4 +40,11 @@ export interface SearchParams {
      * anonymous callers turns it off, since a backtracking pattern blocks the event loop.
      */
     allowRegex?: boolean;
+    /**
+     * Limits every note the query reads to those this returns true for: the notes it starts from,
+     * the notes `parents`, `children`, `ancestors`, `links` and relations reach, and the owners of
+     * the attributes it matches. A surface open to anonymous callers sets it, since a query can
+     * otherwise test notes it never returns.
+     */
+    noteFilter?: (note: BNote) => boolean;
 }

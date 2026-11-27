@@ -9,7 +9,8 @@ import {
     Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState
 } from "preact/hooks";
 
-import { type HighlightedTokenInfo, normalizeBoardGroupBy } from "@triliumnext/commons";
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+import { normalizeBoardGroupBy } from "@triliumnext/commons/src/lib/board_columns.js";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -32,11 +33,16 @@ import {
 import type { SortContext } from "../sorting";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { FormListItem } from "../../react/FormList";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useLingeringTrue, useTrackedElement } from "../../react/hooks/dom";
 import {
-    useContextualShortcutHints, useEffectiveReadOnly, useLingeringTrue, useNoteContext, useNoteLabel,
-    useNoteLabelBoolean, useNoteLabelInt, useNoteLabelWithDefault, useNoteTypeOptions,
-    useSetContextData, useTrackedElement, useTriliumEvent
-} from "../../react/hooks";
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelInt, useNoteLabelWithDefault
+} from "../../react/hooks/note";
+import {
+    useEffectiveReadOnly, useNoteContext, useSetContextData
+} from "../../react/hooks/note_context";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
+import { useNoteTypeOptions } from "../../react/hooks/note_types";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
 import { RAIL_EXIT_MS, RailStand, RailStandContext } from "../../react/OverlayRail";
 import { type TemplateChoiceConfig, useTemplateChoice } from "../../react/TemplateDropdown";
@@ -917,8 +923,12 @@ function Board({
         // least once, or there is no container to notice the tab being shown and it stays empty.
         // Nothing is deferred where the active tab cannot be read, so an answer that has yet to
         // arrive leaves the board drawn rather than blank.
+        // Only a board in a tab is deferred. A detached context, such as the quick edit popup's,
+        // is never the active tab, and nothing shows it the way a tab switch does.
         const shownTab = appContext.tabManager?.getActiveMainContext();
-        if (byColumn && noteContext && shownTab && shownTab !== noteContext.getMainContext()) {
+        const ownTab = shownTab && noteContext?.getMainContext();
+        if (byColumn && ownTab && ownTab !== shownTab
+                && appContext.tabManager.mainNoteContexts.includes(ownTab)) {
             isStale.current = true;
             return;
         }

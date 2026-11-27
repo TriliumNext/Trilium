@@ -104,8 +104,20 @@ describe("TOTP API", () => {
     });
 
     it("exposes the configured secret (empty when none is set)", () => {
-        const result = totpRoute.getSecret();
-        expect(result).toBeDefined();
+        expect(cls.init(() => totpRoute.getSecret())).toBeFalsy();
+
+        runEnable({ secret: SECRET, recoveryCodes: [ "recovery-code" ] });
+        expect(cls.init(() => totpRoute.getSecret())).toBe(SECRET);
+    });
+
+    it("resetTOTP removes the secret and the recovery codes, deactivating TOTP", () => {
+        runEnable({ secret: SECRET, recoveryCodes: [ "recovery-code" ] });
+        expect(totpRoute.getTOTPStatus()).toEqual({ success: true, message: true, set: true });
+
+        expect(cls.init(() => totpRoute.resetTOTP())).toEqual({ success: true });
+
+        expect(totpRoute.getTOTPStatus()).toEqual({ success: true, message: false, set: false });
+        expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
     });
 });
 

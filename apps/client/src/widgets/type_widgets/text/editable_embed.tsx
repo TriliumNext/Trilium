@@ -4,16 +4,19 @@ import type { CKTextEditor, EmbedEdge } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { type ComponentChildren, createContext, type RefObject } from "preact";
 import { Suspense } from "preact/compat";
-import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useRef, useState
+} from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import { type ContentEditor, disposeInteractiveContent } from "../../../services/content_renderer";
 import options from "../../../services/options";
-import { useNoteLabelBoolean } from "../../react/hooks";
+import { useNoteLabelBoolean } from "../../react/hooks/note";
 import {
     type ContentEmbedToolProvider, registerContentEmbedTools, registerEmbedCaretTarget,
-    useIsContentEmbedEditable
+    useIsContentEmbedEditable, whenInPage
 } from "./content_embed_tools";
+import { EDITOR_ROOT_SELECTOR, type EditorRootElement } from "./nested_editor";
 
 /**
  * Whether the content renders inside the editor of an embed. Its own embeds then stay read-only,
@@ -134,19 +137,35 @@ export interface EmbeddedCaretEditor {
     getEdgeLeftBy(event: KeyboardEvent): EmbedEdge | null;
     /** Runs before the caret leaves the editor past an edge, while the editor has the focus. */
     prepareToLeave?(): void;
+    /**
+     * The edge of the content that Enter in `event` leaves past, as it leaves a code block, or
+     * `null` while the caret stays in the content.
+     */
+    getEdgeLeftByEnter?(event: KeyboardEvent): EmbedEdge | null;
+    /** Removes the blank lines that Enter leaves past at `edge`. */
+    removeBlankLinesAt?(edge: EmbedEdge): void;
+    /** Whether `event` is Backspace in empty content, which turns a code block into a paragraph. */
+    isBackspaceOnEmpty?(event: KeyboardEvent): boolean;
+    /** Whether the changes of the editor are steps of the undo stack of the text editor. */
+    readonly hasSharedHistory?: boolean;
 }
 
 /**
  * Lets the arrow keys move the caret between `getEditor()`, the editor of an embed, and the text
- * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`.
- * `getEditor()` returns `null` while the editor is not ready.
+ * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`. With
+ * `hasCodeBlockKeys`, Enter and Backspace act as in a code block: Enter past blank lines at an
+ * edge of the content starts a paragraph beside the embed, and Backspace in empty content turns
+ * the embed into a paragraph. `getEditor()` returns `null` while the editor is not ready.
  */
 export function useEmbedCaretNavigation(
-    getEditor: () => EmbeddedCaretEditor | null | undefined
+    getEditor: () => EmbeddedCaretEditor | null | undefined,
+    hasCodeBlockKeys = false
 ) {
     const rootRef = useContext(CaretNavigationContext);
     const getEditorRef = useRef(getEditor);
     getEditorRef.current = getEditor;
+    const hasCodeBlockKeysRef = useRef(hasCodeBlockKeys);
+    hasCodeBlockKeysRef.current = hasCodeBlockKeys;
 
     useEffect(() => {
         const root = rootRef?.current;
@@ -155,6 +174,23 @@ export function useEmbedCaretNavigation(
         // The capture phase runs before the editor handles the key.
         const onKeyDown = (event: KeyboardEvent) => {
             const editor = getEditorRef.current();
+            if (editor && hasCodeBlockKeysRef.current && editor.isBackspaceOnEmpty?.(event)) {
+                if (replaceContentEmbedWithParagraph(root, editor)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                return;
+            }
+
+            const enterEdge = hasCodeBlockKeysRef.current && editor?.getEdgeLeftByEnter?.(event);
+            if (editor && enterEdge) {
+                if (insertParagraphBesideContentEmbed(root, enterEdge, editor)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                return;
+            }
+
             const edge = editor?.getEdgeLeftBy(event);
             if (!editor || !edge) return;
 
@@ -219,50 +255,6 @@ export function useEmbedPreview(
 }
 
 /**
- * The text editor nested in the split of `ntxId`, such as the editor of an included note, while it
- * holds the focus, for the formatting toolbar to show its buttons. `null` once the editor of the
- * note takes the focus, or the nested editor goes away. Focus elsewhere, such as in the toolbar,
- * changes nothing.
- */
-export function useNestedEditor(ntxId: string | null | undefined) {
-    const [ editor, setEditor ] = useState<CKTextEditor | null>(null);
-
-    useEffect(() => {
-        setEditor(null);
-        if (!ntxId) return;
-
-        let stopWatching: (() => void) | undefined;
-        const onFocusIn = (event: FocusEvent) => {
-            const editable = event.target instanceof Element
-                ? event.target.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)
-                : null;
-            if (editable?.closest<HTMLElement>("[data-ntx-id]")?.dataset.ntxId !== ntxId) return;
-
-            stopWatching?.();
-            stopWatching = undefined;
-            const focused = editable.ckeditorInstance;
-            if (!focused || !editable.parentElement?.closest(EDITOR_ROOT_SELECTOR)) {
-                setEditor(null);
-                return;
-            }
-
-            const release = () => setEditor(null);
-            focused.on("destroy", release);
-            stopWatching = () => focused.off("destroy", release);
-            setEditor(focused);
-        };
-
-        document.addEventListener("focusin", onFocusIn);
-        return () => {
-            document.removeEventListener("focusin", onFocusIn);
-            stopWatching?.();
-        };
-    }, [ ntxId ]);
-
-    return editor;
-}
-
-/**
  * The element in the title row of the embed around `rootRef` that holds the badges of its content,
  * such as the save status of an included note, or `null`. `null` while not `isShown` as well:
  * content mounts before its embed box takes it in, so it looks for the element once it shows.
@@ -288,6 +280,45 @@ export function hasFixedToolbarAround(element: HTMLElement | null) {
     return !!findTextEditorAround(element)?.ui.view.toolbar;
 }
 
+/**
+ * Whether the text note around `ref` is in Vim mode, which follows it as it turns on and off.
+ * `false` in read-only text and until the content is in the page, `undefined` outside a text note.
+ */
+export function useTextNoteVimMode(ref: RefObject<HTMLElement | null>) {
+    const [ isOn, setIsOn ] = useState<boolean | undefined>(false);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+
+        let stopListening: (() => void) | undefined;
+        const stopWaiting = whenInPage(element, () => {
+            const editor = findTextEditorAround(element);
+            if (!editor) {
+                setIsOn(element.closest(READ_ONLY_TEXT_SELECTOR) ? false : undefined);
+                return;
+            }
+            if (!editor.plugins.has("TriliumVim")) {
+                setIsOn(false);
+                return;
+            }
+
+            const vim = editor.plugins.get("TriliumVim");
+            // `isActive` is still false while a new session sets its first status.
+            const update = () => setIsOn(!!vim.status.mode);
+            vim.on("change:status", update);
+            stopListening = () => vim.off("change:status", update);
+            update();
+        });
+        return () => {
+            stopWaiting();
+            stopListening?.();
+        };
+    }, [ ref ]);
+
+    return isOn;
+}
+
 /** The text editor whose editable root contains `element`, as the editor around an embed. */
 export function findTextEditorAround(element: HTMLElement | null) {
     return element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
@@ -298,17 +329,15 @@ export function findTextEditorIn(element: HTMLElement | null) {
     return element?.querySelector<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
 }
 
-/** The editable root of a text editor, which CKEditor gives a reference to the editor. */
-type EditorRootElement = HTMLElement & { ckeditorInstance?: CKTextEditor };
-
-const EDITOR_ROOT_SELECTOR = ".ck-editor__editable:not(.ck-editor__nested-editable)";
-
 /**
  * The root of the content of an embed whose editor has caret navigation, or `null`. Set by
  * `EditableEmbedContent` for `hasCaretNavigation`, and by content that lays out its own editor,
  * such as `MarkdownEmbed`.
  */
 export const CaretNavigationContext = createContext<RefObject<HTMLElement | null> | null>(null);
+
+/** The content of a read-only text note, as `ReadOnlyText` renders it. */
+const READ_ONLY_TEXT_SELECTOR = ".note-detail-readonly-text-content";
 
 const EDITABLE_FLAG_TOOLS: ContentEmbedToolProvider = {
     hasEditableFlag: true,
@@ -325,6 +354,40 @@ function leaveContentEmbed(element: HTMLElement, edge: EmbedEdge) {
     const editor = findTextEditorAround(element);
     return !!editor?.plugins.has("ContentEmbedCaret")
         && editor.plugins.get("ContentEmbedCaret").leaveEmbed(element, edge);
+}
+
+/**
+ * Removes the blank lines of `embedEditor` at `edge` and puts the caret of the text editor around
+ * `element` in a new paragraph beside its embed, in one undo step. Returns `false`, before any
+ * change, when no text editor with `ContentEmbedCaret` is around `element`.
+ */
+function insertParagraphBesideContentEmbed(
+    element: HTMLElement, edge: EmbedEdge, embedEditor: EmbeddedCaretEditor
+) {
+    const editor = findTextEditorAround(element);
+    if (!editor?.plugins.has("ContentEmbedCaret")) {
+        return false;
+    }
+
+    embedEditor.removeBlankLinesAt?.(edge);
+    embedEditor.prepareToLeave?.();
+    return editor.plugins.get("ContentEmbedCaret")
+        .insertParagraphBeside(element, edge, !!embedEditor.hasSharedHistory);
+}
+
+/**
+ * Puts the caret of the text editor around `element` in an empty paragraph that replaces its
+ * embed. Returns `false`, before any change, when no text editor with `ContentEmbedCaret` is
+ * around `element`.
+ */
+function replaceContentEmbedWithParagraph(element: HTMLElement, embedEditor: EmbeddedCaretEditor) {
+    const editor = findTextEditorAround(element);
+    if (!editor?.plugins.has("ContentEmbedCaret")) {
+        return false;
+    }
+
+    embedEditor.prepareToLeave?.();
+    return editor.plugins.get("ContentEmbedCaret").replaceWithParagraph(element);
 }
 
 /**
@@ -348,26 +411,40 @@ export function EmbedPreview({ element, isHidden = false }: {
 
 /**
  * Moves the focus to the element that `selector` matches when the embed box around `rootRef`
- * holds it, including when that element renders after the box took the focus.
+ * holds it, including when that element renders after the box took the focus. The root names
+ * `selector` in `data-embed-focus-target`, which `ContentEmbed` focuses as the box mounts.
+ * Content rendered apart, such as inline source, finds its box once it joins the page.
  */
 function useFocusFromEmbedBox(rootRef: RefObject<HTMLElement | null>, selector?: string) {
-    useEffect(() => {
+    // A layout effect: inline source mounts its embed box right after it renders.
+    useLayoutEffect(() => {
         const root = rootRef.current;
-        const box = root?.closest<HTMLElement>(".include-note-content");
-        if (!root || !box || !selector) return;
+        if (!root || !selector) return;
 
-        const forwardFocus = () => {
-            if (document.activeElement === box) {
-                root.querySelector<HTMLElement>(selector)?.focus();
-            }
-        };
-        const observer = new MutationObserver(forwardFocus);
-        observer.observe(root, { childList: true, subtree: true });
-        box.addEventListener("focus", forwardFocus);
-        forwardFocus();
+        root.dataset.embedFocusTarget = selector;
+        let stopForwarding: (() => void) | undefined;
+        const stopWaiting = whenInPage(root, () => {
+            const box = root.closest<HTMLElement>(".include-note-content");
+            if (!box) return;
+
+            const forwardFocus = () => {
+                if (document.activeElement === box) {
+                    root.querySelector<HTMLElement>(selector)?.focus();
+                }
+            };
+            const observer = new MutationObserver(forwardFocus);
+            observer.observe(root, { childList: true, subtree: true });
+            box.addEventListener("focus", forwardFocus);
+            forwardFocus();
+            stopForwarding = () => {
+                observer.disconnect();
+                box.removeEventListener("focus", forwardFocus);
+            };
+        });
         return () => {
-            observer.disconnect();
-            box.removeEventListener("focus", forwardFocus);
+            stopWaiting();
+            stopForwarding?.();
+            delete root.dataset.embedFocusTarget;
         };
     }, [ rootRef, selector ]);
 }

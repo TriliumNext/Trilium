@@ -91,9 +91,9 @@ const config: ForgeConfig = {
                         "128x128": path.join(APP_ICON_PATH, isNightly ? "png/128x128-dev.png" : "png/128x128.png"),
                     },
                     id: "com.triliumnext.notes",
-                    runtimeVersion: "24.08",
+                    runtimeVersion: "25.08",
                     base: "org.electronjs.Electron2.BaseApp",
-                    baseVersion: "24.08",
+                    baseVersion: "25.08",
                     baseFlatpakref: "https://flathub.org/repo/flathub.flatpakrepo",
                     finishArgs: [
                         // Wayland/X11 Rendering
@@ -129,7 +129,13 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/maker-rpm",
             config: {
-                options: baseLinuxMakerConfigOptions
+                options: {
+                    ...baseLinuxMakerConfigOptions,
+                    // electron-installer-redhat's spec template with an absolute `%install` source
+                    // path, which works whether rpmbuild runs `%install` from `BUILD` or from
+                    // `BUILD/<name>-<version>-build` (RPM 4.20+).
+                    specTemplate: path.resolve(path.join(ELECTRON_FORGE_DIR, "rpm-spec.ejs"))
+                }
             }
         },
         {

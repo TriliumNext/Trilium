@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import dataEncryption from "./encryption/data_encryption.js";
 import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 import protectedSession from "./protected_session.js";
 
@@ -88,6 +89,14 @@ describe("protected_session", () => {
 
             const decrypted = protectedSession.decrypt(cipherText) as Uint8Array;
             expect(Array.from(decrypted)).toEqual(Array.from(payload));
+        });
+
+        it("decrypt returns null for a ciphertext whose digest does not match", () => {
+            const cipherText = protectedSession.encrypt("tampered") as string;
+            const decrypt = vi.spyOn(dataEncryption, "decrypt").mockReturnValueOnce(false);
+            expect(protectedSession.decrypt(cipherText)).toBeNull();
+            expect(decrypt).toHaveBeenCalledOnce();
+            decrypt.mockRestore();
         });
 
         it("decryptString returns the original string for a string round-trip", () => {

@@ -27,6 +27,7 @@ import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
 import { highlightedTexts } from "../../../test/highlights";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { ParentComponent } from "../../react/react_utils";
 import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
@@ -34,7 +35,9 @@ import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
 import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { DEFAULT_COLUMN_ICON } from "./columns";
-import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
+
+beforeAll(() => preloadDropdownPopups());
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -85,7 +88,7 @@ const NOTE_TYPE_OPTIONS = [
     id, title, icon, group: "type" as const, options: { type, mime }
 })) as NoteTypeOption[];
 
-vi.mock("../../react/IconPicker", () => ({
+vi.mock("../../react/IconPickerButton", () => ({
     IconPickerButton: ({ className, icon, onSelect, onOpened, onClosed }: {
         className?: string, icon: string, onSelect: (picked: string) => void,
         onOpened?: () => void, onClosed?: () => void
@@ -912,7 +915,10 @@ describe("A board in a tab the reader is not looking at", () => {
         const host = new Component();
         Object.assign(host, { noteContext: contextStub({ getMainContext: () => tab }) });
         const previousTabManager = appContext.tabManager;
-        appContext.tabManager = { getActiveMainContext: () => shown } as never;
+        appContext.tabManager = {
+            getActiveMainContext: () => shown,
+            mainNoteContexts: [ tab, otherTab ]
+        } as never;
 
         const mountPoint = document.createElement("div");
         container = mountPoint;
@@ -1010,6 +1016,68 @@ describe("A board in a tab the reader is not looking at", () => {
         expect(columnOf("First")).toBe("To Do");
 
         for (const attribute of froca.getNoteFromCache("split1")?.getAttributes() ?? []) {
+            if (attribute.name === "status") attribute.value = "Done";
+        }
+        await draw();
+        expect(columnOf("First")).toBe("Done");
+
+        appContext.tabManager = previousTabManager;
+    });
+
+    /**
+     * The quick edit popup's context is outside the tab row, so it is never the active tab. Its
+     * board is on screen while the popup is, so a card made in it has to appear at once.
+     */
+    it("redraws for a change while its context is outside the tab row", async () => {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { id: "popup1", title: "First", "#status": "To Do" },
+                { id: "popup2", title: "Second", "#status": "Done" }
+            ]
+        });
+
+        const tab = {};
+        const popup = {};
+        const host = new Component();
+        Object.assign(host, { noteContext: contextStub({ getMainContext: () => popup }) });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveMainContext: () => tab,
+            mainNoteContexts: [ tab ]
+        } as never;
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        const draw = async () => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={host}>
+                        <Harness
+                            note={note}
+                            noteIds={[ ...note.getChildNoteIds() ]}
+                            initialConfig={{ columns: [ { value: "To Do" }, { value: "Done" } ] }}
+                        />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            await act(async () => { await flush(); });
+        };
+
+        const columnOf = (title: string) => [ ...mountPoint.querySelectorAll(".board-column") ]
+            .find(column => [ ...column.querySelectorAll(".board-note") ]
+                .some(card => card.textContent?.includes(title)))
+            ?.getAttribute("data-column");
+
+        await draw();
+        expect(columnOf("First")).toBe("To Do");
+
+        for (const attribute of froca.getNoteFromCache("popup1")?.getAttributes() ?? []) {
             if (attribute.name === "status") attribute.value = "Done";
         }
         await draw();

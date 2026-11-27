@@ -1,14 +1,14 @@
 # Text
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Text_demo.webp" width="1152" height="720"></figure>
+
 The default note type in Trilium, text notes allow for rich formatting, tables, images, admonitions and a handful of other features.
 
 ## Formatting bars
 
 Most of the interaction with text notes is done via the built-in toolbars. Depending on preference, there are two different layouts:
 
-*   The _Floating toolbar_ is hidden by default and only appears when needed. In this mode there are actually two different toolbars:  
-    <img src="1_Text_image.png" width="496" height="91"><img src="2_Text_image.png" width="812" height="114">
-*   A toolbar that appears when text is selected. This provides text-level formatting such as bold, italic, text colors, inline code, etc.  
-    _<img src="Text_image.png" width="1109" height="124">_
+*   The _Floating toolbar_ is hidden by default and only appears when needed. In this mode there are actually two different toolbars.
+*   A toolbar that appears when text is selected. This provides text-level formatting such as bold, italic, text colors, inline code, etc.
 
 Fore more information see <a class="reference-link" href="Text/Formatting%20toolbar.md">Formatting toolbar</a>.
 
@@ -86,6 +86,8 @@ Text notes are usually opened in edit mode. However, they may open in read-only 
 ## Keyboard shortcuts
 
 There are numerous keyboard shortcuts to format the text without having to use the mouse. For a reference of all the key combinations, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Keyboard Shortcuts</a>. In addition, see <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-like formatting</a> as an alternative to the keyboard shortcuts.
+
+To edit with the keys of the Vim text editor, see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
 
 ## Content width
 

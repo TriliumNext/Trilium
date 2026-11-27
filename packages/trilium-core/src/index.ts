@@ -20,7 +20,7 @@ import { type ImageProvider, initImageProvider } from "./services/image_provider
 import { type CoreConfig, initConfig } from "./services/config";
 
 export { default as LogService, getLog } from "./services/log";
-export { default as FileBasedLogService, type LogFileInfo } from "./services/file_based_log";
+export { default as FileBasedLogService, type LogFileInfo, type LogFileTail } from "./services/file_based_log";
 export { default as BackupService, getBackup, initBackup, type BackupOptionsService } from "./services/backup";
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
@@ -87,7 +87,7 @@ export { default as handlers } from "./services/handlers";
 export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
-export { default as getSharedBootstrapItems } from "./services/bootstrap_utils";
+export { default as getSharedBootstrapItems, isNextBasedTheme } from "./services/bootstrap_utils";
 export { default as branches } from "./services/branches";
 export { default as bulk_actions } from "./services/bulk_actions";
 export { default as hoisted_note } from "./services/hoisted_note";
@@ -151,6 +151,9 @@ export {
     type VirtualSubtreeAttribute,
     type VirtualSubtreeItem
 } from "./services/virtual_notes";
+export {
+    type GeneratedToc, registerTocGenerator, type TocGenerator, unregisterTocGenerator
+} from "./services/toc/index";
 export { type ImageProvider, type ImageFormat, type ImageCompressionOutcome, type ImageCompressionRequest, type ImageShrink, type ProcessedImage, getImageProvider } from "./services/image_provider";
 export { default as imageCompressionService } from "./services/image_compression";
 export { default as imageInventoryService, type ImageInventoryOptions } from "./services/image_inventory";

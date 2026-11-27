@@ -95,7 +95,7 @@ describe("streamLiveDatabasePages against the real engine", () => {
     });
 
     it("refuses a reader that reports no usable page size", () => {
-        const reader: LiveDatabaseReader = { getValue: () => 0 };
+        const reader: LiveDatabaseReader = { getValue: () => 0, getColumn: () => [] };
         expect(() => streamLiveDatabasePages(reader)).toThrow(/page_size/);
     });
 

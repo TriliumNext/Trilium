@@ -6,23 +6,19 @@ import { ComponentChildren, createContext, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import { onSystemBack } from "../../services/system_back";
-import utils from "../../services/utils";
+import utils, { STACKED_TREE_LAYOUT } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import { useWindowSize } from "./hooks";
+import { useMediaQuery, useSlide } from "./hooks/dom";
+import MasterDetailHeader from "./MasterDetailHeader";
 import Modal, { ModalProps } from "./Modal";
-import { useSlide } from "./SlidePages";
 
 /**
  * The flow a dialog that pairs a list with a detail takes on a screen too narrow to hold both: one at a
  * time, the detail sliding in over the list and a way back in its header. Everything a dialog needs for
  * it lives here — the state and the classes ({@link useMobileMasterDetail}), the two panes
- * ({@link MasterPane}, {@link DetailPane}), the header ({@link MasterDetailHeader}) and their styling
- * (master_detail.css) — so that three dialogs do not each carry their own copy of the same slide.
+ * ({@link MasterPane}, {@link DetailPane}) and their styling (master_detail.css), with the header in
+ * MasterDetailHeader.tsx — so that three dialogs do not each carry their own copy of the same slide.
  */
-
-/** Mobile viewports at least this wide (tablets) keep a side-by-side layout; narrower ones get the
- *  master-detail flow. */
-export const MASTER_DETAIL_TABLET_MIN_WIDTH = 768;
 
 export interface MobileMasterDetail {
     /** True on narrow mobile viewports where the list and detail collapse into a master-detail flow. */
@@ -44,8 +40,9 @@ export interface MobileMasterDetail {
 export function useMobileMasterDetail(modalRef: RefObject<HTMLElement | null>): MobileMasterDetail {
     const [ mobileView, setMobileView ] = useState<"list" | "page">("list");
     const isMobile = utils.isMobile();
-    const { windowWidth } = useWindowSize();
-    const isMasterDetail = isMobile && windowWidth < MASTER_DETAIL_TABLET_MIN_WIDTH;
+    // A phone, by the breakpoint that also stacks the note tree; a tablet keeps both panes side by side.
+    const isPhone = useMediaQuery(STACKED_TREE_LAYOUT);
+    const isMasterDetail = isMobile && isPhone;
     /** Whether the next change of view slides: a switch does, a reset does not. */
     const slideNext = useRef(false);
     // Outside the master-detail flow both panes are on show, and there is nothing to slide between.
@@ -101,64 +98,6 @@ export function MasterPane({ className, children }: PaneProps) {
 /** The half the list leads to, which slides in over it. */
 export function DetailPane({ className, children }: PaneProps) {
     return <div class={clsx("tn-detail-pane", className)}>{children}</div>;
-}
-
-interface MasterDetailHeaderProps {
-    /** Whether the detail is what is on show, which is what the header is a way back from. */
-    inPage: boolean;
-    onBack: () => void;
-    /** The back button's tooltip: where it goes back to, in the dialog's own words. */
-    backTitle: string;
-    /** What the detail on show is called. */
-    pageTitle?: ComponentChildren;
-    /** What the dialog is called, shown while the list is. */
-    listTitle: ComponentChildren;
-    /** A decorative icon for the list view, standing where the back button stands in the other. */
-    listIcon?: string;
-    /** The dialog's own actions, which belong to the list rather than to one page of it. */
-    listActions?: ComponentChildren;
-    /**
-     * Actions belonging to the page on show. The header carries the page's name here, so a control
-     * that explains or acts on the page as a whole reads beside it rather than inside the page.
-     */
-    pageActions?: ComponentChildren;
-}
-
-/**
- * The header of a master-detail modal, in place of its static title (which master_detail.css hides):
- * the way back and the name of what is on show, or the dialog's own name while the list is.
- */
-export function MasterDetailHeader({
-    inPage, onBack, backTitle, pageTitle, listTitle, listIcon, listActions, pageActions
-}: MasterDetailHeaderProps) {
-    const back = useRef(onBack);
-    back.current = onBack;
-    useEffect(() => {
-        if (!inPage) return;
-        return onSystemBack(() => {
-            back.current();
-            return true;
-        });
-    }, [ inPage ]);
-
-    return (
-        <div class="tn-master-detail-header">
-            {inPage ? (
-                <ActionButton icon="bx bx-chevron-left" text={backTitle} onClick={onBack} />
-            ) : (
-                // Borrows `icon-action` so it keeps exactly the back button's footprint, and the title
-                // does not shift as the views change.
-                listIcon && <span class={clsx("tn-master-detail-icon icon-action", listIcon)} aria-hidden="true" />
-            )}
-            {/* A page that names itself passes no title, and gets no room taken for one. */}
-            {(inPage ? pageTitle : listTitle) && (
-                <h5 class="tn-master-detail-title">{inPage ? pageTitle : listTitle}</h5>
-            )}
-            {inPage
-                ? pageActions && <div class="tn-master-detail-page-actions">{pageActions}</div>
-                : listActions}
-        </div>
-    );
 }
 
 interface MasterDetailState {

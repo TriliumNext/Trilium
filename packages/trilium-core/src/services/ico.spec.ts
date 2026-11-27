@@ -132,6 +132,13 @@ describe("trimIcoToSmallestEntry", () => {
 
         expect(readTrimmed(trimmed ?? new Uint8Array()).edge).toBe(12);
         expect(readTrimmed(trimmed ?? new Uint8Array()).picture).toStrictEqual(payload(0xdd));
+
+        // Whichever order the directory lists them in.
+        const largestFirst = trimIcoToSmallestEntry(buildIco([
+            { edge: 12, payload: payload(0xdd) },
+            { edge: 8, payload: payload(0xcc) }
+        ]));
+        expect(readTrimmed(largestFirst ?? new Uint8Array()).edge).toBe(12);
     });
 
     it("answers nothing when the file is one picture already", () => {

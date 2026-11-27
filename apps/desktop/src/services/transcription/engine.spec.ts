@@ -1,5 +1,5 @@
 import path from "path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadSherpaEngine, probeSherpa } from "./engine";
 
@@ -11,7 +11,8 @@ const h = vi.hoisted(() => ({
     extractorConfig: null as Record<string, unknown> | null,
     decoded: [] as Float32Array[],
     isEmbeddingReady: true,
-    embeddings: [] as number[][],
+    /** The embeddings `compute()` returns in turn; `null` makes `isReady()` refuse one. */
+    embeddings: [] as (number[] | null)[],
     /** The length of each stretch of samples a speaker embedding was computed from. */
     embedded: [] as number[]
 }));
@@ -89,6 +90,10 @@ vi.mock("sherpa-onnx-node", () => ({
                 };
             }
             isReady() {
+                if (h.embeddings[0] === null) {
+                    h.embeddings.shift();
+                    return false;
+                }
                 return h.isEmbeddingReady;
             }
             compute(_stream: unknown, enableExternalBuffer: boolean) {
@@ -248,8 +253,73 @@ describe("loadSherpaEngine", () => {
         expect(tracker?.identify(new Float32Array(1600), []))
             .toEqual([ { startSeconds: 0, endSeconds: 0.1, speaker: null } ]);
 
+        // A window that yields no embedding counts as an unknown voice; a cut that snaps within
+        // a second of the previous one is dropped.
+        h.isEmbeddingReady = true;
+        h.embedded.length = 0;
+        h.embeddings.push([ 1, 0 ], [ 1, 0 ], null, null, ...Array(5).fill([ 1, 0 ]),
+            [ 1, 0 ], [ 1, 0 ]);
+        const close = [
+            { text: "One.", startSeconds: 0 },
+            { text: "Two", startSeconds: 3.4 },
+            { text: "three", startSeconds: 3.6 }
+        ];
+        expect(tracker?.identify(new Float32Array(16000 * 10), close)).toEqual([
+            { startSeconds: 0, endSeconds: 3.4, speaker: 1 },
+            { startSeconds: 3.4, endSeconds: 10, speaker: 1 }
+        ]);
+        expect(h.embeddings).toEqual([]);
+
         const withoutSpeakers = await loadSherpaEngine({ ...MODELS, speaker: null });
         expect(withoutSpeakers.createSpeakerTracker).toBeUndefined();
         expect(withoutSpeakers.settings.speakers).toBeNull();
+    });
+});
+
+describe("loading sherpa-onnx", () => {
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    const arch = Object.getOwnPropertyDescriptor(process, "arch");
+
+    afterEach(() => {
+        for (const [ key, descriptor ] of [ [ "platform", platform ], [ "arch", arch ] ] as const) {
+            if (descriptor) {
+                Object.defineProperty(process, key, descriptor);
+            }
+        }
+        vi.doUnmock("sherpa-onnx-node");
+        vi.resetModules();
+    });
+
+    it("reads a module without a default export", async () => {
+        const sherpa = (await import("sherpa-onnx-node")).default;
+        vi.resetModules();
+        vi.doMock("sherpa-onnx-node", () => ({ ...sherpa, default: undefined }));
+        const engine = await import("./engine");
+        expect(await engine.probeSherpa()).toBe("1.13.8");
+        const loaded = await engine.loadSherpaEngine(MODELS);
+        expect(loaded.settings).toMatchObject({ precision: "int8" });
+        expect(h.recognizerConfig).not.toBeNull();
+    });
+
+    it("reports why the platform's addon does not load, or the original failure", async () => {
+        vi.resetModules();
+        vi.doMock("sherpa-onnx-node", () => {
+            throw new Error("Could not find sherpa-onnx-node.");
+        });
+        const { probeSherpa } = await import("./engine");
+
+        Object.defineProperty(process, "arch", { value: "nonexistent", configurable: true });
+        Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+        await expect(probeSherpa()).rejects.toThrow("sherpa-onnx-win-nonexistent/sherpa-onnx.node");
+        Object.defineProperty(process, "platform", { value: "linux", configurable: true });
+        await expect(probeSherpa()).rejects.toThrow("sherpa-onnx-linux-nonexistent/sherpa-onnx.node");
+
+        // Where the platform package is installed, it loads, and the import's own error remains.
+        if (platform && arch) {
+            Object.defineProperty(process, "platform", platform);
+            Object.defineProperty(process, "arch", arch);
+        }
+        const failure = await probeSherpa().catch((e: unknown) => e);
+        expect(String(failure)).not.toContain("sherpa-onnx.node");
     });
 });

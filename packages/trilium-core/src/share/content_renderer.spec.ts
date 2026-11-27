@@ -4,7 +4,7 @@ import {
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
-import { parse } from "node-html-parser";
+import { type HTMLElement, parse } from "node-html-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as iconPackService from "../services/icon_packs.js";
@@ -830,6 +830,87 @@ describe("content_renderer", () => {
             expect(content).not.toContain("embedGone");
         });
 
+        it("plays an embedded video or audio file, and an included video note", () => {
+            const embed = (attribute: string) =>
+                `<figure class="include-note" ${attribute}>&nbsp;</figure>`;
+            buildShareNote({
+                id: "clipNote1", type: "file", mime: "video/webm", title: "Clip", content: ""
+            });
+            const note = buildShareNote({
+                content: embed(`data-attachment-id="mediaVid1"`)
+                    + embed(`data-attachment-id="mediaAud1"`)
+                    + embed(`data-note-id="clipNote1"`),
+                attachments: [
+                    { id: "mediaVid1", role: "file", mime: "video/mp4", title: "a \"clip\".mp4" },
+                    { id: "mediaAud1", role: "file", mime: "audio/mpeg", title: "song.mp3" }
+                ]
+            });
+
+            const html = getContent(note).content as string;
+            const document = parse(html);
+
+            const players = document.querySelectorAll(".include-note > .media-player")
+                .map((player) => [
+                    player.tagName, player.getAttribute("src"), player.getAttribute("aria-label"),
+                    player.hasAttribute("controls"), player.getAttribute("preload"),
+                    player.hasAttribute("playsinline")
+                ]);
+            expect(players).toEqual([
+                [ "VIDEO", "api/attachments/mediaVid1/download", "a \"clip\".mp4", true,
+                    "metadata", true ],
+                [ "AUDIO", "api/attachments/mediaAud1/download", "song.mp3", true,
+                    "metadata", false ],
+                [ "VIDEO", "api/notes/clipNote1/view", "Clip", true, "metadata", true ]
+            ]);
+        });
+
+        it("shows an Expandable embed closed, under its title, with the caption after it", () => {
+            buildShareNote({ id: "foldNote1", title: "Folded <note>", content: "<h2>Inside</h2>" });
+            const note = buildShareNote({
+                content: `<figure class="include-note" data-attachment-id="foldVid1"`
+                    + ` data-box-size="expandable">&nbsp;<figcaption>A clip</figcaption></figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1"`
+                    + ` data-box-size="expandable">&nbsp;</figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1">&nbsp;</figure>`,
+                attachments: [
+                    { id: "foldVid1", role: "file", mime: "video/mp4", title: "clip.mp4" }
+                ]
+            });
+
+            const document = parse(getContent(note).content as string);
+
+            const [ video, folded, open ] = document.querySelectorAll("figure.include-note");
+            expect(video.childNodes.map((child) => (child as HTMLElement).tagName))
+                .toEqual([ "DETAILS", "FIGCAPTION" ]);
+            const summary = (details: HTMLElement) => {
+                const element = details.querySelector("details.include-note-expandable > summary");
+                return [
+                    element?.querySelectorAll(".tn-icon").map((icon) => icon.getAttribute("class")),
+                    element?.text
+                ];
+            };
+            expect(summary(video)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-video" ], "clip.mp4"
+            ]);
+            expect(video.querySelector("details > video.media-player") !== null).toBe(true);
+            expect(video.querySelector("details")?.hasAttribute("open")).toBe(false);
+            expect(summary(folded)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-note" ], "Folded <note>"
+            ]);
+            expect(folded.querySelector("details > h2")?.text).toBe("Inside");
+            expect(open.querySelector("details") === null).toBe(true);
+            expect(open.querySelector("h2")?.text).toBe("Inside");
+
+            const page = preparePageContent(document.toString(), {
+                imageAlt: "", headingLinkLabel: ""
+            });
+            expect(page.headings.map(({ slug }) => slug)).toEqual([ "inside-1" ]);
+            const pageDocument = parse(page.content);
+            expect(pageDocument.querySelectorAll("h2").map((heading) => [
+                heading.id, heading.querySelector(".toc-anchor") !== null
+            ])).toEqual([ [ "inside", false ], [ "inside-1", true ] ]);
+        });
+
         it("shows all of a drawing whose frame cannot be read, and logs it", () => {
             const drawing = (id: string) => [
                 { id, role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw" },
@@ -1110,6 +1191,175 @@ describe("content_renderer", () => {
                 const result = getContent(note);
                 expect(result.content).toStrictEqual("<p>clip.mp4</p>");
             });
+        });
+    });
+
+    describe("Blocks and links", () => {
+        it("shows a shared excerpt of a rule or an empty paragraph alone, as a note of one", () => {
+            buildShareNote({
+                id: "ruleSource01",
+                content: `<p>Before</p><hr data-trilium-block-id="rule">`
+                    + `<p data-trilium-block-id="gap">&nbsp;</p><p>After</p>`
+            });
+            const excerpt = (block: string) => `<figure class="include-note"`
+                + ` data-note-id="ruleSource01" data-block="${block}"></figure>`;
+            const host = buildShareNote({ content: excerpt("rule") + excerpt("gap") });
+
+            const [ rule, gap ] = parse(String(getContent(host).content))
+                .querySelectorAll("figure.include-note");
+            expect(rule.innerHTML).toBe(`<hr data-trilium-block-id="rule">`);
+            expect(gap.innerHTML).toBe(`<p data-trilium-block-id="gap">&nbsp;</p>`);
+
+            const loneRule = `<hr data-trilium-block-id="r">`;
+            expect(getContent(buildShareNote({ content: loneRule })))
+                .toMatchObject({ isEmpty: false, content: loneRule });
+            expect(getContent(buildShareNote({ content: "<p>&nbsp;</p><hr>" })).isEmpty).toBe(true);
+            const page = parse(String(renderNoteContent(buildSitePage({ content: loneRule }))));
+            expect(page.querySelector("#content hr[data-trilium-block-id]") !== null).toBe(true);
+        });
+
+        it("keeps the block ID of an embed shown as a link or as a placeholder", () => {
+            buildShareNote({ id: "asLinkNote01", title: "Compact", content: "<p>x</p>" });
+            buildShareNote({ id: "lockedNote01", content: "<p>y</p>", "#shareCredentials": "a:b" });
+            const embed = (attributes: string, blockId: string) => `<figure class="include-note"`
+                + ` ${attributes} data-trilium-block-id="${blockId}"></figure>`;
+            const note = buildShareNote({
+                content: embed(`data-note-id="asLinkNote01" data-box-size="compact"`, "asLink")
+                    + embed(`data-note-id="lockedNote01"`, "locked")
+                    + embed(`data-attachment-id="asLinkFile01" data-box-size="compact"`, "file"),
+                attachments: [
+                    { id: "asLinkFile01", role: "file", mime: "application/pdf", title: "a.pdf" }
+                ]
+            });
+
+            const document = parse(String(getContent(note, {
+                canAccessEmbed: (embedded) => embedded.getCredentials().length === 0
+            }).content));
+            expect([ "asLink", "locked", "file" ].map((id) =>
+                document.querySelector(`[data-trilium-block-id="${id}"]`)?.tagName))
+                .toEqual([ "A", "P", "A" ]);
+        });
+
+        it("links a bookmark of another note as a fragment of its page", () => {
+            buildShareNote({ id: "markTarget01", title: "Target" });
+            const note = buildShareNote({
+                content: `<p><a href="#root/markTarget01?bookmark=Set%20up">a</a>`
+                    + `<a class="reference-link" href="#root/markTarget01?block=b&amp;bookmark=c">`
+                    + `b</a></p>`
+            });
+
+            const links = parse(String(getContent(note).content)).querySelectorAll("a");
+            expect(links.map((link) => link.getAttribute("href")))
+                .toEqual([ "./markTarget01#Set%20up", "./markTarget01?block=b#c" ]);
+        });
+
+        it("labels a link to a heading of another note with the heading, read once a page", () => {
+            const target = buildShareNote({
+                id: "headTarget01",
+                title: "Manual",
+                content: `<h2 data-trilium-block-id="h">Install</h2>`
+                    + `<p data-trilium-block-id="p">Text</p>`
+            });
+            buildShareNote({
+                id: "headLocked01",
+                title: "Locked",
+                content: `<h2 data-trilium-block-id="h">Secret</h2>`,
+                "#shareCredentials": "a:b"
+            });
+            const readTarget = vi.spyOn(target, "getContent");
+            const links = [ "headTarget01?block=h", "headTarget01?block=h", "headTarget01?block=p",
+                "headLocked01?block=h" ].map((target) =>
+                `<a class="reference-link" href="#root/${target}">x</a>`);
+            const note = buildShareNote({ content: `<p>${links.join("")}</p>` });
+
+            const content = getContent(note, {
+                canAccessEmbed: (linked) => linked.getCredentials().length === 0
+            }).content;
+            expect(parse(String(content)).querySelectorAll("a").map((anchor) => anchor.text))
+                .toEqual([ "Manual - Install", "Manual - Install", "Manual", "Locked" ]);
+            expect(readTarget).toHaveBeenCalledTimes(1);
+        });
+
+        it("labels a link to a heading in the static export, which reads notes from becca", () => {
+            buildNote({
+                id: "exportHeading",
+                title: "Manual",
+                content: `<h2 data-trilium-block-id="h">Install</h2>`
+            });
+            const host = buildNote({
+                id: "exportLinker",
+                content: `<p><a class="reference-link" href="#root/exportHeading?block=h">x</a></p>`
+            });
+
+            expect(parse(String(getContent(host).content)).querySelector("a")?.text)
+                .toBe("Manual - Install");
+        });
+    });
+
+    describe("Markdown note", () => {
+        it("renders each Markdown MIME type as Markdown, and an excerpt of it", () => {
+            for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+                const id = `md${mime.replace(/\W/g, "")}`;
+                const note = buildShareNote({
+                    id,
+                    type: "code",
+                    mime,
+                    content: `Intro\n\n<p data-trilium-block-id="kept">Kept</p>\n\nOutro\n`
+                });
+                expect(String(getContent(note).content)).toContain("<p>Intro</p>");
+
+                const host = buildShareNote({
+                    content: `<figure class="include-note" data-note-id="${id}" data-block="kept"`
+                        + ` data-box-size="full"></figure>`
+                });
+                const excerpt = parse(String(getContent(host).content)).querySelector("figure");
+                expect(excerpt?.innerHTML).toBe(`<p data-trilium-block-id="kept">Kept</p>`);
+            }
+        });
+
+        it("renders the embeds and reference links of a Markdown note as a text note does", () => {
+            buildShareNote({
+                id: "mdGuide0001",
+                title: "Guide",
+                type: "code",
+                mime: "text/x-markdown",
+                content: `<h2 data-trilium-block-id="setup">Set up</h2>\n\n`
+                    + `<p data-trilium-block-id="step">Install it.</p>\n\nOutro\n`
+            });
+            buildShareNote({ id: "mdIncluded1", content: "<p>Included body</p>" });
+            const excerpt = `<figure class="include-note" data-note-id="mdGuide0001"`
+                + ` data-block="step" data-box-size="full"></figure>`;
+            const markdownHost = buildShareNote({
+                type: "code",
+                mime: "text/x-markdown",
+                content: `${excerpt}\n\n<figure class="include-note" data-note-id="mdIncluded1"`
+                    + ` data-box-size="full"></figure>\n\n`
+                    + `See [[mdGuide0001?block=setup]], [[mdGuide0001]] and [[mdMissing01]], `
+                    + `<a class="reference-link" href="./mdGuide0001?block=setup">x</a>.\n`
+            });
+            const textHost = buildShareNote({ content: excerpt });
+            vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            try {
+                const markdown = parse(String(getContent(markdownHost).content));
+                const [ markdownExcerpt, included ] = markdown.querySelectorAll("figure");
+                expect(markdownExcerpt.innerHTML)
+                    .toBe(`<p data-trilium-block-id="step">Install it.</p>`);
+                const text = parse(String(getContent(textHost).content));
+                expect(text.querySelector("figure")?.innerHTML).toBe(markdownExcerpt.innerHTML);
+                expect(included.text).toBe("Included body");
+                const paragraph = markdown.querySelectorAll("p").at(-1);
+                expect(paragraph?.querySelectorAll("a").map((link) =>
+                    [ link.getAttribute("href"), link.text ])).toEqual([
+                    [ "./mdGuide0001?block=setup", "Guide - Set up" ],
+                    [ "./mdGuide0001", "Guide" ],
+                    [ "./mdGuide0001?block=setup", "Guide - Set up" ]
+                ]);
+                expect(paragraph?.text)
+                    .toBe("See Guide - Set up, Guide and mdMissing01, Guide - Set up.");
+            } finally {
+                vi.restoreAllMocks();
+            }
         });
     });
 
@@ -2080,6 +2330,7 @@ describe("content_renderer pages", () => {
         const render = (definition: Parameters<typeof buildShareNote>[0]) =>
             getContent(buildShareNote(definition));
 
+        buildShareNote({ id: "otherNote", title: "Other" });
         const markdown = render({
             type: "code",
             mime: "text/x-markdown",
@@ -2107,6 +2358,8 @@ describe("content_renderer pages", () => {
             .toBe(`<iframe class="pdf-view" src="api/notes/pdfNote/view"></iframe>`);
         expect(file("zipNote", "application/zip"))
             .toContain(`location.href='api/notes/zipNote/download'`);
+        expect(file("audioNote", "audio/ogg")).toMatch(
+            /^<audio class="media-player" src="api\/notes\/audioNote\/view" controls /);
         expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
         const spreadsheet = render({ id: "sheetNote", type: "spreadsheet", content: "{}" });
         expect(spreadsheet.isAppView).toBe(true);
@@ -2223,6 +2476,8 @@ describe("content_renderer pages", () => {
             expect(getContent(note).content)
                 .toBe(binary);
         }
+        const markdown = buildShareNote({ type: "code", mime: "text/x-markdown", content: binary });
+        expect(getContent(markdown)).toMatchObject({ content: binary, isEmpty: true });
         expect(getContent(buildShareNote({ content: "" })).isEmpty).toBe(true);
 
         const page = buildSitePage({ type: "code", mime: "text/plain", content: binary });

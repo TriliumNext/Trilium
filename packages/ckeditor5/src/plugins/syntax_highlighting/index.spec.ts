@@ -73,6 +73,41 @@ describe("SyntaxHighlighting", () => {
         expect(getViewData(editor.editing.view)).not.toContain("hljs-keyword");
     });
 
+    it("loads highlight.js once a code block shows, for the language of each block", async () => {
+        const loadHighlightJs = vi.fn(async (_mimeType: string) => fakeHljs);
+        editor = await createEditor(makeConfig({ loadHighlightJs }));
+
+        setModelData(editor.model, "<paragraph>text[]</paragraph>");
+        await flushPostFixers(editor);
+        expect(loadHighlightJs).not.toHaveBeenCalled();
+
+        setModelData(editor.model, '<codeBlock language="javascript">a</codeBlock>'
+            + '<codeBlock language="python">b</codeBlock><codeBlock language="javascript">c[]</codeBlock>');
+        await flushPostFixers(editor);
+        expect(loadHighlightJs.mock.calls).toEqual([ [ "javascript" ], [ "python" ] ]);
+        expect(fakeHljs.highlight.mock.calls).toEqual([
+            [ "a", { language: "javascript" } ],
+            [ "c", { language: "javascript" } ],
+            [ "b", { language: "python" } ]
+        ]);
+        expect(getViewData(editor.editing.view).match(/hljs-keyword/g)).toHaveLength(3);
+    });
+
+    it("leaves an editor destroyed while its language loads", async () => {
+        let resolveLoad: (hljs: FakeHljs) => void = () => undefined;
+        const loadHighlightJs = vi.fn(() => new Promise<FakeHljs>((resolve) => {
+            resolveLoad = resolve;
+        }));
+        editor = await createEditor(makeConfig({ loadHighlightJs }));
+        setModelData(editor.model, '<codeBlock language="javascript">a[]</codeBlock>');
+        expect(loadHighlightJs).toHaveBeenCalledTimes(1);
+
+        await editor.destroy();
+        resolveLoad(fakeHljs);
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(fakeHljs.highlight).not.toHaveBeenCalled();
+    });
+
     it("highlights a code block, downcasting markers to spans", async () => {
         editor = await createEditor(makeConfig());
 
@@ -339,9 +374,11 @@ function escapeHtml(text: string): string {
         .replace(/'/g, "&#x27;");
 }
 
-// The postfixer runs synchronously inside model.change, but markers are
-// downcast on the next render; yield to flush any pending view updates.
+/**
+ * Waits for the languages that the postfixer asked `loadHighlightJs()` for, and the highlighting
+ * that follows, then renders the markers.
+ */
 async function flushPostFixers(editor: ClassicEditor): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve));
     editor.editing.view.forceRender();
-    await Promise.resolve();
 }

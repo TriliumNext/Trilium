@@ -38,6 +38,7 @@ describe("LogService (base)", () => {
         const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
         service.banner(undefined);
+        service.banner("   ");
         expect(logSpy).not.toHaveBeenCalled();
 
         // Single short word: exercises the no-wrap path.
@@ -58,6 +59,12 @@ describe("LogService (base)", () => {
         const wrappedBox = logSpy.mock.calls[0][0] as string;
         expect(wrappedBox).toContain(longWord);
         expect(wrappedBox.split("\n").length).toBeGreaterThan(4);
+
+        // A trailing space after an oversized word leaves no empty line behind.
+        logSpy.mockClear();
+        service.banner(`${"y".repeat(300)} `);
+        const trailingBox = logSpy.mock.calls[0][0] as string;
+        expect(trailingBox.trim().split("\n")).toHaveLength(3);
     });
 });
 

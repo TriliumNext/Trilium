@@ -12,10 +12,10 @@ const shownNote = vi.hoisted(() => ({
     listeners: new Set<() => void>(),
     parentComponent: null as import("../components/component").default | null
 }));
-vi.mock("./react/hooks", async (importOriginal) => {
+vi.mock("./react/hooks/note_context", async (importOriginal) => {
     const { useEffect, useState } = await import("preact/hooks");
     return {
-        ...(await importOriginal<typeof import("./react/hooks")>()),
+        ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
         useNoteContext: () => {
             const [ note, setNote ] = useState(shownNote.current);
             useEffect(() => {
@@ -106,8 +106,11 @@ describe("SearchResult", () => {
 
         shownNote.current = searchNote;
         await mount();
-        expect(container.querySelectorAll(".search-result-card")).toHaveLength(2);
-        expect(post).toHaveBeenCalledWith("search-note/searchNote/result-details", expect.anything());
+        // The first test pays the cold import of the lazily loaded view, which can outlast `settle()`.
+        await vi.waitFor(() => {
+            expect(container.querySelectorAll(".search-result-card")).toHaveLength(2);
+            expect(post).toHaveBeenCalledWith("search-note/searchNote/result-details", expect.anything());
+        });
 
         await settle(() => {
             shownNote.current = resultNote;

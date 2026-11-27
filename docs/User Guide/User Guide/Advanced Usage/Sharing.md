@@ -94,7 +94,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/File.md">File</a></th>
-            <td>Basic interaction (downloading the file).</td>
+            <td>A PDF is shown in a viewer and a video or audio file plays in the browser's player. Any other file can be downloaded.</td>
             <td><ul><li>No further interaction supported.</li></ul></td>
         </tr>
     </tbody>

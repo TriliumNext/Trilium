@@ -338,33 +338,37 @@ interface CellRef {
 }
 
 /**
- * Reads a worksheet's data-validation rules into Univer rules. exceljs expands a rule's `sqref`
- * (e.g. `D2:I6`) into one entry per cell, so cells sharing an identical config are grouped and
- * their addresses coalesced back into rectangular ranges. Only constraint types Univer understands
- * are emitted; a validation with no usable constraint is skipped. Returns an empty array when the
- * sheet has none.
+ * Reads a worksheet's data-validation rules into Univer rules. The patched exceljs (see
+ * `patches/exceljs@4.4.0.patch`) keys `dataValidations.model` by each token of a rule's `sqref`, a
+ * cell (`E4`) or a range (`E4:L9`), rather than by every cell a range covers. Entries sharing an
+ * identical config are grouped: their ranges are kept as they are, and their single cells are
+ * coalesced into rectangular ranges. Only constraint types Univer understands are emitted; a
+ * validation with no usable constraint is skipped. Returns an empty array when the sheet has none.
  */
 function readDataValidations(ws: ExcelJS.Worksheet, sheetId: string): DataValidationRule[] {
     const model = ws.dataValidations.model;
 
-    // Group cells by an identical validation config; the key is order-stable across the sheet.
-    const groups = new Map<string, { config: ExcelJS.DataValidation; cells: CellRef[] }>();
+    // Group entries by an identical validation config; the key is order-stable across the sheet.
+    const groups = new Map<string, { config: ExcelJS.DataValidation; ranges: IRange[]; cells: CellRef[] }>();
     for (const [address, config] of Object.entries(model)) {
         /* v8 ignore next -- defensive: exceljs model entries always carry a type */
         if (!config?.type) continue;
-        const cell = parseAddress(address);
-        /* v8 ignore next -- defensive: exceljs validation keys are always well-formed addresses */
-        if (!cell) continue;
+        const range = parseRange(address);
+        if (!range) continue;
         const key = JSON.stringify([config.type, config.operator ?? null, config.formulae ?? null]);
-        const group = groups.get(key) ?? { config, cells: [] };
-        group.cells.push({ row: cell.row, column: cell.col });
+        const group = groups.get(key) ?? { config, ranges: [], cells: [] };
+        if (range.startRow === range.endRow && range.startColumn === range.endColumn) {
+            group.cells.push({ row: range.startRow, column: range.startColumn });
+        } else {
+            group.ranges.push(range);
+        }
         groups.set(key, group);
     }
 
     const rules: DataValidationRule[] = [];
     let index = 0;
-    for (const { config, cells } of groups.values()) {
-        const rule = buildValidationRule(config, coalesceRanges(cells), `dv-${sheetId}-${index}`);
+    for (const { config, ranges, cells } of groups.values()) {
+        const rule = buildValidationRule(config, [ ...ranges, ...coalesceRanges(cells) ], `dv-${sheetId}-${index}`);
         if (rule) {
             rules.push(rule);
             index++;

@@ -1,6 +1,6 @@
 import { ComponentChildren, HTMLAttributes, JSX, RefObject, render } from "preact";
 import { useLayoutEffect, useState } from "preact/hooks";
-import { useSyncedRef } from "./hooks";
+import { useSyncedRef } from "./hooks/dom";
 
 interface ShadowDomProps extends Omit<HTMLAttributes<HTMLDivElement>, "ref"> {
     children: ComponentChildren;

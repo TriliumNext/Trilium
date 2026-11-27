@@ -1,4 +1,5 @@
 import type { KeyboardActionNames } from "@triliumnext/commons";
+import type { ComponentChild } from "preact";
 
 import type Component from "../components/component";
 
@@ -21,6 +22,13 @@ export interface ShortcutHintSection {
     /** i18n key for the section header. */
     titleKey?: string;
     hints: ShortcutHint[];
+    /**
+     * Renders the section in place of `hints`, for a list that follows a state of its own while
+     * the panel shows it, such as the keys of Vim mode.
+     */
+    content?: () => ComponentChild;
+    /** Keeps the panel open until it is dismissed, rather than closing it after a while. */
+    isPersistent?: boolean;
 }
 
 /** The declarative shape a widget defines and hands to `useContextualShortcutHints`. */

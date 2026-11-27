@@ -45,12 +45,14 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
     const attachmentPaths: Record<string, string> = {};
     const images: Record<string, string> = {};
     for (const note of notes) {
-        const owned = note.getAttachments();
+        const owned = note.getPortableAttachments();
         attachments[note.noteId] = owned.map(getAttachmentRow);
         for (const attachment of owned) {
-            const path = paths.getAttachmentPath(attachment.attachmentId ?? "");
+            /* v8 ignore next -- an attachment read from the database always has an id */
+            const attachmentId = attachment.attachmentId ?? "";
+            const path = paths.getAttachmentPath(attachmentId);
             if (path !== null) {
-                attachmentPaths[attachment.attachmentId ?? ""] = path;
+                attachmentPaths[attachmentId] = path;
             }
         }
 
@@ -62,7 +64,7 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
 
     for (const note of getNotesReadByViews(notes)) {
         writeJson(`data/blobs/notes/${note.noteId}.json`, getBlobRow(note));
-        for (const attachment of note.getAttachments()) {
+        for (const attachment of note.getPortableAttachments()) {
             if (attachment.hasStringContent()) {
                 writeJson(`data/blobs/attachments/${attachment.attachmentId}.json`,
                     getBlobRow(attachment));
@@ -89,6 +91,7 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
     }
 
     const rows = buildFrocaRows(notes, (note) => isVisible(note.noteId),
+        /* v8 ignore next -- only visible notes get a link, and each of them has a path */
         (note) => paths.getNotePath(note.noteId) ?? "");
     writeJson("data/rows.json", { ...rows, attachments, attachmentPaths, images, noteMaps });
     return files;
@@ -147,6 +150,7 @@ function writeImage(
     const attachment = title
         ? note.getAttachments().find((candidate) => candidate.title === title)
         : undefined;
+    /* v8 ignore next -- an attachment read from the database always has an id */
     return attachment ? attachmentPaths[attachment.attachmentId ?? ""] : undefined;
 }
 

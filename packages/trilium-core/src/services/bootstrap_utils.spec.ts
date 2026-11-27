@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import attributes from "./attributes.js";
-import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
+import getSharedBootstrapItems, { getIconConfig, isNextBasedTheme } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
+import * as iconPacks from "./icon_packs.js";
 import notes from "./notes.js";
 import options from "./options.js";
 import { getPlatform } from "./platform.js";
@@ -31,7 +32,10 @@ function fullPayload(theme: string) {
 }
 
 describe("bootstrap_utils (real DB)", () => {
-    afterEach(() => cls.reset());
+    afterEach(() => {
+        cls.reset();
+        vi.restoreAllMocks();
+    });
 
     it("returns the minimal setup payload before the DB is initialized", () => {
         const items = getSharedBootstrapItems(ASSET_PATH, false);
@@ -42,7 +46,7 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.appCssNoteIds).toEqual([]);
         // Common items + icon config are always present.
         expect(items.assetPath).toBe(ASSET_PATH);
-        expect(items.iconRegistry).toBeTruthy();
+        expect(items.iconPacks.length).toBeGreaterThan(0);
         expect(typeof items.iconPackCss).toBe("string");
     });
 
@@ -143,6 +147,28 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.themeBase).toBe("next-dark");
     });
 
+    it("tells which themes include the Next theme's stylesheets", () => {
+        const customThemes: [ string, string | undefined ][] = [ [ "customOnNext", "next-light" ], [ "customStandalone", undefined ] ];
+        cls.init(() => {
+            for (const [ theme, base ] of customThemes) {
+                const { note } = notes.createNewNote({
+                    parentNoteId: "root", title: theme, content: "body {}", type: "code", mime: "text/css"
+                });
+                attributes.createLabel(note.noteId, "appTheme", theme);
+                if (base) {
+                    attributes.createLabel(note.noteId, "appThemeBase", base);
+                }
+            }
+        });
+
+        for (const theme of [ "next", "next-light", "next-dark", "customOnNext" ]) {
+            expect(isNextBasedTheme(theme), `theme=${theme}`).toBe(true);
+        }
+        for (const theme of [ "auto", "light", "dark", "customStandalone", "missing" ]) {
+            expect(isNextBasedTheme(theme), `theme=${theme}`).toBe(false);
+        }
+    });
+
     it("withholds both custom theme URLs in safe mode", () => {
         cls.init(() => {
             const { note } = notes.createNewNote({
@@ -168,15 +194,80 @@ describe("bootstrap_utils (real DB)", () => {
         }
     });
 
+    it("preloads the icon font and Inter, and applies the font options, while a Next-based theme draws the main font", () => {
+        const boxicons = `${ASSET_PATH}/fonts/boxicons.woff2`;
+        const inter = `${ASSET_PATH}/fonts/Inter/Inter-VariableFont_opsz,wght.woff2`;
+        expect(getSharedBootstrapItems(ASSET_PATH, false).preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("next-dark").preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("light").preloadFonts).toEqual([ boxicons ]);
+
+        cls.init(() => {
+            const { note } = notes.createNewNote({
+                parentNoteId: "root",
+                title: "Next-based Theme",
+                content: "body {}",
+                type: "code",
+                mime: "text/css"
+            });
+            attributes.createLabel(note.noteId, "appTheme", "myNextBasedTheme");
+            attributes.createLabel(note.noteId, "appThemeBase", "next-light");
+        });
+        expect(fullPayload("myNextBasedTheme").preloadFonts).toEqual([ boxicons, inter ]);
+
+        const previous = [ "overrideThemeFonts", "mainFontFamily" ].map((name) => [ name, options.getOption(name as "mainFontFamily") ] as const);
+        try {
+            cls.init(() => {
+                options.setOption("overrideThemeFonts", "true");
+                options.setOption("mainFontFamily", "theme");
+            });
+            expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+
+            cls.init(() => options.setOption("mainFontFamily", "Arial"));
+            const overridden = fullPayload("next");
+            expect(overridden.preloadFonts).toEqual([ boxicons ]);
+            expect(overridden.fontCss).toContain("--main-font-family: Arial;");
+
+            cls.init(() => options.setOption("overrideThemeFonts", "false"));
+            const themed = fullPayload("next");
+            expect(themed.preloadFonts).toEqual([ boxicons, inter ]);
+            expect(themed.fontCss).toBe("");
+        } finally {
+            cls.init(() => {
+                for (const [ name, value ] of previous) {
+                    options.setOption(name as "mainFontFamily", value);
+                }
+            });
+        }
+    });
+
     it("falls back to the baseline light theme for an unknown theme with no matching note", () => {
         const items = fullPayload("ghostThemeWithoutNote");
         expect(items.themeCssUrl).toBe(false);
         expect(items.customThemeCssUrl).toBeUndefined();
     });
 
-    it("getIconConfig produces an icon registry and CSS", () => {
+    it("getIconConfig names the icon packs, leaving their icons to the icon registry route, and produces their CSS", () => {
         const config = getIconConfig(ASSET_PATH);
-        expect(config.iconRegistry).toBeTruthy();
-        expect(typeof config.iconPackCss).toBe("string");
+        expect(config.iconPacks).toContainEqual({ prefix: "bx", name: expect.any(String), icon: expect.any(String) });
+        for (const pack of config.iconPacks) {
+            expect(pack).not.toHaveProperty("icons");
+        }
+        // The fonts come inline, and the glyph of each icon from a stylesheet named after its content.
+        expect(config.iconPackCss).toContain("@font-face");
+        expect(config.iconPackCss).not.toContain("::before");
+        expect(config.iconPackGlyphCssUrl).toMatch(/^api\/icon-packs\.css\?v=[0-9a-f]{32}$/);
+    });
+
+    it("getIconConfig serves a built-in pack's font from the assets and a user pack's from its attachment", () => {
+        const [ builtin ] = iconPacks.getIconPacks();
+        vi.spyOn(iconPacks, "getIconPacks").mockReturnValue([
+            builtin,
+            { ...builtin, prefix: "userpack", builtin: false, fontAttachmentId: "userFontAttachment" }
+        ]);
+
+        const { iconPackCss } = getIconConfig(ASSET_PATH);
+        expect(iconPackCss).toContain(`url('${ASSET_PATH}/fonts/${builtin.fontAttachmentId}.woff2')`);
+        expect(iconPackCss).toContain("url('api/attachments/download/userFontAttachment')");
     });
 });

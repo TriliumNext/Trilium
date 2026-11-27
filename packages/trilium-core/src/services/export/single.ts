@@ -1,5 +1,4 @@
-
-
+import { DOCX_MIME } from "@triliumnext/commons";
 import type { Response } from "../../http_interface";
 import mimeTypes from "mime-types";
 
@@ -9,6 +8,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
+import { renderTextNoteToDocx } from "./docx.js";
 import { formatHtml } from "./format_html.js";
 import mdService from "./markdown.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
@@ -16,7 +16,9 @@ import { ExportFormat } from "../../meta.js";
 import { encodeBase64 } from "../utils/binary.js";
 import { getVirtualNoteAssets, type VirtualNoteAsset } from "../virtual_notes.js";
 
-async function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Response) {
+export type SingleExportFormat = "html" | "markdown" | "docx";
+
+async function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: SingleExportFormat, res: Response) {
     const note = branch.getNote();
 
     // These are thrown rather than returned: the export route writes straight to `res` and has no
@@ -27,13 +29,32 @@ async function exportSingleNote(taskContext: TaskContext<"export">, branch: BBra
         throw new ValidationError(`Note type '${note.type}' cannot be exported as single file.`);
     }
 
-    if (format !== "html" && format !== "markdown") {
+    if (format !== "html" && format !== "markdown" && format !== "docx") {
         throw new ValidationError(`Unrecognized format '${format}'`);
+    }
+
+    if (format === "docx" && note.type !== "text") {
+        throw new ValidationError(`Note type '${note.type}' cannot be exported as a Word document.`);
     }
 
     let content = note.getContent();
     if (note.isVirtual && typeof content === "string") {
         content = await inlineVirtualAssets(content, getVirtualNoteAssets(note.noteId));
+    }
+
+    if (format === "docx") {
+        if (typeof content !== "string") {
+            throw new Error("Unsupported content type for export.");
+        }
+
+        const payload = await renderTextNoteToDocx(note, content);
+        res.setHeader("Content-Disposition", getContentDisposition(`${note.title}.docx`));
+        res.setHeader("Content-Type", DOCX_MIME);
+        res.send(payload);
+
+        taskContext.increaseProgressCount();
+        taskContext.taskSucceeded(null);
+        return;
     }
 
     const { payload, extension, mime } = mapByNoteType(note, content, format);
@@ -85,8 +106,8 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
 
             extension = "html";
             mime = "text/html";
-        } else if (format === "markdown") {
-            payload = mdService.toMarkdown(content);
+        } else {
+            payload = mdService.toMarkdown(content, { blockIds: "markers" });
             extension = "md";
             mime = "text/x-markdown";
         }

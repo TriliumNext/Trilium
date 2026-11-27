@@ -8,7 +8,7 @@ import type TabManager from "../../components/tab_manager";
 import LoadResults from "../../services/load_results";
 import { buildNote } from "../../test/easy-froca";
 import NoteWrapperWidget from "../note_wrapper";
-import { useNoteContext } from "../react/hooks";
+import { useNoteContext } from "../react/hooks/note_context";
 import SplitNoteContainer from "./split_note_container";
 
 // The resizer drives Split.js against the real #center-pane layout, on an animation frame that
@@ -170,6 +170,8 @@ describe("SplitNoteContainer", () => {
             return <div className="probe">{note?.noteId ?? ""}</div>;
         }
 
+        // The container imports it on mobile; loaded here, the fake timers alone pace the rendering.
+        await import("../mobile_widgets/tab_swipe.js");
         const { device } = window.glob;
         window.glob.device = "mobile";
         vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });

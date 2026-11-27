@@ -1,13 +1,15 @@
 import "./NoteTypeSwitcher.css";
 
-import { getCodeLanguageIcon, type MimeType, type NoteType } from "@triliumnext/commons";
-import { type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import type { MimeType, NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
+import {
+    type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState
+} from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import type { TreeCommandNames } from "../../menus/tree_context_menu";
 import attributes from "../../services/attributes";
-import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import mime_types from "../../services/mime_types";
 import { applyNotePreset } from "../../services/note_presets";
@@ -17,12 +19,13 @@ import note_types, {
 import server from "../../services/server";
 import { escapeHtml } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
-import {
-    useGetContextDataFrom, useNoteContext, useNoteProperty, useNoteSavedData, useTriliumEvent, useTriliumOption
-} from "../react/hooks";
-import { MenuItemRows } from "../react/Menu";
-import Modal from "../react/Modal";
-import { CodeMimeTypesCard } from "../type_widgets/options/code_mime_types_card";
+import { DropdownMenuItemRows } from "../react/Dropdown";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useGetContextDataFrom, useNoteContext } from "../react/hooks/note_context";
+import { useNoteSavedData } from "../react/hooks/editor";
+import { WithLazyModule } from "../react/LazyComponent";
 import { onWheelHorizontalScroll } from "../widget_utils";
 
 /** The note types offered as a pill of their own, each a single click away. */
@@ -40,8 +43,7 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const currentNoteType = useNoteProperty(note, "type");
     const currentNoteTypeData = NOTE_TYPES.find(t => t.type === currentNoteType);
 
-    // Code notes fill the pane with their editor and carry no inline title, so the switcher has
-    // nowhere to sit above them.
+    // Code notes fill the pane with their editor, so the switcher has nowhere to sit above them.
     return (currentNoteType === "text" &&
         <div
             className="note-type-switcher"
@@ -183,7 +185,7 @@ interface NoteTypeListProps {
 
 /** The note types to switch `note` to, as rows of a menu or a list. See {@link useNoteTypeItems}. */
 export function NoteTypeDropdownContent(props: NoteTypeListProps) {
-    return <MenuItemRows items={useNoteTypeItems(props)} />;
+    return <DropdownMenuItemRows items={useNoteTypeItems(props)} />;
 }
 
 /**
@@ -203,9 +205,9 @@ export function useNoteTypeItems({ currentNoteType, currentNoteMime, note, setMo
         if (type !== currentNoteType) {
             const blob = await note.getBlob();
 
-            if (blob?.content && blob.content.trim().length &&
-                !await (dialog.confirm(t("note_types.confirm-change")))) {
-                return;
+            if (blob?.content && blob.content.trim().length) {
+                const { default: dialog } = await import("../../services/dialog");
+                if (!await dialog.confirm(t("note_types.confirm-change"))) return;
             }
         }
 
@@ -249,8 +251,10 @@ interface CodeLanguageListProps {
 }
 
 /** The code languages to switch a note to, the current one ticked, as menu items. */
-export function codeLanguageItems({ currentMimeType, mimeTypes, changeNoteType, onConfigure }: CodeLanguageListProps) {
-    const items: MenuItem<unknown>[] = mimeTypes.map((mimeType) => ({
+export function codeLanguageItems<T = unknown>({
+    currentMimeType, mimeTypes, changeNoteType, onConfigure
+}: CodeLanguageListProps) {
+    const items: MenuItem<T>[] = mimeTypes.map((mimeType) => ({
         title: escapeHtml(mimeType.title),
         uiIcon: getCodeLanguageIcon(mimeType),
         checked: mimeType.mime === currentMimeType,
@@ -275,15 +279,21 @@ export function useMimeTypes() {
     }, [ codeNotesMimeTypes, isSortedAlphabetically ]);
 }
 
+const loadCodeMimeTypesCard = () => import("../type_widgets/options/code_mime_types_card");
+
+/**
+ * The options of the code languages in a dialog, loaded the first time it opens and kept mounted
+ * afterwards, so that it can animate its closing.
+ */
 export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
-    return (
-        <Modal
-            className="code-mime-types-modal"
-            title={t("code_mime_types.title")}
-            show={modalShown} onHidden={() => setModalShown(false)}
-            size="md" scrollable
-        >
-            <CodeMimeTypesCard />
-        </Modal>
+    const [ isMounted, setMounted ] = useState(modalShown);
+    useEffect(() => {
+        if (modalShown) setMounted(true);
+    }, [ modalShown ]);
+
+    return (isMounted &&
+        <WithLazyModule load={loadCodeMimeTypesCard}>
+            {({ CodeMimeTypesModal }) => <CodeMimeTypesModal modalShown={modalShown} setModalShown={setModalShown} />}
+        </WithLazyModule>
     );
 }

@@ -1,4 +1,4 @@
-import { attributes as attributeService } from "@triliumnext/core";
+import { attributes as attributeService, BAttribute, becca } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import supertest from "supertest";
@@ -98,6 +98,31 @@ describe("etapi/patch-attribute", () => {
             .send({ value: "root" })
             .expect(400);
         expect(notAllowed.body.code).toStrictEqual("PROPERTY_NOT_ALLOWED");
+    });
+
+    it("refuses to save a legacy definition attribute loaded from an old database", async () => {
+        // Loading a row registers it in becca, as the becca loader does for a database that predates
+        // the removal of the definition types; saving one is no longer valid.
+        const legacy = new BAttribute({
+            attributeId: "legacyDefinition1", noteId: createdNoteId, type: "label-definition",
+            name: "legacy", value: "promoted,single,text", isInheritable: false, position: 10,
+            utcDateModified: "2020-01-01 00:00:00.000Z"
+        });
+        try {
+            const response = await supertest(app)
+                .patch(`/etapi/attributes/${legacy.attributeId}`)
+                .auth(USER, token, { "type": "basic"})
+                .send({ value: "changed" })
+                .expect(500);
+
+            expect(response.body.message).toContain("Invalid attribute type 'label-definition'");
+            expect(legacy.value).toBe("promoted,single,text");
+        } finally {
+            delete becca.attributes[legacy.attributeId];
+            becca.attributeIndex["label-definition-legacy"]?.delete(legacy);
+            const owner = becca.getNoteOrThrow(createdNoteId);
+            owner.ownedAttributes = owner.ownedAttributes.filter((attribute) => attribute !== legacy);
+        }
     });
 
     it("reports a 500 when attribute creation throws", async () => {

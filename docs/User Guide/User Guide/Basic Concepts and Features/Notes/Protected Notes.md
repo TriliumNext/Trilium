@@ -12,6 +12,12 @@ By default, notes are unprotected. To protect a note, simply click on the shield
 
 ![example animation of unlocking protected notes](Protected%20Notes_protecting-note.gif)
 
+To protect or unprotect a whole subtree at once, right-click its top note in the note tree and choose _Protect subtree_ or _Unprotect subtree_. If no protected session is running, a dialog explains what the action does and asks for your password, so you don't have to start a protected session beforehand.
+
+### Removing protection
+
+Unprotecting decrypts the notes: their content, attachments and revisions are stored without encryption from then on, also in backups and on the sync server. Because of this, _Unprotect subtree_ always asks for confirmation first, even while a protected session is running.
+
 ## What is Encrypted?
 
 Trilium encrypts the data within protected notes but not their metadata. Specifically:
@@ -42,6 +48,14 @@ The following steps outline how encryption and decryption work in Trilium:
     *   The data encryption key is randomly generated during the [database](../../Advanced%20Usage/Database.md) initialization and remains constant throughout the document’s lifetime. When the password is changed, only this key is re-encrypted.
 5.  The data encryption key is then used to decrypt the actual content of the note, including its title and body.
     *   The encryption algorithm used is AES-128 with [CBC mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation), where a unique IV is generated for each encryption operation and stored with the cipher text.
+
+```mermaid
+flowchart TD
+    password(["Password"]) -->|"scrypt, verification salt"| verification["Verification hash"]
+    password -->|"scrypt, encryption salt"| derived["Password-derived key"]
+    derived -->|"decrypts (AES-128)"| dataKey["Data encryption key"]
+    dataKey -->|"decrypts (AES-128-CBC)"| content["Title and content<br>of each protected note"]
+```
 
 ## Sharing Protected Notes
 

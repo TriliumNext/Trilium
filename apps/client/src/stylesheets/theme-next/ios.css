@@ -54,37 +54,36 @@ body.mobile.ios {
         --mobile-menu-group-radius: 12px;
     }
 
-    #mobile-rest-container > #mobile-sidebar-wrapper {
-        background: var(--grouped-background-color);
-    }
-
-    .mobile-note-navigator {
-        --navigator-group-radius: var(--grouped-card-radius);
-        --navigator-group-spacing: 22px;
-        --navigator-group-background: var(--grouped-card-background-color);
-        --navigator-separator-color: var(--main-border-color);
-        /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
-        --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
-        background: var(--grouped-background-color);
-
-        .mobile-navigator-toolbar {
-            background: transparent;
+    /* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+    @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+        #mobile-rest-container > #mobile-sidebar-wrapper {
+            background: var(--grouped-background-color);
         }
 
-        .mobile-navigator-children-label {
-            padding-block-end: 8px;
-            font-size: 0.95em;
-            letter-spacing: normal;
-            text-transform: none;
-            opacity: 1;
-        }
+        .mobile-note-navigator {
+            --navigator-group-radius: var(--grouped-card-radius);
+            --navigator-group-spacing: 22px;
+            --navigator-group-background: var(--grouped-card-background-color);
+            --navigator-separator-color: var(--main-border-color);
+            /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
+            --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
+            background: var(--grouped-background-color);
 
-        .mobile-navigator-row {
-            min-height: 52px;
-        }
+            .mobile-navigator-children-label {
+                padding-block-end: 8px;
+                font-size: 0.95em;
+                letter-spacing: normal;
+                text-transform: none;
+                opacity: 1;
+            }
 
-        .mobile-navigator-row-chevron {
-            opacity: 0.35;
+            .mobile-navigator-row {
+                min-height: 52px;
+            }
+
+            .mobile-navigator-row-chevron {
+                opacity: 0.35;
+            }
         }
     }
 
@@ -189,16 +188,18 @@ body.mobile.ios {
         --mobile-title-row-height: 50px;
 
         /* Safari tints its bars from the page's background and from `theme-color`, which
-           `#initThemeColor()` in root_container.ts copies from `#background-color-tracker`. */
-        &.mobile-sidebar-open {
-            background-color: var(--grouped-background-color);
-
-            #root-widget {
+           `initThemeColor()` in appearance.ts copies from `#background-color-tracker`. */
+        @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+            &.mobile-sidebar-open {
                 background-color: var(--grouped-background-color);
-            }
 
-            #background-color-tracker {
-                color: var(--grouped-background-color) !important;
+                #root-widget {
+                    background-color: var(--grouped-background-color);
+                }
+
+                #background-color-tracker {
+                    color: var(--grouped-background-color) !important;
+                }
             }
         }
 
@@ -341,104 +342,107 @@ body.mobile.ios {
             scroll-padding-top: var(--mobile-title-row-height);
         }
 
-        .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
-            border: 0;
-            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;
-        }
-
-        /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
-           rounded corners. */
-        .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
-            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
-            bottom: var(--mobile-sheet-margin);
-            width: calc(100% - 2 * var(--mobile-sheet-margin));
-            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
-            background: var(--glass-background);
-            backdrop-filter: var(--dropdown-backdrop-filter);
-            box-shadow: var(--glass-shadow);
-
-            > .modal-content {
-                border-radius: inherit;
-                background: transparent !important;
-                box-shadow: none;
+        /* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+        @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
+            .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
+                border: 0;
+                border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;
             }
 
-            .modal-footer {
-                padding-bottom: 16px;
-                background: transparent;
-            }
-        }
+            /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
+               rounded corners. */
+            .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
+                --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
+                bottom: var(--mobile-sheet-margin);
+                width: calc(100% - 2 * var(--mobile-sheet-margin));
+                border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
+                background: var(--glass-background);
+                backdrop-filter: var(--dropdown-backdrop-filter);
+                box-shadow: var(--glass-shadow);
 
-        /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
-        .modal .modal-header {
-            --modal-header-trailing-width: 52px;
-            padding-block: 12px !important;
-
-            &:has(> .modal-title:nth-last-child(3)) {
-                --modal-header-trailing-width: 104px;
-            }
-
-            &:has(> .modal-title:nth-last-child(4)) {
-                --modal-header-trailing-width: 156px;
-            }
-
-            .modal-title,
-            .tn-master-detail-title {
-                color: var(--main-text-color);
-                font-weight: 600;
-                text-align: center;
-            }
-
-            .modal-title {
-                display: -webkit-box;
-                padding-inline-start: var(--modal-header-trailing-width);
-                overflow: hidden;
-                -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
-                line-clamp: 2;
-            }
-
-            .tn-master-detail-icon {
-                display: none;
-            }
-
-            /* The close button follows the master-detail header; the back button, 44px with an 8px
-               gap, takes its width. */
-            .tn-master-detail-header {
-                padding-inline-start: 52px;
-
-                &:has(> button.icon-action, > .note-panel-header-slot:not([hidden], :empty)) {
-                    padding-inline-start: 0;
+                > .modal-content {
+                    border-radius: inherit;
+                    background: transparent !important;
+                    box-shadow: none;
                 }
 
-                button.icon-action {
-                    --icon-button-size: 44px;
-                    --icon-button-icon-ratio: 0.55;
-                    --icon-button-color: var(--main-text-color);
-                    --icon-button-hover-color: var(--main-text-color);
-                    --icon-button-hover-background: var(--glass-background);
+                .modal-footer {
+                    padding-bottom: 16px;
+                    background: transparent;
+                }
+            }
+
+            /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
+            .modal .modal-header {
+                --modal-header-trailing-width: 52px;
+                padding-block: 12px !important;
+
+                &:has(> .modal-title:nth-last-child(3)) {
+                    --modal-header-trailing-width: 104px;
+                }
+
+                &:has(> .modal-title:nth-last-child(4)) {
+                    --modal-header-trailing-width: 156px;
+                }
+
+                .modal-title,
+                .tn-master-detail-title {
+                    color: var(--main-text-color);
+                    font-weight: 600;
+                    text-align: center;
+                }
+
+                .modal-title {
+                    display: -webkit-box;
+                    padding-inline-start: var(--modal-header-trailing-width);
+                    overflow: hidden;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 2;
+                    line-clamp: 2;
+                }
+
+                .tn-master-detail-icon {
+                    display: none;
+                }
+
+                /* The close button follows the master-detail header; the back button, 44px with an 8px
+                   gap, takes its width. */
+                .tn-master-detail-header {
+                    padding-inline-start: 52px;
+
+                    &:has(> button.icon-action, > .note-panel-header-slot:not([hidden], :empty)) {
+                        padding-inline-start: 0;
+                    }
+
+                    button.icon-action {
+                        --icon-button-size: 44px;
+                        --icon-button-icon-ratio: 0.55;
+                        --icon-button-color: var(--main-text-color);
+                        --icon-button-hover-color: var(--main-text-color);
+                        --icon-button-hover-background: var(--glass-background);
+                        flex-shrink: 0;
+                        margin-inline-end: 4px;
+                        border-radius: 50%;
+                        background: var(--glass-background);
+                        backdrop-filter: var(--dropdown-backdrop-filter);
+                        box-shadow: var(--glass-edge);
+                    }
+                }
+
+                :is(.btn-close, .help-button, .custom-title-bar-button) {
+                    --modal-control-button-size: 44px;
                     flex-shrink: 0;
-                    margin-inline-end: 4px;
-                    border-radius: 50%;
-                    background: var(--glass-background);
+                    margin-block: 0;
+                    margin-inline-end: 0;
+                    font-size: 22px;
                     backdrop-filter: var(--dropdown-backdrop-filter);
                     box-shadow: var(--glass-edge);
-                }
-            }
 
-            :is(.btn-close, .help-button, .custom-title-bar-button) {
-                --modal-control-button-size: 44px;
-                flex-shrink: 0;
-                margin-block: 0;
-                margin-inline-end: 0;
-                font-size: 22px;
-                backdrop-filter: var(--dropdown-backdrop-filter);
-                box-shadow: var(--glass-edge);
-
-                &,
-                &:hover {
-                    background: var(--glass-background);
-                    color: var(--main-text-color);
+                    &,
+                    &:hover {
+                        background: var(--glass-background);
+                        color: var(--main-text-color);
+                    }
                 }
             }
         }

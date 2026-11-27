@@ -1,4 +1,4 @@
-import type { LogFileInfo } from "@triliumnext/core";
+import type { LogFileInfo, LogFileTail } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import StandaloneLogService, { MAX_PENDING_ENTRIES } from "./log_provider.js";
@@ -13,7 +13,7 @@ interface LogInternals {
     openLogFile(fileName: string): Promise<void>;
     closeLogFile(): void;
     writeEntry(entry: string): void;
-    readLogFile(fileName: string): string | null;
+    readLogFile(fileName: string, maxBytes: number): LogFileTail | null;
     listLogFiles(): Promise<LogFileInfo[]>;
     deleteLogFile(fileName: string): Promise<void>;
     getRetentionDays(): number;
@@ -112,10 +112,15 @@ describe("StandaloneLogService file handling", () => {
         expect(internal.currentFileName).toBe("trilium-2024-01-15.log");
 
         internal.writeEntry("hello world\n");
-        expect(internal.readLogFile("trilium-2024-01-15.log")).toBe("hello world\n");
+        const read = (maxBytes: number) => {
+            const tail = internal.readLogFile("trilium-2024-01-15.log", maxBytes);
+            return tail && { text: new TextDecoder().decode(tail.bytes), omittedBytes: tail.omittedBytes };
+        };
+        expect(read(1024)).toEqual({ text: "hello world\n", omittedBytes: 0 });
+        expect(read(6)).toEqual({ text: "world\n", omittedBytes: 6 });
 
         // A different file name cannot be read via the sync handle.
-        expect(internal.readLogFile("trilium-2024-01-14.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-01-14.log", 1024)).toBeNull();
 
         internal.closeLogFile();
         expect(handle.close).toHaveBeenCalled();
@@ -179,14 +184,59 @@ describe("StandaloneLogService file handling", () => {
     it("readLogFile returns null without a directory and swallows read errors", async () => {
         const service = new StandaloneLogService();
         const internal = internalsOf(service);
-        expect(internal.readLogFile("trilium-2024-01-15.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-01-15.log", 1024)).toBeNull();
 
         // With an open current file whose read throws → caught, returns null.
         const handle = makeSyncHandle();
         handle.read = () => { throw new Error("read fail"); };
         installOpfs({ createSyncAccessHandle: async () => handle });
         await internal.openLogFile("trilium-2024-05-01.log");
-        expect(internal.readLogFile("trilium-2024-05-01.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-05-01.log", 1024)).toBeNull();
+    });
+});
+
+describe("StandaloneLogService.getLogContents", () => {
+    it("serves the pending entries alone, or nothing for a file it cannot read back", async () => {
+        const internal = internalsOf(new StandaloneLogService());
+        const service = internal as unknown as StandaloneLogService;
+        (internal as unknown as { todaysMidnight: Date }).todaysMidnight = new Date();
+        internal.writeEntry("pending\n");
+        expect(service.getLogContents()).toBe("pending\n");
+
+        installOpfs({ createSyncAccessHandle: async () => makeSyncHandle() });
+        await internal.openLogFile("trilium-2000-01-01.log");
+        expect(service.getLogContents()).toBeNull();
+    });
+});
+
+describe("StandaloneLogService opening a file", () => {
+    it("gives up when no directory could be set up", async () => {
+        const createSyncAccessHandle = vi.fn(async () => makeSyncHandle());
+        installOpfs({ createSyncAccessHandle });
+        const internal = internalsOf(new StandaloneLogService());
+        vi.spyOn(internal, "ensureLogDirectory").mockResolvedValue(undefined);
+
+        await internal.openLogFile("trilium-2024-01-15.log");
+
+        expect(createSyncAccessHandle).not.toHaveBeenCalled();
+        expect(internal.currentFile).toBeNull();
+    });
+
+    it("closes a handle that arrives after the file was closed", async () => {
+        const handle = makeSyncHandle();
+        const pending: { deliver?: (value: unknown) => void } = {};
+        installOpfs({ createSyncAccessHandle: () => new Promise((resolve) => { pending.deliver = resolve; }) });
+        const internal = internalsOf(new StandaloneLogService());
+        await internal.ensureLogDirectory();
+
+        const open = internal.openLogFile("trilium-2024-01-15.log");
+        await vi.waitFor(() => expect(pending.deliver).toBeDefined());
+        internal.closeLogFile();
+        pending.deliver?.(handle);
+        await open;
+
+        expect(handle.close).toHaveBeenCalledOnce();
+        expect(internal.currentFile).toBeNull();
     });
 });
 
@@ -261,6 +311,34 @@ describe("StandaloneLogService when the log file is held elsewhere", () => {
         await vi.advanceTimersByTimeAsync(120_000);
         expect(opfs.attempts()).toBe(attemptsAfterClose);
         expect(internal.currentFile).toBeNull();
+    });
+
+    it("does not retry again when the file is closed while a retry is in flight", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        let attempts = 0;
+        let refuse: (error: Error) => void = () => {};
+        installOpfs({
+            createSyncAccessHandle: () => {
+                attempts++;
+                if (attempts <= 3) {
+                    return Promise.reject(new Error("locked"));
+                }
+                return new Promise((_resolve, reject) => { refuse = reject; });
+            }
+        });
+        const internal = internalsOf(new StandaloneLogService());
+
+        const open = internal.openLogFile("trilium-2024-07-01.log");
+        await vi.advanceTimersByTimeAsync(1_000);
+        await open;
+        await vi.advanceTimersByTimeAsync(1_000);
+        expect(attempts).toBe(4);
+
+        internal.closeLogFile();
+        refuse(new Error("locked"));
+        await vi.advanceTimersByTimeAsync(120_000);
+        expect(attempts).toBe(4);
     });
 });
 

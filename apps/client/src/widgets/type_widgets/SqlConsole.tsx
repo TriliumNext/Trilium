@@ -2,14 +2,18 @@ import "./SqlConsole.css";
 
 import { SchemaResponse, SqlExecuteResponse } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
-import { ClipboardModule, EditModule, ExportModule, FilterModule, FormatModule, FrozenColumnsModule, KeybindingsModule, PageModule, ResizeColumnsModule, SelectRangeModule, SelectRowModule, SortModule } from "tabulator-tables";
+import {
+    ClipboardModule, EditModule, ExportModule, FilterModule, FormatModule, FrozenColumnsModule,
+    KeybindingsModule, PageModule, ResizeColumnsModule, SelectRangeModule, SelectRowModule,
+    SortModule
+} from "tabulator-tables";
 
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import Tabulator from "../collections/table/tabulator";
 import Button from "../react/Button";
 import { DropdownPanel } from "../react/Dropdown";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import NoItems from "../react/NoItems";
 import SplitEditor from "./helpers/SplitEditor";
 import { TypeWidgetProps } from "./type_widget";

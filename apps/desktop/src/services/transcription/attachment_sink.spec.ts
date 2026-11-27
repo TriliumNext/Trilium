@@ -123,6 +123,11 @@ describe("AttachmentSink", () => {
         expect(() => sink.write({ source: "system", offsetMs: 0, text: "Hi" }))
             .toThrow("The transcript attachment was not created.");
         expect(() => sink.save()).toThrow("The transcript attachment was not created.");
+
+        h.saveAttachment.mockReturnValueOnce({ attachmentId: undefined });
+        const unsaved = new AttachmentSink("meeting");
+        unsaved.open(STARTED_AT);
+        expect(() => unsaved.save()).toThrow("The transcript attachment was not created.");
         expect(h.setContent).not.toHaveBeenCalled();
     });
 });

@@ -335,6 +335,53 @@ describe("RecordingSession", () => {
         expect(() => deliver("system", utteranceChunk(1, 0), 2000)).not.toThrow();
         expect(log.error).toHaveBeenCalledWith("Transcription: system failed: VAD model missing");
     });
+
+    it("runs without taps, with bare sinks, and reports an empty chunk as silent", async () => {
+        let onSamples: SamplesListener = () => {};
+        const capture = {
+            start: (listener: SamplesListener) => {
+                onSamples = listener;
+            },
+            stop: vi.fn()
+        };
+        const createSegmenter = vi.fn(() => ({
+            accept: (samples: Float32Array) => samples.length ? [ { start: 0, samples } ] : [],
+            flush: () => [],
+            isSpeaking: () => false
+        }));
+        const written: TranscriptUtterance[] = [];
+        const onLevel = vi.fn();
+        const session = new RecordingSession({
+            capture,
+            engine: {
+                settings: {},
+                recognizer: { transcribe: async () => ({ text: "Hello.", words: [] }) },
+                createSegmenter
+            },
+            sinks: [ { write: (utterance) => {
+                written.push(utterance);
+            } } ],
+            log,
+            onLevel,
+            now: () => 0
+        });
+        await session.start();
+
+        onSamples("microphone", new Float32Array(0));
+        expect(onLevel).toHaveBeenCalledExactlyOnceWith("microphone", 0);
+        onSamples("microphone", new Float32Array(16000));
+        createSegmenter.mockImplementationOnce(() => {
+            throw "no segmenter";
+        });
+        onSamples("system", new Float32Array(16000));
+        expect(log.error).toHaveBeenCalledExactlyOnceWith("Transcription: system failed: no segmenter");
+
+        await session.stop();
+        expect(capture.stop).toHaveBeenCalledOnce();
+        expect(written).toEqual([
+            { source: "microphone", offsetMs: 0, durationMs: 1000, text: "Hello." }
+        ]);
+    });
 });
 
 describe("PortCapture", () => {

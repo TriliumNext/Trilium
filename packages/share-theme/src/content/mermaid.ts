@@ -50,7 +50,7 @@ function findDiagrams() {
             placeholders.push({
                 placeholder: block,
                 source: code.textContent,
-                // A code block keeps its block ID on `<code>`, a Mermaid embed on `<pre>`.
+                // The block ID is on the `<code>`, or on the `<pre>` in embeds of earlier versions.
                 blockId: block.dataset.triliumBlockId ?? code.dataset.triliumBlockId
             });
         }

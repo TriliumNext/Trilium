@@ -13,7 +13,6 @@ import { isBackupDownloadSupported } from "../../../services/backup_download";
 import { describeDatabaseFormat, summarizeBackups } from "../../../services/database_files";
 import dialogService from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import options from "../../../services/options";
 import server from "../../../services/server";
 import { bootToSetup, canBootToSetup } from "../../../services/setup_mode";
 import toast from "../../../services/toast";
@@ -24,7 +23,7 @@ import { DirectoryLocation } from "../../react/DirectoryLink";
 import FormPasswordWithConfirmation from "../../react/FormPasswordWithConfirmation";
 import FormText from "../../react/FormText";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import SetupForm from "../helpers/SetupForm";
 import DatabaseFileList from "./components/DatabaseFileList";
@@ -285,17 +284,15 @@ export function BackupConfiguration() {
  * one with a directory picker to offer; a server is pointed elsewhere through `TRILIUM_BACKUP_DIR`.
  */
 export function BackupLocation({ backupFolderPath, refreshCallback }: { backupFolderPath: string; refreshCallback: () => void }) {
-    const [customDir, setCustomDir] = useTriliumOption("customDbBackupDir");
+    const [customDir] = useTriliumOption("customDbBackupDir");
     const canSelect = isElectron();
 
+    // The main process stores the folder: the options route refuses `customDbBackupDir`.
     async function selectLocation() {
-        const result = await window.electronApi?.dialog.pickDirectory({ defaultPath: backupFolderPath });
-        if (result?.status !== "selected" || !result.path) {
-            return;
+        const result = await window.electronApi?.backupLocation.choose();
+        if (result?.status === "selected") {
+            refreshCallback();
         }
-
-        await setCustomDir(result.path);
-        refreshCallback();
     }
 
     async function resetToDefault() {
@@ -303,7 +300,7 @@ export function BackupLocation({ backupFolderPath, refreshCallback }: { backupFo
             return;
         }
 
-        await setCustomDir("");
+        await window.electronApi?.backupLocation.reset();
         refreshCallback();
     }
 
@@ -342,11 +339,11 @@ export function BackupLocation({ backupFolderPath, refreshCallback }: { backupFo
  *
  * Encryption hangs off a passphrase the OS keyring holds, so the controls follow what that keyring
  * can do. Without one there is nowhere safe to keep the passphrase, and an unattended backup cannot
- * ask for it, so the whole feature is unavailable rather than half-working.
+ * ask for it, so the whole feature is unavailable rather than half-working. Backups are encrypted
+ * whenever a passphrase is stored, so the switch shows that state.
  */
 export function BackupOptions() {
     const [compressionEnabled, setCompressionEnabled] = useTriliumOptionBool("backupEnableCompression");
-    const [encryptionEnabled, setEncryptionEnabled] = useTriliumOptionBool("backupEnableEncryption");
     const [passphrase, setPassphrase] = useState<BackupPassphraseStatus>({ available: false, set: false });
     const [passwordModalShown, setPasswordModalShown] = useState(false);
 
@@ -372,39 +369,17 @@ export function BackupOptions() {
         }
 
         await refreshPassphrase();
-        await setEncryptionEnabled(true);
         setPasswordModalShown(false);
-
-        // The password is stored either way, but saying it is encrypted when the option never
-        // reached the server would send the next backup out in the clear under that belief.
-        if (!options.is("backupEnableEncryption")) {
-            toast.showError(t("backup.encryption_not_enabled"));
-            return;
-        }
-
         toast.showMessage(t("backup.password_stored"));
     }
 
-    // Switching encryption off forgets the passphrase with it: there is nothing left to keep it for,
-    // and leaving it behind would mean a passphrase nobody remembers setting. Backups already written
-    // keep the one they were written with.
+    // Switching encryption off forgets the passphrase. Backups already written keep the one they
+    // were written with.
     async function disableEncryption() {
-        const result = await window.electronApi?.backupPassphrase.clear();
+        await window.electronApi?.backupPassphrase.clear();
 
         // Re-read either way: a declined confirmation has to put the switch back where it was.
         await refreshPassphrase();
-        if (result !== "applied") {
-            return;
-        }
-
-        await setEncryptionEnabled(false);
-
-        // Saving an option swallows its own failure, and the passphrase is already gone by now. Left
-        // unsaid, every later backup would quietly fall back to an unencrypted one in the default
-        // directory, with nothing on this page to explain why.
-        if (options.is("backupEnableEncryption")) {
-            toast.showError(t("backup.encryption_not_disabled"));
-        }
     }
 
     return (
@@ -425,8 +400,8 @@ export function BackupOptions() {
                                 onClick={() => setPasswordModalShown(true)}
                             />
                             <FormToggle
-                                currentValue={encryptionEnabled}
-                                onChange={(enabled) => enabled ? setEncryptionEnabled(true) : disableEncryption()}
+                                currentValue={passphrase.set}
+                                onChange={(isEnabled) => !isEnabled && disableEncryption()}
                             />
                         </span>
                     ) : (

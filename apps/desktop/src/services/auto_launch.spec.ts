@@ -246,6 +246,10 @@ describe("auto_launch", () => {
         callback(new Error("no portal"));
 
         expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("no portal"));
+
+        state.log.error.mockClear();
+        callback(null);
+        expect(state.log.error).not.toHaveBeenCalled();
     });
 
     it("logs and does not throw when applying fails", () => {

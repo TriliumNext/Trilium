@@ -1,7 +1,8 @@
+import type { MimeType } from "@triliumnext/commons";
 import {
-    type MimeType, MIME_TYPE_AUTO, MIME_TYPE_TRILIUM_LOG, MIME_TYPE_TRILIUM_SEARCH,
-    normalizeMimeTypeForCKEditor, resolveEnabledMimeTypes
-} from "@triliumnext/commons";
+    MIME_TYPE_AUTO, MIME_TYPE_TRILIUM_LOG, MIME_TYPE_TRILIUM_SEARCH, normalizeMimeTypeForCKEditor,
+    resolveEnabledMimeTypes
+} from "@triliumnext/commons/src/lib/mime_type.js";
 
 import { t } from "./i18n.js";
 import options from "./options.js";
@@ -44,6 +45,16 @@ function getEnabledMimeTypes(): MimeType[] {
         options.getJson("codeNotesMimeTypes"),
         options.is("codeNotesMimeTypesSortAlphabetically")
     );
+}
+
+/**
+ * The enabled MIME types that a code block of a text note offers, in display order. The
+ * `env=frontend` and `env=backend` JavaScript variants are Trilium script environments, which mean
+ * nothing in a code block: `text/javascript` highlights the same.
+ */
+function getCodeBlockMimeTypes(): MimeType[] {
+    return getEnabledMimeTypes()
+        .filter((mimeType) => !mimeType.mime.startsWith("application/javascript;env="));
 }
 
 /**
@@ -107,6 +118,7 @@ export default {
     MIME_TYPE_AUTO,
     getMimeTypes,
     getEnabledMimeTypes,
+    getCodeBlockMimeTypes,
     loadMimeTypes,
     getHighlightJsNameForMime
 };

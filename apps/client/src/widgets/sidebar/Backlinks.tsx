@@ -1,16 +1,16 @@
 import "./Backlinks.css";
 
-import { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { BacklinksResponse } from "@triliumnext/commons";
+import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
-import attributes from "../../services/attributes";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import LoadResults from "../../services/load_results";
 import { sanitizeNoteContentHtml } from "../../services/sanitize_content";
 import server from "../../services/server";
-import { useActiveNoteContext, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { hasBacklinkChanges } from "../react/hooks/note";
+import { useActiveNoteContext } from "../react/hooks/tree";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import RawHtml from "../react/RawHtml";
@@ -61,7 +61,7 @@ export function BacklinksList({ note }: { note: FNote }) {
 
     useEffect(() => refresh(), [ note ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (needsRefresh(note, loadResults)) refresh();
+        if (hasBacklinkChanges(loadResults, note)) refresh();
     });
 
     // Nothing at all until the request has answered, so that the placeholder below doesn't show for
@@ -99,29 +99,4 @@ export function BacklinksList({ note }: { note: FNote }) {
             )}
         </li>
     ));
-}
-
-export function useBacklinkCount(note: FNote | null | undefined, isDefaultViewMode: boolean) {
-    const [ backlinkCount, setBacklinkCount ] = useState(0);
-
-    const refresh = useCallback(() => {
-        if (!note || !isDefaultViewMode) return;
-
-        server.get<BacklinkCountResponse>(`note-map/${note.noteId}/backlink-count`).then(resp => {
-            setBacklinkCount(resp.count);
-        });
-    }, [ isDefaultViewMode, note ]);
-
-    useEffect(() => refresh(), [ refresh ]);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (note && needsRefresh(note, loadResults)) refresh();
-    });
-
-    return backlinkCount;
-}
-
-function needsRefresh(note: FNote, loadResults: LoadResults) {
-    return loadResults.getAttributeRows().some(attr =>
-        attr.type === "relation" &&
-        attributes.isAffecting(attr, note));
 }

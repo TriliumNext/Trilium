@@ -5,7 +5,7 @@ import Modal from "../react/Modal";
 import FormTextBox from "../react/FormTextBox";
 import FormGroup from "../react/FormGroup";
 import { refToJQuerySelector } from "../react/react_utils";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 // JQuery here is maintained for compatibility with existing code.
 interface ShownCallbackData {

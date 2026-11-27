@@ -215,7 +215,34 @@ describe("NoteFlatTextExp", () => {
         expect(execute(new NoteFlatTextExp(["sync"]), ctx).result.notes).toHaveLength(0);
     });
 
+    it("matches the remaining tokens against an ancestor's type, mime and attributes", () => {
+        const austria = note("Austria");
+        const script = note("Snippet", { type: "code", mime: "application/javascript" });
+        const region = note("Region").label("continent", "europe");
+        const vienna = note("Vienna");
+        rootNote.child(script.child(austria)).child(region.child(vienna));
+
+        expect(noteIds(execute(new NoteFlatTextExp([ "austria", "javascript" ])).result)).toEqual([ austria.note.noteId ]);
+        expect(noteIds(execute(new NoteFlatTextExp([ "vienna", "europe" ])).result)).toEqual([ vienna.note.noteId ]);
+    });
+
+    it("leaves out a matching note that has no path to the root", () => {
+        const orphan = note("Orphan", { noteId: "orphan0123" });
+
+        expect(execute(new NoteFlatTextExp([ "orphan0123" ])).result.notes).toEqual([]);
+        expect(execute(new NoteFlatTextExp([ "orphan" ]), searchContext({ autocomplete: true })).result.notes).toEqual([]);
+        expect(orphan.note.getBestNotePath()).toBeUndefined();
+    });
+
     describe("getNotePath", () => {
+        it("keeps only the taken path when the top-most note is gone", () => {
+            const austria = note("Austria");
+            rootNote.child(austria);
+
+            const exp = new NoteFlatTextExp([ "austria" ]);
+            expect(exp.getNotePath(austria.note, [ "missingNote", austria.note.noteId ])).toEqual([ austria.note.noteId ]);
+        });
+
         it("throws when the taken path is empty", () => {
             const austria = note("Austria");
             rootNote.child(austria);

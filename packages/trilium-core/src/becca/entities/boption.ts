@@ -24,9 +24,15 @@ class BOption extends AbstractBeccaEntity<BOption> {
     constructor(row?: OptionRow) {
         super();
 
-        if (row) {
-            this.updateFromRow(row);
+        if (!row) {
+            return;
         }
+
+        this.updateFromRow(row);
+        this.init();
+    }
+
+    override init() {
         this.becca.options[this.name] = this;
     }
 

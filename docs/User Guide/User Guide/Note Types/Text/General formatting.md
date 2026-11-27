@@ -5,7 +5,7 @@
 
 Trilium provides headings to define sections within text. Headings are numbered from 2 to 6.
 
-The reason why Heading 1 is missing from the list is that it is being reserved for the title of note.
+The reason why Heading 1 is missing from the list is that it is being reserved for the title of note. A Heading 1 that is already in the text, for example in text pasted from another application, is kept as a heading.
 
 To turn a heading back into a normal text, select _Paragraph_ from the list.
 
@@ -16,6 +16,8 @@ Apart from using the UI, it is also possible to quickly insert headings using th
 *   `####` for Heading 4
 *   `#####` for Heading 5
 *   `######` for Heading 6
+
+A heading can be collapsed to hide the content under it, see <a class="reference-link" href="Collapsible%20headings.md">Collapsible headings</a>.
 
 ## Font size
 
@@ -30,8 +32,6 @@ Unlike other text editors such as Microsoft Word, the font size is relative (i.e
 Avoid using this feature just to simply make all text bigger. In that case it's generally better to adjust the font size for all notes in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> or by zooming.
 
 ## Bold, italic, underline, strike-through
-
-<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
 
 Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) in the formatting toolbar.
 
@@ -61,7 +61,7 @@ For mathematical formulas, prefer the <a class="reference-link" href="Math%20Eq
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
-Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>).
+Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>). A selected link preview can be colored the same way (see <a class="reference-link" href="Link%20Previews.md">Link Previews</a>).
 
 Once there is at least one color defined in the document, it will appear in the list for easy reuse.
 

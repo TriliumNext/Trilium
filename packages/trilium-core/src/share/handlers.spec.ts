@@ -2,15 +2,19 @@ import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import BAttribute from "../becca/entities/battribute.js";
+import BBranch from "../becca/entities/bbranch.js";
+import { getContext } from "../services/context.js";
 import { getCrypto } from "../services/encryption/crypto.js";
+import noteService from "../services/notes.js";
 import scriptService from "../services/script.js";
 import SearchResult from "../services/search/search_result.js";
 import searchService from "../services/search/services/search.js";
-import { encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
+import { decodeUtf8, encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote } from "../test/shaca_mocking.js";
 import {
-    getShareRoute, getShareRoutes, handleShareRequest, type ShareReply, type ShareRequest
+    getShareRoute, getShareRoutes, handleShareRequest, isVisibleInShareTree, type ShareReply, type ShareRequest
 } from "./handlers.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { getShareProvider } from "./share_provider.js";
@@ -123,6 +127,21 @@ describe("share handlers", () => {
         expect(request("/share/:shareId", { params: { shareId: "openNote" }, query: { raw: "" } }).body).toBe("<p>public body</p>");
     });
 
+    it("refuses a protected note's JSON, which carries its label values (GHSA-gmf6-2wph-f898)", () => {
+        buildShareTree([
+            { id: "lockedUp", content: "", isProtected: true, "#projectSecret": "TOPSECRET-123" },
+            { id: "openNote", content: "", "#projectSecret": "PUBLIC-456" }
+        ]);
+
+        const refused = request("/share/api/notes/:noteId", { params: { noteId: "lockedUp" } });
+        expect(refused.status).toBe(404);
+        expect(String(refused.body)).not.toContain("TOPSECRET");
+
+        const served = request("/share/api/notes/:noteId", { params: { noteId: "openNote" } });
+        expect(served.status).toBe(200);
+        expect(String(served.body)).toContain("PUBLIC-456");
+    });
+
     it("lists only the children visible in the tree in a note's JSON", () => {
         buildShareTree([ {
             id: "jsonParent",
@@ -158,6 +177,98 @@ describe("share handlers", () => {
         });
         expect(right.status).toBe(200);
         expect(JSON.parse(String(right.body)).noteId).toBe("lockedNote");
+    });
+
+    it("asks for credentials a note inherits from notes outside the share (GHSA-xh3r-3xw2-w23p)", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [
+                        { "id": "templated", "title": "Templated", "~template": "credentialTemplate" },
+                        { "id": "inheriting", "title": "Inheriting", "~inherit": "credentialSource" },
+                        { id: "cloned", title: "Cloned" }
+                    ]
+                } ] },
+                { "id": "credentialTemplate", "title": "Template", "#shareCredentials": "root:hunter2" },
+                { "id": "credentialSource", "title": "Source", "#shareCredentials": "root:hunter2" },
+                { id: "privateParent", title: "Private parent" }
+            ]
+        });
+        new BAttribute({
+            noteId: "privateParent", type: "label", name: "shareCredentials", value: "root:hunter2", isInheritable: true
+        });
+        new BBranch({ branchId: "privateParent_cloned", noteId: "cloned", parentNoteId: "privateParent" });
+        buildShareTree([
+            { "id": "templated", "content": "<p>classified</p>", "~template": "credentialTemplate" },
+            { "id": "inheriting", "content": "<p>classified</p>", "~inherit": "credentialSource" },
+            { id: "cloned", content: "<p>classified</p>" }
+        ]);
+
+        const statuses = (headers: Record<string, string>) => Object.fromEntries(
+            [ "templated", "inheriting", "cloned" ].map((noteId) => [
+                noteId, request("/share/api/notes/:noteId", { params: { noteId }, headers }).status
+            ])
+        );
+        expect(statuses({})).toEqual({ templated: 401, inheriting: 401, cloned: 401 });
+        expect(statuses({ authorization: `Basic ${encodeBase64("root:hunter2")}` }))
+            .toEqual({ templated: 200, inheriting: 200, cloned: 200 });
+    });
+
+    it("hides a note that inherits #shareHiddenFromTree from notes outside the share", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [ {
+                        id: "docs",
+                        title: "Docs",
+                        children: [
+                            { id: "shown", title: "Shown" },
+                            { "id": "templated", "title": "Templated", "~template": "hidingTemplate" },
+                            { "id": "inheriting", "title": "Inheriting", "~inherit": "hidingSource" },
+                            { id: "cloned", title: "Cloned" }
+                        ]
+                    } ]
+                } ] },
+                { "id": "hidingTemplate", "title": "Template", "#shareHiddenFromTree": "" },
+                { "id": "hidingSource", "title": "Source", "#shareHiddenFromTree": "" },
+                { id: "privateParent", title: "Private parent" }
+            ]
+        });
+        new BAttribute({
+            noteId: "privateParent", type: "label", name: "shareHiddenFromTree", value: "", isInheritable: true
+        });
+        new BBranch({ branchId: "privateParent_cloned", noteId: "cloned", parentNoteId: "privateParent" });
+        const hiddenIds = [ "templated", "inheriting", "cloned" ];
+        buildShareTree([ {
+            id: "docs",
+            content: "",
+            children: [
+                { "id": "shown", "content": "", "#projectShown": "" },
+                { "id": "templated", "content": "", "~template": "hidingTemplate", "#projectTemplated": "" },
+                { "id": "inheriting", "content": "", "~inherit": "hidingSource", "#projectInheriting": "" },
+                { "id": "cloned", "content": "", "#projectCloned": "" }
+            ]
+        } ]);
+
+        expect(readJson("/share/api/notes/:noteId", { params: { noteId: "docs" } }).childNoteIds)
+            .toEqual([ "shown" ]);
+        expect(hiddenIds.filter((noteId) => isVisibleInShareTree("docs", [ "docs", noteId ])))
+            .toEqual([]);
+        expect(readJson("/share/api/attribute-names", { query: { type: "label", query: "project" } }))
+            .toEqual([ "projectShown" ]);
+        // The notes stay readable by their URL.
+        expect(hiddenIds.map((noteId) => request("/share/api/notes/:noteId", { params: { noteId } }).status))
+            .toEqual([ 200, 200, 200 ]);
     });
 
     it("sanitizes an SVG note and locks it down with a content security policy", () => {
@@ -267,6 +378,46 @@ describe("share handlers", () => {
         const pdf = view("pdfFile");
         expect(pdf).toMatchObject({ status: 200, body: "%PDF" });
         expect(pdf.headers).not.toHaveProperty("Content-Security-Policy");
+    });
+
+    it("answers a range of a viewed note or a downloaded attachment, for media players", () => {
+        buildShareTree([
+            {
+                id: "clipNote", type: "file", mime: "video/mp4", content: "0123456789",
+                attachments: [ { id: "clipAttachment", role: "file", mime: "audio/mpeg" } ]
+            }
+        ]);
+        stubAttachmentContent("clipAttachment", encodeUtf8("abcdef"));
+        const view = (range?: string) => request("/share/api/notes/:noteId/view", {
+            params: { noteId: "clipNote" }, headers: range ? { range } : {}
+        });
+        const download = (range: string) => request("/share/api/attachments/:attachmentId/download", {
+            params: { attachmentId: "clipAttachment" }, headers: { range }
+        });
+
+        const whole = view();
+        expect(whole).toMatchObject({ status: 200, body: "0123456789" });
+        expect(whole.headers).toMatchObject({ "Accept-Ranges": "bytes", "Content-Type": "video/mp4" });
+        expect(whole.headers).not.toHaveProperty("Content-Range");
+
+        const slice = view("bytes=2-4");
+        expect(slice.status).toBe(206);
+        expect(decodeUtf8(slice.body as Uint8Array)).toBe("234");
+        expect(slice.headers).toMatchObject({ "Content-Range": "bytes 2-4/10" });
+
+        const tail = download("bytes=4-");
+        expect(tail.status).toBe(206);
+        expect(decodeUtf8(tail.body as Uint8Array)).toBe("ef");
+        expect(tail.headers).toMatchObject({
+            "Content-Range": "bytes 4-5/6", "Content-Type": "audio/mpeg"
+        });
+
+        expect(download("bytes=9-")).toMatchObject({
+            status: 416, headers: { "Content-Range": "bytes */6" }
+        });
+
+        stubAttachmentContent("clipAttachment", undefined);
+        expect(download("bytes=0-")).toMatchObject({ status: 200, body: undefined });
     });
 
     it("locks a raw SVG note down with a content security policy, but not raw HTML", () => {
@@ -713,6 +864,65 @@ describe("share handlers", () => {
         becca.reset();
         expect(JSON.parse(String(bundle().body)))
             .toEqual({ message: "Note 'scriptNote' has no script to run." });
+    });
+
+    it("answers a search only from the notes the caller can read, wherever the query walks", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [
+                        { id: "publicPage", title: "Public page",
+                            children: [ { id: "sharedChild", title: "Shared child" } ] },
+                        { "id": "guardedPage", "title": "Guarded", "#shareCredentials": "root:hunter2" }
+                    ]
+                } ] },
+                { id: "personal", title: "Personal" },
+                { "id": "privateTemplate", "title": "Template", "#template": "", "#codename": "zanzibar" }
+            ]
+        });
+        const secret = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "personal", title: "Bank login", content: "password=Tr0ub4dor", type: "text"
+        }).note);
+        new BAttribute({ noteId: secret.noteId, type: "label", name: "pin", value: "1234" });
+        new BAttribute({ noteId: "publicPage", type: "relation", name: "ref", value: secret.noteId });
+        new BAttribute({ noteId: "publicPage", type: "relation", name: "template", value: "privateTemplate" });
+        new BBranch({ branchId: "personal_sharedChild", noteId: "sharedChild", parentNoteId: "personal" });
+        buildShareTree([
+            { id: "publicPage", title: "Public page", content: "",
+                children: [ { id: "sharedChild", title: "Shared child", content: "" } ] },
+            { "id": "guardedPage", "title": "Guarded", "content": "", "#shareCredentials": "root:hunter2" }
+        ]);
+        // createNewNote() emits an entity event that marks shaca unloaded.
+        shaca.loaded = true;
+        vi.spyOn(searchService, "buildSearchResultDetails").mockReturnValue([]);
+
+        const notes = (search: string) => (readJson("/share/api/notes",
+            { query: { ancestorNoteId: "publicPage", search } }).results as { noteId: string }[])
+            .map((result) => result.noteId);
+        const filter = (searchString: string) => readJson("/share/api/search",
+            { query: { ancestorNoteId: "publicPage", searchString } }).searchResultNoteIds as string[];
+        const fromRoot = "note.parents.parents.parents.children.children";
+        const queries = [
+            `${fromRoot}.title = "Bank login"`,
+            `${fromRoot}.content *=* "Tr0ub4dor"`,
+            `${fromRoot}.labels.pin = "1234"`,
+            `note.children.parents.title = "Personal"`,
+            `note.parents.children.title = "Guarded"`,
+            `note.links.title = "Bank login"`,
+            `~ref.content *=* "Tr0ub4dor"`,
+            `#codename`
+        ];
+
+        for (const readable of [ `note.parents.title = "Shared Notes"`, `note.children.title = "Shared child"` ]) {
+            expect([ notes(readable), filter(readable) ]).toEqual([ [ "publicPage" ], [ "publicPage" ] ]);
+        }
+        expect(Object.fromEntries(queries.map((query) => [ query, [ notes(query), filter(query) ] ])))
+            .toEqual(Object.fromEntries(queries.map((query) => [ query, [ [], [] ] ])));
     });
 
     it("reads a search string without running it, answering its error", () => {

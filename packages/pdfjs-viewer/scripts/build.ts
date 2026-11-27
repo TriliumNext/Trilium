@@ -49,7 +49,11 @@ async function main() {
     // The legacy build ships core-js polyfills for the newest JS APIs; the modern
     // build requires browsers only a few months old (Chrome 145+/Safari 26.2+).
     // Keep in sync with the legacy viewer vendored by scripts/update-viewer.ts.
-    const pdfjsBuildDir = join(dirname(require.resolve("pdfjs-dist/package.json")), "legacy", "build");
+    const pdfjsDir = dirname(require.resolve("pdfjs-dist/package.json"));
+    for (const directory of [ "cmaps", "iccs", "standard_fonts" ]) {
+        build.copy("/" + relative(build.rootDir, join(pdfjsDir, directory)), join("web", directory));
+    }
+    const pdfjsBuildDir = join(pdfjsDir, "legacy", "build");
     const pdfjsBuildDirFromRoot = "/" + relative(build.rootDir, pdfjsBuildDir);
     for (const file of [ "pdf.mjs", "pdf.worker.mjs", "pdf.sandbox.mjs" ]) {
         build.copy(join(pdfjsBuildDirFromRoot, file), join("build", file));

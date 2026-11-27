@@ -6,7 +6,7 @@
     max-width: 340px;
     padding: 12px;
     white-space: normal;
-    font-size: var(--main-font-size);
+    font-size: 1rem;
     line-height: 1.5;
 
     code {

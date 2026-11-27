@@ -36,8 +36,8 @@ vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className
 // `appearance_fonts.spec.tsx`; here only its place on the page matters.
 vi.mock("./appearance_fonts", () => ({ default: () => <div className="fonts-stub" /> }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [ String(mocks.stored[name] ?? ""), vi.fn() ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
@@ -94,6 +94,21 @@ describe("the layout orientation", () => {
         open();
         expect(expandToggle()).not.toBeNull();
         expect(chatsToggle()).not.toBeNull();
+    });
+});
+
+describe("the note title style", () => {
+    it("marks the stored style, and falls back to the large title", () => {
+        const activeChoice = () => [ ...host.querySelectorAll(".tn-segmented-choice .active") ]
+            .map(button => button.textContent?.trim())
+            .find(text => text?.startsWith("theme.note_title_style_"));
+
+        open();
+        expect(activeChoice()).toBe("theme.note_title_style_large");
+
+        mocks.stored.noteTitleStyle = "compact";
+        open();
+        expect(activeChoice()).toBe("theme.note_title_style_compact");
     });
 });
 

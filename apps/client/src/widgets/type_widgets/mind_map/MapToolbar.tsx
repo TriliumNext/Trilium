@@ -1,11 +1,11 @@
 import "./MapToolbar.css";
 
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { useFullscreen } from "../../react/hooks";
+import { useFullscreen } from "../../react/hooks/dom";
 import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "../../react/OverlayControlGroup";
 import OverlayToolbar, { OverlayToolbarButton } from "../../react/OverlayToolbar";
 import { centerMapOn, type MapPoint, readMapCenter, stepZoom } from "./viewport";

@@ -645,7 +645,7 @@ describe("getDraggedBlocks", () => {
     it("lists the outermost dragged blocks, and none for a selection in no block", async () => {
         const { editor } = await createEditor("<paragraph>[one</paragraph>"
             + "<blockQuote><paragraph>two</paragraph><paragraph>three]</paragraph></blockQuote>");
-        const getNames = () => getDraggedBlocks(editor.model).map((block) => block.name);
+        const getNames = () => getDraggedBlocks(editor).map((block) => block.name);
         expect(getNames()).toEqual([ "paragraph", "blockQuote" ]);
 
         setModelData(editor.model, "<table><tableRow><tableCell><paragraph>cell</paragraph>"

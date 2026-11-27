@@ -4,7 +4,7 @@ import { formatShortcut, joinShortcut } from "./keyboard_shortcut_display.js";
 import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 import { isPreAuthScreen, isShare } from "./utils.js";
 import type Component from "../components/component.js";
-import { closeOpenPopups } from "../widgets/react/Popup";
+import { closeOpenPopups } from "../widgets/react/open_popups";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 
 const keyboardActionRepo: Record<string, ActionKeyboardShortcut> = {};
@@ -58,7 +58,7 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
 
 /**
  * Binds every window-scoped action (jump to note, reload, tab switching, …) as a global shortcut
- * routed through `appContext.triggerCommand`. `AppContext.initComponents()` calls this once
+ * routed through `appContext.triggerCommand`. `startAppAroundLayout()` calls this once
  * `appContext.tabManager` exists; binding at module load instead left a window during startup in
  * which a matching keypress (F5 held across a reload, for instance) threw on the missing tab manager.
  */

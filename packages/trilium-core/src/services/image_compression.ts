@@ -380,6 +380,7 @@ function noteTarget(note: BNote): CompressionTarget {
 }
 
 function attachmentTarget(attachment: BAttachment): CompressionTarget {
+    /* v8 ignore next -- an attachment read from the database always carries its id */
     const attachmentId = attachment.attachmentId ?? "";
 
     return {
@@ -865,6 +866,7 @@ function logRunEnd(response: ImageCompressionResponse): ImageCompressionResponse
         const reasons = new Map<string, number>();
 
         response.items.filter((item) => !item.compressed).forEach((item) => {
+            /* v8 ignore next -- `skippedItem()` gives every item it makes a reason */
             const reason = item.skipReason ?? "unknown";
 
             reasons.set(reason, (reasons.get(reason) ?? 0) + 1);

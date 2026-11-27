@@ -1260,7 +1260,6 @@
     "refresh-saved-search-results": "Оновити збережені результати пошуку",
     "create-child-note": "Створити дочірню нотатку",
     "unhoist": "Відкріпити",
-    "toggle-sidebar": "Перемикання бічної панелі",
     "subtree-hidden-tooltip_one": "{{count}} дочірня нотатка, прихована від дерев",
     "subtree-hidden-tooltip_few": "{{count}} дочірніх нотатки, прихованих від дерев",
     "subtree-hidden-tooltip_many": "{{count}} дочірніх нотаток, прихованих від дерев",

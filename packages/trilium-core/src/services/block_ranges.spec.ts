@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getBlockRangeContent, replaceBlockRangeContent } from "./block_ranges";
+import {
+    getBlockRangeContent, replaceBlockRangeContent, replaceBlockRangeOnBase
+} from "./block_ranges";
+import { hashedBlobId } from "./utils/index.js";
 
 const BEFORE = `<h2 class='title'>Intro</h2><!-- kept -->\n<p>Skip&nbsp;me</p>`;
 const RANGE = `<p data-trilium-block-id="a">A</p><ul><li>x</li></ul>`
@@ -99,5 +102,32 @@ describe("replaceBlockRangeContent", () => {
             `<ol reversed start="3"><li>3</li></ol>${paragraph}`
             + `<ol reversed start="1"><li>1</li></ol>`
         );
+    });
+
+    it("keeps a bulleted list unnumbered, around whitespace or text the edit adds", () => {
+        const bullets = `<ul><li><p data-trilium-block-id="a">A</p></li><li><p>B</p></li></ul>`;
+
+        expect(replaceBlockRangeContent(bullets, "a",
+            `\n<ul><li><p data-trilium-block-id="a">New</p></li></ul>\n`)).toBe(
+            `<ul><li><p data-trilium-block-id="a">New</p></li><li><p>B</p></li></ul>`
+        );
+        expect(replaceBlockRangeContent(bullets, "a", "Plain text")).toBe(
+            `Plain text<ul><li><p>B</p></li></ul>`
+        );
+    });
+});
+
+describe("replaceBlockRangeOnBase", () => {
+    it("replaces the blocks only while they are as they were read", () => {
+        const fragment = `<p data-trilium-block-id="a">New A</p>`;
+        const hash = hashedBlobId(RANGE);
+
+        expect(replaceBlockRangeOnBase(NOTE, "a:b", fragment, hash)).toStrictEqual({
+            status: "replaced", hash, content: `${BEFORE}${fragment}${AFTER}`
+        });
+        expect(replaceBlockRangeOnBase(NOTE, "a:b", fragment, "stale"))
+            .toStrictEqual({ status: "changed", hash });
+        expect(replaceBlockRangeOnBase(NOTE, "a:z", fragment, hash))
+            .toStrictEqual({ status: "missing" });
     });
 });

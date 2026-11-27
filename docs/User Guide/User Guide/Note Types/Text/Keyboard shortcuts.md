@@ -1,4 +1,7 @@
 # Keyboard shortcuts
+> [!NOTE]
+> With <a class="reference-link" href="Vim%20mode.md">Vim mode</a> turned on, some of these shortcuts follow Vim instead, such as <kbd>Ctrl</kbd>+<kbd>B</kbd>, which scrolls a page up in Normal mode. See _Shortcuts that change in the editor_ on that page.
+
 ## Trilium-specific shortcuts
 
 | Action | PC | Mac |
@@ -14,6 +17,7 @@
 | Insert <a class="reference-link" href="Math%20Equations.md">Math Equations</a> | Ctrl + M | ⌘+ M |
 | Move blocks (lists, paragraphs, etc.) up, or in a [table](Tables.md) the rows | Alt+↑ | ⌥+↑ |
 | Move blocks (lists, paragraphs, etc.) down, or in a [table](Tables.md) the rows | Alt+↓ | ⌥+↓ |
+| Collapse or expand a [heading](Collapsible%20headings.md) or a [list item](Lists.md) | Ctrl+Alt+Enter | ⌘+⌥+Enter |
 | Move the selected content to another column of a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
 | Move the current column of a multicolumn layout | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
 | Add a column after or before the current one in a multicolumn layout | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |

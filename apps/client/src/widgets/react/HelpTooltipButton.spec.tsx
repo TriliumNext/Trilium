@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // The tooltip itself is Bootstrap's; what this component decides is the configuration it hands over,
 // so the hook is stubbed and the configuration asserted on.
 const useStaticTooltip = vi.hoisted(() => vi.fn());
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip
 }));
 

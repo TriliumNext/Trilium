@@ -72,12 +72,16 @@ cd apps/server
 CI=true node ../../node_modules/vitest/vitest.mjs run \
     ../../packages/trilium-core/src/becca/entities/bnote.spec.ts \
     --reporter=dot --coverage --coverage.reporter=lcov \
-    --coverage.reportsDirectory=./test-output/cov-bnote
+    --coverage.reportsDirectory=./test-output/cov-bnote \
+    --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 \
+    --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
 node ../../.claude/skills/analyzing-coverage/coverage.mjs \
     ./test-output/cov-bnote/lcov.info gaps --filter bnote.ts
 ```
 
 ### Footguns (learned the hard way)
+- **The server suite gates on 100% coverage** (`thresholds` in `apps/server/vite.config.mts`, over every `apps/server/src` and core file it measures). A scoped run covers a fraction of that set, so it exits 1 with `does not meet global threshold` even though the lcov is written. Zero the four thresholds on the command line, as above. A full `pnpm --filter server test --coverage` that drops below 100% fails the same way, which is the point: cover the new lines, or `v8 ignore` code that is provably unreachable.
+- **A failing test suppresses the report.** Add `--coverage.reportOnFailure` when you need numbers from a run with a red spec.
 - **Always pass `--reporter=dot`** for scoped runs — the project's configured `html`/`@vitest/ui` reporter can crash at end-of-run and abort coverage.
 - **The v8 `text` reporter crashes** (`PARSE_ERROR` remapping unrelated core files) on single-spec `--coverage` runs. Use `lcov`/`json`/`json-summary` and analyze with this script — never rely on the terminal table for a scoped run.
 - **The per-file table row renders blank** when a single included file is exactly 100% (cosmetic v8 quirk). This script reads the raw data, so it shows the real number.

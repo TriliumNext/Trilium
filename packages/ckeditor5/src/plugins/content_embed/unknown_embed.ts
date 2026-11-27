@@ -1,6 +1,6 @@
 import {
     BOX_SIZES, CONTENT_EMBED_KIND_ATTRIBUTE, EMBED_HEIGHT_PROPERTY, readBoxSize
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
     CKEditorError,
     type Editor,

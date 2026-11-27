@@ -138,12 +138,13 @@ async function downloadImage(noteId: string, imageUrl: string) {
         const imageBuffer = new Uint8Array(await request.getImage(unescapedUrl));
 
         const parsedUrl = url.parse(unescapedUrl);
+        /* v8 ignore next -- an http(s) URL, checked above, always parses with a pathname */
         const title = basename(parsedUrl.pathname || "");
 
         // Given a context of its own, as the link rewrite below is: the download resumes long
         // after the request that started it has answered, and a write with no context around it
         // has nowhere to record its entity change.
-        const attachment = cls.getContext().init(
+        const attachment = cls.initWithoutComponent(
             () => imageService.saveImageToAttachment(noteId, imageBuffer, title, true, true)
         );
 
@@ -241,9 +242,8 @@ export function downloadImages(noteId: string, content: string) {
             // are downloaded and the IMG references are not updated. For this occasion we have this code
             // which upon the download of all the images will update the note if the links have not been fixed before
 
-            cls.getContext().init(() => {
+            cls.initWithoutComponent(() => {
                 getSql().transactional(() => {
-                const imageNotes = becca.getNotes(Object.values(imageUrlToAttachmentIdMapping), true);
                     const log = getLog();
 
                 const origNote = becca.getNote(noteId);
@@ -261,11 +261,11 @@ export function downloadImages(noteId: string, content: string) {
                     return;
                 }
 
-                for (const url in imageUrlToAttachmentIdMapping) {
-                    const imageNote = imageNotes.find((note) => note.noteId === imageUrlToAttachmentIdMapping[url]);
+                    for (const [ url, attachmentId ] of Object.entries(imageUrlToAttachmentIdMapping)) {
+                        const attachment = becca.getAttachment(attachmentId);
 
-                    if (imageNote) {
-                        updatedContent = replaceUrl(updatedContent, url, imageNote);
+                        if (attachment) {
+                            updatedContent = replaceUrl(updatedContent, url, attachment);
                     }
                 }
 
@@ -340,7 +340,7 @@ export async function storeLinkPreviewPictures(note: BNote) {
     rewritten += content.slice(cursor);
 
     if (rewritten !== content) {
-        getSql().transactional(() => note.setContent(rewritten));
+        cls.initWithoutComponent(() => getSql().transactional(() => note.setContent(rewritten)));
     }
 }
 

@@ -208,6 +208,17 @@ describe("buildRewardMap", () => {
         expect(xMap.get("xcustom")).toBeUndefined();
     });
 
+    it("leaves out the title of an undecrypted note and a mime without a subtype", () => {
+        const note = buildNote({ title: "Encrypted heading", type: "file", mime: "weirdmime" });
+        note.isDecrypted = false;
+
+        const map = buildRewardMap(note);
+
+        expect(map.get("encrypted")).toBeUndefined();
+        expect(map.get("weirdmime")).toBeUndefined();
+        expect(map.get("")).toBeUndefined();
+    });
+
     it("stems english plurals instead of discarding the word, both the 'es' and the plain 's' form", () => {
         const note = buildNote({ title: "Foxes churches docs links", content: "<p>b</p>" });
         const map = buildRewardMap(note);
@@ -272,6 +283,25 @@ describe("findSimilarNotes", () => {
 
         const result = await similarity.findSimilarNotes(base.noteId);
         expect(result.length).toBe(200);
+    });
+
+    it("rewards the title of a candidate's parent only once it is decrypted", async () => {
+        const word = "zorblequant";
+        const base = buildRootNote({ title: `${word} base note`, type: "text" });
+        const parent = buildRootNote({ title: `${word} parent folder`, type: "text" });
+        const candidate = buildNote({ title: `${word} candidate`, content: "<p>c</p>" });
+        new BBranch({ branchId: `${parent.noteId}_${candidate.noteId}`, noteId: candidate.noteId, parentNoteId: parent.noteId, prefix: null, notePosition: 10 });
+
+        const scoreOf = async () => (await similarity.findSimilarNotes(base.noteId))
+            .find((r) => r.noteId === candidate.noteId)?.score ?? 0;
+
+        parent.isDecrypted = false;
+        const lockedScore = await scoreOf();
+        parent.isDecrypted = true;
+        const unlockedScore = await scoreOf();
+
+        expect(lockedScore).toBeGreaterThan(0);
+        expect(unlockedScore).toBeGreaterThan(lockedScore);
     });
 
     it("finds similar notes sharing distinctive title words", async () => {

@@ -60,10 +60,25 @@
     "search_note": "Suche nach einer Notiz anhand ihres Namens",
     "link_title": "Linktitel",
     "button_add_link": "Link hinzufügen",
-    "anchor": "Anker (optional)",
-    "anchor_none": "Keine (Link zur Notiz)",
     "edit_link": "Link bearbeiten",
-    "button_edit_link": "Link speichern"
+    "button_edit_link": "Link speichern",
+    "fix_link": "Link korrigieren",
+    "button_fix_link": "Link reparieren",
+    "web_link": "Webseite",
+    "url": "URL",
+    "invalid_url": "Dies ist keine valide URL.",
+    "script_link_not_allowed": "Links, die mit {{scheme}} starten, können Code ausführen, darum sind sie nicht erlaubt.",
+    "display_as": "Anzeigen als",
+    "display_plain": "Text",
+    "display_inline": "Icon & Text",
+    "display_card": "Karte",
+    "description": "Beschreibung",
+    "retrieving_from_page": "Webseite wird ausgelesen...",
+    "top_of_note": "Link zur kompletten Notiz",
+    "page_description": "Beschreibung der Webseite",
+    "anchors": "Überschrift",
+    "headings": "Überschriften",
+    "page_title": "Title der Website"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Zweigpräfix bearbeiten",
@@ -1729,7 +1744,6 @@
     "refresh-saved-search-results": "Gespeicherte Suchergebnisse aktualisieren",
     "create-child-note": "Untergeordnete Notiz anlegen",
     "unhoist": "Fokus verlassen",
-    "toggle-sidebar": "Seitenleiste ein-/ausblenden",
     "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig.",
     "clone-indicator-tooltip": "Diese Notiz hat {{- count}} übergeordnete Knoten: {{- parents}}",
     "clone-indicator-tooltip-single": "Diese Notiz ist geklont (1 weitere übergeordnete Notiz: {{- parent}})",
@@ -2855,8 +2869,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Aus der Startleiste entfernen",
     "configure_launch_bar": "Startleiste konfigurieren",
-    "launch_bar_orientation": "Ausrichtung der Startleiste",
-    "will_reload_frontend": "(App wird neu geladen)"
+    "launch_bar_orientation": "Ausrichtung der Startleiste"
   },
   "link": {
     "failed_to_open": "Link '{{- href}}' konnte nicht geöffnet werden: {{- message}}"

@@ -85,6 +85,19 @@ describe("extractProperties", () => {
         expect(propertiesOf(row("date", "Start", "<td><time>whenever</time></td>"))).toEqual([]);
     });
 
+    it("reads a date from the text of a <time> whose datetime attribute is blank", () => {
+        expect(propertiesOf(row("date", "Start", `<td><time datetime="@">2026-06-01</time></td>`)))
+            .toEqual(propertiesOf(row("date", "Start", "<td><time>2026-06-01</time></td>")));
+        expect(propertiesOf(row("date", "Start", "<td><time>2026-06-01</time></td>"))).toHaveLength(1);
+    });
+
+    it("reads both ends of a date range from its text", () => {
+        const range = `<td><time datetime="2026-06-01">2026-06-01 → 2026-06-05</time></td>`;
+        expect(propertiesOf(row("date", "Trip", range)).map((p) => [ p.name, p.value ])).toEqual([
+            [ "Trip", "2026-06-01" ], [ "Trip end", "2026-06-05" ]
+        ]);
+    });
+
     it("reads each user of a people cell, dropping one whose name is only an avatar", () => {
         const cell = `<td><span class="user"><span class="user-icon">E</span>Elian</span><span class="user"><span class="user-icon">A</span></span></td>`;
         expect(propertiesOf(row("person", "Assignee", cell))).toEqual([

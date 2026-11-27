@@ -316,6 +316,18 @@ describe("Image API (core)", () => {
         });
     });
 
+    describe("cancelImageCompression (POST /api/image-compression/:taskId/cancel)", () => {
+        it("calls off the run of that name, which then leaves every image alone", async () => {
+            const noteId = await createImageNote({ content: PNG_BYTES });
+
+            expect((await api.post("/api/image-compression/cancelledSpecRun/cancel")).status).toBe(204);
+
+            const res = await api.post<{ items: { compressed: boolean; skipReason?: string }[] }>(
+                `/api/notes/${noteId}/compress-images`, { body: { taskId: "cancelledSpecRun" } });
+            expect(res.body.items).toEqual([ expect.objectContaining({ compressed: false, skipReason: "cancelled" }) ]);
+        });
+    });
+
     it("sets Content-Security-Policy header on SVG responses", () => {
         const parentNote = mockNote("note").note;
         const response = new MockResponse();

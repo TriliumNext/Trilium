@@ -1,23 +1,17 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
-import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
+import { SqlExecuteResponse } from "@triliumnext/commons";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
-import bundleService from "../services/bundle.js";
-import froca from "../services/froca.js";
-import { initLocale, t } from "../services/i18n.js";
-import keyboardActionsService from "../services/keyboard_actions.js";
-import linkService, { type HashPane, type ViewScope } from "../services/link.js";
+import { t } from "../services/i18n.js";
 import type LoadResults from "../services/load_results.js";
+import { type HashPane, parseNavigationStateFromUrl, type ViewScope } from "../services/navigation_state.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
-import options from "../services/options.js";
 import type { ShortcutHintSection } from "../services/shortcut_hints.js";
-import { reportSplashPhase } from "../services/splash.js";
 import toast from "../services/toast.js";
-import utils, { reuseAcrossHotReloads } from "../services/utils.js";
-import { ReactWrappedWidget } from "../widgets/basic_widget.js";
-import type RootContainer from "../widgets/containers/root_container.js";
+import { reuseAcrossHotReloads } from "../services/utils.js";
+import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
@@ -38,19 +32,9 @@ import type { PaneId, PaneMode } from "../widgets/react/peek_pane.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
 import type { ToolCall } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import Component from "./component.js";
-import Entrypoints from "./entrypoints.js";
-import MainTreeExecutors from "./main_tree_executors.js";
-import MobileScreenSwitcherExecutor, { type Screen } from "./mobile_screen_switcher.js";
+import type { Screen } from "./mobile_screen_switcher.js";
 import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
-import RootCommandExecutor from "./root_command_executor.js";
-import ShortcutComponent from "./shortcut_component.js";
-import { StartupChecks } from "./startup_checks.js";
-import TabManager from "./tab_manager.js";
-import zoomComponent from "./zoom.js";
-
-interface Layout {
-    getRootWidget: (appContext: AppContext) => RootContainer;
-}
+import type TabManager from "./tab_manager.js";
 
 export interface BeforeUploadListener extends Component {
     beforeUnloadEvent(): boolean;
@@ -92,6 +76,13 @@ export interface NoteCommandData extends CommandData {
     splits?: HashPane[] | null;
     /** Index into `[main pane, ...splits]` of the pane to focus. Defaults to the main pane. */
     activeSplit?: number;
+    /** Screen position, in CSS pixels, of the new window's top-left corner. Honoured only by `openInWindow`. */
+    windowPosition?: WindowPosition;
+}
+
+export interface WindowPosition {
+    x: number;
+    y: number;
 }
 
 /** The note a quick-edit popup opens, and how. */
@@ -275,6 +266,7 @@ export type CommandMappings = {
 
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
+    showProtectSubtreeDialog: CommandData & { noteId: string; protect: boolean };
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showContentEmbedDialog: CommandData & ContentEmbedOpts;
     showEditLinkDialog: CommandData & EditLinkOpts;
@@ -311,7 +303,7 @@ export type CommandMappings = {
     pinTab: CommandData;
     unpinTab: CommandData;
     reopenLastTab: CommandData;
-    moveTabToNewWindow: CommandData;
+    moveTabToNewWindow: CommandData & { windowPosition?: WindowPosition };
     copyTabToNewWindow: CommandData;
     closeActiveTab: CommandData & {
         $el: JQuery<HTMLElement>;
@@ -526,6 +518,10 @@ type EventMappings = {
     beforeNoteSwitch: {
         noteContext: NoteContext;
     };
+    /** Makes every editor of the note `noteId` in this window save its pending changes now. */
+    saveNoteChanges: {
+        noteId: string;
+    };
     beforeNoteContextRemove: {
         ntxIds: string[];
     };
@@ -561,6 +557,8 @@ type EventMappings = {
     newNoteContextCreated: {
         noteContext: NoteContext;
     };
+    /** `TabManager.loadTabs()` has opened the saved tabs, or an empty one if that failed. */
+    tabsRestored: {};
     noteContextRemoved: {
         ntxIds: string[];
     };
@@ -636,7 +634,6 @@ export class AppContext extends Component {
     components: Component[];
     beforeUnloadListeners: (WeakRef<BeforeUploadListener> | (() => boolean))[];
     tabManager!: TabManager;
-    layout?: Layout;
     noteTreeWidget?: NoteTreeWidget;
 
     lastSearchString?: string;
@@ -648,86 +645,6 @@ export class AppContext extends Component {
         // non-widget/layout components needed for the application
         this.components = [];
         this.beforeUnloadListeners = [];
-    }
-
-    /**
-     * Must be called as soon as possible, before the creation of any components since this method is in charge of initializing the locale. Any attempts to read translation before this method is called will result in `undefined`.
-     */
-    async earlyInit() {
-        await options.initializedPromise;
-        await initLocale((options.get("locale") || "en") as LOCALE_IDS);
-    }
-
-    setLayout(layout: Layout) {
-        this.layout = layout;
-    }
-
-    async start() {
-        this.initComponents();
-        this.renderWidgets();
-
-        reportSplashPhase("notes");
-        await froca.initializedPromise;
-
-        this.tabManager.loadTabs();
-
-        setTimeout(() => bundleService.executeStartupBundles(), 2000);
-    }
-
-    initComponents() {
-        this.tabManager = new TabManager();
-
-        this.components = [
-            this.tabManager,
-            new RootCommandExecutor(),
-            new Entrypoints(),
-            new MainTreeExecutors(),
-            new ShortcutComponent(),
-            new StartupChecks()
-        ];
-
-        if (utils.isMobile()) {
-            this.components.push(new MobileScreenSwitcherExecutor());
-        }
-
-        for (const component of this.components) {
-            this.child(component);
-        }
-
-        if (utils.isElectron()) {
-            this.child(zoomComponent);
-        }
-
-        void keyboardActionsService.setupWindowShortcuts();
-    }
-
-    renderWidgets() {
-        if (!this.layout) {
-            throw new Error("Missing layout.");
-        }
-
-        const rootWidget = this.layout.getRootWidget(this);
-        const $renderedWidget = rootWidget.render();
-
-        keyboardActionsService.updateDisplayedShortcuts($renderedWidget);
-
-        $("body").append($renderedWidget);
-
-        $renderedWidget.on("click", "[data-trigger-command]", function () {
-            if ($(this).hasClass("disabled")) {
-                return;
-            }
-
-            const commandName = $(this).attr("data-trigger-command");
-            const $component = $(this).closest(".component");
-            const component = $component.prop("component");
-
-            component.triggerCommand(commandName, { $el: $(this) });
-        });
-
-        this.child(rootWidget as Component);
-
-        this.triggerEvent("initialRenderComplete", {});
     }
 
     triggerEvent<K extends EventNames>(name: K, data: EventData<K>) {
@@ -812,7 +729,7 @@ function registerWindowHandlers(appContext: AppContext) {
     });
 
     $(window).on("hashchange", () => {
-        const { notePath, ntxId, viewScope, searchString } = linkService.parseNavigationStateFromUrl(window.location.href);
+        const { notePath, ntxId, viewScope, searchString } = parseNavigationStateFromUrl(window.location.href);
 
         if (notePath || ntxId) {
             appContext.tabManager.switchToHistoryEntry(ntxId, notePath, viewScope);

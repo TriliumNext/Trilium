@@ -1,4 +1,10 @@
 import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import {
+    getContentFormat, isNoteEmbed, type NoteSaveBase, type SaveConflictReason,
+    type SaveConflictResponse, type SavedAttachmentBase, type SavedAttachmentRow,
+    type SaveNoteDataResponse
+} from "@triliumnext/commons";
+import { renderToHtml as renderMarkdown } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -7,13 +13,14 @@ import BAttachment from "../becca/entities/battachment.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
-import { ValidationError } from "../errors.js";
+import { DetailedConflictError, ValidationError } from "../errors.js";
 import { getLog } from "../services/log.js";
 import protectedSessionService from "../services/protected_session.js";
 import blobService from "./blob.js";
 import * as cls from "./context.js";
 import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
+import { getLinkTargetParameters } from "./export/rewrite_links.js";
 import imageService from "./image.js";
 import { downloadImages, storeLinkPreviewPictures } from "./image_download.js";
 import noteTypesService from "./note_types.js";
@@ -144,9 +151,9 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulte
 }
 
 function copyAttachments(origNote: BNote, newNote: BNote) {
-    for (const attachment of origNote.getAttachments()) {
+    for (const attachment of origNote.getPortableAttachments()) {
+        // Pictures are handled by `checkImageAttachments`.
         if (isImageAttachmentRole(attachment.role)) {
-            // Handled separately, see `checkImageAttachments`.
             continue;
         }
 
@@ -175,9 +182,13 @@ function getNewNoteTitle(parentNote: BNote) {
 function getTemplateNoteTitle(note: BNote, parentNote: BNote) {
     for (const relation of note.getOwnedRelations("template")) {
         const templateNote = relation.targetNote;
-        const titleTemplate = templateNote ? getTemplateTitleTemplate(templateNote) : null;
+        /* v8 ignore if -- deleting a note deletes the relations pointing at it */
+        if (!templateNote) {
+            continue;
+        }
 
-        if (templateNote && titleTemplate !== null) {
+        const titleTemplate = getTemplateTitleTemplate(templateNote);
+        if (titleTemplate !== null) {
             return evaluateTitleTemplate(
                 titleTemplate,
                 parentNote,
@@ -205,7 +216,7 @@ function evaluateTitleTemplate(titleTemplate: string | null, parentNote: BNote, 
     let title = t("notes.new-note");
 
     if (titleTemplate !== null) {
-        const now = dayjs(date_utils.localNowDateTime() || new Date());
+        const now = dayjs(date_utils.localNowDateTime());
 
         // "officially" injected values:
         // - now
@@ -522,6 +533,7 @@ function protectNote(note: BNote, protect: boolean) {
  * it is stored, and put back by {@link writeExtractedText} once the new state does.
  */
 function readExtractedText(blobId: string | undefined, isProtected: boolean | undefined): string {
+    /* v8 ignore if -- saved notes and attachments always have a blob */
     if (!blobId) {
         return "";
     }
@@ -659,7 +671,9 @@ export function checkImageAttachments(note: BNote, content: string) {
         // and carrying the app's role over would leave the copy deduplicated against this note's own
         // previews, denied the OCR and compression a picture is offered, and filed out of sight. A
         // role we know nothing about is left alone: there is nothing better to say about it.
-        const copiedRole = previewPictureIds.has(unknownAttachment.attachmentId ?? "")
+        const copiedRole = previewPictureIds.has(
+            /* v8 ignore next -- loaded attachments have an ID */
+            unknownAttachment.attachmentId ?? "")
             ? unknownAttachment.role
             : attachmentRoleTraits(unknownAttachment.role)?.copiedAs ?? unknownAttachment.role;
 
@@ -698,11 +712,15 @@ export function checkImageAttachments(note: BNote, content: string) {
         // at the foreign attachment made them resolve to another note's picture until a later save
         // happened to fix one more, each one announcing itself with a toast.
         content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/image`, `api/attachments/${localAttachment.attachmentId}/image`);
-        // replace reference links
-        content = content.replace(
-            new RegExp(`href="[^"]+attachmentId=${unknownAttachment.attachmentId}[^"]*"`, "g"),
-            `href="#root/${localAttachment.ownerId}?viewMode=attachments&amp;attachmentId=${localAttachment.attachmentId}"`
-        );
+        // Replace reference links, keeping the `LINK_TARGET_PARAMS` of each, such as a PDF page.
+        const localHref = `#root/${localAttachment.ownerId}?viewMode=attachments`
+            + `&amp;attachmentId=${localAttachment.attachmentId}`;
+        const referenceLink = new RegExp(
+            `href="([^"]+attachmentId=${unknownAttachment.attachmentId}[^"]*)"`, "g");
+        content = content.replace(referenceLink, (_match, href: string) => {
+            const query = href.replace(/^[^?]*/, "");
+            return `href="${localHref}${getLinkTargetParameters(query, "attribute")}"`;
+        });
         // replace embeds
         content = replaceAll(
             content,
@@ -774,7 +792,8 @@ function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAt
     }
 
     const fileIds = collectCanvasImageFileIds(decodeUtf8(drawing.getContent()));
-    const pictureTitle = getDrawingPictureTitle(drawing.attachmentId ?? "");
+    const pictureTitle = getDrawingPictureTitle(
+        /* v8 ignore next -- loaded attachments have an ID */ drawing.attachmentId ?? "");
     for (const image of owner.getAttachments()) {
         const title = image.title === pictureTitle && copiedDrawing.attachmentId
             ? getDrawingPictureTitle(copiedDrawing.attachmentId)
@@ -935,14 +954,36 @@ function findMarkdownInternalLinks(content: string, foundLinks: FoundLink[]) {
         });
     }
 
-    // [[noteId]] wiki-links
-    const wikiLinkRe = /\[\[([a-zA-Z0-9_]+)\]\]/g;
+    // [[noteId]] or [[noteId?query]] wiki-links
+    const wikiLinkRe = /\[\[([a-zA-Z0-9_]+)(?:\?[^[\]]*)?\]\]/g;
 
     while ((match = wikiLinkRe.exec(content))) {
         foundLinks.push({
             name: "internalLink",
             value: match[1]
         });
+    }
+}
+
+/**
+ * Collects the notes that the embeds of a Markdown note show, read from the note as it renders,
+ * so that an embed in a fence or in a comment shows nothing and links nothing. Only a source that
+ * names `data-note-id` is rendered: an attribute name, unlike a class, has no other spelling.
+ */
+function findMarkdownEmbedLinks(content: string, foundLinks: FoundLink[]) {
+    if (!/data-note-id/i.test(content)) {
+        return;
+    }
+
+    const html = renderMarkdown(content, "", { sanitize: sanitizeHtml, demoteH1: false });
+    const root = parseHtml(html, { blockTextElements: {} });
+    for (const element of root.querySelectorAll(".include-note")) {
+        if (isNoteEmbed(element)) {
+            foundLinks.push({
+                name: "includeNoteLink",
+                value: element.getAttribute("data-note-id") as string
+            });
+        }
     }
 }
 
@@ -1170,6 +1211,7 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
     } else if (note.isMarkdown() && typeof content === "string") {
         findMarkdownImageLinks(content, foundLinks);
         findMarkdownInternalLinks(content, foundLinks);
+        findMarkdownEmbedLinks(content, foundLinks);
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "spreadsheet" && typeof content === "string") {
         // Spreadsheet images are stored as attachments referenced from the workbook JSON; scan for
@@ -1247,7 +1289,30 @@ function saveRevisionIfNeeded(note: BNote) {
     }
 }
 
-function updateNoteData(noteId: string, content: string, attachments: AttachmentRow[] = []) {
+/** What a save expects the note to hold, so that it replaces no version that it has not seen. */
+export interface SavePrecondition {
+    base: NoteSaveBase;
+    /** Saves over the version of `base`, after the note keeps it as a revision. */
+    isKeepingOther?: boolean;
+}
+
+/** An attachment row of a save, as the client sends it. */
+type AttachmentSaveRow = Omit<AttachmentRow, "ownerId">
+    & Partial<Pick<AttachmentRow, "ownerId">>
+    & Pick<SavedAttachmentRow, "blobId">;
+
+/**
+ * Saves `content` and the `attachments` rows as the content of the note `noteId`, and returns
+ * what the next save of the editor is based on. With `precondition`, it saves nothing and throws
+ * a {@link DetailedConflictError} when the note has another format or version than the save is
+ * based on, or an attachment row does not hold.
+ */
+function updateNoteData(
+    noteId: string,
+    content: string,
+    attachments: AttachmentSaveRow[] = [],
+    precondition?: SavePrecondition
+): SaveNoteDataResponse {
     const note = becca.getNote(noteId);
 
     if (!note || !note.isContentAvailable()) {
@@ -1258,16 +1323,25 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     // of; its provider stores the content alone.
     if (note.isVirtual) {
         note.setContent(content);
-        return;
+        return { blobId: note.blobId ?? "", attachments: [] };
+    }
+
+    if (precondition) {
+        checkSavePrecondition(note, precondition, attachments);
+        if (precondition.isKeepingOther && note.isVersioned()) {
+            note.saveRevision();
+        }
     }
 
     saveRevisionIfNeeded(note);
 
     // Saved before the links, so that `checkImageAttachments()` reads the drawings of this save.
+    const savedAttachments: SavedAttachmentBase[] = [];
     if (attachments?.length > 0) {
         const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
-        for (const { attachmentId, role, mime, title, position, content, encoding } of attachments) {
+        for (const row of attachments) {
+            const { attachmentId, role, mime, title, position } = row;
             // An attachment deleted since the client read it, or one of another note, is not saved.
             if (attachmentId && becca.getAttachment(attachmentId)?.ownerId !== noteId) {
                 getLog().info(
@@ -1276,26 +1350,112 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
                 continue;
             }
 
-            const decodedContent = encoding === "base64" && typeof content === "string"
-                ? decodeBase64(content) : content;
+            const decodedContent = row.encoding === "base64" && typeof row.content === "string"
+                ? decodeBase64(row.content) : row.content;
 
-            const existingAttachment = existingAttachmentsByTitle.get(title);
-            if (attachmentId || !existingAttachment) {
-                note.saveAttachment({ attachmentId, role, mime, title, content: decodedContent, position });
+            const existing = existingAttachmentsByTitle.get(title);
+            let attachment: BAttachment;
+            if (attachmentId || !existing) {
+                attachment = note.saveAttachment({
+                    attachmentId, role, mime, title, content: decodedContent, position
+                });
             } else {
-                existingAttachment.role = role;
-                existingAttachment.mime = mime;
-                existingAttachment.position = position;
+                existing.role = role;
+                existing.mime = mime;
+                existing.position = position;
                 if (decodedContent) {
-                    existingAttachment.setContent(decodedContent, { forceSave: true });
+                    existing.setContent(decodedContent, { forceSave: true });
                 }
+                attachment = existing;
             }
+
+            // The attachment is saved, so it has an ID and a blob.
+            savedAttachments.push({
+                attachmentId: attachment.attachmentId as string,
+                title: attachment.title,
+                blobId: attachment.blobId as string
+            });
         }
     }
 
     const { forceFrontendReload, content: newContent } = saveLinks(note, content);
 
     note.setContent(newContent, { forceFrontendReload });
+
+    return {
+        blobId: note.blobId as string,
+        attachments: savedAttachments,
+        content: newContent !== content && typeof newContent === "string" ? newContent : undefined
+    };
+}
+
+/**
+ * Throws a {@link DetailedConflictError} when `note` has another format or another version than
+ * `precondition` names, or when an attachment row does not hold: one that replaces an attachment
+ * at another blob, or one that creates an attachment whose title the note has.
+ */
+function checkSavePrecondition(
+    note: BNote,
+    { base }: SavePrecondition,
+    attachments: AttachmentSaveRow[]
+) {
+    const isSameFormat =
+        getContentFormat(note.type, note.mime) === getContentFormat(base.type, base.mime);
+    if (!isSameFormat) {
+        throw createSaveConflict(note, "format",
+            `Note '${note.noteId}' has another format than the save is based on.`, attachments);
+    }
+
+    const isSameVersion = note.blobId === base.blobId
+        && attachments.every((row) => isAttachmentRowValid(note, row));
+    if (!isSameVersion) {
+        throw createSaveConflict(note, "version",
+            `Note '${note.noteId}' has changed since the version that the save is based on.`,
+            attachments);
+    }
+}
+
+/** The attachments of `note` that `rows` name, by ID or by title, as the note has them now. */
+function getNamedAttachments(note: BNote, rows: AttachmentSaveRow[]): SavedAttachmentBase[] {
+    const named: SavedAttachmentBase[] = [];
+    for (const row of rows) {
+        const attachment = row.attachmentId
+            ? becca.getAttachment(row.attachmentId)
+            : note.getAttachmentByTitle(row.title);
+        if (attachment?.ownerId === note.noteId && attachment.attachmentId && attachment.blobId) {
+            const { attachmentId, title, blobId } = attachment;
+            named.push({ attachmentId, title, blobId });
+        }
+    }
+    return named;
+}
+
+/** Whether the attachment row `row` of a save with a base can be saved into `note`. */
+function isAttachmentRowValid(note: BNote, row: AttachmentSaveRow) {
+    if (!row.attachmentId) {
+        return !note.getAttachmentByTitle(row.title);
+    }
+    const attachment = becca.getAttachment(row.attachmentId);
+    return !row.blobId || attachment?.ownerId !== note.noteId || attachment.blobId === row.blobId;
+}
+
+function createSaveConflict(
+    note: BNote,
+    reason: SaveConflictReason,
+    message: string,
+    rows: AttachmentSaveRow[]
+) {
+    const content = reason === "version" ? note.getContent() : undefined;
+    return new DetailedConflictError<SaveConflictResponse>(message, {
+        reason,
+        message,
+        blobId: note.blobId as string,
+        type: note.type,
+        mime: note.mime,
+        isVersioned: note.isVersioned(),
+        attachments: getNamedAttachments(note, rows),
+        ...(typeof content === "string" ? { content } : {})
+    });
 }
 
 export interface UndeleteNoteOptions {
@@ -1384,6 +1544,7 @@ function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskCon
     const sql = getSql();
     const branchRow = sql.getRow<BranchRow>("SELECT * FROM branches WHERE branchId = ?", [branchId]);
 
+    /* v8 ignore if -- callers pass deleted branches, and only the parent's restore reaches one */
     if (!branchRow.isDeleted) {
         return;
     }
@@ -1412,6 +1573,7 @@ function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskConte
     const sql = getSql();
     const noteEntity = becca.getNote(noteRow.noteId);
 
+    /* v8 ignore if -- saving the branch above creates the note's skeleton */
     if (!noteEntity) {
         throw new Error("Unable to find the just restored note.");
     }
@@ -1524,10 +1686,6 @@ async function asyncPostProcessContent(note: BNote, content: string | Uint8Array
 
 // all keys should be replaced by the corresponding values
 function replaceByMap(str: string, mapObj: Record<string, string>) {
-    if (!mapObj) {
-        return str;
-    }
-
     const re = new RegExp(Object.keys(mapObj).join("|"), "g");
 
     return str.replace(re, (matched) => mapObj[matched]);
@@ -1580,6 +1738,7 @@ function duplicateSubtreeWithoutRoot(origNoteId: string, newNoteId: string) {
 
     const noteIdMapping = getNoteIdMapping(origNote);
     for (const childBranch of origNote.getChildBranches()) {
+        /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
         if (childBranch) {
             duplicateSubtreeInner(childBranch.getNote(), childBranch, newNoteId, noteIdMapping);
         }
@@ -1638,6 +1797,7 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
 
         if (withChildren) {
             for (const childBranch of origNote.getChildBranches()) {
+                /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
                 if (childBranch) {
                     duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
                 }
@@ -1683,6 +1843,7 @@ export default {
     createNewNote,
     createNewNoteWithTarget,
     updateNoteData,
+    getNamedAttachments,
     getPortableContent,
     undeleteNote,
     protectNoteRecursively,

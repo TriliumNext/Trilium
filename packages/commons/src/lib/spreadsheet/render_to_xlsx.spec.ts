@@ -656,12 +656,13 @@ describe("renderSpreadsheetToXlsx", () => {
                 }
             ]))).getWorksheet("Sheet1");
 
-            const dv = ws?.getCell("D2").dataValidation;
+            // The whole 2x2 rectangle carries the rule as one `sqref` range.
+            const model = ws?.dataValidations.model ?? {};
+            expect(Object.keys(model)).toEqual([ "D2:E3" ]);
+            const dv = model["D2:E3"];
             expect(dv?.type).toBe("list");
             // Excel inline list: the options comma-joined and wrapped in double quotes.
             expect(dv?.formulae).toEqual(['"Low,Medium,High"']);
-            // The whole 2x2 rectangle carries the rule.
-            expect(ws?.getCell("E3").dataValidation?.type).toBe("list");
         });
 
         it("writes a numeric constraint with its operator and both bounds", async () => {
@@ -711,10 +712,11 @@ describe("renderSpreadsheetToXlsx", () => {
                 }
             ]))).getWorksheet("Sheet1");
 
-            expect(ws?.getCell("D2").dataValidation?.type).toBe("list");
-            expect(ws?.getCell("F6").dataValidation?.type).toBe("list");
-            // A cell between the two ranges is untouched.
-            expect(ws?.getCell("E3").dataValidation).toBeUndefined();
+            // Each range keeps its own `sqref` token, so column E between them carries no rule.
+            const model = ws?.dataValidations.model ?? {};
+            expect(Object.keys(model)).toEqual([ "D2:D6", "F2:F6" ]);
+            expect(model["D2:D6"]?.type).toBe("list");
+            expect(model["F2:F6"]?.type).toBe("list");
         });
 
         it("writes a custom-formula validation (a formula, no operator)", async () => {

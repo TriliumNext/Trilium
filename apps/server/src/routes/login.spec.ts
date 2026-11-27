@@ -1,15 +1,23 @@
 import { dayjs } from "@triliumnext/commons";
-import express, { type Application } from "express";
+import express, { type Application, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, events, initMessaging, options } from "@triliumnext/core";
+import { cls, events, initMessaging, options, password as passwordService } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
+import { markAsInternalElectronRequest } from "../services/electron_request.js";
+import openID from "../services/open_id.js";
 import totp from "../services/totp.js";
-import { createLoginRateLimiter } from "./login.js";
+import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { type SQLiteSessionStore } from "./session_parser.js";
+
+const desktop = vi.hoisted(() => ({ isElectron: false }));
+vi.mock("../services/utils.js", async (orig) => ({
+    ...await orig<typeof import("../services/utils.js")>(),
+    get isElectron() { return desktop.isElectron; }
+}));
 
 let app: Application;
 let sessionStore: SQLiteSessionStore;
@@ -39,6 +47,104 @@ describe("createLoginRateLimiter", () => {
 
         expect(handled()).toBe(12);
         expect(statuses).toEqual(Array(12).fill(200));
+    });
+});
+
+describe("set-password handlers", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        desktop.isElectron = false;
+    });
+
+    function setPasswordWith(body: Record<string, unknown>, opts: { internal?: boolean } = {}) {
+        const req = { body } as ExpressRequest;
+        if (opts.internal) {
+            markAsInternalElectronRequest(req);
+        }
+        const res = { redirect: vi.fn() };
+        const result = loginRoute.setPassword(req, res as unknown as ExpressResponse);
+        return { result, res };
+    }
+
+    it("redirects GET /set-password to the SPA root", () => {
+        const res = { redirect: vi.fn() };
+        loginRoute.setPasswordPage({} as ExpressRequest, res as unknown as ExpressResponse);
+        expect(res.redirect).toHaveBeenCalledWith(".");
+    });
+
+    it("refuses to overwrite a password that is already set", async () => {
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
+        const setPassword = vi.spyOn(passwordService, "setPassword");
+
+        const { result, res } = setPasswordWith({ password1: "new-pass", password2: "new-pass" });
+
+        await expect(result).rejects.toThrow("Password has been already set");
+        expect(setPassword).not.toHaveBeenCalled();
+        expect(res.redirect).not.toHaveBeenCalled();
+    });
+
+    it("rejects mismatched or too-short passwords without storing them", async () => {
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+        const setPassword = vi.spyOn(passwordService, "setPassword");
+
+        await expect(setPasswordWith({ password1: "abcd", password2: "abce" }).result)
+            .rejects.toThrow("Entered passwords don't match.");
+        // Surrounding whitespace is trimmed before the length check.
+        await expect(setPasswordWith({ password1: " abc ", password2: "abc" }).result)
+            .rejects.toThrow("Password must be at least 4 characters long.");
+        expect(setPassword).not.toHaveBeenCalled();
+    });
+
+    it("refuses a desktop password sent over the network, but not from the desktop app", async () => {
+        desktop.isElectron = true;
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+        const setPassword = vi.spyOn(passwordService, "setPassword").mockResolvedValue({ success: true });
+
+        const network = setPasswordWith({ password1: "secret", password2: "secret" });
+        await expect(network.result).rejects.toMatchObject({ statusCode: 403 });
+        expect(network.res.redirect).not.toHaveBeenCalled();
+        expect(setPassword).not.toHaveBeenCalled();
+
+        const renderer = setPasswordWith({ password1: "secret", password2: "secret" }, { internal: true });
+        await renderer.result;
+        expect(setPassword).toHaveBeenCalledWith("secret");
+        expect(renderer.res.redirect).toHaveBeenCalledWith("login");
+    });
+
+    it("stores the trimmed password and redirects to the login page", async () => {
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+        const setPassword = vi.spyOn(passwordService, "setPassword").mockResolvedValue({ success: true });
+
+        const { result, res } = setPasswordWith({ password1: "  secret  ", password2: "secret" });
+        await result;
+
+        expect(setPassword).toHaveBeenCalledWith("secret");
+        expect(res.redirect).toHaveBeenCalledWith("login");
+    });
+});
+
+describe("login with OpenID enabled", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("hands the login to the OIDC provider without checking a password or logging the session in", async () => {
+        vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(true);
+        const oidcLogin = vi.fn().mockResolvedValue(undefined);
+        const regenerate = vi.fn();
+        const session: Record<string, unknown> = { regenerate };
+        const res = { oidc: { login: oidcLogin }, status: vi.fn(), redirect: vi.fn() };
+
+        await loginRoute.login(
+            { body: { password: "demo1234" }, session } as unknown as ExpressRequest,
+            res as unknown as ExpressResponse
+        );
+
+        expect(oidcLogin).toHaveBeenCalledWith({ returnTo: "/" });
+        expect(regenerate).not.toHaveBeenCalled();
+        expect(session.loggedIn).toBeUndefined();
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.redirect).not.toHaveBeenCalled();
     });
 });
 

@@ -30,6 +30,7 @@ import IpcMessagingProvider from "./ipc_messaging_provider";
 import DesktopPlatformProvider from "./platform_provider";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "./protocol";
 import { applyLaunchOnStartup, setupAutoLaunch, wasLaunchedHidden } from "./services/auto_launch";
+import { setupBackupLocationHandlers } from "./services/backup_location";
 import { setupCustomDictionary } from "./services/custom_dictionary";
 import { setupReferer } from "./services/referer";
 import { setupDialogHandlers } from "./services/dialog";
@@ -38,6 +39,7 @@ import { setupImportHandlers } from "./services/import";
 import {
     adoptBackupPassphrase,
     getBackupPassphrase,
+    isPassphraseSet,
     registerBackupPassphraseIpcHandlers
 } from "./services/backup_passphrase";
 import { setupOneNoteHandlers } from "./services/onenote";
@@ -111,7 +113,14 @@ export async function main() {
 
         // Enable global shortcuts in Flatpak
         // the app runs in a Wayland session.
-        app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+        const features = [ "GlobalShortcutsPortal" ];
+        // The Flatpak sandbox has no access to the Secret Service, so `safeStorage` encrypts
+        // with the per-app key of the Secret portal. Data encrypted this way needs the flag
+        // kept on.
+        if (process.env.FLATPAK_ID) {
+            features.push("SecretPortalKeyProviderUseForEncryption");
+        }
+        app.commandLine.appendSwitch("enable-features", features.join(","));
     }
 
     // Quit when all windows are closed, except on macOS. There, it's common
@@ -143,6 +152,7 @@ export async function main() {
     setupDialogHandlers();
     registerSecurityIpcHandlers();
     registerBackupPassphraseIpcHandlers();
+    setupBackupLocationHandlers();
     setupStartupMetricsIpc();
     setupResourceDownloads();
     setupTranscriptionHandlers();
@@ -269,7 +279,7 @@ export async function main() {
         messaging,
         schema: loadCoreSchema(),
         platform: new DesktopPlatformProvider(),
-        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,
+        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslationsWithParams,
         // demo.zip is a server-owned asset; src/assets is copied to dist/assets
         // by the build script, so the same RESOURCE_DIR-relative path works in
         // both source and bundled-production modes.
@@ -282,6 +292,7 @@ export async function main() {
             {
                 allowCustomDirectory: true,
                 getPassphrase: getBackupPassphrase,
+                isPassphraseStored: isPassphraseSet,
                 setPassphrase: adoptBackupPassphrase
             }
         ),

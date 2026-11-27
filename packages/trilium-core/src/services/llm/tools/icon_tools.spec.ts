@@ -1,4 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { ProcessedIconPack } from "../../icon_packs.js";
+
+const customPacks = vi.hoisted((): ProcessedIconPack[] => []);
+
+vi.mock("../../icon_packs.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../icon_packs.js")>();
+    return { ...original, getIconPacks: () => [ ...original.getIconPacks(), ...customPacks ] };
+});
 
 import { iconTools, scoreIcon } from "./icon_tools.js";
 import type { ToolDefinition } from "./tool_registry.js";
@@ -16,6 +25,10 @@ interface SearchResult {
 }
 
 describe("icon_tools", () => {
+    afterEach(() => {
+        customPacks.length = 0;
+    });
+
     describe("search_icons", () => {
         it("finds icons by keyword and returns their icon class with terms", () => {
             const result = getTool("search_icons").execute({ query: "rocket" }) as SearchResult;
@@ -51,6 +64,22 @@ describe("icon_tools", () => {
         it("returns no results for an unmatched keyword", () => {
             const result = getTool("search_icons").execute({ query: "xyzzyplugh" }) as SearchResult;
             expect(result).toEqual({ totalResults: 0, results: [] });
+        });
+
+        it("skips the entries of a user's icon pack that have no name or no terms", () => {
+            customPacks.push({
+                prefix: "zz", manifestNoteId: "zzPack", fontMime: "font/woff2", fontAttachmentId: "zzFont",
+                title: "Custom", icon: "bx bx-package", builtin: false,
+                manifest: { icons: {
+                    "": { glyph: "a", terms: [ "zzquux" ] },
+                    "zz-untermed": { glyph: "b" } as unknown as { glyph: string; terms: string[] },
+                    "zz-quux": { glyph: "c", terms: [ "zzquux" ] }
+                } }
+            });
+
+            expect(getTool("search_icons").execute({ query: "zzquux" })).toEqual({
+                totalResults: 1, results: [ { iconClass: "zz zz-quux", terms: [ "zzquux" ] } ]
+            });
         });
 
         it("rejects an empty or whitespace-only query", () => {

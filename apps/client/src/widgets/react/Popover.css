@@ -12,6 +12,11 @@
 
     /* Above the note split's own layers; menus and dialogs stand higher still. */
     z-index: 998;
+
+    /* Above a modal (1055), on the layer of `.attr-detail`; menus (1200) stand higher still. */
+    &.over-modal {
+        z-index: 1060;
+    }
     position: fixed;
     display: flex;
     flex-direction: column;
@@ -61,6 +66,10 @@
     position: fixed;
     inset: 0;
     z-index: 997;
+
+    &.over-modal {
+        z-index: 1059;
+    }
     /* Each theme states the colour opaque and leaves the dimming to `.modal-backdrop.show`, which
        is Bootstrap's and not in play here. */
     background: var(--modal-backdrop-color, #000);

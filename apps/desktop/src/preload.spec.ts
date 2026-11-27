@@ -221,6 +221,11 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "show-window", args: [] });
         });
 
+        it("releaseFirstPaint sends correct IPC message", () => {
+            win().releaseFirstPaint();
+            expect(ipcRendererSent).toContainEqual({ channel: "release-first-paint", args: [] });
+        });
+
         it("reportStartupMetric sends correct IPC message", () => {
             win().reportStartupMetric("client-full-render");
             expect(ipcRendererSent).toContainEqual({
@@ -232,16 +237,6 @@ describe("preload script", () => {
         it("clearCache invokes correct IPC channel", async () => {
             await win().clearCache();
             expect(ipcRendererInvoked).toContainEqual({ channel: "clear-cache", args: [] });
-        });
-
-        it("setBackgroundMaterial sends correct IPC message", () => {
-            win().setBackgroundMaterial("mica");
-            expect(ipcRendererSent).toContainEqual({ channel: "set-background-material", args: ["mica"] });
-        });
-
-        it("setVibrancy sends correct IPC message", () => {
-            win().setVibrancy("under-window");
-            expect(ipcRendererSent).toContainEqual({ channel: "set-vibrancy", args: ["under-window"] });
         });
 
         it("onGlobalShortcut registers and forwards globalShortcut channel", () => {
@@ -649,6 +644,26 @@ describe("preload script", () => {
             const exposed = Object.keys(backupPassphrase()).sort();
 
             expect(exposed).toEqual([ "clear", "getStatus", "set" ]);
+        });
+    });
+
+    describe("backupLocation", () => {
+        const backupLocation = () => getGroup("backupLocation");
+
+        it("choose invokes its IPC channel, passing no folder of its own", async () => {
+            await backupLocation().choose();
+            expect(ipcRendererInvoked)
+                .toContainEqual({ channel: "backup-location-choose", args: [] });
+        });
+
+        it("reset invokes its IPC channel", async () => {
+            await backupLocation().reset();
+            expect(ipcRendererInvoked)
+                .toContainEqual({ channel: "backup-location-reset", args: [] });
+        });
+
+        it("exposes no way to name a folder", () => {
+            expect(Object.keys(backupLocation()).sort()).toEqual([ "choose", "reset" ]);
         });
     });
 

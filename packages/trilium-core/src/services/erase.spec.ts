@@ -91,6 +91,29 @@ describe("erase service (real DB)", () => {
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
         });
 
+        it("erases a deleted clone branch and attribute of a live note, and the revisions of an erased note", () => {
+            const live = createNote();
+            const otherParent = createNote();
+            const withRevision = createNote();
+            const deleteId = `del-parts-${counter}`;
+            const { cloneBranch, attribute, revision } = getContext().init(() => {
+                const cloneBranch = live.cloneTo(otherParent.noteId).branchId;
+                const attribute = live.addLabel("eraseMePartly");
+                const revision = withRevision.saveRevision();
+                attribute.markAsDeleted(deleteId);
+                becca.getBranchOrThrow(cloneBranch ?? "").markAsDeleted(deleteId);
+                withRevision.markAsDeleted(deleteId);
+                return { cloneBranch: cloneBranch ?? "", attribute, revision };
+            });
+
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([ deleteId ]));
+
+            expect(rowCount("notes", "noteId", live.noteId)).toBe(1);
+            expect(rowCount("branches", "branchId", cloneBranch)).toBe(0);
+            expect(rowCount("attributes", "attributeId", attribute.attributeId)).toBe(0);
+            expect(rowCount("revisions", "revisionId", revision.revisionId ?? "")).toBe(0);
+        });
+
         it("does nothing for a deleteId that matches no soft-deleted entities", () => {
             const note = createNote();
             const noteId = note.noteId;

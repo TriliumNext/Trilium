@@ -17,7 +17,7 @@ const ALLOWED_STATIC_VALUE_IMPORTS: readonly string[] = [];
 /**
  * `local-server-worker.ts` is the standalone SQLite worker's entry module. Its
  * design (see the file's own header) requires that nothing runs before the
- * module body installs `self.onerror` / `self.onunhandledrejection` and waits
+ * module body installs its `error` and `unhandledrejection` handlers and waits
  * for the INIT message — every heavy dependency is pulled in with a dynamic
  * `import()` from inside `initialize()`, in a controlled order.
  *

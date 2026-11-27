@@ -98,19 +98,30 @@ const HIDDEN_ATTRIBUTES = [
     "mapPosition",
     "docName",
     "webViewSrc",
-    "archived"
+    "archived",
+    "clipType",
+    "pageDescription",
+    "pageAuthor",
+    "publishedDate",
+    "modifiedDate"
 ];
 
-async function renderNormalAttributes(note: FNote) {
+/**
+ * The attributes a summary of the note shows: the ones its promoted definitions cover, or else its own
+ * labels and relations short of definitions, auto-links and {@link HIDDEN_ATTRIBUTES}.
+ */
+export function getNormalAttributes(note: FNote) {
     const promotedDefinitionAttributes = note.getPromotedDefinitionAttributes();
-    let attrs = note.getAttributes();
+    const attrs = note.getAttributes();
 
     if (promotedDefinitionAttributes.length > 0) {
-        attrs = attrs.filter((attr) => !!promotedDefinitionAttributes.find((promAttr) => promAttr.isDefinitionFor(attr)));
-    } else {
-        attrs = attrs.filter((attr) => !attr.isDefinition() && !attr.isAutoLink && !HIDDEN_ATTRIBUTES.includes(attr.name) && attr.noteId === note.noteId);
+        return attrs.filter((attr) => !!promotedDefinitionAttributes.find((promAttr) => promAttr.isDefinitionFor(attr)));
     }
+    return attrs.filter((attr) => !attr.isDefinition() && !attr.isAutoLink && !HIDDEN_ATTRIBUTES.includes(attr.name) && attr.noteId === note.noteId);
+}
 
+async function renderNormalAttributes(note: FNote) {
+    const attrs = getNormalAttributes(note);
     const $renderedAttributes = await renderAttributes(attrs, false);
 
     return {

@@ -38,7 +38,7 @@ describe("api/metrics", () => {
     it("returns error on invalid format", async() => {
         const response = await supertest(app)
             .get("/api/metrics?format=xml")
-            .expect(500);
+            .expect(400);
         expect(response.body.message).toContain("prometheus");
     });
 });

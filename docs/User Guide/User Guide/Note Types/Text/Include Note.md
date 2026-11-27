@@ -15,7 +15,7 @@ To include a note that is already linked, right-click a reference link to it in 
 
 An [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) can be included the same way, from the context menu of a link to it (see _Embedding an attachment_ there).
 
-A link to blocks of a text note is converted the same way, with _Convert link to note excerpt_, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
+A link to blocks of a text or Markdown note is converted the same way, with _Convert link to note excerpt_, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
 
 ## Box sizes
 
@@ -32,7 +32,7 @@ The box size sets how much of the included note is shown, and whether the box ca
 A new include gets the size that suits what it shows:
 
 *   _Compact_ for a note or an attachment that has no preview, such as a relation map or an archive, and for audio.
-*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
+*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text or Markdown note.
 *   _Resizable_ for anything else.
 
 The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. Both have _Default_, which puts the include back at the size it started with, without a resized width or height; it is unavailable while the include is already there. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
@@ -84,7 +84,7 @@ The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ but
 
 In a note being edited, the menu also has the _Size_ submenu, _Show title_ and _Show caption_, each a switch that is on while it is in effect, and the _Position_ submenu after _Size_ (see _Positioning_ above). The menu ends with <span class="tn-icon bx bx-trash"></span> _Delete block_, which removes the include from the note, followed by _Convert to link_. For an embedded attachment, _Delete attachment..._ follows _Delete block_, and _Convert attachment into note..._ follows _Convert to link_. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
 
-To show an include of size _Resizable_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
+To show an include of size _Resizable_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a text note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
 A _Compact_ include has these buttons instead, followed by the same _More actions_ button:
 
@@ -97,7 +97,9 @@ To replace an include with a link to the included note, choose _Convert to link_
 
 ## Includes inside an included note
 
-The includes of an included note show in boxes of their own too, read-only, however deeply they nest. An include of a note that is already shown around it shows as a link to that note instead, so the chain ends there. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
+The includes of an included note show as _Compact_ boxes, whatever their own box size: a row with the icon and title of the note, and buttons to open it, but not its content. This keeps a note that includes notes which include further notes, such as a journal built from templates, quick to open. Opening the included note shows its own includes at the box size they were given.
+
+An include of a note that is already shown around it shows as a link to that note instead. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
 
 ## Missing notes and attachments
 
@@ -107,7 +109,9 @@ Content added by a newer version of Trilium, which this version cannot show, app
 
 ## Included notes in the share functionality
 
-If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Compact_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. An _Expandable_ include shows its title and stays collapsed until it is clicked, with its caption under the title until then. Its headings are left out of the page's table of contents. A _Compact_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+
+An included video or audio file, whether a note or an attachment, plays in the browser's player.
 
 For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
 

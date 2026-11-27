@@ -12,7 +12,7 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import { ButtonGroup } from "../../react/Button";
-import { useFocusWithin } from "../../react/hooks";
+import { useFocusWithin } from "../../react/hooks/dom";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
@@ -129,7 +129,7 @@ export default function ContentEmbed({
         // The box mounts after an upload, by which time the focus can have left the editor.
         const editable = contentRef.current?.closest(".ck-editor__editable");
         if (isFocusedOnMount && (!editable || editable.contains(document.activeElement))) {
-            (content.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? contentRef.current)?.focus();
+            (getFocusTarget(content) ?? contentRef.current)?.focus();
         }
     }, []);
 
@@ -168,7 +168,7 @@ export default function ContentEmbed({
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
                 />}
-                {isExcerpt && (
+                {isExcerpt && contentType === "text" && (
                     <ExcerptEditButton
                         contentRef={contentRef}
                         content={content}
@@ -502,6 +502,20 @@ function useFocusAfterRender(ref: RefObject<HTMLElement | null>) {
 
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
     + ":is(button, input, select, textarea):not(:disabled)";
+
+/**
+ * The element of `content` that takes the focus as its box mounts: the target that the content
+ * names in `data-embed-focus-target`, otherwise its first focusable element. `null` while the
+ * named target has not rendered, as `useFocusFromEmbedBox()` passes it the focus of the box.
+ */
+function getFocusTarget(content: HTMLElement) {
+    const root = content.querySelector<HTMLElement>("[data-embed-focus-target]");
+    const selector = root?.dataset.embedFocusTarget;
+    if (root && selector) {
+        return root.querySelector<HTMLElement>(selector);
+    }
+    return content.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+}
 
 /** The content types whose rendered content "Search in note" searches. */
 const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);

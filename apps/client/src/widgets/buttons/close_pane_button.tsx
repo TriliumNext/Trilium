@@ -1,7 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext, useTriliumEvents } from "../react/hooks";
+import { useTriliumEvents } from "../react/hooks/events";
+import { useNoteContext } from "../react/hooks/note_context";
 import appContext from "../../components/app_context";
 
 export default function ClosePaneButton() {

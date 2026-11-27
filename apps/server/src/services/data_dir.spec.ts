@@ -466,6 +466,33 @@ describe("data_dir.ts unit tests", () => {
                 expect(message).not.toContain("UID:GID");
                 expect(message).not.toContain("sudo");
             });
+
+            it("on Windows – says a writable file or a directory cannot be accessed", () => {
+                stubUser(null);
+                blockWrites("/data/document.db", "/data/log");
+
+                const message = runUntilExit(() => getDataDirs("/data"));
+                expect(message).toContain("  - document.db cannot be accessed\n  - log cannot be accessed\n");
+            });
+
+            it("names entries outside the data directory by their full path", () => {
+                mockFn.pathJoinMock.mockImplementation((...parts: string[]) => parts.join("\\"));
+                process.env.TRILIUM_DOCUMENT_PATH = "/elsewhere/document.db";
+                process.env.TRILIUM_LOG_DIR = "/data2/log";
+                blockWrites("/elsewhere/document.db", "/data2/log", "/data\\backup");
+
+                try {
+                    const message = runUntilExit(() => getDataDirs("/data"));
+                    expect(message).toContain([
+                        "  - /elsewhere/document.db is owned by UID:GID 1000:1000 with permissions 644",
+                        "  - /data2/log is owned by UID:GID 1000:1000 with permissions 644",
+                        "  - backup is owned by UID:GID 1000:1000 with permissions 644",
+                        ""
+                    ].join("\n"));
+                } finally {
+                    setMockedEnv(null);
+                }
+            });
         });
     });
 
@@ -552,6 +579,53 @@ describe("data_dir.ts unit tests", () => {
             expect(message).toContain("Trilium runs as UID:GID 1234:1234, which cannot enter /home/mock: it is owned by UID:GID 1000:1000 with permissions 700.");
             expect(message).toContain("  sudo chmod o+x /home/mock");
             expect(mockFn.statSyncMock).toHaveBeenCalledWith("/home/mock");
+        });
+
+        it("EACCES creating a directory configured outside the data directory – suggests creating it, without TRILIUM_DATA_DIR", () => {
+            process.env.TRILIUM_TMP_DIR = "/elsewhere/tmp";
+            mkdirThrows("EACCES");
+            mockFn.statSyncMock.mockImplementation(ownedByRoot);
+
+            try {
+                const message = runUntilExit(() => getDataDirs("/data"));
+                expect(message).toContain("Trilium cannot start because it cannot create /elsewhere/tmp.");
+                expect(message).toContain("which cannot write to /elsewhere: it is owned by UID:GID 0:0 with permissions 755.");
+                expect(message).toContain("  sudo mkdir -p /elsewhere/tmp && sudo chown 1000:1000 /elsewhere/tmp");
+                expect(message).not.toContain("TRILIUM_DATA_DIR");
+            } finally {
+                delete process.env.TRILIUM_TMP_DIR;
+            }
+        });
+
+        it("EACCES on Windows – gives each fix without UIDs or sudo", () => {
+            stubUser(null);
+            mkdirThrows("EACCES");
+            mockFn.statSyncMock.mockImplementation(ownedByRoot);
+            const nextMessage = (run: () => unknown) => {
+                vi.mocked(console.error).mockClear();
+                const message = runUntilExit(run);
+                expect(message).not.toContain("UID:GID");
+                expect(message).not.toContain("sudo");
+                return message;
+            };
+
+            const dataDirMessage = nextMessage(() => getTriliumDataDir("trilium-data"));
+            expect(dataDirMessage).toContain("The user running Trilium cannot write to /home/mock: it cannot be accessed.");
+            expect(dataDirMessage).toContain("To fix this, create the directory and give the user running Trilium full control of it.");
+
+            delete process.env.TRILIUM_TMP_DIR;
+            mockFn.pathJoinMock.mockImplementation((...parts: string[]) => parts.join("/"));
+            expect(nextMessage(() => getDataDirs("/data")))
+                .toContain("To fix this, give the user running Trilium full control of the data directory.");
+
+            mockFn.accessSyncMock.mockImplementation((path: string) => {
+                if (path === "/home/mock") {
+                    throw new Error("EACCES");
+                }
+            });
+            const ancestorMessage = nextMessage(() => getTriliumDataDir("trilium-data"));
+            expect(ancestorMessage).toContain("The user running Trilium cannot enter /home/mock: it cannot be accessed.");
+            expect(ancestorMessage).toContain("To fix this, let the user running Trilium enter /home/mock.");
         });
 
         it("EACCES – reports a parent that cannot be inspected and exits", () => {

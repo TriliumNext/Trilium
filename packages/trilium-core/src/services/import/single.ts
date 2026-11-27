@@ -9,7 +9,7 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import importUtils from "./utils.js";
+import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { processStringOrBuffer } from "../utils/binary.js";
@@ -165,6 +165,7 @@ async function importSpreadsheet(taskContext: TaskContext<"importNotes">, file: 
     // Dynamically import the exceljs-backed parser so exceljs only loads when an `.xlsx` is
     // actually imported, keeping it out of the core barrel (and the standalone/browser bundle).
     const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    /* v8 ignore next -- an uploaded .xlsx always arrives as bytes; only text formats arrive as strings */
     const buffer = typeof file.buffer === "string" ? Buffer.from(file.buffer) : file.buffer;
     const workbook = await parseXlsxToWorkbook(buffer);
 
@@ -255,7 +256,7 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     });
 
     for (const attribute of attributes) {
-        note.addLabel(attribute.name, attribute.value);
+        note.addLabel(importedAttributeName("label", attribute.name, taskContext.data?.safeImport), attribute.value);
     }
 
     taskContext.increaseProgressCount();

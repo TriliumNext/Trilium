@@ -11,7 +11,8 @@ import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import ColorPicker from "../../react/ColorPicker";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
-import { useFullscreen, useNoteLabel } from "../../react/hooks";
+import { useFullscreen } from "../../react/hooks/dom";
+import { useNoteLabel } from "../../react/hooks/note";
 import OverlayControlGroup, { OverlayControlButton, OverlayControlDropdown } from "../../react/OverlayControlGroup";
 import {
     canEditSlideInPlace, getNewSlideTypes, type NewSlideTypeOption, type PresentationSlideBaseModel

@@ -1,5 +1,5 @@
 import { type ComponentChild, render } from "preact";
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
