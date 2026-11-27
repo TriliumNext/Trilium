@@ -506,8 +506,8 @@ export default class InkSurface {
     }
 
     /**
-     * The view that fits the width of the content: of the page in view on pages, and of all the strokes on
-     * a canvas without bounds. It starts at the top of the content for a note just opened, and
+     * The view that fits the width of the content: of the page in view on pages, and of all the
+     * strokes, images and text boxes on a canvas without bounds. It starts at the top of the content for a note just opened, and
      * keeps the part of it on screen otherwise.
      */
     private getContentView(): InkView {
@@ -518,11 +518,18 @@ export default class InkSurface {
             ? { minX: sheet.x, minY: 0, maxX: sheet.x + sheet.width }
             : { minX: Infinity, minY: Infinity, maxX: -Infinity };
         if (this.layout === "infinite") {
-            if (!this.strokes.size && !this.images.size) return { x: width / 2, y: height / 2, zoom: 1 };
+            if (!this.strokes.size && !this.images.size && !this.texts.length) {
+                return { x: width / 2, y: height / 2, zoom: 1 };
+            }
             for (const item of this.getItems()) {
                 bounds.minX = Math.min(bounds.minX, item.bounds.minX);
                 bounds.minY = Math.min(bounds.minY, item.bounds.minY);
                 bounds.maxX = Math.max(bounds.maxX, item.bounds.maxX);
+            }
+            for (const text of this.texts) {
+                bounds.minX = Math.min(bounds.minX, text.x);
+                bounds.minY = Math.min(bounds.minY, text.y);
+                bounds.maxX = Math.max(bounds.maxX, text.x + text.width);
             }
         }
 

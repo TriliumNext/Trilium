@@ -203,6 +203,16 @@ describe("ink surface input", () => {
         surface.load({ paper: "ruled", layout: "infinite", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
         surface.showView("content");
         expect(surface.getView()).toMatchObject({ zoom: 2, y: 40 });
+
+        // A note of text boxes alone fits them: 1000 to 2008 across, from the top of the first.
+        surface.load({
+            paper: "ruled", layout: "infinite", strokes: [],
+            texts: [ { id: "a", html: "<p>a</p>", x: 1000, y: 996, width: 300 }, { id: "b", html: "<p>b</p>", x: 1500, y: 1500, width: 508 } ]
+        });
+        surface.showView("content");
+        expect(Math.abs(surface.getCenterView().x - 1504)).toBeLessThanOrEqual(1.5);
+        expect(Math.abs(surface.getCenterView().y - 1350)).toBeLessThanOrEqual(1.5);
+        expect(surface.getCenterView().zoom).toBeCloseTo(336 / 1008);
     });
 
     it("shows pages up to an empty one after the last ink, and fits their width", () => {
