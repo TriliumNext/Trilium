@@ -123,7 +123,7 @@ Wherever a handwriting note appears outside its own editor, it is shown as a pic
 
 ## Read-only mode
 
-A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) handwriting note hides the tools and can only be scrolled and zoomed. A pen or a mouse then moves the page instead of drawing.
+A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) handwriting note hides the tools and can only be scrolled and zoomed. A pen or a mouse then moves the page instead of drawing. A handwriting note is read-only only when it is set to be, from _Editable_ in the note menu or with the `readOnly` label: unlike a large code note, it never becomes read-only automatically because of its size.
 
 ## Keyboard shortcuts
 
