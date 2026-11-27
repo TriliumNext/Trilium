@@ -98,7 +98,7 @@ export function ReadOnlyCode({
                 editorRef={combinedEditorRef}
                 className="note-detail-readonly-code-content"
                 content={content}
-                mime={mime ?? "text/plain"}
+                mime={getReadOnlyMime(note, mime)}
                 readOnly
                 {...(noteTabWidth != null && { indentSize: noteTabWidth })}
                 {...(noteUseTabs != null && { useTabs: noteUseTabs })}
@@ -107,6 +107,15 @@ export function ReadOnlyCode({
             <ApiLog note={note} />
         </>
     );
+}
+
+/**
+ * The media type that highlights the content of `note` in the read-only view, given its `mime`.
+ * The source of a handwriting note is JSON, which its own media type names to no highlighter.
+ */
+export function getReadOnlyMime(note: FNote, mime: string | null | undefined) {
+    if (note.isHandwriting()) return "application/json";
+    return mime ?? "text/plain";
 }
 
 export function formatViewSource(note: FNote, content: string) {
