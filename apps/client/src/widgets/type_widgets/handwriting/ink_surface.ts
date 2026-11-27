@@ -9,7 +9,7 @@ import {
 import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
 import InkThumbnail from "./ink_thumbnail";
 
-export type SurfaceTool = InkTool | "eraser";
+export type SurfaceTool = InkTool | "eraser" | "pan";
 
 export interface InkSurfaceState {
     zoom: number;
@@ -102,6 +102,8 @@ export default class InkSurface {
     readOnly = false;
     /** Whether one finger draws. Otherwise fingers only pan and zoom, and only a pen or a mouse draws. */
     fingerDrawing = false;
+    /** Whether a pen or a mouse pans instead of drawing, as while the space bar is held. */
+    spacePanning = false;
 
     private baseCanvas: HTMLCanvasElement;
     private liveLayer: HTMLDivElement;
@@ -462,7 +464,7 @@ export default class InkSurface {
                 return;
             }
             if (this.touches.size > 2 || this.mode !== "idle") return;
-            this.begin(this.fingerDrawing && !this.readOnly ? this.inkMode(e) : "pan", e);
+            this.begin(this.fingerDrawing && !this.pans() ? this.inkMode(e) : "pan", e);
             return;
         }
 
@@ -471,12 +473,17 @@ export default class InkSurface {
         }
         if (this.mode !== "idle") return;
         if (e.pointerType === "pen") {
-            this.begin(this.readOnly || (e.buttons & PEN_MIDDLE_BUTTON) ? "pan" : this.inkMode(e), e);
-        } else if (e.button === 1 || (e.button === 0 && this.readOnly)) {
+            this.begin(this.pans() || (e.buttons & PEN_MIDDLE_BUTTON) ? "pan" : this.inkMode(e), e);
+        } else if (e.button === 1 || (e.button === 0 && this.pans())) {
             this.begin("pan", e);
         } else if (e.button === 0) {
             this.begin(this.inkMode(e), e);
         }
+    }
+
+    /** Whether a pen or the main button of a mouse pans instead of drawing or erasing. */
+    private pans() {
+        return this.readOnly || this.spacePanning || this.tool === "pan";
     }
 
     /** Ends the gesture of the fingers on the screen, such as a resting palm, for a pen to draw. */

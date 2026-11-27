@@ -31,6 +31,7 @@ The cursor is a ring as wide as the line that the tool draws.
 
 *   On a touch screen, drag with one finger to scroll and pinch with two fingers to zoom. Fingers do not draw, so the hand can rest on the screen while writing with a pen.
 *   With a mouse, scroll to move up and down, hold <kbd>Shift</kbd> while scrolling to move sideways, and hold <kbd>Ctrl</kbd> while scrolling to zoom. Dragging with the middle button also moves the page, as does a pen button that the tablet maps to it.
+*   To move the page with a pen or a mouse, select the <span class="tn-icon bx bx-move"></span> _Pan_ tool and drag, or hold <kbd>Space</kbd> and drag with any tool. This also works with a drawing tablet whose pen has no button mapped to the middle button.
 *   With the _Pages_ layout, the buttons in the bottom-left corner show which page is on screen and the number of pages. The <span class="tn-icon bx bx-chevron-up"></span> and <span class="tn-icon bx bx-chevron-down"></span> buttons, or <kbd>Page Up</kbd> and <kbd>Page Down</kbd>, go to the top of the previous or next page without changing the zoom.
 *   The buttons in the bottom-right corner zoom in and out, between 25% and 800%. Pressing the percentage goes back to 100%.
 *   To see the whole width of the page, press the <span class="tn-icon bx bx-target-lock"></span> _Zoom to fit_ button. On an infinite canvas, it shows all the ink instead.
@@ -88,11 +89,13 @@ A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) h
 | Shortcut | Action |
 | --- | --- |
 | <kbd>P</kbd> | Select the pen. |
-| <kbd>H</kbd> | Select the highlighter. |
+| <kbd>Shift</kbd>+<kbd>P</kbd> | Select the highlighter. |
 | <kbd>E</kbd> | Select the eraser. |
+| <kbd>H</kbd> | Select the pan tool. |
 | <kbd>[</kbd> and <kbd>]</kbd> | Make the line thinner or thicker. |
 | <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo. |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Redo. |
+| <kbd>Space</kbd> (held) | Move the page by dragging with the pen or the mouse. |
 | <kbd>Page Up</kbd> and <kbd>Page Down</kbd> | Go to the previous or next page. |
 | <kbd>Esc</kbd> | Leave fullscreen. |
 

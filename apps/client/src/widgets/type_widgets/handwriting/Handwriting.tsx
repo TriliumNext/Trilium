@@ -24,11 +24,26 @@ import {
 } from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
-const TOOLS: { tool: SurfaceTool, icon: string, title: () => string, key: string }[] = [
+/** The tools of the toolbar, with the keys of drawing apps: H pans, and Shift+P is a second pen. */
+const TOOLS: ToolbarTool[] = [
     { tool: "pen", icon: "bx-pen", title: () => t("handwriting.pen"), key: "p" },
-    { tool: "highlighter", icon: "bx-highlight", title: () => t("handwriting.highlighter"), key: "h" },
-    { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser"), key: "e" }
+    {
+        tool: "highlighter", icon: "bx-highlight", title: () => t("handwriting.highlighter"),
+        key: "p", shift: true
+    },
+    { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser"), key: "e" },
+    { tool: "pan", icon: "bx-move", title: () => t("handwriting.pan"), key: "h" }
 ];
+
+interface ToolbarTool {
+    tool: SurfaceTool;
+    icon: string;
+    title: () => string;
+    /** The key that picks the tool, in lower case. */
+    key: string;
+    /** Whether the key picks the tool with Shift held. */
+    shift?: boolean;
+}
 
 interface InkSettings {
     color: string;
@@ -89,16 +104,18 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const shownNoteIdRef = useRef<string | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
-    const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
+    const inkTool: InkTool | undefined = tool === "eraser" || tool === "pan" ? undefined : tool;
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
         page: 0, pageCount: 1
     });
     /** The tool the pen uses now, the eraser while a button of the pen erases. */
-    const activeTool: SurfaceTool = state.penErasing ? "eraser" : tool;
+    const activeTool: SurfaceTool = state.penErasing && tool !== "pan" ? "eraser" : tool;
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
+    /** Whether the space bar is held over the surface, which makes a pen or a mouse pan. */
+    const [ spaceHeld, setSpaceHeld ] = useState(false);
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -193,7 +210,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.size = size;
         surface.readOnly = isReadOnly;
         surface.fingerDrawing = fingerDrawing;
-    }, [ tool, color, size, isReadOnly, fingerDrawing ]);
+        surface.spacePanning = spaceHeld;
+    }, [ tool, color, size, isReadOnly, fingerDrawing, spaceHeld ]);
 
     useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
@@ -203,6 +221,13 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     }
 
     function onKeyDown(e: TargetedKeyboardEvent<HTMLDivElement>) {
+        // Only on the surface itself, so that the space bar still presses a focused toolbar button.
+        if (e.key === " " && e.target === e.currentTarget && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            setSpaceHeld(true);
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         const pageStep = { PageUp: -1, PageDown: 1 }[e.key];
         if (pageStep && state.layout === "pages" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
             surfaceRef.current?.goToPage(state.page + pageStep);
@@ -225,7 +250,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             const step = e.key === "]" ? SIZE_STEP : -SIZE_STEP;
             updateInk({ size: Math.min(MAX_SIZE, Math.max(MIN_SIZE, size + step)) });
         } else {
-            const match = TOOLS.find((item) => item.key === key);
+            const match = TOOLS.find((item) => item.key === key && !!item.shift === e.shiftKey);
             if (match) setTool(match.tool);
             else handled = false;
         }
@@ -241,24 +266,30 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             className={clsx("handwriting-container", isPageFullscreen && "handwriting-page-fullscreen")}
             tabIndex={-1}
             onKeyDown={onKeyDown}
+            onKeyUp={(e) => {
+                if (e.key === " ") setSpaceHeld(false);
+            }}
+            onBlur={() => setSpaceHeld(false)}
             onPointerDown={() => containerEl?.focus({ preventScroll: true })}
         >
             <div
                 ref={surfaceElRef}
                 className="handwriting-surface"
-                data-tool={isReadOnly ? "pan" : activeTool}
-                style={{ cursor: isReadOnly ? undefined : getInkCursor(activeTool, size, state.zoom) }}
+                data-tool={isReadOnly || spaceHeld ? "pan" : activeTool}
+                style={{
+                    cursor: isReadOnly || spaceHeld ? undefined : getInkCursor(activeTool, size, state.zoom)
+                }}
             />
 
             {!isReadOnly && (
                 <div className="handwriting-toolbar">
                     <OverlayControlGroup className="handwriting-tools" titlePosition="bottom">
-                        {TOOLS.map(({ tool: itemTool, icon, title, key }) => (
+                        {TOOLS.map(({ tool: itemTool, icon, title, key, shift }) => (
                             <OverlayControlButton
                                 key={itemTool}
                                 title={title()}
                                 icon={icon}
-                                shortcut={key.toUpperCase()}
+                                shortcut={`${shift ? "Shift+" : ""}${key.toUpperCase()}`}
                                 active={activeTool === itemTool}
                                 onClick={() => setTool(itemTool)}
                             />
@@ -470,7 +501,7 @@ const MIN_CURSOR_DIAMETER = 4;
  * `undefined` for the eraser, whose cursor is in the stylesheet.
  */
 function getInkCursor(tool: SurfaceTool, size: number, zoom: number) {
-    if (tool === "eraser") return undefined;
+    if (tool === "eraser" || tool === "pan") return undefined;
     const width = tool === "highlighter" ? size * HIGHLIGHTER_WIDTH_FACTOR : size;
     const diameter = Math.min(MAX_CURSOR_DIAMETER, Math.max(MIN_CURSOR_DIAMETER, width * zoom));
     const box = Math.ceil(diameter) + 4;

@@ -73,6 +73,32 @@ describe("ink surface input", () => {
         expect(onChange).toHaveBeenCalledOnce();
     });
 
+    it("pans with a pen or a mouse while space is held or the pan tool is picked", async () => {
+        const strokeCount = () => parseInkDocument(surface.serialize()).strokes.length;
+        surface.spacePanning = true;
+        swipe("pen", 1, 100);
+        await nextFrame();
+        swipe("mouse", 2, 100);
+        await nextFrame();
+        expect(strokeCount()).toBe(0);
+        expect(onChange).not.toHaveBeenCalled();
+        expect(surface.getView().y).toBe(80);
+
+        surface.spacePanning = false;
+        swipe("pen", 3, 100);
+        expect(strokeCount()).toBe(1);
+
+        // The pan tool does the same without the space bar, and fingers pan with it whatever the option.
+        surface.tool = "pan";
+        surface.fingerDrawing = true;
+        swipe("pen", 4, 100);
+        await nextFrame();
+        swipe("touch", 5, 100);
+        await nextFrame();
+        expect(strokeCount()).toBe(1);
+        expect(surface.getView().y).toBe(160);
+    });
+
     it("erases while the barrel button of a pen is held and pans with its middle button", async () => {
         const strokeCount = () => parseInkDocument(surface.serialize()).strokes.length;
         swipe("pen", 1, 100);
