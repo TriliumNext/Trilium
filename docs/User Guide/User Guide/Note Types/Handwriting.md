@@ -91,6 +91,18 @@ In a dark theme, images are shown with their colors inverted, as the paper is: a
 
 Each image is saved as an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the note, and is compressed as the images of <a class="reference-link" href="Text.md">Text</a> notes are. The attachment of a deleted image is kept for a while, in case the deletion is undone, and then erased.
 
+## Text boxes
+
+Typed text goes in text boxes, which lie over the ink and the images.
+
+*   To add a text box, select the <span class="tn-icon bx bx-text"></span> _Text_ tool and tap or click the paper, then type. With this tool, dragging or pinching still moves and zooms the page.
+*   The text is formatted as in a <a class="reference-link" href="Text.md">Text</a> note: select some of it to show a toolbar with bold, italics, the size and the colors of the text, links, lists, tables, quotes and code blocks.
+*   To finish typing, press <kbd>Esc</kbd> or press outside the box. A box left without text is removed.
+*   To edit a text box later, double-click it with the _Text_ tool or the <span class="tn-icon bx bx-pointer"></span> _Select_ tool.
+*   To move a text box, press it with one of those tools and drag the <span class="tn-icon bx bx-move"></span> bar above it. To make it wider or narrower, drag its right edge; its height follows the text.
+*   To delete a text box, press it and then the <span class="tn-icon bx bx-trash"></span> button of the bar above it.
+*   With the other tools, the pen writes through the text boxes.
+
 ## Writing on a PDF
 
 A PDF, such as the slides of a lecture, can be the paper of a handwriting note, to write over its pages. A note can hold several PDFs, one after the other.
@@ -137,6 +149,7 @@ A handwriting note that was saved by a newer version of Trilium is also shown wi
 | <kbd>E</kbd> | Select the eraser. |
 | <kbd>V</kbd> | Select the select tool. |
 | <kbd>H</kbd> | Select the pan tool. |
+| <kbd>T</kbd> | Select the text tool. |
 | <kbd>[</kbd> and <kbd>]</kbd> | Make the line thinner or thicker. |
 | <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo. |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Redo. |
@@ -172,7 +185,8 @@ To keep an RNote document as it is, as a <a class="reference-link" href="File.md
 *   Images cannot be rotated or cropped, and always lie under the ink.
 *   The pages of a PDF are pictures: their text cannot be selected or searched, and their links do not work. Zoomed in beyond about 200%, or 100% on a high-density screen, they are less sharp than the ink.
 *   The pages of a PDF cannot be reordered, removed or rotated, and a note with its ink cannot be exported as a PDF yet.
-*   Typed text and other kinds of content cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
+*   Adding, moving, editing and deleting a text box cannot be undone with the undo button, and the text boxes always lie over the ink.
+*   Other kinds of content, such as shapes that stay editable, cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
 
 ## Under the hood
 
