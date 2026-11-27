@@ -60,9 +60,11 @@ export async function writeSetupMarker(marker: SetupMarker): Promise<void> {
 
     try {
         await writable.write(JSON.stringify(marker, null, 4));
-    } finally {
-        await writable.close();
+    } catch (e) {
+        await writable.abort();
+        throw e;
     }
+    await writable.close();
 }
 
 /** Takes it back, for a request that was made and then abandoned. */

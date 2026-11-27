@@ -55,15 +55,20 @@ export default class SlotRecordPort implements DeliveryRecordPort {
         const writable = await handle.createWritable();
         try {
             await writable.write(content);
-        } finally {
-            await writable.close();
+        } catch (e) {
+            await writable.abort();
+            throw e;
         }
+        await writable.close();
         this.newest = { counter, index };
     }
 
 }
 
-/** Reads a slot: its content, `missing` without a file, `invalid` when it fails its checksum. */
+/**
+ * Reads a slot: its content, `invalid` when it fails its checksum, and `missing` without a file or
+ * with an empty one, which `getFileHandle()` creates before a first write commits.
+ */
 async function readSlot(name: string): Promise<Slot | "missing" | "invalid"> {
     let raw: string;
     try {
@@ -71,6 +76,9 @@ async function readSlot(name: string): Promise<Slot | "missing" | "invalid"> {
         const handle = await root.getFileHandle(name);
         raw = await (await handle.getFile()).text();
     } catch {
+        return "missing";
+    }
+    if (raw === "") {
         return "missing";
     }
 

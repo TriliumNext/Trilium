@@ -438,9 +438,11 @@ export async function writeCurrentDatabaseName(dbName: string): Promise<void> {
 
     try {
         await writable.write(dbName);
-    } finally {
-        await writable.close();
+    } catch (e) {
+        await writable.abort();
+        throw e;
     }
+    await writable.close();
 }
 
 /**

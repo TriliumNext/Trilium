@@ -182,21 +182,31 @@ beforeEach(() => {
         storage: {
             getDirectory: async () => ({
                 getFileHandle: async (_name: string, opts?: { create?: boolean }) => {
-                    if (pointer === undefined && !opts?.create) {
-                        throw new Error("NotFoundError");
+                    if (pointer === undefined) {
+                        if (!opts?.create) {
+                            throw new Error("NotFoundError");
+                        }
+                        pointer = "";
                     }
 
                     return {
                         getFile: async () => ({ text: async () => pointer ?? "" }),
-                        createWritable: async () => ({
-                            write: async (text: string) => {
-                                if (refusePointer?.(text)) {
-                                    throw new Error("the pointer could not be written");
-                                }
-                                pointer = text;
-                            },
-                            close: async () => {}
-                        })
+                        // As in a browser, the stream writes to a copy that only `close()` commits.
+                        createWritable: async () => {
+                            let copy = "";
+                            return {
+                                write: async (text: string) => {
+                                    if (refusePointer?.(text)) {
+                                        throw new Error("the pointer could not be written");
+                                    }
+                                    copy += text;
+                                },
+                                close: async () => {
+                                    pointer = copy;
+                                },
+                                abort: async () => undefined
+                            };
+                        }
                     };
                 }
             })
