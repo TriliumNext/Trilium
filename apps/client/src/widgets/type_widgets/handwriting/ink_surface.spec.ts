@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AUTO_COLOR, createStroke, parseInkDocument } from "./ink_document";
 import { darkenPicture } from "./ink_images";
+import type { PdfPages } from "./ink_pdf";
 import InkSurface, { isDarkColor } from "./ink_surface";
 
 describe("ink surface input", () => {
@@ -733,25 +734,25 @@ describe("ink surface input", () => {
             render: vi.fn(async () => ({ picture, width: 960, height: 540 })),
             destroy: vi.fn()
         };
-        const openPdf = vi.fn(async () => pages);
+        const openPdf = vi.fn(async (_url: string): Promise<PdfPages | undefined> => pages);
         const settle = () => new Promise((resolve) => setTimeout(resolve));
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange, openPdf });
         surface.load({ paper: "blank", layout: "infinite", strokes: [] });
 
-        surface.setPdf(PDF);
+        expect(await surface.addPdf(PDF)).toBe(true);
         expect(onChange).toHaveBeenCalledOnce();
-        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasPdf: true, layout: "pages" }));
-        expect(JSON.parse(surface.serialize())).toMatchObject({ pdf: PDF, layout: "pages" });
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ pdfs: [ PDF ], layout: "pages" }));
+        expect(JSON.parse(surface.serialize())).toMatchObject({ pdfs: [ PDF ], layout: "pages" });
         await settle();
         expect(openPdf).toHaveBeenCalledExactlyOnceWith(PDF);
         expect(surface.getPageCount()).toBe(3);
         // The sheets take the size of the slides, each around the middle of an A4 sheet, and the
         // view fits the width of the first one.
         expect(drawImages).toContainEqual([ picture, -243, 0, 1280, 720 ]);
-        expect(JSON.parse(surface.serialize()).sheets).toEqual([ [ 1280, 720 ], [ 1280, 720 ], [ 1280, 720 ] ]);
-        expect(onChange).toHaveBeenCalledTimes(2);
+        expect(JSON.parse(surface.serialize()).sheets).toEqual([ [ 1280, 720, 0, 0 ], [ 1280, 720, 0, 1 ], [ 1280, 720, 0, 2 ] ]);
+        surface.showView("content");
         expect(surface.getCenterView().zoom).toBe(336 / 1280);
         // The view is placed on a whole pixel, which is close to four units at this zoom.
         expect(Math.abs(surface.getCenterView().x - 397)).toBeLessThan(2);
@@ -772,13 +773,72 @@ describe("ink surface input", () => {
         expect(openPdf).toHaveBeenCalledOnce();
         expect(surface.getPageCount()).toBe(3);
 
-        // Without the PDF, the note keeps its ink, the pages that hold it and the sizes of its sheets.
-        surface.setPdf(undefined);
-        expect(JSON.parse(surface.serialize()).sheets).toHaveLength(3);
+        // A second PDF goes after the last sheet in use, here the last of the first PDF, and the
+        // view moves to its first page. A PDF that cannot be read adds nothing.
+        const OTHER = "api/attachments/def/open";
+        const BROKEN = "api/attachments/bad/open";
+        const notes = {
+            pageCount: 1, sizes: [ { width: 600, height: 800 } ],
+            render: vi.fn(async () => ({ picture, width: 450, height: 600 })), destroy: vi.fn()
+        };
+        openPdf.mockImplementation(async (url: string) => (url === OTHER ? notes : url === BROKEN ? undefined : pages));
+        expect(await surface.addPdf(BROKEN)).toBe(false);
+        expect(await surface.addPdf(OTHER)).toBe(true);
+        expect(surface.getPageCount()).toBe(4);
+        expect(JSON.parse(surface.serialize())).toMatchObject({
+            pdfs: [ PDF, OTHER ],
+            sheets: [ [ 1280, 720, 0, 0 ], [ 1280, 720, 0, 1 ], [ 1280, 720, 0, 2 ], [ 600, 800, 1, 0 ] ]
+        });
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ pdfs: [ PDF, OTHER ], page: 3 }));
+        await settle();
+        expect(drawImages).toContainEqual([ picture, 97, 3 * 744, 600, 800 ]);
+
+        // Without the first PDF, the note keeps its ink, its sheets at their sizes and the pages
+        // of the second PDF on theirs.
+        surface.removePdf(PDF);
         expect(pages.destroy).toHaveBeenCalledOnce();
-        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasPdf: false, pageCount: 2 }));
-        expect(JSON.parse(surface.serialize())).not.toHaveProperty("pdf");
+        expect(notes.destroy).not.toHaveBeenCalled();
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ pdfs: [ OTHER ], pageCount: 4 }));
+        expect(JSON.parse(surface.serialize())).toMatchObject({
+            pdfs: [ OTHER ],
+            sheets: [ [ 1280, 720 ], [ 1280, 720 ], [ 1280, 720 ], [ 600, 800, 0, 0 ] ]
+        });
         expect(parseInkDocument(surface.serialize()).strokes).toHaveLength(1);
+    });
+
+    it("adds a PDF after the ink of a note, and gives sheets to a note saved with a PDF and none", async () => {
+        const PDF = "api/attachments/abc/open";
+        const picture = document.createElement("canvas");
+        const slide = { width: 1280, height: 720 };
+        const pages = {
+            pageCount: 2, sizes: [ slide, slide ],
+            render: vi.fn(async () => ({ picture, width: 960, height: 540 })), destroy: vi.fn()
+        };
+        const openPdf = vi.fn(async () => pages);
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange, openPdf });
+        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+
+        // The ink is on the first A4 sheet, which stays, and the slides follow it.
+        swipe("pen", 1, 100);
+        await surface.addPdf(PDF);
+        expect(JSON.parse(surface.serialize()).sheets).toEqual([ [ 794, 1123 ], [ 1280, 720, 0, 0 ], [ 1280, 720, 0, 1 ] ]);
+        expect(surface.getPageCount()).toBe(3);
+
+        // A PDF that opens after another note was loaded is not added to that note.
+        const adding = surface.addPdf("api/attachments/def/open");
+        surface.load({ paper: "blank", layout: "pages", strokes: [], legacyPdf: PDF });
+        // Until the PDF is open, the note names it as it was saved.
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ pdfs: [ PDF ] }));
+        expect(JSON.parse(surface.serialize())).toMatchObject({ pdf: PDF });
+        expect(JSON.parse(surface.serialize())).not.toHaveProperty("sheets");
+        onChange.mockClear();
+        expect(await adding).toBe(false);
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(JSON.parse(surface.serialize())).toMatchObject({ pdfs: [ PDF ], sheets: [ [ 1280, 720, 0, 0 ], [ 1280, 720, 0, 1 ] ] });
+        expect(JSON.parse(surface.serialize())).not.toHaveProperty("pdf");
+        expect(onChange).toHaveBeenCalledOnce();
     });
 
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {

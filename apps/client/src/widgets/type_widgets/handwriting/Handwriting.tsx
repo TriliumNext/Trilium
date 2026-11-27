@@ -129,10 +129,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const inkTool: InkTool | undefined = tool === "pen" || tool === "highlighter" ? tool : undefined;
     const imageInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
+    const [ pdfNames, setPdfNames ] = useState(new Map<string, string>());
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
-        page: 0, pageCount: 1, hasSelection: false, hasPdf: false
+        page: 0, pageCount: 1, hasSelection: false, pdfs: []
     });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
@@ -260,6 +261,25 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
 
     useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
+    // The names of the PDFs, for the menu that removes one: the titles of their attachments.
+    const pdfUrls = state.pdfs.join("\n");
+    useEffect(() => {
+        if (!note || !pdfUrls) return;
+        let isCurrent = true;
+        void note.getAttachments().then((attachments) => {
+            if (!isCurrent) return;
+            const names = new Map<string, string>();
+            for (const url of pdfUrls.split("\n")) {
+                const title = attachments.find(({ attachmentId }) => url === `api/attachments/${attachmentId}/open`)?.title;
+                if (title) names.set(url, title);
+            }
+            setPdfNames(names);
+        });
+        return () => {
+            isCurrent = false;
+        };
+    }, [ note, pdfUrls ]);
+
     /**
      * Uploads `files` as attachments of the note and adds each to the middle of the view. The
      * select tool is picked, for the image to be moved to its place.
@@ -281,16 +301,20 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         }
     }
 
-    /** Uploads `file` as an attachment of the note and puts its pages on the sheets. */
-    async function insertPdf(file: File) {
+    /**
+     * Uploads each of `files` as an attachment of the note and adds its pages after the last
+     * sheet in use, one PDF after the other so that they keep their order.
+     */
+    async function insertPdfs(files: File[]) {
         const noteId = note?.noteId;
         if (!noteId || isReadOnly) return;
-        const url = await uploadPdf(noteId, file);
-        if (!url) {
-            toast.showError(t("handwriting.pdf_failed", { name: file.name }));
-            return;
+        for (const file of files) {
+            const url = await uploadPdf(noteId, file);
+            if (shownNoteIdRef.current !== noteId || !surfaceRef.current) return;
+            if (!url || !await surfaceRef.current.addPdf(url)) {
+                toast.showError(t("handwriting.pdf_failed", { name: file.name }));
+            }
         }
-        if (shownNoteIdRef.current === noteId) surfaceRef.current?.setPdf(url);
     }
 
     function updateInk(changes: Partial<InkSettings>) {
@@ -368,11 +392,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             }}
             onDrop={(e) => {
                 const files = getImageFiles(e.dataTransfer);
-                const pdf = [ ...(e.dataTransfer?.files ?? []) ].find(isPdf);
-                if ((!files.length && !pdf) || isReadOnly) return;
+                const pdfs = [ ...(e.dataTransfer?.files ?? []) ].filter(isPdf);
+                if ((!files.length && !pdfs.length) || isReadOnly) return;
                 e.preventDefault();
                 e.stopPropagation();
-                if (pdf) void insertPdf(pdf);
+                void insertPdfs(pdfs);
                 void insertImages(files);
             }}
         >
@@ -502,10 +526,14 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                     </FormListItem>
                                 ))}
                             </FormDropdownSubmenu>
-                            {state.hasPdf && (
-                                <FormListItem icon="bx bx-trash" onClick={() => surfaceRef.current?.setPdf(undefined)}>
-                                    {t("handwriting.remove_pdf")}
-                                </FormListItem>
+                            {state.pdfs.length > 0 && (
+                                <FormDropdownSubmenu icon="bx bx-trash" title={t("handwriting.remove_pdf")}>
+                                    {state.pdfs.map((url, index) => (
+                                        <FormListItem key={url} onClick={() => surfaceRef.current?.removePdf(url)}>
+                                            {pdfNames.get(url) ?? t("handwriting.pdf_number", { number: index + 1 })}
+                                        </FormListItem>
+                                    ))}
+                                </FormDropdownSubmenu>
                             )}
                             {HAS_TOUCH && (
                                 <FormListItem
@@ -546,10 +574,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 type="file"
                 className="handwriting-image-input"
                 accept="application/pdf"
+                multiple
                 onChange={(e) => {
-                    const file = e.currentTarget.files?.[0];
+                    const files = [ ...(e.currentTarget.files ?? []) ];
                     e.currentTarget.value = "";
-                    if (file) void insertPdf(file);
+                    void insertPdfs(files);
                 }}
                 tabIndex={-1}
                 aria-hidden="true"

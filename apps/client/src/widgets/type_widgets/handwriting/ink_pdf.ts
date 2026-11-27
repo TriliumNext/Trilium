@@ -1,4 +1,4 @@
-import { type Bounds, type PageLayout, type Sheet, type SheetSize } from "./ink_document";
+import { type Bounds, type PageLayout, type Sheet, type SheetSize, type SheetSource } from "./ink_document";
 import { darkenPicture, type Picture } from "./ink_images";
 
 /** The longest side of the picture of a page, in pixels, however far the view is zoomed in. */
@@ -33,15 +33,13 @@ export interface PdfPages {
 export interface PdfLayerHost {
     /** Opens the PDF at `url`, or returns `undefined` when it cannot be read. */
     openPdf(url: string): Promise<PdfPages | undefined>;
-    /** The sheets of the note, which the pages lie on. */
+    /** The sheets of the note, each with the page of a PDF that lies on it, if any. */
     getLayout(): PageLayout;
     redrawBounds(bounds: Bounds): void;
     /** Device pixels per world unit. */
     getScale(): number;
     /** Whether a stroke or another gesture is in progress, during which no page is drawn. */
     isBusy(): boolean;
-    /** Called once the PDF is open, before its first page is drawn. */
-    onOpen(pages: PdfPages): void;
 }
 
 /** Where a page lies, in world units. */
@@ -55,58 +53,87 @@ export interface PageRect {
 interface CachedPage extends RenderedPage {
     /** The length in pixels the picture was asked for. */
     pixels: number;
+    /** The sheet the picture was last drawn for, counted from zero. */
+    sheet: number;
     /** The copy that a dark theme shows, made when first drawn. */
     dark?: Picture;
 }
 
+interface OpenDocument {
+    /** The document once open. */
+    pages?: PdfPages;
+    /** Resolves to the document, or to `undefined` when it cannot be read or was closed. */
+    opening: Promise<PdfPages | undefined>;
+}
+
 /**
- * The PDF that a handwriting note has as its paper. Page `n` of the PDF lies on sheet `n` of the
- * note, as `fitPage()` places it, under the images and the ink. Pdf.js draws a page on the main
- * thread, so a page is drawn only between gestures, one at a time, and its picture is kept.
+ * The pages of the PDFs that a handwriting note has as its paper. Each sheet of the note names
+ * the page that lies on it, its `SheetSource`, and the layer draws that page as `fitPage()` places
+ * it, under the images and the ink. A PDF is opened when one of its pages first comes into view.
+ * Pdf.js draws a page on the main thread, so a page is drawn only between gestures, one at a time,
+ * and its picture is kept.
  */
 export default class PdfLayer {
 
-    private currentUrl: string | undefined;
-    private pages: PdfPages | undefined;
-    private cache = new Map<number, CachedPage>();
+    private documents = new Map<string, OpenDocument>();
+    /** The picture of each page, by `getKey()`. */
+    private cache = new Map<string, CachedPage>();
+    /** The sheets whose pages wait to be drawn, the one asked for last at the end. */
     private queue: number[] = [];
     private rendering = false;
-    /** Resolves once the PDF is open and its first page is drawn, or either failed. */
-    private ready: Promise<void> = Promise.resolve();
 
     constructor(private host: PdfLayerHost) {}
 
     destroy() {
-        this.set(undefined);
+        this.retain([]);
     }
 
-    get url() {
-        return this.currentUrl;
+    /** Opens the PDF at `url`, or returns it when it is open. */
+    open(url: string) {
+        let document = this.documents.get(url);
+        if (!document) {
+            const opened: OpenDocument = {
+                opening: this.host.openPdf(url).catch(() => undefined).then((pages) => {
+                    if (this.documents.get(url) !== opened) {
+                        pages?.destroy();
+                        return undefined;
+                    }
+                    opened.pages = pages;
+                    return pages;
+                })
+            };
+            document = opened;
+            this.documents.set(url, document);
+        }
+        return document.opening;
     }
 
-    /** The number of pages, or zero until the PDF is open. */
-    get pageCount() {
-        return this.pages?.pageCount ?? 0;
+    /** Closes the PDF at `url` and drops the pictures of its pages. */
+    close(url: string) {
+        this.documents.get(url)?.pages?.destroy();
+        this.documents.delete(url);
+        for (const key of this.cache.keys()) {
+            if (key.startsWith(`${url}#`)) this.cache.delete(key);
+        }
     }
 
-    /** Shows the PDF at `url`, or none. */
-    set(url: string | undefined) {
-        if (url === this.currentUrl) return;
-        this.pages?.destroy();
-        this.pages = undefined;
-        this.cache.clear();
+    /** Closes every PDF but those at `urls`, as for a note just loaded. */
+    retain(urls: string[]) {
         this.queue = [];
-        this.currentUrl = url;
-        this.ready = url ? this.open(url) : Promise.resolve();
+        for (const url of [ ...this.documents.keys() ]) {
+            if (!urls.includes(url)) this.close(url);
+        }
     }
 
-    whenReady() {
-        return this.ready;
+    /** Draws the page of the first sheet, for the thumbnail of the note. */
+    async prepareFirstPage() {
+        if (!this.getFirstPage()) await this.render(0);
     }
 
-    /** The picture of the first page and where it lies, for the thumbnail of the note. */
+    /** The picture of the page of the first sheet, and where it lies. */
     getFirstPage() {
-        const page = this.cache.get(0);
+        const source = this.getSource(0);
+        const page = source && this.cache.get(getKey(source));
         return page && { picture: page.picture, rect: this.getRect(page, 0) };
     }
 
@@ -115,14 +142,16 @@ export default class PdfLayer {
      * pictures of those that have none.
      */
     draw(ctx: CanvasRenderingContext2D, bounds: Bounds, dark: boolean) {
-        if (!this.pages) return;
         const layout = this.host.getLayout();
         const first = layout.indexAt(bounds.minY);
-        const last = Math.min(this.pages.pageCount - 1, layout.indexAt(bounds.maxY));
+        const last = Math.min(layout.sizes.length - 1, layout.indexAt(bounds.maxY));
         for (let index = first; index <= last; index++) {
-            const page = this.cache.get(index);
+            const source = this.getSource(index);
+            if (!source) continue;
+            const page = this.cache.get(getKey(source));
             if (!page || page.pixels * SHARPEN_FACTOR < this.getPixels(index)) this.request(index);
             if (!page) continue;
+            page.sheet = index;
             const rect = this.getRect(page, index);
             if (dark) page.dark ??= darkenPicture(page.picture);
             const picture = dark && page.dark ? page.dark : page.picture;
@@ -136,23 +165,15 @@ export default class PdfLayer {
         void this.renderNext();
     }
 
-    private async open(url: string) {
-        const pages = await this.host.openPdf(url).catch(() => undefined);
-        if (this.currentUrl !== url) {
-            pages?.destroy();
-            return;
-        }
-        this.pages = pages;
-        if (!pages) return;
-        this.host.onOpen(pages);
-        await this.render(0);
+    private getSource(index: number): SheetSource | undefined {
+        return this.host.getLayout().sizes[index]?.source;
     }
 
     private getRect(page: RenderedPage, index: number) {
         return fitPage(page.width, page.height, this.host.getLayout().getSheet(index));
     }
 
-    /** How long the picture of page `index` has to be for the current view, in pixels. */
+    /** How long the picture of the page of sheet `index` has to be for the current view, in pixels. */
     private getPixels(index: number) {
         const { width, height } = this.host.getLayout().getSheet(index);
         return Math.min(MAX_PAGE_PIXELS, Math.ceil(Math.max(width, height) * this.host.getScale()));
@@ -165,7 +186,7 @@ export default class PdfLayer {
 
     private async renderNext() {
         if (this.rendering || this.host.isBusy()) return;
-        // The page asked for last is the one on screen now.
+        // The sheet asked for last is the one on screen now.
         const index = this.queue.pop();
         if (index === undefined) return;
         this.rendering = true;
@@ -174,33 +195,44 @@ export default class PdfLayer {
         void this.renderNext();
     }
 
+    /** Draws the picture of the page of sheet `index`, opening its PDF first if needed. */
     private async render(index: number) {
-        const { pages, currentUrl: url } = this;
-        if (!pages) return;
+        const source = this.getSource(index);
+        if (!source) return;
+        const pages = await this.open(source.url);
+        if (!pages || source.page >= pages.pageCount) return;
         const pixels = this.getPixels(index);
-        const rendered = await pages.render(index, pixels).catch(() => undefined);
-        if (!rendered || this.currentUrl !== url) return;
-        this.cache.set(index, { ...rendered, pixels });
+        const rendered = await pages.render(source.page, pixels).catch(() => undefined);
+        if (!rendered || this.documents.get(source.url)?.pages !== pages) return;
+        this.cache.set(getKey(source), { ...rendered, pixels, sheet: index });
         this.evict(index);
+        // The sheets can have changed while the page was drawn.
+        const current = this.getSource(index);
+        if (!current || getKey(current) !== getKey(source)) return;
         const { x, y, width, height } = this.getRect(rendered, index);
         this.host.redrawBounds({ minX: x, minY: y, maxX: x + width, maxY: y + height });
     }
 
     /**
-     * Drops the pictures of the pages farthest from page `index` until the rest hold no more than
-     * `MAX_CACHED_PIXELS`, but never the first page's.
+     * Drops the pictures of the pages farthest from sheet `index` until the rest hold no more than
+     * `MAX_CACHED_PIXELS`, but never that of the first sheet.
      */
     private evict(index: number) {
-        const others = [ ...this.cache.keys() ].filter((key) => key !== 0);
-        others.sort((a, b) => Math.abs(a - index) - Math.abs(b - index));
+        const first = this.getSource(0);
+        const firstKey = first && getKey(first);
+        const others = [ ...this.cache.entries() ].filter(([ key ]) => key !== firstKey);
+        others.sort(([ , a ], [ , b ]) => Math.abs(a.sheet - index) - Math.abs(b.sheet - index));
         let pixels = 0;
-        for (const key of others) {
-            const picture = this.cache.get(key)?.picture;
-            pixels += (picture?.width ?? 0) * (picture?.height ?? 0);
+        for (const [ key, { picture } ] of others) {
+            pixels += picture.width * picture.height;
             if (pixels > MAX_CACHED_PIXELS) this.cache.delete(key);
         }
     }
 
+}
+
+function getKey({ url, page }: SheetSource) {
+    return `${url}#${page}`;
 }
 
 /**

@@ -1,39 +1,43 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PAGE_HEIGHT, PageLayout } from "./ink_document";
+import { PAGE_HEIGHT, PageLayout, type SheetSpec } from "./ink_document";
 import PdfLayer, { fitPage, MAX_PAGE_PIXELS, type PdfPages, toSheetSize } from "./ink_pdf";
 
 describe("PDF layer", () => {
     const URL = "api/attachments/abc/open";
+    const OTHER = "api/attachments/def/open";
     const picture = document.createElement("canvas");
-    /** The page and the length in pixels of each picture asked of the PDF. */
-    let renders: number[][];
-    /** The page that each `drawImage()` call drew, from where it lies. */
+    /** The PDF, the page and the length in pixels of each picture asked for. */
+    let renders: (string | number)[][];
+    /** The sheet that each `drawImage()` call drew a page on, from where it lies. */
     let drawn: number[];
     let busy: boolean;
     let scale: number;
     let layout: PageLayout;
     const getPageTop = (index: number) => layout.getPageTop(index);
-    const pages: PdfPages = {
-        pageCount: 12,
-        sizes: Array.from({ length: 12 }, () => ({ width: 1280, height: 720 })),
+    const openPages = (url: string, pageCount: number): PdfPages => ({
+        pageCount,
+        sizes: Array.from({ length: pageCount }, () => ({ width: 794, height: 1123 })),
         render: async (index, pixels) => {
-            renders.push([ index, pixels ]);
+            renders.push([ url, index, pixels ]);
             const rendered = Object.assign(document.createElement("canvas"), { width: pixels, height: pixels * 9 / 16 });
-            return { picture: index === 0 ? picture : rendered, width: 960, height: 540 };
+            return { picture: url === URL && index === 0 ? picture : rendered, width: 960, height: 540 };
         },
         destroy: vi.fn()
-    };
+    });
+    let documents: Record<string, PdfPages>;
     const openPdf = vi.fn();
     const redrawBounds = vi.fn();
-    const onOpen = vi.fn();
     let layer: PdfLayer;
     const ctx = {
         drawImage: (_picture: unknown, _x: number, y: number) => drawn.push(Math.round(y / getPageTop(1)))
     } as unknown as CanvasRenderingContext2D;
+    /** A4 sheets with the pages `from` to `to` of the PDF at `url` on them. */
+    const sheetsOf = (url: string, from: number, to: number): SheetSpec[] =>
+        Array.from({ length: to - from + 1 }, (_, index) => ({ width: 794, height: 1123, source: { url, page: from + index } }));
 
-    /** Draws the sheets of the pages `from` to `to`, as the surface does for the part of them on screen. */
-    function drawPages(from: number, to = from) {
+    /** Draws the sheets `from` to `to`, as the surface does for the part of them on screen. */
+    function drawSheets(from: number, to = from) {
         drawn = [];
         layer.draw(ctx, { minX: 0, minY: getPageTop(from) + 1, maxX: 794, maxY: getPageTop(to) + PAGE_HEIGHT }, false);
         return drawn;
@@ -45,14 +49,11 @@ describe("PDF layer", () => {
         renders = [];
         busy = false;
         scale = 1;
-        layout = new PageLayout();
-        vi.mocked(pages.destroy).mockClear();
-        openPdf.mockReset().mockResolvedValue(pages);
+        layout = new PageLayout(sheetsOf(URL, 0, 11));
+        documents = { [URL]: openPages(URL, 12), [OTHER]: openPages(OTHER, 2) };
+        openPdf.mockReset().mockImplementation(async (url: string) => documents[url]);
         redrawBounds.mockReset();
-        onOpen.mockReset();
-        layer = new PdfLayer({
-            openPdf, redrawBounds, getLayout: () => layout, getScale: () => scale, isBusy: () => busy, onOpen
-        });
+        layer = new PdfLayer({ openPdf, redrawBounds, getLayout: () => layout, getScale: () => scale, isBusy: () => busy });
     });
 
     it("gives a sheet the size of its page as printed, which the page then fills", () => {
@@ -67,44 +68,72 @@ describe("PDF layer", () => {
         expect(fitPage(400, 1123, layout.getSheet(2))).toEqual({ x: 197, y: getPageTop(2), width: 400, height: 1123 });
     });
 
-    it("opens the PDF and draws its first page at once, then each page when it comes into view", async () => {
-        expect(drawPages(0)).toEqual([]);
-        layer.set(URL);
-        layer.set(URL);
-        await layer.whenReady();
+    it("opens a PDF when one of its pages comes into view, and draws each page on its sheet", async () => {
+        expect(drawSheets(0, 1)).toEqual([]);
         expect(openPdf).toHaveBeenCalledExactlyOnceWith(URL);
-        expect(onOpen).toHaveBeenCalledExactlyOnceWith(pages);
-        expect(layer.pageCount).toBe(12);
-        expect(renders).toEqual([ [ 0, PAGE_HEIGHT ] ]);
-        expect(redrawBounds).toHaveBeenLastCalledWith({ minX: 0, minY: 0, maxX: 794, maxY: 446.625 });
-        expect(layer.getFirstPage()?.rect).toEqual(fitPage(960, 540, layout.getSheet(0)));
-
-        // Once the sheets take the sizes of the pages, each page fills its sheet.
-        layout = new PageLayout(pages.sizes);
-        expect(layer.getFirstPage()?.rect).toEqual({ x: -243, y: 0, width: 1280, height: 720 });
-        layout = new PageLayout();
-
-        // The second page shows once its picture is there, and the picture is kept.
-        expect(drawPages(0, 1)).toEqual([ 0 ]);
-        await settle();
-        expect(renders).toEqual([ [ 0, PAGE_HEIGHT ], [ 1, PAGE_HEIGHT ] ]);
-        expect(drawPages(0, 1)).toEqual([ 0, 1 ]);
         await settle();
         expect(renders).toHaveLength(2);
+        expect(renders).toEqual(expect.arrayContaining([ [ URL, 0, PAGE_HEIGHT ], [ URL, 1, PAGE_HEIGHT ] ]));
+        expect(redrawBounds).toHaveBeenCalledWith({ minX: 0, minY: 0, maxX: 794, maxY: 446.625 });
+        expect(layer.getFirstPage()).toEqual({ picture, rect: fitPage(960, 540, layout.getSheet(0)) });
 
-        // No page is drawn past the last one, and none once the PDF is taken away.
-        expect(drawPages(12, 14)).toEqual([]);
-        layer.set(undefined);
-        expect(pages.destroy).toHaveBeenCalledOnce();
-        expect(layer.pageCount).toBe(0);
-        expect(drawPages(0, 1)).toEqual([]);
+        // The pictures are kept, and the PDF is not opened again.
+        expect(drawSheets(0, 1)).toEqual([ 0, 1 ]);
+        await settle();
+        expect(renders).toHaveLength(2);
+        expect(openPdf).toHaveBeenCalledOnce();
+        expect(await layer.open(URL)).toBe(documents[URL]);
+
+        // A page follows its sheet: with the sheets in another order, each shows the page it names,
+        // and a sheet that names none, or a page that the PDF has not, stays empty.
+        layout = new PageLayout([
+            ...sheetsOf(URL, 1, 1), { width: 794, height: 1123 }, ...sheetsOf(URL, 0, 0), ...sheetsOf(URL, 40, 40)
+        ]);
+        expect(drawSheets(0, 3)).toEqual([ 0, 2 ]);
+        expect(layer.getFirstPage()?.picture).not.toBe(picture);
+        await settle();
+        expect(renders).toHaveLength(2);
+    });
+
+    it("draws the pages of several PDFs, and drops those of a PDF that is closed", async () => {
+        layout = new PageLayout([ ...sheetsOf(URL, 0, 1), ...sheetsOf(OTHER, 0, 1) ]);
+        drawSheets(0, 3);
+        await settle();
+        expect(openPdf.mock.calls.map(([ url ]) => url).sort()).toEqual([ URL, OTHER ]);
+        expect(renders.map(([ url, index ]) => `${url}#${index}`).sort())
+            .toEqual([ `${URL}#0`, `${URL}#1`, `${OTHER}#0`, `${OTHER}#1` ]);
+        expect(drawSheets(0, 3)).toEqual([ 0, 1, 2, 3 ]);
+
+        layer.close(URL);
+        expect(documents[URL].destroy).toHaveBeenCalledOnce();
+        expect(documents[OTHER].destroy).not.toHaveBeenCalled();
+        layout = new PageLayout([ { width: 794, height: 1123 }, { width: 794, height: 1123 }, ...sheetsOf(OTHER, 0, 1) ]);
+        expect(drawSheets(0, 3)).toEqual([ 2, 3 ]);
+
+        // A note just loaded keeps open the PDFs it shares with the one before.
+        layer.retain([ URL ]);
+        expect(documents[OTHER].destroy).toHaveBeenCalledOnce();
+        expect(drawSheets(0, 3)).toEqual([]);
+    });
+
+    it("draws the page of the first sheet for the thumbnail, whatever is in view", async () => {
+        expect(layer.getFirstPage()).toBeUndefined();
+        await layer.prepareFirstPage();
+        expect(renders).toEqual([ [ URL, 0, PAGE_HEIGHT ] ]);
+        expect(layer.getFirstPage()?.picture).toBe(picture);
+        await layer.prepareFirstPage();
+        expect(renders).toHaveLength(1);
+
+        layout = new PageLayout([ { width: 794, height: 1123 }, ...sheetsOf(URL, 0, 0) ]);
+        await layer.prepareFirstPage();
+        expect(layer.getFirstPage()).toBeUndefined();
+        expect(renders).toHaveLength(1);
     });
 
     it("draws no page while a gesture is in progress, and catches up when it ends", async () => {
-        layer.set(URL);
-        await layer.whenReady();
+        await layer.prepareFirstPage();
         busy = true;
-        drawPages(1, 2);
+        drawSheets(1, 2);
         await settle();
         expect(renders).toHaveLength(1);
 
@@ -112,49 +141,46 @@ describe("PDF layer", () => {
         layer.resume();
         await settle();
         // The page asked for last comes first.
-        expect(renders.map(([ index ]) => index)).toEqual([ 0, 2, 1 ]);
+        expect(renders.map(([ , index ]) => index)).toEqual([ 0, 2, 1 ]);
     });
 
     it("draws a page again for a closer view, up to a size, and keeps the pages near the view", async () => {
-        layer.set(URL);
-        await layer.whenReady();
+        await layer.prepareFirstPage();
         scale = 1.2;
-        drawPages(0);
+        drawSheets(0);
         await settle();
         expect(renders).toHaveLength(1);
 
         scale = 8;
-        expect(drawPages(0)).toEqual([ 0 ]);
+        expect(drawSheets(0)).toEqual([ 0 ]);
         await settle();
-        expect(renders[1]).toEqual([ 0, MAX_PAGE_PIXELS ]);
-        drawPages(0);
+        expect(renders[1]).toEqual([ URL, 0, MAX_PAGE_PIXELS ]);
+        drawSheets(0);
         await settle();
         expect(renders).toHaveLength(2);
 
         // Paging through the document keeps the first page and the nearest ones that fit the
         // memory for pictures: six slides at the largest size.
         for (let index = 1; index < 12; index++) {
-            drawPages(index);
+            drawSheets(index);
             await settle();
         }
-        expect(drawPages(0, 11)).toEqual([ 0, 6, 7, 8, 9, 10, 11 ]);
+        expect(drawSheets(0, 11)).toEqual([ 0, 6, 7, 8, 9, 10, 11 ]);
 
         // Zoomed far out, the pictures are small, and every page on screen keeps its own.
         scale = 0.25;
-        layer.set(undefined);
-        layer.set(URL);
-        await layer.whenReady();
-        drawPages(0, 11);
+        layer.close(URL);
+        drawSheets(0, 11);
         await settle();
-        expect(drawPages(0, 11)).toEqual([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]);
+        expect(drawSheets(0, 11)).toEqual([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]);
     });
 
-    it("leaves the sheets empty for a PDF that cannot be read", async () => {
+    it("leaves the sheets empty for a PDF that cannot be read, and does not open it again", async () => {
         openPdf.mockRejectedValue(new Error("not a PDF"));
-        layer.set(URL);
-        await layer.whenReady();
-        expect(layer.pageCount).toBe(0);
-        expect(onOpen).not.toHaveBeenCalled();
-        expect(drawPages(0)).toEqual([]);
+        expect(await layer.open(URL)).toBeUndefined();
+        drawSheets(0);
+        await settle();
+        expect(drawSheets(0)).toEqual([]);
+        expect(openPdf).toHaveBeenCalledOnce();
     });
 });

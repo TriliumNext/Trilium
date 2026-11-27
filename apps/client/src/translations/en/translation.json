@@ -4412,6 +4412,7 @@
     "delete_image": "Delete image",
     "insert_pdf": "Insert PDF...",
     "remove_pdf": "Remove PDF",
+    "pdf_number": "PDF {{number}}",
     "pdf_failed": "The PDF \"{{name}}\" could not be added.",
     "image_failed": "The image \"{{name}}\" could not be added.",
     "text": "Text",

@@ -122,15 +122,44 @@ describe("ink document", () => {
         expect(parseInkDocument(JSON.stringify({ version: 1, strokes: [], images: "none" })).images).toEqual([]);
     });
 
-    it("saves the PDF of the note, and reads back only one of the note's attachments", () => {
-        const pdf = "api/attachments/abc_123/open";
-        const saved = serializeInkDocument("ruled", [], undefined, "pages", [], pdf);
-        expect(JSON.parse(saved).pdf).toBe(pdf);
-        expect(parseInkDocument(saved).pdf).toBe(pdf);
+    it("saves the page of a PDF that lies on each sheet, and reads back only the note's attachments", () => {
+        const [ slides, notes ] = [ "api/attachments/abc_123/open", "api/attachments/def/open" ];
+        const sheets = [
+            { width: 1280, height: 720, source: { url: slides, page: 1 } },
+            { width: 794, height: 1123 },
+            { width: 600, height: 800, source: { url: notes, page: 0 } },
+            { width: 1280, height: 720, source: { url: slides, page: 0 } }
+        ];
+        const saved = serializeInkDocument("ruled", [], undefined, "pages", [], undefined, sheets);
+        expect(JSON.parse(saved)).toMatchObject({
+            pdfs: [ slides, notes ],
+            sheets: [ [ 1280, 720, 0, 1 ], [ 794, 1123 ], [ 600, 800, 1, 0 ], [ 1280, 720, 0, 0 ] ]
+        });
+        expect(JSON.parse(saved)).not.toHaveProperty("pdf");
+        expect(parseInkDocument(saved).sheets).toEqual(sheets);
+
+        // A sheet keeps its size without a page that names no PDF of the note.
+        const parse = (content: object) => parseInkDocument(JSON.stringify({ version: 1, strokes: [], ...content }));
+        expect(parse({
+            pdfs: [ "https://example.com/a.pdf", slides, "api/attachments/abc/open?x=1" ],
+            sheets: [ [ 500, 500, 0, 0 ], [ 500, 500, 1, 2 ], [ 500, 500, 2, 0 ], [ 500, 500, 7, 0 ], [ 500, 500, 1, -1 ], [ 500, 500, 1.5, 0 ] ]
+        }).sheets).toEqual([
+            { width: 500, height: 500 }, { width: 500, height: 500, source: { url: slides, page: 2 } },
+            { width: 500, height: 500 }, { width: 500, height: 500 }, { width: 500, height: 500 }, { width: 500, height: 500 }
+        ]);
+
+        // A note saved with one PDF has its pages on its sheets in order, and one saved before
+        // sheets had sizes names the PDF for the surface to give it sheets.
+        expect(parse({ pdf: slides, sheets: [ [ 1280, 720 ], [ 1280, 720 ] ] })).toMatchObject({ sheets: [
+            { width: 1280, height: 720, source: { url: slides, page: 0 } },
+            { width: 1280, height: 720, source: { url: slides, page: 1 } }
+        ] });
+        expect(parse({ pdf: slides })).toMatchObject({ legacyPdf: slides });
+        expect(JSON.parse(serializeInkDocument("ruled", [], undefined, "pages", [], slides)).pdf).toBe(slides);
         for (const other of [ "https://example.com/a.pdf", "api/attachments/abc/open?x=1", "api/notes/abc/open", 5 ]) {
-            const parsed = parseInkDocument(JSON.stringify({ version: 1, paper: "ruled", strokes: [], pdf: other }));
-            expect(parsed).not.toHaveProperty("pdf");
+            expect(parse({ pdf: other })).not.toHaveProperty("legacyPdf");
         }
+        expect(parse({ sheets: [ [ 500, 500 ] ] }).sheets).toEqual([ { width: 500, height: 500 } ]);
     });
 
     it("saves the text boxes with their text, and reads back one box for each ID", () => {
@@ -335,8 +364,6 @@ describe("PageLayout", () => {
 
         const at = (maxY: number) => [ { bounds: { minX: 0, minY: maxY - 10, maxX: 10, maxY } } ];
         expect([ -5, 100, 800, 1100 ].map((maxY) => layout.getPageCount(at(maxY)))).toEqual([ 1, 2, 3, 4 ]);
-        expect(layout.hasSizes([ slide, { width: 400, height: 300 } ])).toBe(true);
-        expect(layout.hasSizes([ slide ])).toBe(false);
         expect(new PageLayout().getSheet(1)).toEqual({ x: 0, y: 1147, width: 794, height: 1123 });
     });
 

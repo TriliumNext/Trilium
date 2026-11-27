@@ -92,14 +92,14 @@ Each image is saved as an [attachment](../Basic%20Concepts%20and%20Features/Note
 
 ## Writing on a PDF
 
-A PDF, such as the slides of a lecture, can be the paper of a handwriting note, to write over its pages.
+A PDF, such as the slides of a lecture, can be the paper of a handwriting note, to write over its pages. A note can hold several PDFs, one after the other.
 
-*   To add a PDF, press the <span class="tn-icon bx bxs-file-pdf"></span> _Insert PDF_ button of the toolbar and choose the file, or drag a PDF file onto the note.
+*   To add a PDF, press the <span class="tn-icon bx bxs-file-pdf"></span> _Insert PDF_ button of the toolbar and choose one or more files, or drag PDF files onto the note.
 *   Each page of the PDF lies on a sheet of the note, in order, under the images and the ink. The sheet takes the size of its page as printed, so a slide in landscape gets a sheet in landscape and an A4 page an A4 sheet.
 *   Ink is not held to the sheets. To write more than a page has room for, write beside it or below it.
 *   The note switches to the _Pages_ layout and shows a sheet for every page of the PDF. Once the last one has ink, A4 sheets follow.
-*   A note holds one PDF. Adding another replaces it and gives the sheets the sizes of its pages. Ink keeps its distance from the top of the note, so it is on the same page only if the pages before it kept their height.
-*   To take the PDF away, open the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and select _Remove PDF_. The ink and the images stay, and the sheets keep their sizes.
+*   The pages of a new PDF are added after the last sheet in use: after the pages of the PDFs already in the note, and after any sheet that has ink or an image. Nothing above them moves, and the view goes to the first new page.
+*   To take a PDF away, open the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and select it by its file name under _Remove PDF_. Its sheets stay, empty, at their sizes, with the ink and the images on them, and the other PDFs stay on theirs.
 *   In a dark theme, the pages are shown with their colors inverted, as images are.
 
 The PDF is saved as an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the note and is not changed: the ink is kept in the note, not written into the file. To read the PDF with its text, links and outline, open the attachment, or keep the PDF as a <a class="reference-link" href="File.md">File</a> note as well.
