@@ -173,15 +173,11 @@
             }
         }
 
-        .note-detail-editable-text-editor {
-            height: auto;
-            min-height: 0;
-            padding-top: 0;
-        }
-
         .ck.ck-editor__editable_inline {
             padding: 0;
             border-width: 0;
+            box-shadow: none;
+            overflow: visible;
         }
 
         .ck.ck-editor__editable_inline > :first-child {
@@ -196,11 +192,6 @@
             position: absolute;
             inset: 4px 8px auto;
             visibility: hidden;
-        }
-
-        .handwriting-text-missing {
-            opacity: 0.5;
-            font-style: italic;
         }
 
         .handwriting-text-box-bar {

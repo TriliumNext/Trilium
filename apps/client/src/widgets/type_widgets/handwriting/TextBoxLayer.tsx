@@ -3,12 +3,9 @@ import type { RefObject, TargetedPointerEvent } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import type FNote from "../../../entities/fnote";
-import content_renderer from "../../../services/content_renderer";
-import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import server from "../../../services/server";
-import { useTriliumEvent } from "../../react/hooks/events";
+import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
+import { isHtmlEmpty, randomString } from "../../../services/utils";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import type { InkTextBox } from "./ink_document";
 
@@ -20,8 +17,6 @@ const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 80;
 
 interface TextBoxLayerProps {
-    /** The handwriting note, under which the text note of each box is created. */
-    noteId: string | undefined;
     /** The element that the view of the surface moves and scales, as `Handwriting` places it. */
     layerRef: RefObject<HTMLDivElement | null>;
     boxes: InkTextBox[];
@@ -36,13 +31,13 @@ interface TextBoxLayerProps {
 }
 
 /**
- * The text boxes of a handwriting note, over the paper and the ink. Each box shows a text note,
- * a child of the handwriting note, and edits it in place with the text editor.
+ * The text boxes of a handwriting note, over the paper and the ink. The note holds the text of
+ * each box as HTML, which the box edits in place with a text editor.
  *
  * A prototype: the boxes have no undo, are not part of the thumbnail and lie over the ink.
  */
 export default function TextBoxLayer({
-    noteId, layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, onChange
+    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, onChange
 }: TextBoxLayerProps) {
     const [ selectedId, setSelectedId ] = useState<string>();
     const [ editedId, setEditedId ] = useState<string>();
@@ -71,43 +66,39 @@ export default function TextBoxLayer({
         return () => document.removeEventListener("pointerdown", onPointerDown, true);
     }, [ selectedId, editedId ]);
 
-    async function addBox(clientX: number, clientY: number) {
-        if (!noteId) return;
-        const { x, y } = toWorld(clientX, clientY);
-        const { note } = await server.post<{ note: { noteId: string } }>(
-            `notes/${noteId}/children?target=into`,
-            { title: t("handwriting.text_box_title"), content: "", type: "text" }
-        );
-        onChange([ ...boxesRef.current, { noteId: note.noteId, x, y, width: DEFAULT_WIDTH } ]);
-        setSelectedId(note.noteId);
-        setEditedId(note.noteId);
+    function setBoxes(next: InkTextBox[]) {
+        boxesRef.current = next;
+        onChange(next);
     }
 
-    function updateBox(box: InkTextBox, changes: Partial<InkTextBox>) {
-        onChange(boxesRef.current.map((other) => (other.noteId === box.noteId ? { ...other, ...changes } : other)));
+    function addBox(clientX: number, clientY: number) {
+        const { x, y } = toWorld(clientX, clientY);
+        const id = randomString(10);
+        setBoxes([ ...boxesRef.current, { id, x, y, width: DEFAULT_WIDTH, html: "" } ]);
+        setSelectedId(id);
+        setEditedId(id);
     }
 
     return (
         <>
             {isAdding && (
-                <div
-                    className="handwriting-text-catcher"
-                    onClick={(e) => void addBox(e.clientX, e.clientY)}
-                />
+                <div className="handwriting-text-catcher" onClick={(e) => addBox(e.clientX, e.clientY)} />
             )}
             <div ref={layerRef} className="handwriting-text-layer">
                 {boxes.map((box) => (
                     <TextBox
-                        key={box.noteId}
+                        key={box.id}
                         box={box}
                         isInteractive={isInteractive}
-                        isSelected={selectedId === box.noteId}
-                        isEditing={editedId === box.noteId}
+                        isSelected={selectedId === box.id}
+                        isEditing={editedId === box.id}
                         getZoom={getZoom}
-                        onSelect={() => setSelectedId(box.noteId)}
-                        onEdit={(isEditing) => setEditedId(isEditing ? box.noteId : undefined)}
-                        onChange={(changes) => updateBox(box, changes)}
-                        onDelete={() => onChange(boxesRef.current.filter((other) => other.noteId !== box.noteId))}
+                        onSelect={() => setSelectedId(box.id)}
+                        onEdit={(isEditing) => setEditedId(isEditing ? box.id : undefined)}
+                        onChange={(changes) => setBoxes(boxesRef.current.map((other) => (
+                            other.id === box.id ? { ...other, ...changes } : other
+                        )))}
+                        onDelete={() => setBoxes(boxesRef.current.filter((other) => other.id !== box.id))}
                     />
                 ))}
             </div>
@@ -140,18 +131,23 @@ interface TextBoxProps {
 function TextBox({
     box, isInteractive, isSelected, isEditing, getZoom, onSelect, onEdit, onChange, onDelete
 }: TextBoxProps) {
-    const note = useTextNote(box.noteId);
-    /** Counts the saves of the editor, each of which renders the note again. */
-    const [ version, setVersion ] = useState(0);
-    /** Whether the editor holds the content of the note, and so shows in place of the rendered text. */
+    /** Whether the editor shows the text, and so stands in place of the rendered text. */
     const [ isEditorReady, setEditorReady ] = useState(false);
-    /** The content of the editor that closed, shown until its save lands and the note is rendered again. */
-    const [ closingContent, setClosingContent ] = useState<string>();
-    useEffect(() => {
-        if (!isEditing) setEditorReady(false);
-    }, [ isEditing ]);
     const startMove = useDrag(getZoom, (dx, dy, start) => onChange({ x: start.x + dx, y: start.y + dy }));
     const startResize = useDrag(getZoom, (dx, _dy, start) => onChange({ width: Math.max(MIN_WIDTH, start.width + dx) }));
+    const htmlRef = useRef(box.html);
+    htmlRef.current = box.html;
+    const onDeleteRef = useRef(onDelete);
+    onDeleteRef.current = onDelete;
+
+    // A box left without text goes away, so that pressing around with the text tool leaves none.
+    useEffect(() => {
+        if (!isEditing) return;
+        return () => {
+            setEditorReady(false);
+            if (isHtmlEmpty(htmlRef.current)) onDeleteRef.current();
+        };
+    }, [ isEditing ]);
 
     return (
         <div
@@ -165,7 +161,7 @@ function TextBox({
                 if (!isSelected) onSelect();
             }}
             onDblClick={() => {
-                if (!isEditing && note) onEdit(true);
+                if (!isEditing) onEdit(true);
             }}
             onKeyDown={(e) => {
                 if (e.key === "Escape" && !e.defaultPrevented && isEditing) {
@@ -186,27 +182,18 @@ function TextBox({
                     />
                 </div>
             )}
-            {note && isEditing && (
+            {isEditing && (
                 <div className={clsx("handwriting-text-editor-host", !isEditorReady && "pending")}>
                     <Suspense fallback={null}>
                         <TextBoxEditor
-                            note={note}
+                            html={box.html}
                             onReady={() => setEditorReady(true)}
-                            onClose={(content, save) => {
-                                setClosingContent(content);
-                                void save.finally(() => {
-                                    setClosingContent(undefined);
-                                    setVersion((current) => current + 1);
-                                });
-                            }}
+                            onChange={(html) => onChange({ html })}
                         />
                     </Suspense>
                 </div>
             )}
-            {note && !(isEditing && isEditorReady) && (
-                <TextPreview note={note} version={version} closingContent={closingContent} />
-            )}
-            {note === null && <div className="handwriting-text-missing">{t("handwriting.text_box_missing")}</div>}
+            {!(isEditing && isEditorReady) && <TextPreview html={box.html} />}
             {isSelected && (
                 <div className="handwriting-text-box-resize" onPointerDown={(e) => startResize(e, box)} />
             )}
@@ -214,65 +201,17 @@ function TextBox({
     );
 }
 
-interface TextPreviewProps {
-    note: FNote;
-    version: number;
-    /** The content to show in place of the note's, which the editor that closed is still saving. */
-    closingContent: string | undefined;
-}
-
-/** The rendered content of `note`, or a hint for an empty one. */
-function TextPreview({ note, version, closingContent }: TextPreviewProps) {
-    const ref = useRef<HTMLDivElement>(null);
-    const [ reloads, setReloads ] = useState(0);
-
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.isNoteContentReloaded(note.noteId)) setReloads((current) => current + 1);
-    });
-
-    useEffect(() => {
-        if (closingContent !== undefined) return;
-        let isStale = false;
-        void content_renderer.getRenderedContent(note).then(({ $renderedContent }) => {
-            if (isStale || !ref.current) return;
-            const rendered = $renderedContent[0];
-            if (rendered?.textContent?.trim() || rendered?.querySelector("img, table, hr")) {
-                ref.current.replaceChildren(rendered);
-            } else {
-                ref.current.textContent = t("handwriting.text_box_empty");
-                ref.current.classList.add("empty");
-                return;
-            }
-            ref.current.classList.remove("empty");
-        });
-        return () => {
-            isStale = true;
-        };
-    }, [ note, version, reloads, closingContent ]);
-
-    if (closingContent !== undefined) {
-        return (
-            <div className="handwriting-text-preview">
-                <RawHtmlBlock className="ck-content" html={closingContent} />
-            </div>
-        );
+/** The text of a box as it is shown while it is not edited, or a hint for a box without text. */
+function TextPreview({ html }: { html: string }) {
+    if (isHtmlEmpty(html)) {
+        return <div className="handwriting-text-preview empty">{t("handwriting.text_box_empty")}</div>;
     }
-    return <div ref={ref} className="handwriting-text-preview" />;
-}
-
-/** The text note `noteId`, `undefined` while it loads and `null` when it is gone. */
-function useTextNote(noteId: string) {
-    const [ note, setNote ] = useState<FNote | null>();
-    useEffect(() => {
-        let isStale = false;
-        void froca.getNote(noteId, true).then((loaded) => {
-            if (!isStale) setNote(loaded ?? null);
-        });
-        return () => {
-            isStale = true;
-        };
-    }, [ noteId ]);
-    return note;
+    // The HTML comes from the saved note, which a sync or an import can have written.
+    return (
+        <div className="handwriting-text-preview">
+            <RawHtmlBlock className="ck-content" html={sanitizeNoteContentHtml(html)} />
+        </div>
+    );
 }
 
 /**

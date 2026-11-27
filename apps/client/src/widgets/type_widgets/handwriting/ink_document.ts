@@ -26,6 +26,19 @@ export interface SheetSize {
 }
 
 /** A sheet of a note laid out in pages: its top left corner and its size, in world units. */
+/** The page of a PDF that lies on a sheet. */
+export interface SheetSource {
+    /** The URL of the PDF attachment, which matches {@link PDF_URL_PATTERN}. */
+    url: string;
+    /** The page of the PDF, counted from zero. */
+    page: number;
+}
+
+/** A sheet with a size of its own, as a saved document holds it. */
+export interface SheetSpec extends SheetSize {
+    source?: SheetSource;
+}
+
 export interface Sheet extends SheetSize {
     x: number;
     y: number;
@@ -94,9 +107,12 @@ export const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#
  */
 export const PDF_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/open$/;
 
-/** A box of typed text on the paper: a text note, a child of the handwriting note. */
+/** A box of typed text on the paper. */
 export interface InkTextBox {
-    noteId: string;
+    /** Tells the boxes of a note apart. */
+    id: string;
+    /** The text, as the HTML of a text editor. */
+    html: string;
     /** The top left corner and the width, in world units. The text gives the height. */
     x: number;
     y: number;
@@ -109,10 +125,16 @@ export interface InkDocument {
     strokes: Stroke[];
     images?: InkImage[];
     texts?: InkTextBox[];
-    /** The PDF whose pages lie on the sheets, which matches {@link PDF_URL_PATTERN}. */
-    pdf?: string;
-    /** The sizes of the first sheets, as a PDF gave them. The sheets after them are A4. */
-    sheets?: SheetSize[];
+    /**
+     * The first sheets, each with its size and the page of a PDF that lies on it, if any. The
+     * sheets after them are A4.
+     */
+    sheets?: SheetSpec[];
+    /**
+     * The PDF of a note saved before sheets had sizes, whose pages lie on the first sheets. The
+     * surface gives the note sheets for them once the PDF is open.
+     */
+    legacyPdf?: string;
     /** The view the note was last saved at. */
     view?: InkView;
 }
@@ -136,11 +158,17 @@ interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
     layout?: InkLayout;
+    /** The PDF of a note saved before `pdfs`, whose page `n` lies on sheet `n`. */
     pdf?: string;
-    /** The `[width, height]` of each sheet with a size of its own. */
+    /** The URLs of the PDFs whose pages lie on sheets. */
+    pdfs?: string[];
+    /**
+     * The `[width, height]` of each sheet with a size of its own, followed by the index in `pdfs`
+     * of a PDF and its page, counted from zero, for a sheet that a page lies on.
+     */
     sheets?: number[][];
     images?: SerializedImage[];
-    texts?: { noteId: string, x: number, y: number, w: number }[];
+    texts?: { id: string, x: number, y: number, w: number, html: string }[];
     strokes: SerializedStroke[];
     view?: InkView;
 }
@@ -173,7 +201,7 @@ export function createImage(props: Omit<InkImage, "bounds">): InkImage {
  */
 export function serializeInkDocument(
     paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
-    images: InkImage[] = [], pdf?: string, sheets: SheetSize[] = [], texts: InkTextBox[] = []
+    images: InkImage[] = [], legacyPdf?: string, sheets: SheetSpec[] = [], texts: InkTextBox[] = []
 ): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
@@ -183,17 +211,21 @@ export function serializeInkDocument(
     const savedView = view
         ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
         : "";
+    const pdfs = getPdfUrls(sheets);
+    const savedPdfs = pdfs.length ? `,"pdfs":${JSON.stringify(pdfs)}` : "";
     const savedSheets = sheets.length
-        ? `,"sheets":${JSON.stringify(sheets.map(({ width, height }) => [ round(width, 10), round(height, 10) ]))}`
+        ? `,"sheets":${JSON.stringify(sheets.map(({ width, height, source }) => [
+            round(width, 10), round(height, 10), ...(source ? [ pdfs.indexOf(source.url), source.page ] : [])
+        ]))}`
         : "";
     const savedImages = images.length
         ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
         : "";
     const savedTexts = texts.length
-        ? `,"texts":${JSON.stringify(texts.map(({ noteId, x, y, width }) =>
-            ({ noteId, x: round(x, 10), y: round(y, 10), w: round(width, 10) })))}`
+        ? `,"texts":${JSON.stringify(texts.map(({ id, x, y, width, html }) =>
+            ({ id, x: round(x, 10), y: round(y, 10), w: round(width, 10), html })))}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedSheets}${savedImages}${savedTexts},"strokes":[${parts.join(",")}]}`;
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${legacyPdf ? `,"pdf":${JSON.stringify(legacyPdf)}` : ""}${savedPdfs}${savedSheets}${savedImages}${savedTexts},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -253,25 +285,46 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const layout = INK_LAYOUTS.includes(raw.layout as InkLayout)
         ? raw.layout as InkLayout
         : strokes.length ? "infinite" : "pages";
-    const pdf = typeof raw.pdf === "string" && PDF_URL_PATTERN.test(raw.pdf) ? raw.pdf : undefined;
-    const sheets = parseSheets(raw.sheets);
+    const isPdfUrl = (url: unknown): url is string => typeof url === "string" && PDF_URL_PATTERN.test(url);
+    const single = isPdfUrl(raw.pdf) ? raw.pdf : undefined;
+    const sheets = parseSheets(raw.sheets, Array.isArray(raw.pdfs)
+        ? raw.pdfs.map((url) => (isPdfUrl(url) ? url : undefined))
+        : undefined);
+    // Before `pdfs`, the sheets were those of the one PDF, in the order of its pages.
+    if (single && !Array.isArray(raw.pdfs)) {
+        for (const [ page, sheet ] of sheets.entries()) {
+            sheet.source = { url: single, page };
+        }
+    }
+    const legacyPdf = sheets.length ? undefined : single;
     return {
         paper, layout, strokes, images: parseImages(raw.images), texts: parseTexts(raw.texts),
         view: parseView(raw.view),
-        ...(pdf && { pdf }), ...(sheets.length && { sheets })
+        ...(sheets.length && { sheets }), ...(legacyPdf && { legacyPdf })
     };
 }
 
-function parseSheets(raw: unknown): SheetSize[] {
-    const sheets: SheetSize[] = [];
+function parseSheets(raw: unknown, pdfs: (string | undefined)[] = []): SheetSpec[] {
+    const sheets: SheetSpec[] = [];
     if (!Array.isArray(raw)) return sheets;
-    for (const size of raw.slice(0, MAX_SHEETS)) {
-        const [ width, height ] = Array.isArray(size) ? size : [];
+    for (const saved of raw.slice(0, MAX_SHEETS)) {
+        const [ width, height, pdf, page ] = Array.isArray(saved) ? saved : [];
         // A sheet that cannot be read ends the list: the sheets after it would be out of place.
         if (!isSheetSide(width) || !isSheetSide(height)) break;
-        sheets.push({ width, height });
+        const url = Number.isInteger(pdf) ? pdfs[pdf] : undefined;
+        const hasSource = url && Number.isInteger(page) && page >= 0 && page < MAX_SHEETS;
+        sheets.push({ width, height, ...(hasSource && { source: { url, page } }) });
     }
     return sheets;
+}
+
+/** The URLs of the PDFs whose pages lie on `sheets`, each once, in the order of the sheets. */
+export function getPdfUrls(sheets: SheetSpec[]) {
+    const urls = new Set<string>();
+    for (const { source } of sheets) {
+        if (source) urls.add(source.url);
+    }
+    return [ ...urls ];
 }
 
 function isSheetSide(value: unknown): value is number {
@@ -281,12 +334,12 @@ function isSheetSide(value: unknown): value is number {
 function parseTexts(raw: unknown): InkTextBox[] {
     const texts: InkTextBox[] = [];
     if (!Array.isArray(raw)) return texts;
-    for (const serialized of raw as Partial<Record<"noteId" | "x" | "y" | "w", unknown>>[]) {
-        const { noteId, x, y, w } = serialized ?? {};
-        if (typeof noteId !== "string" || !/^[a-zA-Z0-9_]+$/.test(noteId)) continue;
+    for (const serialized of raw as Partial<Record<"id" | "x" | "y" | "w" | "html", unknown>>[]) {
+        const { id, x, y, w, html } = serialized ?? {};
+        if (typeof id !== "string" || typeof html !== "string") continue;
         if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) continue;
-        if (texts.some((text) => text.noteId === noteId)) continue;
-        texts.push({ noteId, x, y, width: w });
+        if (texts.some((text) => text.id === id)) continue;
+        texts.push({ id, x, y, width: w, html });
     }
     return texts;
 }
@@ -313,25 +366,19 @@ function parseView(view: unknown): InkView | undefined {
 
 /**
  * The sheets of a note laid out in pages: a column of sheets `PAGE_GAP` apart, each centered on
- * the middle of an A4 sheet. The first sheets have the `sizes` given, as the pages of a PDF, and
- * every sheet after them is A4, so a note without `sizes` is a column of A4 sheets from the
- * origin.
+ * the middle of an A4 sheet. The first sheets have the `sizes` given, as the pages of a PDF, each
+ * with the page that lies on it, and every sheet after them is A4, so a note without `sizes` is a
+ * column of A4 sheets from the origin.
  */
 export class PageLayout {
 
     /** The top of each sheet of `sizes`, then of the first sheet after them. */
     private tops: number[] = [ 0 ];
 
-    constructor(readonly sizes: SheetSize[] = []) {
+    constructor(readonly sizes: SheetSpec[] = []) {
         for (const { height } of sizes) {
             this.tops.push(this.tops[this.tops.length - 1] + height + PAGE_GAP);
         }
-    }
-
-    /** Whether the first sheets have exactly the `sizes` given. */
-    hasSizes(sizes: SheetSize[]) {
-        return sizes.length === this.sizes.length && sizes.every(({ width, height }, index) =>
-            width === this.sizes[index].width && height === this.sizes[index].height);
     }
 
     /** The top of sheet `index`, counted from zero, in world units. */

@@ -4415,9 +4415,7 @@
     "pdf_failed": "The PDF \"{{name}}\" could not be added.",
     "image_failed": "The image \"{{name}}\" could not be added.",
     "text": "Text",
-    "text_box_title": "Text box",
     "text_box_empty": "Double-click to type",
-    "text_box_missing": "The note of this text box was deleted.",
     "delete_text_box": "Remove text box"
   },
   "mind-map": {

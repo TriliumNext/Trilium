@@ -384,7 +384,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             />
 
             <TextBoxLayer
-                noteId={note?.noteId}
                 layerRef={textLayerRef}
                 boxes={textBoxes}
                 isAdding={!isReadOnly && activeTool === "text"}
