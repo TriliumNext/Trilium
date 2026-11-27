@@ -101,10 +101,14 @@
         }
 
         /* Reboot sets `button { border-radius: 0 }` (specificity 0,0,1), so the rounding must live on
-           these end selectors (0,1,0) to out-specify it; middle buttons keep Reboot's square corners. */
+           these end selectors (0,1,0) to out-specify it; middle buttons keep Reboot's square corners.
+           Logical corners, so the outer ends stay rounded in a right-to-left layout. */
         &:first-child,
         &:last-child {
-            border-radius: var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0) var(--_start-border-radius, 0);
+            border-start-start-radius: var(--_start-border-radius, 0);
+            border-end-start-radius: var(--_start-border-radius, 0);
+            border-start-end-radius: var(--_end-border-radius, 0);
+            border-end-end-radius: var(--_end-border-radius, 0);
         }
 
         /* A button that would do nothing says as much rather than merely failing to answer. */
