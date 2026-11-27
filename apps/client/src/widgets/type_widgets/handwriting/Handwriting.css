@@ -137,3 +137,21 @@
         }
     }
 }
+
+.handwriting-pressure {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 240px;
+    padding: 8px 12px;
+
+    .handwriting-pressure-value {
+        font-weight: 500;
+    }
+
+    .handwriting-pressure-hint {
+        margin: 0;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+}

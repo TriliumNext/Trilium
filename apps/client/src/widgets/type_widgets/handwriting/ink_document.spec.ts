@@ -136,6 +136,43 @@ describe("ink document", () => {
         expect(preview[0].point).not.toEqual(finished[finished.length - 1].point);
     });
 
+    it("keeps the pressure sensitivity each stroke was drawn with", () => {
+        const points = wavyPoints(100);
+        const raw: number[][] = [];
+        for (let i = 0; i < points.length; i += 3) raw.push(points.slice(i, i + 3));
+        const outlineAt = (thinning: number) => getStroke(raw, {
+            size: 4, thinning, smoothing: 0.5, streamline: 0.35, simulatePressure: false, last: true
+        });
+        const pen = (sensitivity?: number) => createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: false, points, order: 0, sensitivity
+        });
+
+        // A stroke saves its own sensitivity, and its outline follows it.
+        const soft = pen(20);
+        expect(JSON.parse(serializeStroke(soft)).k).toBe(20);
+        const [ parsed ] = parseInkDocument(serializeInkDocument("ruled", [ soft ])).strokes;
+        expect(parsed.sensitivity).toBe(20);
+        expect(getStrokeOutline(soft)).toEqual(outlineAt(0.2));
+        expect(getStrokeOutline(pen(0))).toEqual(outlineAt(0));
+
+        // The default is left out, and a stroke saved without one outlines as before the setting.
+        expect(JSON.parse(serializeStroke(pen(60)))).not.toHaveProperty("k");
+        const [ older ] = parseInkDocument(JSON.stringify({ strokes: [ { w: 4, p: [ 0, 0, 128, 10, 0, 255 ] } ] })).strokes;
+        expect(older.sensitivity).toBeUndefined();
+        expect(getStrokeOutline(pen())).toEqual(outlineAt(0.6));
+
+        // A saved value out of range is brought back into it, and one that is not a number is dropped.
+        const saved = [ 150, -5, "40" ].map((k) => ({ w: 4, k, p: [ 0, 0, 128 ] }));
+        expect(parseInkDocument(JSON.stringify({ strokes: saved })).strokes.map((stroke) => stroke.sensitivity))
+            .toEqual([ 100, 0, undefined ]);
+
+        // The highlighter keeps its width whatever the pressure.
+        const highlighter = createStroke({
+            tool: "highlighter", color: AUTO_COLOR, size: 4, simulatePressure: false, points, order: 0, sensitivity: 90
+        });
+        expect(getStrokeOutline(highlighter)).toEqual(outlineAt(0));
+    });
+
     it("gives a run of stroke points the width it has in the whole stroke", () => {
         for (const simulatePressure of [ false, true ]) {
             const stroke = createStroke({

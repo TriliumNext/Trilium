@@ -353,6 +353,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteVimModeEnabled: boolean;
     /** Whether one finger draws in handwriting notes, on this device. Otherwise fingers pan and zoom. */
     handwritingFingerDrawing: boolean;
+    /**
+     * How much the pressure of a pen changes the width of the strokes drawn in handwriting notes on
+     * this device, from 0 (not at all) to 100.
+     */
+    handwritingPressureSensitivity: number;
     /** Whether the notice that explains Vim mode was shown when it was first turned on. */
     textNoteVimModeNoticeShown: boolean;
     /** Whether six more Ctrl keys of Insert mode, such as `Ctrl+V`, follow Vim. */

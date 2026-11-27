@@ -35,6 +35,11 @@ export interface Stroke {
     simulatePressure: boolean;
     /** Flat `x, y, pressure` triples in world units, with the pressure between 0 and 1. */
     points: number[];
+    /**
+     * How much the pressure changes the width, from 0 to 100, as set when the stroke was drawn.
+     * `undefined` stands for {@link DEFAULT_PRESSURE_SENSITIVITY}.
+     */
+    sensitivity?: number;
     bounds: Bounds;
     /** The position of the stroke in the drawing order. */
     order: number;
@@ -66,6 +71,8 @@ interface SerializedStroke {
     w: number;
     /** `1` when the pressure is simulated. */
     s?: 1;
+    /** The pressure sensitivity, left out for {@link DEFAULT_PRESSURE_SENSITIVITY}. */
+    k?: number;
     /**
      * Flat `x, y, pressure` triples: positions in tenths of a world unit and the pressure between
      * 0 and 255. Every triple after the first holds the difference from the previous one.
@@ -85,11 +92,21 @@ const POSITION_SCALE = 10;
 /** The widest stroke a document can hold: the highlighter at its largest thickness. */
 const MAX_STROKE_SIZE = 60;
 const PRESSURE_SCALE = 255;
+/**
+ * The pressure sensitivity of a stroke that saved none: perfect-freehand's `thinning` of 0.6,
+ * which every stroke had before the sensitivity could be set.
+ */
+export const DEFAULT_PRESSURE_SENSITIVITY = 60;
 
 export function createStroke(
-    props: Pick<Stroke, "tool" | "color" | "size" | "simulatePressure" | "points" | "order">
+    props: Pick<Stroke, "tool" | "color" | "size" | "simulatePressure" | "points" | "order" | "sensitivity">
 ): Stroke {
-    return { ...props, bounds: computeBounds(props.points, props.size) };
+    const { sensitivity, ...rest } = props;
+    return {
+        ...rest,
+        ...(sensitivity !== undefined && sensitivity !== DEFAULT_PRESSURE_SENSITIVITY && { sensitivity }),
+        bounds: computeBounds(props.points, props.size)
+    };
 }
 
 /**
@@ -118,6 +135,7 @@ export function serializeStroke(stroke: Stroke): string {
             ...(stroke.color !== AUTO_COLOR && { c: stroke.color }),
             w: stroke.size,
             ...(stroke.simulatePressure && { s: 1 as const }),
+            ...(stroke.sensitivity !== undefined && { k: stroke.sensitivity }),
             p: encodePoints(stroke.points)
         };
         stroke.json = JSON.stringify(serialized);
@@ -148,7 +166,8 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
             size: isFiniteNumber(serialized.w) && serialized.w > 0 ? Math.min(MAX_STROKE_SIZE, serialized.w) : 3,
             simulatePressure: serialized.s === 1,
             points,
-            order: strokes.length
+            order: strokes.length,
+            sensitivity: isFiniteNumber(serialized.k) ? Math.round(Math.min(100, Math.max(0, serialized.k))) : undefined
         }));
     }
 
@@ -273,7 +292,7 @@ const STREAMLINE_STEP = 0.15 + (1 - STREAMLINE) * 0.85;
 /** How fast a simulated pressure follows the speed, as in perfect-freehand's `getStrokeOutlinePoints()`. */
 const PRESSURE_RATE = 0.275;
 
-type OutlinedStroke = Pick<Stroke, "tool" | "size" | "simulatePressure" | "points">;
+type OutlinedStroke = Pick<Stroke, "tool" | "size" | "simulatePressure" | "points" | "sensitivity">;
 
 /**
  * Turns the raw points of a stroke into perfect-freehand's smoothed stroke points, one at a time.
@@ -432,7 +451,9 @@ export function outlineToPath(outline: number[][]) {
 }
 
 /** Returns the outline of a run of a stroke's points, which can be any part of the stroke. */
-export function outlineStrokePoints(stroke: Pick<Stroke, "tool" | "size">, points: StrokePoint[]): number[][] {
+export function outlineStrokePoints(
+    stroke: Pick<Stroke, "tool" | "size" | "sensitivity">, points: StrokePoint[]
+): number[][] {
     return getStrokeOutlinePoints(points, { ...outlineOptions(stroke), simulatePressure: false });
 }
 
@@ -453,10 +474,10 @@ export function getShortStrokeOutline(stroke: OutlinedStroke): number[][] {
     });
 }
 
-function outlineOptions(stroke: Pick<Stroke, "tool" | "size">) {
+function outlineOptions(stroke: Pick<Stroke, "tool" | "size" | "sensitivity">) {
     return {
         size: stroke.size,
-        thinning: stroke.tool === "highlighter" ? 0 : 0.6,
+        thinning: stroke.tool === "highlighter" ? 0 : (stroke.sensitivity ?? DEFAULT_PRESSURE_SENSITIVITY) / 100,
         smoothing: 0.5
     };
 }

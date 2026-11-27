@@ -25,6 +25,14 @@ While the pen or the highlighter is selected, a rail on the side of the note set
 *   To change the color, select one of the five colors of the tool, or the last swatch (_Custom color..._) to pick any other.
 *   The first color of the pen, _Text color_, follows the theme: such ink is dark on a light theme and light on a dark one, so it stays readable when the theme changes.
 
+### Pressure sensitivity
+
+How much pressing harder thickens the pen's line is set with the <span class="tn-icon bx bx-tachometer"></span> _Pressure sensitivity_ button on the rail, which shows while the pen is selected. Its slider goes from 0, where every line keeps the same thickness however hard the pen is pressed, to 100, where a light touch draws a hairline and a firm one a line several times as thick. The default is 60. With a mouse or a finger, the setting changes how much the speed of the stroke changes the thickness instead.
+
+*   The setting applies to the device it is changed on, like _Finger drawing_, as how a pen responds depends on the pen.
+*   Each stroke keeps the sensitivity it was drawn with, so changing it only affects new strokes and never reshapes the ink already on the page.
+*   The highlighter is not affected: it always draws a line of even thickness.
+
 The cursor is a ring as wide as the line that the tool draws.
 
 ### Moving around the note
@@ -111,4 +119,4 @@ A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) h
 
 ## Under the hood
 
-A handwriting note is stored as JSON that lists the strokes with their color, thickness and points. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.

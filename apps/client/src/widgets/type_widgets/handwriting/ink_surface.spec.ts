@@ -75,6 +75,21 @@ describe("ink surface input", () => {
         expect(onChange).toHaveBeenCalledOnce();
     });
 
+    it("draws each stroke with the pressure sensitivity set when it began", () => {
+        const sensitivities = () => parseInkDocument(surface.serialize()).strokes.map((stroke) => stroke.sensitivity);
+        surface.sensitivity = 0;
+        swipe("pen", 1, 100);
+        const first = JSON.parse(surface.serialize()).strokes[0];
+
+        // A new value reaches only the strokes drawn after it, and the default is saved as none.
+        surface.sensitivity = 90;
+        swipe("pen", 2, 200);
+        surface.sensitivity = 60;
+        swipe("pen", 3, 300);
+        expect(sensitivities()).toEqual([ 0, 90, undefined ]);
+        expect(JSON.parse(surface.serialize()).strokes[0]).toEqual(first);
+    });
+
     it("pans with a pen or a mouse while space is held or the pan tool is picked", async () => {
         const strokeCount = () => parseInkDocument(surface.serialize()).strokes.length;
         surface.spacePanning = true;

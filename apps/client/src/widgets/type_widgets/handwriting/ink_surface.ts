@@ -1,7 +1,7 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getStrokePath, getVisiblePage,
-    HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH,
+    AUTO_COLOR, type Bounds, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getPageCount as countPages, getPageTop,
+    getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH,
     type PaperStyle, serializeInkDocument, serializeStroke, type Stroke, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
@@ -76,6 +76,8 @@ export default class InkSurface {
     tool: SurfaceTool = "pen";
     color = AUTO_COLOR;
     size = 3;
+    /** The pressure sensitivity of the pen strokes drawn from now on, from 0 to 100. */
+    sensitivity = DEFAULT_PRESSURE_SENSITIVITY;
     readOnly = false;
     /** Whether one finger draws. Otherwise fingers only pan and zoom, and only a pen or a mouse draws. */
     fingerDrawing = false;
@@ -491,7 +493,8 @@ export default class InkSurface {
                 tool,
                 color: this.color,
                 size: tool === "highlighter" ? this.size * HIGHLIGHTER_WIDTH_FACTOR : this.size,
-                order: this.nextOrder
+                order: this.nextOrder,
+                sensitivity: tool === "highlighter" ? undefined : this.sensitivity
             });
         } else if (mode === "erase") {
             this.erased = [];

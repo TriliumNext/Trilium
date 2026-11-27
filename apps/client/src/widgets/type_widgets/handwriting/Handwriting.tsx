@@ -13,14 +13,16 @@ import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen } from "../../react/hooks/dom";
 import { type SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useTriliumEvent } from "../../react/hooks/events";
-import { useTriliumOptionBool } from "../../react/hooks/options";
+import { useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks/options";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
+import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
 import {
-    AUTO_COLOR, INK_LAYOUTS, type InkDocument, type InkTool, type InkView, PAPER_STYLES, parseInkDocument
+    AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTool, type InkView,
+    PAPER_STYLES, parseInkDocument
 } from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
@@ -112,6 +114,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
+    const [ savedSensitivity, setSensitivity ] = useTriliumOptionInt("handwritingPressureSensitivity");
+    const sensitivity = Number.isFinite(savedSensitivity) ? savedSensitivity : DEFAULT_PRESSURE_SENSITIVITY;
     /** Whether the space bar is held over the surface, which makes a pen or a mouse pan. */
     const [ spaceHeld, setSpaceHeld ] = useState(false);
     /**
@@ -214,9 +218,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.color = color;
         surface.size = size;
         surface.readOnly = isReadOnly;
+        surface.sensitivity = sensitivity;
         surface.fingerDrawing = fingerDrawing;
         surface.spacePanning = spaceHeld;
-    }, [ tool, color, size, isReadOnly, fingerDrawing, spaceHeld ]);
+    }, [ tool, color, size, sensitivity, isReadOnly, fingerDrawing, spaceHeld ]);
 
     useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
@@ -358,7 +363,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             )}
 
             {!isReadOnly && inkTool && (
-                <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
+                <InkRail
+                    tool={inkTool} color={color} size={size} onChange={updateInk}
+                    sensitivity={sensitivity} onSensitivityChange={setSensitivity}
+                />
             )}
 
             {state.layout === "pages" && (
@@ -406,13 +414,16 @@ interface InkRailProps {
     color: string;
     size: number;
     onChange(changes: Partial<InkSettings>): void;
+    sensitivity: number;
+    onSensitivityChange(sensitivity: number): void;
 }
 
 /**
  * The color and the thickness of the pen or the highlighter, on a rail down the side of the note:
- * steps and the value of the thickness, its three presets, then the colors.
+ * steps and the value of the thickness, its three presets, the pressure sensitivity of the pen,
+ * then the colors.
  */
-function InkRail({ tool, color, size, onChange }: InkRailProps) {
+function InkRail({ tool, color, size, onChange, sensitivity, onSensitivityChange }: InkRailProps) {
     const customInputRef = useRef<HTMLInputElement>(null);
     const presets = INK_PRESETS[tool];
     const isCustomColor = !presets.colors.some((preset) => preset.color === color);
@@ -453,6 +464,25 @@ function InkRail({ tool, color, size, onChange }: InkRailProps) {
                     />
                 ))}
             </OverlayControlGroup>
+
+            {tool === "pen" && (
+                <OverlayControlGroup vertical titlePosition="right">
+                    <OverlayControlDropdown panel title={t("handwriting.pressure_sensitivity")} icon="bx-tachometer">
+                        <div className="handwriting-pressure">
+                            <div className="handwriting-pressure-value">
+                                {t("handwriting.pressure_sensitivity_value", { value: sensitivity })}
+                            </div>
+                            <Slider
+                                min={0} max={100} step={5}
+                                value={sensitivity}
+                                title={t("handwriting.pressure_sensitivity")}
+                                onChange={onSensitivityChange}
+                            />
+                            <p className="handwriting-pressure-hint">{t("handwriting.pressure_sensitivity_hint")}</p>
+                        </div>
+                    </OverlayControlDropdown>
+                </OverlayControlGroup>
+            )}
 
             <OverlayControlGroup vertical titlePosition="right">
                 {presets.colors.map((preset) => (
