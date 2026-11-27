@@ -39,7 +39,11 @@ import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import {
+    apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route,
+    router, shareTargetMiddlewareWithErrorHandling, soundUploadMiddleware,
+    uploadMiddlewareWithErrorHandling
+} from "./route_api.js";
 
 const GET = "get",
     PST = "post",
@@ -124,6 +128,7 @@ function register(app: express.Application) {
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
         importMiddlewareWithErrorHandling,
+        soundUploadMiddleware,
         csrfMiddleware
     });
 

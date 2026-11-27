@@ -19,8 +19,14 @@ const toasts = vi.hoisted(() => {
     };
 });
 const actions = vi.hoisted(() => ({ runNotificationAction: vi.fn(async () => true) }));
+/** The URL that `getAlertSoundUrl()` resolves to, the default sound's when unset. */
+const sounds = vi.hoisted(() => ({ alertUrl: undefined as string | undefined }));
 
 vi.mock("./toast.js", () => ({ default: toasts }));
+vi.mock("./notification_sound.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./notification_sound.js")>();
+    return { ...actual, getAlertSoundUrl: async () => sounds.alertUrl ?? actual.defaultSoundUrl };
+});
 vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("./notification_display.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("./notification_display.js")>(),
@@ -104,6 +110,29 @@ async function alertOf(notification: TriliumNotification) {
     await showAlert(notification.notificationId);
 }
 
+/** How far each quiet alert sets the clock ahead: a minute further than the one before it. */
+let quietLeadMs = 0;
+
+/**
+ * Shows the alert of `notification` with fake timers, later than every alert before it by more
+ * than the sound's interval, so that the sound plays whatever the tests before played.
+ */
+async function alertAfterQuiet(notification: TriliumNotification) {
+    quietLeadMs += 60_000;
+    vi.setSystemTime(Date.now() + quietLeadMs);
+    const alerting = alertOf(notification);
+    await vi.advanceTimersByTimeAsync(0);
+    await alerting;
+}
+
+function countPlays() {
+    return FakeAudio.instances.reduce((count, audio) => count + audio.play.mock.calls.length, 0);
+}
+
+function namedError(name: string) {
+    return Object.assign(new Error(name), { name });
+}
+
 function lastToast() {
     return toasts.showPersistent.mock.lastCall?.[0] as ToastOptionsWithRequiredId | undefined;
 }
@@ -112,7 +141,8 @@ beforeEach(() => {
     vi.stubGlobal("Audio", FakeAudio);
     vi.spyOn(document, "hasFocus").mockReturnValue(true);
     vi.spyOn(Math, "random").mockReturnValue(0);
-    vi.spyOn(options, "is").mockReturnValue(false);
+    vi.spyOn(options, "is").mockImplementation((name) => name === "notificationSoundEnabled");
+    sounds.alertUrl = undefined;
     toasts.showPersistent.mockClear();
     toasts.closePersistent.mockClear();
     actions.runNotificationAction.mockClear();
@@ -302,6 +332,38 @@ describe("showAlert", () => {
             title: "notifications.category-title.general",
             message: "notifications.enter-protected-session"
         });
+    });
+
+    it("shows the toast without the sound while sound alerts are off", async () => {
+        vi.useFakeTimers();
+        vi.mocked(options.is).mockReturnValue(false);
+        const before = countPlays();
+        await alertAfterQuiet(makeNotification());
+
+        expect(lastToast()?.message).toBe("Backup finished");
+        expect(countPlays()).toBe(before);
+    });
+
+    it("plays the custom sound, and the default one where it does not play", async () => {
+        vi.useFakeTimers();
+        const customUrl = "api/notifications/sound?v=blob1";
+        sounds.alertUrl = customUrl;
+        await alertAfterQuiet(makeNotification());
+        const [ audio ] = FakeAudio.instances;
+        expect(audio.src).toBe(customUrl);
+        expect(audio.play).toHaveBeenCalled();
+
+        const before = countPlays();
+        audio.play.mockRejectedValueOnce(namedError("NotSupportedError"));
+        await alertAfterQuiet(makeNotification());
+        expect(countPlays() - before).toBe(2);
+        expect(audio.src).toMatch(/notification-sound\.mp3/);
+
+        // A browser refuses every sound before the first gesture of the tab: the custom one stays.
+        audio.play.mockRejectedValueOnce(namedError("NotAllowedError"));
+        await alertAfterQuiet(makeNotification());
+        expect(audio.src).toBe(customUrl);
+        expect(FakeAudio.instances).toHaveLength(1);
     });
 
     it("builds the toast from the copy that the store holds after the note lookup", async () => {

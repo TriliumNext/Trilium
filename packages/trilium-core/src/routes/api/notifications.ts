@@ -6,12 +6,16 @@
  */
 import type { NotificationErrorBody, NotificationErrorCode } from "@triliumnext/commons";
 
-import type { Request } from "../../http_interface";
+import type { Request, Response } from "../../http_interface";
 import { getLog } from "../../services/log.js";
 import { getNotificationService } from "../../services/notifications/index.js";
 import { NotificationError } from "../../services/notifications/model.js";
 import type { NotificationProducer } from "../../services/notifications/service.js";
+import {
+    readCustomSound, resetCustomSound, saveCustomSound
+} from "../../services/notifications/sound.js";
 import sqlInit from "../../services/sql_init.js";
+import { serveContentWithRanges } from "../partial_content.js";
 
 /** The status of each refusal. Every other code is a malformed request, with status 400. */
 const STATUS_OF_CODE: Partial<Record<NotificationErrorCode, number>> = {
@@ -76,6 +80,48 @@ function dismissTransientNotification(req: Request<{ id: string }>) {
     });
 }
 
+/**
+ * A multipart upload of the custom sound, in the field `upload`. It answers for itself: an upload
+ * route needs `route()`, whose result handler drops the status of a refusal in standalone.
+ */
+function uploadSound(req: Request, res: Response) {
+    const refusal = answer(() => {
+        if (!req.file?.buffer) {
+            return refuse("invalid-input");
+        }
+        saveCustomSound(req.file.buffer);
+        return null;
+    });
+    return refusal ? sendRefusal(res, refusal) : res.sendStatus(204);
+}
+
+function resetSound() {
+    return answer(() => {
+        resetCustomSound();
+        return undefined;
+    });
+}
+
+/**
+ * Serves the custom sound in the byte ranges that a media element asks for, with the MIME type
+ * that its bytes name and `nosniff`. Without a sound that plays it answers 404, and the client
+ * plays the default sound.
+ */
+function getSound(req: Request, res: Response) {
+    const sound = sqlInit.isDbInitialized() ? readCustomSound() : null;
+    if (!sound) {
+        return sendRefusal(res, [ 404, { code: "not-found" } ]);
+    }
+
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return serveContentWithRanges(req, res, {
+        content: sound.content,
+        fileName: sound.fileName,
+        mimeType: sound.mime,
+        etag: sound.blobId
+    });
+}
+
 /** All clients are one producer, and each session has a budget of its own. */
 function getClientProducer(req: Request): NotificationProducer {
     return { kind: "client", sessionId: req.sessionID };
@@ -105,6 +151,12 @@ function refuse(code: NotificationErrorCode): [ number, NotificationErrorBody ] 
     return [ STATUS_OF_CODE[code] ?? 400, { code } ];
 }
 
+/** Writes a refusal, for a route that writes its own response. */
+function sendRefusal(res: Response, [ status, body ]: [ number, NotificationErrorBody ]) {
+    return res.setHeader("Content-Type", "application/json; charset=utf-8").status(status)
+        .send(JSON.stringify(body));
+}
+
 /** The frames of an error's stack, without its message. */
 function getStackFrames(error: unknown) {
     const stack = error instanceof Error ? error.stack ?? "" : "";
@@ -119,5 +171,8 @@ export default {
     setNotificationState,
     dismissNotifications,
     putTransientNotification,
-    dismissTransientNotification
+    dismissTransientNotification,
+    uploadSound,
+    resetSound,
+    getSound
 };

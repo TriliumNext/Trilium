@@ -5582,5 +5582,28 @@
     "dismiss": "Dismiss",
     "action-generic": "Action {{number}}",
     "handler-failed": "The action of the notification failed. The browser console has the details."
+  },
+  "notification_settings": {
+    "alerts_title": "Alerts",
+    "sound": "Sound alerts",
+    "sound_description": "Plays a sound with the toast of a notification, on every device. To silence one device, turn on Silent in the notification panel.",
+    "custom_sound": "Custom sound",
+    "custom_sound_description": "An MP3, OGG or WAV file of up to {{size}} that plays instead of the default sound.",
+    "browse": "Browse...",
+    "play": "Play",
+    "reset_sound": "Reset to default",
+    "sound_too_large": "The sound file is larger than {{size}}.",
+    "sound_unsupported": "The file is not an MP3, OGG or WAV sound.",
+    "sound_upload_failed": "The sound could not be saved.",
+    "sound_reset_failed": "The sound could not be reset.",
+    "sound_play_failed": "The custom sound could not be played.",
+    "categories_title": "Notification categories",
+    "categories_description": "A notification of a category that is turned off is dropped when it is raised. Turning the category on again brings back none of the notifications dropped meanwhile.",
+    "categories": {
+      "general": "General",
+      "reminder": "Reminders",
+      "softwareUpdate": "Software updates"
+    },
+    "general_description": "Notifications that belong to no other category, Trilium's own security notices among them."
   }
 }

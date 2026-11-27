@@ -91,6 +91,12 @@ interface SharedApiRoutesContext {
     checkCredentials: any;
     uploadMiddlewareWithErrorHandling: any;
     importMiddlewareWithErrorHandling: any;
+    /**
+     * Parses the upload of a notification sound and keeps no more of the file than
+     * `NOTIFICATION_SOUND_MAX_BYTES`, refusing a longer one, also when the request declares no
+     * length.
+     */
+    soundUploadMiddleware: any;
     csrfMiddleware: any;
 }
 
@@ -111,6 +117,7 @@ export function buildSharedApiRoutes({
     loginRateLimiter,
     uploadMiddlewareWithErrorHandling,
     importMiddlewareWithErrorHandling,
+    soundUploadMiddleware,
     csrfMiddleware
 }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
@@ -132,6 +139,13 @@ export function buildSharedApiRoutes({
         notificationsApiRoute.putTransientNotification);
     apiRoute(DEL, "/api/notifications/transient/:id",
         notificationsApiRoute.dismissTransientNotification);
+    route(GET, "/api/notifications/sound", [ checkApiAuthOrElectron ],
+        notificationsApiRoute.getSound);
+    // The token comes before the parser, so that a request without one is refused unread.
+    route(PST, "/api/notifications/sound",
+        [ checkApiAuthOrElectron, csrfMiddleware, soundUploadMiddleware ],
+        notificationsApiRoute.uploadSound);
+    apiRoute(DEL, "/api/notifications/sound", notificationsApiRoute.resetSound);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);

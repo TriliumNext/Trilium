@@ -337,7 +337,10 @@
     "sidebar-chat-title": "AI Chat",
     "record-meeting-title": "Transcribe meeting",
     "transcription-title": "Transcription",
-    "resources-title": "Downloaded resources"
+    "resources-title": "Downloaded resources",
+    "notifications-title": "Notifications",
+    "resources-folder-title": "Resources",
+    "notification-sound-title": "Notification Sound"
   },
   "notes": {
     "new-note": "New note",

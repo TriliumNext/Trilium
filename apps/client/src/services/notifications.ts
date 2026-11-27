@@ -33,7 +33,10 @@ const MAX_HELD_TRANSIENT_MESSAGES = 100;
 /** A transient notification of this client sends at most four requests a second. */
 const TRANSIENT_SEND_INTERVAL_MS = 250;
 const TRANSIENT_ID_LENGTH = 16;
-const SILENT = { silentBadRequest: true, silentNotFound: true, silentConflict: true };
+/** The options of a request whose refusals the caller reads as codes, without an error toast. */
+export const SILENT_REFUSALS = {
+    silentBadRequest: true, silentNotFound: true, silentConflict: true
+};
 
 type TransientNotificationsMessage = Extract<WebSocketMessage, { type: "transient-notifications" }>;
 
@@ -770,7 +773,7 @@ class ClientTransientHandle implements TransientNotificationHandle {
         try {
             const { token } = await server.put<TransientNotificationPutResponse>(
                 `notifications/transient/${encodeURIComponent(this.id)}`, request, undefined,
-                SILENT);
+                SILENT_REFUSALS);
             this.token = token;
         } catch (e) {
             reportFailure("transient", e);
@@ -788,7 +791,7 @@ class ClientTransientHandle implements TransientNotificationHandle {
 
         try {
             await server.remove(`notifications/transient/${encodeURIComponent(this.id)}`, undefined,
-                { token: this.token }, SILENT);
+                { token: this.token }, SILENT_REFUSALS);
         } catch (e) {
             reportFailure("transient", e);
         }
@@ -867,7 +870,7 @@ function compareText(a: string, b: string) {
 }
 
 /** The code of a refused request: the body of every refusal of a notification route is its code. */
-function getErrorCode(error: unknown): NotificationErrorCode {
+export function getErrorCode(error: unknown): NotificationErrorCode {
     let body: unknown = error;
     if (typeof error === "string") {
         try {

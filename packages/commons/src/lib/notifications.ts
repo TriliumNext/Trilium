@@ -215,6 +215,12 @@ export const TRANSIENT_NOTIFICATION_MAX_BYTES = 2 * 1024;
 export const TRANSIENT_NOTIFICATION_EXPIRY_MS = 60_000;
 /** A client sends its transient notification again this often, so that it does not expire. */
 export const TRANSIENT_NOTIFICATION_REFRESH_MS = 20_000;
+/** The hidden note that holds the files of built-in features, such as the custom sound. */
+export const RESOURCES_NOTE_ID = "_resources";
+/** The file note of the custom sound, which the first upload creates under `_resources`. */
+export const NOTIFICATION_SOUND_NOTE_ID = "_notificationSound";
+/** The size of a custom sound, at most. */
+export const NOTIFICATION_SOUND_MAX_BYTES = 1024 * 1024;
 
 /** Why a generation is dismissed. A persistent notification is refused for `user`. */
 export const NOTIFICATION_DISMISS_REASONS = [ "user", "handler", "force" ] as const;
@@ -231,8 +237,13 @@ export const NOTIFICATION_ERROR_CODES = [
     "reserved-name",
     /** `raisedAt` lies more than an hour ahead. */
     "raised-ahead",
-    /** The content, or the private text written out as plain JSON, is over 8 KiB. */
+    /**
+     * The content, or the private text written out as plain JSON, is over 8 KiB, or a custom
+     * sound is over 1 MiB.
+     */
     "too-large",
+    /** An uploaded sound is not an MP3, OGG or WAV file. */
+    "unsupported-format",
     /** The producer raised 30 in a minute, or the producers that are not built in 120. */
     "budget",
     /** A producer that is not built in raised 500 in a day. */

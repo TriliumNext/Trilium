@@ -411,6 +411,7 @@ const defaultOptions: DefaultOption[] = [
         isSynced: true
     },
     { name: "experimentalFeatures", value: "[]", isSynced: true },
+    { name: "notificationSoundEnabled", value: "true", isSynced: true },
     { name: "notificationDisabledCategories", value: "[]", isSynced: true },
     { name: "notificationsSilent", value: "false", isSynced: false },
 

@@ -68,7 +68,8 @@ describe("hidden_subtree (real DB)", () => {
             // directly under _hidden. (_help is deliberately absent: it is a virtual
             // subtree owned by the in-app help provider, not by checkHiddenSubtree —
             // see in_app_help.spec.ts.)
-            for (const childId of ["_search", "_options", "_taskStates", "_lbRoot"]) {
+            const containers = [ "_search", "_options", "_taskStates", "_lbRoot", "_resources" ];
+            for (const childId of containers) {
                 const child = becca.notes[childId];
                 expect(child, `${childId} should exist`).toBeDefined();
                 expect(
@@ -260,6 +261,12 @@ describe("hidden_subtree (real DB)", () => {
             checkHiddenSubtree();
 
             expect(pageOrder()).toEqual(before);
+        });
+
+        it("lists the notifications page right above the sync page", () => {
+            const order = pageOrder();
+            expect(order.indexOf("_optionsNotifications")).toBeGreaterThan(-1);
+            expect(order.indexOf("_optionsSync") - order.indexOf("_optionsNotifications")).toBe(1);
         });
 
         it("leaves a group the user arranges alone, the launcher bar declaring no order", () => {

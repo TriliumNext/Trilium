@@ -1,14 +1,18 @@
-import type {
-    NotificationCreateResponse,
-    NotificationErrorBody,
-    NotificationListResponse,
-    TransientNotificationPutResponse,
-    TriliumNotification
+import {
+    NOTIFICATION_SOUND_MAX_BYTES,
+    NOTIFICATION_SOUND_NOTE_ID,
+    type NotificationCreateResponse,
+    type NotificationErrorBody,
+    type NotificationListResponse,
+    RESOURCES_NOTE_ID,
+    type TransientNotificationPutResponse,
+    type TriliumNotification
 } from "@triliumnext/commons";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { getContext } from "../../services/context";
+import hiddenSubtreeService from "../../services/hidden_subtree";
 import { getLog } from "../../services/log";
 import { getNotificationService } from "../../services/notifications/index";
 import {
@@ -20,11 +24,14 @@ import optionService from "../../services/options";
 import protectedSessionService from "../../services/protected_session";
 import { getSql } from "../../services/sql/index";
 import sqlInit from "../../services/sql_init";
-import { encodeBase64 } from "../../services/utils/binary";
+import { encodeBase64, encodeUtf8 } from "../../services/utils/binary";
 import { CoreApiTester } from "../../test/api_tester";
 
 const DATA_KEY = Uint8Array.from({ length: 16 }, (_, index) => 50 + index);
 const MARKER = "Recognizable-7f3a";
+/** The header of an MPEG-1 Layer III frame, and silence. */
+const MP3 = Uint8Array.from([ 0xff, 0xfb, 0x90, 0x64, ...new Array<number>(60).fill(0) ]);
+const WAV = Uint8Array.from([ ...encodeUtf8("RIFF"), 36, 0, 0, 0, ...encodeUtf8("WAVEfmt ") ]);
 const TABLES = [
     "notifications", "notification_marks", "notification_private_texts",
     "notification_channel_records"
@@ -66,6 +73,16 @@ async function create(body: Record<string, unknown>) {
 
 function list(after?: string) {
     return api.get<NotificationListResponse>("/api/notifications", { query: { after } });
+}
+
+/**
+ * An upload as multer parses it, with the type that the browser declares, and the answer that the
+ * route writes itself.
+ */
+async function uploadSound(buffer?: Uint8Array, mimetype = "audio/mpeg") {
+    const file = buffer && { originalname: "sound.mp3", mimetype, buffer };
+    const { status, body } = await api.post<string>("/api/notifications/sound", { file });
+    return { status, body: body ? JSON.parse(body) as unknown : undefined };
 }
 
 describe("notification routes", () => {
@@ -218,10 +235,86 @@ describe("notification routes", () => {
             await api.post("/api/notifications/dismiss", { body: { refs: [], reason: "user" } }),
             await api.put("/api/notifications/transient/spec-x",
                 { body: { notification: { title: "Title" } } }),
-            await api.delete("/api/notifications/transient/spec-x", { body: { token: "x" } })
+            await api.delete("/api/notifications/transient/spec-x", { body: { token: "x" } }),
+            await uploadSound(MP3),
+            await api.delete("/api/notifications/sound")
         ]) {
             expect(response).toMatchObject({ status: 409, body: { code: "not-initialized" } });
         }
+        expect((await api.get("/api/notifications/sound")).status).toBe(404);
+    });
+
+    describe("of the custom sound", () => {
+        const HTML = encodeUtf8("<!doctype html><script>alert(1)</script>");
+
+        // The fixture database predates `_resources`, which every start creates.
+        beforeAll(() => getContext().init(() => hiddenSubtreeService.checkHiddenSubtree(true)));
+
+        beforeEach(() => getContext().init(() => getSql().transactional(() => {
+            becca.getNote(NOTIFICATION_SOUND_NOTE_ID)?.deleteNote();
+        })));
+
+        it("store an upload by the format of its bytes and serve it with nosniff", async () => {
+            expect((await uploadSound(MP3, "text/html")).status).toBe(204);
+            const note = becca.getNoteOrThrow(NOTIFICATION_SOUND_NOTE_ID);
+            expect(note).toMatchObject({ type: "file", mime: "audio/mpeg" });
+            expect(note.getParentBranches().map(({ parentNoteId }) => parentNoteId))
+                .toEqual([ RESOURCES_NOTE_ID ]);
+
+            const whole = await api.get<Buffer>("/api/notifications/sound");
+            expect(whole.status).toBe(200);
+            expect(whole.headers).toMatchObject({
+                "Content-Type": "audio/mpeg", "X-Content-Type-Options": "nosniff",
+                "Accept-Ranges": "bytes"
+            });
+            expect(Uint8Array.from(whole.body)).toEqual(MP3);
+
+            const range = await api.get<Buffer>("/api/notifications/sound",
+                { headers: { range: "bytes=0-3" } });
+            expect(range.status).toBe(206);
+            expect(range.headers["X-Content-Type-Options"]).toBe("nosniff");
+            expect(Uint8Array.from(range.body)).toEqual(MP3.subarray(0, 4));
+        });
+
+        it("refuse a file that is not audio, one over 1 MiB and a missing one", async () => {
+            const tooLarge = new Uint8Array(NOTIFICATION_SOUND_MAX_BYTES + 1);
+            tooLarge.set(MP3);
+            expect(await uploadSound(HTML)).toMatchObject(
+                { status: 400, body: { code: "unsupported-format" } });
+            expect(await uploadSound(tooLarge)).toMatchObject(
+                { status: 400, body: { code: "too-large" } });
+            expect(await uploadSound()).toMatchObject(
+                { status: 400, body: { code: "invalid-input" } });
+
+            expect(becca.getNote(NOTIFICATION_SOUND_NOTE_ID)).toBeNull();
+            const missing = await api.get<string>("/api/notifications/sound");
+            expect(missing.status).toBe(404);
+            expect(JSON.parse(missing.body)).toEqual({ code: "not-found" });
+        });
+
+        it("reset to the default sound by emptying the note, which an upload fills", async () => {
+            await uploadSound(MP3);
+            expect((await api.delete("/api/notifications/sound")).status).toBe(204);
+            expect(becca.getNoteOrThrow(NOTIFICATION_SOUND_NOTE_ID).getContent()).toHaveLength(0);
+            expect((await api.get("/api/notifications/sound")).status).toBe(404);
+
+            expect((await uploadSound(WAV)).status).toBe(204);
+            expect(becca.getNoteOrThrow(NOTIFICATION_SOUND_NOTE_ID).mime).toBe("audio/wav");
+            expect((await api.get("/api/notifications/sound")).headers["Content-Type"])
+                .toBe("audio/wav");
+        });
+
+        it("serve nothing once the note holds something other than a sound", async () => {
+            await uploadSound(MP3);
+            getContext().init(() => {
+                const note = becca.getNoteOrThrow(NOTIFICATION_SOUND_NOTE_ID);
+                note.mime = "text/html";
+                note.save();
+                note.setContent(HTML);
+            });
+
+            expect((await api.get("/api/notifications/sound")).status).toBe(404);
+        });
     });
 
     it("answer an error that is no refusal without its message, also in the log", async () => {

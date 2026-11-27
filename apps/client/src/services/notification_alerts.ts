@@ -1,18 +1,19 @@
 /**
  * @module
  *
- * The alert of a notification: a toast in every tab of this backend, and the sound in the one tab
- * of this browser profile that claims the alert. Loaded on the first alert.
+ * The alert of a notification: a toast in every tab of this backend, and, while sound alerts are
+ * on, the sound in the one tab of this browser profile that claims the alert. Loaded on the first
+ * alert.
  */
 import { effect } from "@preact/signals";
 import type { TriliumNotification } from "@triliumnext/commons";
 
-import soundUrl from "../assets/notification-sound.mp3?url";
 import froca from "./froca.js";
 import {
     getActionCaption, getNotificationIcon, getNotificationText, getReferencedNoteId,
     getShownActions, isClickable, markBidiControls, runNotificationAction
 } from "./notification_display.js";
+import { defaultSoundUrl, getAlertSoundUrl } from "./notification_sound.js";
 import notificationStore from "./notifications.js";
 import options from "./options.js";
 import toastService from "./toast.js";
@@ -47,9 +48,12 @@ export async function showAlert(notificationId: string) {
     }
 
     await showToast(notification);
+    if (!options.is("notificationSoundEnabled")) {
+        return;
+    }
     claims ??= new AlertClaims(openClaimChannel());
     if (await claims.claim(notificationId)) {
-        playSound();
+        await playSound();
     }
 }
 
@@ -100,6 +104,8 @@ let claims: AlertClaims | null = null;
 /** The copy of each notification that its toast shows, by `notificationId`, oldest first. */
 const shownToasts = new Map<string, TriliumNotification>();
 let audio: HTMLAudioElement | null = null;
+/** The URL that `audio` plays, as it was set: `src` reads back as an absolute URL. */
+let audioUrl = defaultSoundUrl;
 let lastSoundMs = -Infinity;
 
 // Updates the toast of a notification that changed, and closes it once the notification is read
@@ -170,21 +176,39 @@ function renderToast(notification: TriliumNotification) {
     });
 }
 
-function playSound() {
+/** Plays the custom sound, or the default one where the custom one is not set or does not play. */
+async function playSound() {
     const nowMs = Date.now();
     if (nowMs - lastSoundMs < SOUND_INTERVAL_MS) {
         return;
     }
 
     lastSoundMs = nowMs;
+    const url = await getAlertSoundUrl().catch(() => defaultSoundUrl);
+    try {
+        await play(url);
+    } catch (e) {
+        // A browser refuses to play before the first pointer or key event of the tab, whatever
+        // the sound.
+        if (url !== defaultSoundUrl && (e as Error | null)?.name !== "NotAllowedError") {
+            await play(defaultSoundUrl).catch(() => {});
+        }
+    }
+}
+
+/** Plays `url` from its start on the one audio element, which keeps a sound once it has loaded. */
+function play(url: string) {
     const sound = getAudio();
+    if (audioUrl !== url) {
+        audioUrl = url;
+        sound.src = url;
+    }
     sound.currentTime = 0;
-    // A browser refuses to play before the first pointer or key event of the tab.
-    sound.play().catch(() => {});
+    return sound.play();
 }
 
 function getAudio() {
-    audio ??= new Audio(soundUrl);
+    audio ??= new Audio(audioUrl);
     return audio;
 }
 
