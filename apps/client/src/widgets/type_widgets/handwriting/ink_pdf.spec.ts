@@ -19,7 +19,8 @@ describe("PDF layer", () => {
         sizes: Array.from({ length: 12 }, () => ({ width: 1280, height: 720 })),
         render: async (index, pixels) => {
             renders.push([ index, pixels ]);
-            return { picture, width: 960, height: 540 };
+            const rendered = Object.assign(document.createElement("canvas"), { width: pixels, height: pixels * 9 / 16 });
+            return { picture: index === 0 ? picture : rendered, width: 960, height: 540 };
         },
         destroy: vi.fn()
     };
@@ -130,12 +131,22 @@ describe("PDF layer", () => {
         await settle();
         expect(renders).toHaveLength(2);
 
-        // Paging through the document keeps the first page and the five nearest the view.
+        // Paging through the document keeps the first page and the nearest ones that fit the
+        // memory for pictures: six slides at the largest size.
         for (let index = 1; index < 12; index++) {
             drawPages(index);
             await settle();
         }
-        expect(drawPages(0, 11)).toEqual([ 0, 7, 8, 9, 10, 11 ]);
+        expect(drawPages(0, 11)).toEqual([ 0, 6, 7, 8, 9, 10, 11 ]);
+
+        // Zoomed far out, the pictures are small, and every page on screen keeps its own.
+        scale = 0.25;
+        layer.set(undefined);
+        layer.set(URL);
+        await layer.whenReady();
+        drawPages(0, 11);
+        await settle();
+        expect(drawPages(0, 11)).toEqual([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]);
     });
 
     it("leaves the sheets empty for a PDF that cannot be read", async () => {

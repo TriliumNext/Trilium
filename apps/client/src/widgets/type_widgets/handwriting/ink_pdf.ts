@@ -3,8 +3,11 @@ import { darkenPicture, type Picture } from "./ink_images";
 
 /** The longest side of the picture of a page, in pixels, however far the view is zoomed in. */
 export const MAX_PAGE_PIXELS = 2400;
-/** How many pictures of pages are kept, besides that of the first page. */
-const MAX_CACHED_PAGES = 5;
+/**
+ * How many pixels the pictures of the pages hold together, besides that of the first page: four
+ * A4 pages at `MAX_PAGE_PIXELS`, or every page on screen when the view is zoomed far out.
+ */
+const MAX_CACHED_PIXELS = 20_000_000;
 /** A picture is drawn again once the view asks for one this many times larger. */
 const SHARPEN_FACTOR = 1.3;
 /** World units, which are pixels at 96 DPI, per PDF point. */
@@ -183,12 +186,18 @@ export default class PdfLayer {
         this.host.redrawBounds({ minX: x, minY: y, maxX: x + width, maxY: y + height });
     }
 
-    /** Drops the pictures of the pages farthest from page `index`, but never the first page's. */
+    /**
+     * Drops the pictures of the pages farthest from page `index` until the rest hold no more than
+     * `MAX_CACHED_PIXELS`, but never the first page's.
+     */
     private evict(index: number) {
         const others = [ ...this.cache.keys() ].filter((key) => key !== 0);
-        others.sort((a, b) => Math.abs(b - index) - Math.abs(a - index));
-        for (const key of others.slice(0, Math.max(0, others.length - MAX_CACHED_PAGES))) {
-            this.cache.delete(key);
+        others.sort((a, b) => Math.abs(a - index) - Math.abs(b - index));
+        let pixels = 0;
+        for (const key of others) {
+            const picture = this.cache.get(key)?.picture;
+            pixels += (picture?.width ?? 0) * (picture?.height ?? 0);
+            if (pixels > MAX_CACHED_PIXELS) this.cache.delete(key);
         }
     }
 
