@@ -128,6 +128,7 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 *   Handwriting is not converted to text, so [search](../Basic%20Concepts%20and%20Features/Navigation/Search.md) does not find what is written.
 *   Outside the note itself, only a picture of the first page is shown (see _Previews_ above), and a handwriting note [shared](../Advanced%20Usage/Sharing.md) on a page of its own is not displayed.
 *   The buttons of a pen work only if the tablet driver reports them as mouse buttons. A button mapped to a keystroke has no effect.
+*   On an iPad or iPhone with a 120 Hz screen, Safari shows web pages at 60 frames per second, so the ink trails the pen further than in a native app. To draw at 120 frames per second, open _Settings_ → _Apps_ → _Safari_ → _Advanced_ → _Feature Flags_ on the device, turn off _Prefer Page Rendering Updates near 60fps_, and force-quit Safari. The flag applies to every website in Safari.
 *   Text, images and other kinds of content cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
 
 ## Under the hood
