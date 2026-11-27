@@ -90,6 +90,19 @@ In a dark theme, images are shown with their colors inverted, as the paper is: a
 
 Each image is saved as an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the note, and is compressed as the images of <a class="reference-link" href="Text.md">Text</a> notes are. The attachment of a deleted image is kept for a while, in case the deletion is undone, and then erased.
 
+## Writing on a PDF
+
+A PDF, such as the slides of a lecture, can be the paper of a handwriting note, to write over its pages.
+
+*   To add a PDF, press the <span class="tn-icon bx bxs-file-pdf"></span> _Insert PDF_ button of the toolbar and choose the file, or drag a PDF file onto the note.
+*   Each page of the PDF lies on a sheet of the note, in order, under the images and the ink. A page is made as large as fits the sheet and placed at its top, so a slide in landscape leaves the lower part of the sheet free for notes.
+*   The note switches to the _Pages_ layout and shows a sheet for every page of the PDF, and more after them once the last one has ink.
+*   A note holds one PDF. Adding another replaces it, and the ink stays where it was on the sheets.
+*   To take the PDF away, open the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and select _Remove PDF_. The ink and the images stay.
+*   In a dark theme, the pages are shown with their colors inverted, as images are.
+
+The PDF is saved as an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the note and is not changed: the ink is kept in the note, not written into the file. To read the PDF with its text, links and outline, open the attachment, or keep the PDF as a <a class="reference-link" href="File.md">File</a> note as well.
+
 ## Configuration
 
 The layout and the paper are set from the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and are saved with the note.
@@ -150,8 +163,10 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 *   The buttons of a pen work only if the tablet driver reports them as mouse buttons. A button mapped to a keystroke has no effect.
 *   On an iPad or iPhone with a 120 Hz screen, Safari shows web pages at 60 frames per second, so the ink trails the pen further than in a native app. To draw at 120 frames per second, open _Settings_ → _Apps_ → _Safari_ → _Advanced_ → _Feature Flags_ on the device, turn off _Prefer Page Rendering Updates near 60fps_, and force-quit Safari. The flag applies to every website in Safari.
 *   Images cannot be rotated or cropped, and always lie under the ink.
+*   The pages of a PDF are pictures: their text cannot be selected or searched, and their links do not work. Zoomed in beyond about 200%, or 100% on a high-density screen, they are less sharp than the ink.
+*   The pages of a PDF cannot be reordered, removed or rotated, and a note with its ink cannot be exported as a PDF yet.
 *   Typed text and other kinds of content cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
 
 ## Under the hood
 
-A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points, and the images with their position, their size and the address of their attachment. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points, and the images with their position, their size and the address of their attachment, as well as the address of the PDF. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.

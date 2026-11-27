@@ -600,16 +600,16 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     }
 
     /**
-     * Points the pictures of a mind map's nodes, or the images of a handwriting note, at the
-     * attachments as they were recreated here.
+     * Points the pictures of a mind map's nodes, or the images and the PDF of a handwriting note,
+     * at the attachments as they were recreated here.
      *
      * The JSON carries each picture as the `api/attachments/...` URL it was served from in the
      * instance the note came from, and every attachment is given a new id on the way in — so without
      * this the pictures of an imported note point at attachments of the instance it left.
      */
     function processAttachmentImageUrls(content: string) {
-        return content.replace(/api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
-            (_match, attachmentId: string) => `api/attachments/${getNewAttachmentId(attachmentId)}/image`);
+        return content.replace(/api\/attachments\/([a-zA-Z0-9_]+)\/(image|open)/g,
+            (_match, attachmentId: string, route: string) => `api/attachments/${getNewAttachmentId(attachmentId)}/${route}`);
     }
 
     /**

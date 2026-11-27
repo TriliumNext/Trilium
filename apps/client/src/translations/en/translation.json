@@ -4410,6 +4410,9 @@
     "select": "Select",
     "insert_image": "Insert image...",
     "delete_image": "Delete image",
+    "insert_pdf": "Insert PDF...",
+    "remove_pdf": "Remove PDF",
+    "pdf_failed": "The PDF \"{{name}}\" could not be added.",
     "image_failed": "The image \"{{name}}\" could not be added."
   },
   "mind-map": {

@@ -25,6 +25,7 @@ import {
     AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTool, type InkView,
     PAPER_STYLES, parseInkDocument
 } from "./ink_document";
+import { openPdf } from "./ink_pdf";
 import InkSurface, {
     ERASER_MODES, type EraserMode, HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool
 } from "./ink_surface";
@@ -120,10 +121,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
     const inkTool: InkTool | undefined = tool === "pen" || tool === "highlighter" ? tool : undefined;
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const pdfInputRef = useRef<HTMLInputElement>(null);
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
-        page: 0, pageCount: 1, hasSelection: false
+        page: 0, pageCount: 1, hasSelection: false, hasPdf: false
     });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
@@ -212,7 +214,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             },
             onGesture: () => spacedUpdate.resetUpdateTimer(),
             onStateChange: setState,
-            loadImage: loadPicture
+            loadImage: loadPicture,
+            openPdf
         });
         surfaceRef.current = surface;
         if (pendingDocRef.current) {
@@ -261,6 +264,18 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             surfaceRef.current.addImage(url, picture.naturalWidth, picture.naturalHeight);
             setTool("select");
         }
+    }
+
+    /** Uploads `file` as an attachment of the note and puts its pages on the sheets. */
+    async function insertPdf(file: File) {
+        const noteId = note?.noteId;
+        if (!noteId || isReadOnly) return;
+        const url = await uploadPdf(noteId, file);
+        if (!url) {
+            toast.showError(t("handwriting.pdf_failed", { name: file.name }));
+            return;
+        }
+        if (shownNoteIdRef.current === noteId) surfaceRef.current?.setPdf(url);
     }
 
     function updateInk(changes: Partial<InkSettings>) {
@@ -334,9 +349,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             }}
             onDrop={(e) => {
                 const files = getImageFiles(e.dataTransfer);
-                if (!files.length || isReadOnly) return;
+                const pdf = [ ...(e.dataTransfer?.files ?? []) ].find(isPdf);
+                if ((!files.length && !pdf) || isReadOnly) return;
                 e.preventDefault();
                 e.stopPropagation();
+                if (pdf) void insertPdf(pdf);
                 void insertImages(files);
             }}
         >
@@ -384,6 +401,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                             title={t("handwriting.insert_image")}
                             icon="bx-image-add"
                             onClick={() => imageInputRef.current?.click()}
+                        />
+                        <OverlayControlButton
+                            title={t("handwriting.insert_pdf")}
+                            icon="bxs-file-pdf"
+                            onClick={() => pdfInputRef.current?.click()}
                         />
                         {state.hasSelection && (
                             <OverlayControlButton
@@ -448,6 +470,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                     </FormListItem>
                                 ))}
                             </FormDropdownSubmenu>
+                            {state.hasPdf && (
+                                <FormListItem icon="bx bx-trash" onClick={() => surfaceRef.current?.setPdf(undefined)}>
+                                    {t("handwriting.remove_pdf")}
+                                </FormListItem>
+                            )}
                             {HAS_TOUCH && (
                                 <FormListItem
                                     icon="bx bxs-hand-up"
@@ -478,6 +505,19 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                     const files = [ ...(e.currentTarget.files ?? []) ];
                     e.currentTarget.value = "";
                     void insertImages(files);
+                }}
+                tabIndex={-1}
+                aria-hidden="true"
+            />
+            <input
+                ref={pdfInputRef}
+                type="file"
+                className="handwriting-image-input"
+                accept="application/pdf"
+                onChange={(e) => {
+                    const file = e.currentTarget.files?.[0];
+                    e.currentTarget.value = "";
+                    if (file) void insertPdf(file);
                 }}
                 tabIndex={-1}
                 aria-hidden="true"
@@ -797,6 +837,28 @@ async function uploadImage(noteId: string, file: File) {
         return result?.uploaded ? result.url : undefined;
     } catch (e) {
         console.error(`Could not upload an image to the handwriting note '${noteId}'`, e);
+        return undefined;
+    }
+}
+
+function isPdf(file: File) {
+    return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+/**
+ * Uploads `file` as a file attachment of the note and returns the URL that serves it, which
+ * matches `PDF_URL_PATTERN`.
+ */
+async function uploadPdf(noteId: string, file: File) {
+    if (!isPdf(file)) return undefined;
+    try {
+        const result = await server.upload(`notes/${noteId}/attachments/upload`, file, undefined, "POST") as
+            { uploaded?: boolean, url?: string };
+        // The server answers with a link to the attachment, `#root/{noteId}?...&attachmentId={id}`.
+        const attachmentId = result?.uploaded ? result.url?.match(/attachmentId=([a-zA-Z0-9_]+)/)?.[1] : undefined;
+        return attachmentId && `api/attachments/${attachmentId}/open`;
+    } catch (e) {
+        console.error(`Could not upload a PDF to the handwriting note '${noteId}'`, e);
         return undefined;
     }
 }

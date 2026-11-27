@@ -30,8 +30,10 @@ export interface ThumbnailContent {
     getImages(): InkImage[];
     /** Returns the picture of `image`, or `undefined` for one that is not loaded. */
     getPicture(image: InkImage): Picture | undefined;
-    /** Resolves once the pictures of the images have loaded or failed. */
+    /** Resolves once the pictures of the images and of the background have loaded or failed. */
     whenImagesLoaded(): Promise<void>;
+    /** Returns the picture under the images, such as the first page of a PDF, and where it lies. */
+    getBackground?(): { picture: Picture, rect: { x: number, y: number, width: number, height: number } } | undefined;
 }
 
 /** A picture of a thumbnail, and the version of the thumbnail that it shows. */
@@ -161,6 +163,12 @@ export default class InkThumbnail {
 
         ctx.setTransform(scale, 0, 0, scale, -area.minX * scale, -area.minY * scale);
         this.hasPictures = false;
+        const background = this.content.getBackground?.();
+        if (background) {
+            const { x, y, width, height } = background.rect;
+            ctx.drawImage(background.picture, x, y, width, height);
+            this.hasPictures = true;
+        }
         for (const image of images) {
             const picture = intersects(area, image.bounds) && this.content.getPicture(image);
             if (!picture) continue;

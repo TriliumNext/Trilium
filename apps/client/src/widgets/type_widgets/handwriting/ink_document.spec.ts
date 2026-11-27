@@ -122,6 +122,17 @@ describe("ink document", () => {
         expect(parseInkDocument(JSON.stringify({ version: 1, strokes: [], images: "none" })).images).toEqual([]);
     });
 
+    it("saves the PDF of the note, and reads back only one of the note's attachments", () => {
+        const pdf = "api/attachments/abc_123/open";
+        const saved = serializeInkDocument("ruled", [], undefined, "pages", [], pdf);
+        expect(JSON.parse(saved).pdf).toBe(pdf);
+        expect(parseInkDocument(saved).pdf).toBe(pdf);
+        for (const other of [ "https://example.com/a.pdf", "api/attachments/abc/open?x=1", "api/notes/abc/open", 5 ]) {
+            const parsed = parseInkDocument(JSON.stringify({ version: 1, paper: "ruled", strokes: [], pdf: other }));
+            expect(parsed).not.toHaveProperty("pdf");
+        }
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
             expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [], images: [] });

@@ -6,6 +6,7 @@ import {
     splitStroke, type Stroke, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 import ImageLayer, { type Picture, placeImage } from "./ink_images";
+import PdfLayer, { type PdfPages } from "./ink_pdf";
 import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
 import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
@@ -29,6 +30,8 @@ export interface InkSurfaceState {
     pageCount: number;
     /** Whether an image is selected. */
     hasSelection: boolean;
+    /** Whether the note has a PDF as its paper. */
+    hasPdf: boolean;
 }
 
 interface InkSurfaceOptions {
@@ -42,6 +45,8 @@ interface InkSurfaceOptions {
     onStateChange(state: InkSurfaceState): void;
     /** Loads the picture of an image of the note. Without it, images show as empty rectangles. */
     loadImage?(url: string): Promise<Picture | undefined>;
+    /** Opens the PDF of the note. Without it, the sheets stay empty. */
+    openPdf?(url: string): Promise<PdfPages | undefined>;
 }
 
 interface HistoryEntry {
@@ -111,6 +116,7 @@ export default class InkSurface {
     private strokes = new Set<Stroke>();
     private index = new StrokeIndex();
     private images: ImageLayer;
+    private pdf: PdfLayer;
     private thumbnail: InkThumbnail;
     private nextOrder = 0;
     private nextImageOrder = 0;
@@ -200,12 +206,22 @@ export default class InkSurface {
             },
             onSelectionChange: () => this.reportState()
         });
+        this.pdf = new PdfLayer({
+            openPdf: async (url) => this.options.openPdf?.(url),
+            redrawBounds: (bounds) => this.redrawBounds(bounds),
+            getScale: () => this.zoom * this.dpr,
+            isBusy: () => this.mode !== "idle",
+            onOpen: () => this.updatePageCount()
+        });
         this.thumbnail = new InkThumbnail({
             getAll: () => this.strokes,
             query: (bounds) => this.index.query(bounds),
             getImages: () => this.images.getAll(),
             getPicture: (image) => this.images.getPicture(image),
-            whenImagesLoaded: () => this.images.whenLoaded()
+            whenImagesLoaded: async () => {
+                await Promise.all([ this.images.whenLoaded(), this.pdf.whenReady() ]);
+            },
+            getBackground: () => this.pdf.getFirstPage()
         });
 
         const listener = { signal: this.abort.signal };
@@ -238,6 +254,7 @@ export default class InkSurface {
         this.baseCanvas.remove();
         this.eraserRing.remove();
         this.images.destroy();
+        this.pdf.destroy();
     }
 
     get tool() {
@@ -270,10 +287,11 @@ export default class InkSurface {
         const images = doc.images ?? [];
         this.images.load(images);
         this.nextImageOrder = images.length;
+        this.pdf.set(doc.pdf);
         this.paper = doc.paper;
         this.layout = doc.layout;
         this.thumbnail.reset(doc.layout);
-        this.pageCount = countPages(this.getItems());
+        this.pageCount = this.countPages();
         this.viewShown = false;
         this.undoStack = [];
         this.redoStack = [];
@@ -301,7 +319,23 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll());
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.pdf.url);
+    }
+
+    /**
+     * Puts the pages of the PDF at `url` on the sheets of the note, which is then laid out in
+     * pages, or with `undefined`, takes the PDF away. The ink and the images stay where they are.
+     */
+    setPdf(url: string | undefined) {
+        if (url === this.pdf.url) return;
+        this.pdf.set(url);
+        if (url) this.layout = "pages";
+        this.thumbnail.setLayout(this.layout);
+        this.pageCount = this.countPages();
+        this.cancelZoomPreview();
+        this.redrawAll();
+        this.reportState();
+        this.options.onChange();
     }
 
     /**
@@ -741,6 +775,7 @@ export default class InkSurface {
         this.mode = "idle";
         this.activePointerId = undefined;
         this.activePointerType = undefined;
+        this.pdf.resume();
     }
 
     //#endregion
@@ -846,6 +881,11 @@ export default class InkSurface {
         this.updatePageCount();
     }
 
+    /** How many pages the note shows: those of its PDF at least. */
+    private countPages() {
+        return Math.max(countPages(this.getItems()), this.pdf.pageCount);
+    }
+
     /** The strokes and the images, for what needs only their bounds. */
     private *getItems(): Iterable<{ bounds: Bounds }> {
         yield* this.strokes;
@@ -854,7 +894,7 @@ export default class InkSurface {
 
     /** Adds an empty page after the last one holding ink or an image, or drops the pages after it. */
     private updatePageCount() {
-        const count = countPages(this.getItems());
+        const count = this.countPages();
         if (count === this.pageCount) return;
         const from = Math.min(count, this.pageCount);
         const to = Math.max(count, this.pageCount);
@@ -984,7 +1024,8 @@ export default class InkSurface {
             penErasing: this.penErasing,
             page: this.reportedPage,
             pageCount: this.pageCount,
-            hasSelection: !!this.images.selection
+            hasSelection: !!this.images.selection,
+            hasPdf: !!this.pdf.url
         });
     }
 
@@ -1109,6 +1150,7 @@ export default class InkSurface {
             maxX: (x + width - this.tx) / scale,
             maxY: (y + height - this.ty) / scale
         };
+        this.pdf.draw(ctx, bounds, this.isDark);
         this.images.draw(ctx, bounds, this.autoColor, this.isDark);
         for (const stroke of this.index.query(bounds)) {
             this.fillStroke(ctx, stroke);

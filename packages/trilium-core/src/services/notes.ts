@@ -585,7 +585,9 @@ export function checkImageAttachments(note: BNote, content: string) {
                 // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
                 { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/image/g },
                 // [...](#root/{noteId}?viewMode=attachments&attachmentId={id})
-                { pattern: /attachmentId=([a-zA-Z0-9_]+)/g }
+                { pattern: /attachmentId=([a-zA-Z0-9_]+)/g },
+                // "pdf":"api/attachments/{id}/open", the PDF that a handwriting note has as its paper
+                ...(note.type === "handwriting" ? [ { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/open/g } ] : [])
             ]
             : [
                 // <img src="api/attachments/{id}/image/...">
@@ -717,6 +719,8 @@ export function checkImageAttachments(note: BNote, content: string) {
         // at the foreign attachment made them resolve to another note's picture until a later save
         // happened to fix one more, each one announcing itself with a toast.
         content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/image`, `api/attachments/${localAttachment.attachmentId}/image`);
+        // Likewise for the PDF of a handwriting note.
+        content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/open`, `api/attachments/${localAttachment.attachmentId}/open`);
         // Replace reference links, keeping the `LINK_TARGET_PARAMS` of each, such as a PDF page.
         const localHref = `#root/${localAttachment.ownerId}?viewMode=attachments`
             + `&amp;attachmentId=${localAttachment.attachmentId}`;

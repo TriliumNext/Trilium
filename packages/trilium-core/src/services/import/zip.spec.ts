@@ -255,11 +255,19 @@ describe("processNoteContent", () => {
                     mime: "image/png",
                     position: 10,
                     dataFileName: "Exercise_exercise.png"
+                }, {
+                    attachmentId: "sheetPdf1",
+                    title: "slides.pdf",
+                    role: "file",
+                    mime: "application/pdf",
+                    position: 20,
+                    dataFileName: "Exercise_slides.pdf"
                 }]
             }]
         };
         const sheet = {
             version: 1, paper: "ruled", layout: "pages",
+            pdf: "api/attachments/sheetPdf1/open",
             images: [{ url: "api/attachments/sheetPicture1/image/exercise.png", x: 0, y: 0, w: 240, h: 180 }],
             strokes: []
         };
@@ -267,7 +275,8 @@ describe("processNoteContent", () => {
         const zipBuffer = await createZipBuffer({
             "!!!meta.json": JSON.stringify(metaFile),
             "Exercise.json": JSON.stringify(sheet),
-            "Exercise_exercise.png": Buffer.from("fake image data")
+            "Exercise_exercise.png": Buffer.from("fake image data"),
+            "Exercise_slides.pdf": Buffer.from("fake pdf data")
         });
 
         const { importedNote } = await testImportBuffer(zipBuffer);
@@ -277,6 +286,9 @@ describe("processNoteContent", () => {
         expect(picture.attachmentId).not.toBe("sheetPicture1");
         expect(content).toContain(`api/attachments/${picture.attachmentId}/image/exercise.png`);
         expect(content).not.toContain("sheetPicture1");
+        const [ pdf ] = importedNote.getAttachmentsByRole("file");
+        expect(pdf.attachmentId).not.toBe("sheetPdf1");
+        expect(JSON.parse(content).pdf).toBe(`api/attachments/${pdf.attachmentId}/open`);
     });
 
     it("points an imported embed at its attachment as it was recreated", async () => {

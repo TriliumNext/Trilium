@@ -684,9 +684,12 @@ describe("notes service (real DB)", () => {
     describe("handwriting images", () => {
         const sheet = (...urls: string[]) => JSON.stringify({
             version: 1, paper: "ruled", layout: "pages",
-            images: urls.map((url) => ({ url, x: 0, y: 0, w: 100, h: 50 })),
+            pdf: urls.find((url) => url.endsWith("/open")),
+            images: urls.filter((url) => !url.endsWith("/open")).map((url) => ({ url, x: 0, y: 0, w: 100, h: 50 })),
             strokes: []
         });
+        const PDF = { role: "file", mime: "application/pdf", title: "slides.pdf", content: new Uint8Array([ 4, 5 ]) };
+        const pdfUrlOf = (attachmentId: string | undefined) => `api/attachments/${attachmentId}/open`;
         const urlOf = (attachmentId: string | undefined) => `api/attachments/${attachmentId}/image/a.png`;
         const isScheduled = (attachmentId: string | undefined) =>
             !!becca.getAttachment(attachmentId ?? "")?.utcDateScheduledForErasureSince;
@@ -707,18 +710,29 @@ describe("notes service (real DB)", () => {
             getContext().init(() => noteService.updateNoteData(note.noteId,
                 sheet(urlOf(used.attachmentId), urlOf(removed.attachmentId))));
             expect(isScheduled(removed.attachmentId)).toBe(false);
+
+            // The PDF that is the paper of the note is kept as well, until it is taken away.
+            const pdf = getContext().init(() => note.saveAttachment(PDF));
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(pdfUrlOf(pdf.attachmentId))));
+            expect(isScheduled(pdf.attachmentId)).toBe(false);
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet()));
+            expect(isScheduled(pdf.attachmentId)).toBe(true);
         });
 
         it("gives a duplicated note images of its own", async () => {
             const { note } = createNote("root", { type: "handwriting", mime: "application/json", content: sheet() });
             const image = getContext().init(() => note.saveAttachment(PNG));
-            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(urlOf(image.attachmentId))));
+            const pdf = getContext().init(() => note.saveAttachment(PDF));
+            getContext().init(() => noteService.updateNoteData(note.noteId,
+                sheet(urlOf(image.attachmentId), pdfUrlOf(pdf.attachmentId))));
 
             const copy = getContext().init(() => noteService.duplicateSubtree(note.noteId, "root")).note;
-            await vi.waitFor(() => expect(copy.getAttachmentsByRole("image")).toHaveLength(1));
+            await vi.waitFor(() => expect(copy.getAttachmentsByRole("file")).toHaveLength(1));
             const [ copied ] = copy.getAttachmentsByRole("image");
+            const [ copiedPdf ] = copy.getAttachmentsByRole("file");
             expect(copied.attachmentId).not.toBe(image.attachmentId);
-            expect(copy.getContent()).toBe(sheet(urlOf(copied.attachmentId)));
+            expect(copiedPdf.attachmentId).not.toBe(pdf.attachmentId);
+            expect(copy.getContent()).toBe(sheet(urlOf(copied.attachmentId), pdfUrlOf(copiedPdf.attachmentId)));
         });
     });
 

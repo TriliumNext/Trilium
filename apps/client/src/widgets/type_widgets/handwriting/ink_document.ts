@@ -70,11 +70,20 @@ export interface InkImage {
  */
 export const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#]*$/;
 
+/**
+ * The URL of the PDF attachment that a note has as its paper. The server's
+ * `checkImageAttachments()` finds the attachment by this shape, and no other URL is loaded from a
+ * saved document.
+ */
+export const PDF_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/open$/;
+
 export interface InkDocument {
     paper: PaperStyle;
     layout: InkLayout;
     strokes: Stroke[];
     images?: InkImage[];
+    /** The PDF whose pages lie on the sheets, which matches {@link PDF_URL_PATTERN}. */
+    pdf?: string;
     /** The view the note was last saved at. */
     view?: InkView;
 }
@@ -98,6 +107,7 @@ interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
     layout?: InkLayout;
+    pdf?: string;
     images?: SerializedImage[];
     strokes: SerializedStroke[];
     view?: InkView;
@@ -131,7 +141,7 @@ export function createImage(props: Omit<InkImage, "bounds">): InkImage {
  */
 export function serializeInkDocument(
     paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
-    images: InkImage[] = []
+    images: InkImage[] = [], pdf?: string
 ): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
@@ -144,7 +154,7 @@ export function serializeInkDocument(
     const savedImages = images.length
         ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${savedImages},"strokes":[${parts.join(",")}]}`;
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedImages},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -204,7 +214,8 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const layout = INK_LAYOUTS.includes(raw.layout as InkLayout)
         ? raw.layout as InkLayout
         : strokes.length ? "infinite" : "pages";
-    return { paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view) };
+    const pdf = typeof raw.pdf === "string" && PDF_URL_PATTERN.test(raw.pdf) ? raw.pdf : undefined;
+    return { paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view), ...(pdf && { pdf }) };
 }
 
 function parseImages(raw: unknown): InkImage[] {

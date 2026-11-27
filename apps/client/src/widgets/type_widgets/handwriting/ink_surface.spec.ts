@@ -723,6 +723,46 @@ describe("ink surface input", () => {
         });
     });
 
+    it("puts the pages of a PDF on the sheets, under the ink, and shows a sheet for each", async () => {
+        const PDF = "api/attachments/abc/open";
+        const picture = document.createElement("canvas");
+        const pages = {
+            pageCount: 3,
+            render: vi.fn(async () => ({ picture, width: 960, height: 540 })),
+            destroy: vi.fn()
+        };
+        const openPdf = vi.fn(async () => pages);
+        const settle = () => new Promise((resolve) => setTimeout(resolve));
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange, openPdf });
+        surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+
+        surface.setPdf(PDF);
+        expect(onChange).toHaveBeenCalledOnce();
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasPdf: true, layout: "pages" }));
+        expect(JSON.parse(surface.serialize())).toMatchObject({ pdf: PDF, layout: "pages" });
+        await settle();
+        expect(openPdf).toHaveBeenCalledExactlyOnceWith(PDF);
+        expect(surface.getPageCount()).toBe(3);
+        expect(drawImages).toContainEqual([ picture, 0, 0, 794, 446.625 ]);
+
+        // Ink goes over the page, and a note reloaded with the same PDF does not open it again.
+        swipe("pen", 1, 100);
+        expect(surface.getPageCount()).toBe(3);
+        surface.load(parseInkDocument(surface.serialize()));
+        await settle();
+        expect(openPdf).toHaveBeenCalledOnce();
+        expect(surface.getPageCount()).toBe(3);
+
+        // Without the PDF, the note keeps its ink and the pages that hold it.
+        surface.setPdf(undefined);
+        expect(pages.destroy).toHaveBeenCalledOnce();
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasPdf: false, pageCount: 2 }));
+        expect(JSON.parse(surface.serialize())).not.toHaveProperty("pdf");
+        expect(parseInkDocument(surface.serialize()).strokes).toHaveLength(1);
+    });
+
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
         vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
         pointer("pointerdown", "pen", 1, 100);

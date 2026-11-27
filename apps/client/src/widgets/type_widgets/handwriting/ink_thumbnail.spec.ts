@@ -11,6 +11,7 @@ describe("ink thumbnail", () => {
     let strokes: Set<Stroke>;
     let images: InkImage[];
     const picture = document.createElement("canvas");
+    let background: { picture: HTMLCanvasElement, rect: { x: number, y: number, width: number, height: number } } | undefined;
     let index: StrokeIndex;
     let thumbnail: InkThumbnail;
 
@@ -40,7 +41,8 @@ describe("ink thumbnail", () => {
             query: (bounds) => index.query(bounds),
             getImages: () => images,
             getPicture: (image) => (image.url.includes("loaded") ? picture : undefined),
-            whenImagesLoaded: async () => {}
+            whenImagesLoaded: async () => {},
+            getBackground: () => background
         });
         thumbnail.reset("pages");
     });
@@ -126,6 +128,14 @@ describe("ink thumbnail", () => {
         await thumbnail.export();
         expect(drawn).toEqual([ "picture", "#ff0000" ]);
         expect(toBlob).toHaveBeenLastCalledWith(expect.anything(), "image/webp", expect.anything());
+
+        // The first page of a PDF lies under the images.
+        background = { picture, rect: { x: 0, y: 0, width: 794, height: 446 } };
+        thumbnail.invalidate();
+        drawn = [];
+        await thumbnail.export();
+        expect(drawn).toEqual([ "picture", "picture", "#ff0000" ]);
+        background = undefined;
 
         // On a canvas without bounds, the thumbnail fits the images as well as the ink, which
         // starts 3 units before the image, with 16 units around them.
