@@ -77,6 +77,14 @@ export interface InkObject {
      * order, which a saved document keeps all the same.
      */
     order: number;
+    /** The fields of the saved object that this build does not know, which a save writes back. */
+    extra?: Record<string, unknown>;
+}
+
+/** An object of a saved note that this build cannot read, which a save writes back as it is. */
+export interface OpaqueObject {
+    order: number;
+    json: string;
 }
 
 /** Returns an `id` for a new object. */
@@ -146,13 +154,20 @@ const MIN_FONT_SIZE = 4;
 const MAX_FONT_SIZE = 400;
 
 export interface InkDocument {
-    /** The version of the saved document, which a later build can have saved. */
+    /**
+     * The version of the saved document. A note of a version after `HANDWRITING_FORMAT_VERSION`
+     * was saved by a later build, and must not be saved by this one.
+     */
     version: number;
     paper: PaperStyle;
     layout: InkLayout;
     strokes: Stroke[];
     images?: InkImage[];
     texts?: InkTextBox[];
+    /** The objects that this build cannot read. */
+    opaque?: OpaqueObject[];
+    /** The fields of the saved document that this build does not know, which a save writes back. */
+    extra?: Record<string, unknown>;
     /**
      * The first sheets, each with its size and the page of a PDF that lies on it, if any. The
      * sheets after them are A4.
@@ -199,6 +214,14 @@ interface SerializedDocument {
     texts?: unknown[];
 }
 
+/** The fields of a saved document and of each kind of object that this build reads. */
+const DOCUMENT_FIELDS = new Set<string>([
+    "version", "paper", "layout", "view", "pdf", "pdfs", "sheets", "objects", "strokes", "images", "texts"
+] satisfies (keyof SerializedDocument)[]);
+const STROKE_FIELDS = new Set([ "id", "at", "t", "c", "w", "s", "k", "p" ]);
+const IMAGE_FIELDS = new Set([ "o", "id", "at", "url", "x", "y", "w", "h" ]);
+const TEXT_FIELDS = new Set([ "o", "id", "at", "x", "y", "w", "s", "html" ]);
+
 /**
  * The pressure sensitivity of a stroke that saved none: perfect-freehand's `thinning` of 0.6,
  * which every stroke had before the sensitivity could be set.
@@ -207,7 +230,7 @@ export const DEFAULT_PRESSURE_SENSITIVITY = 60;
 
 /** What makes an object: its own fields `K` and its place, with an `id` only to keep one. */
 type NewObject<T extends InkObject, K extends keyof T> =
-    Pick<T, K | "order"> & Partial<Pick<InkObject, "id" | "at">>;
+    Pick<T, K | "order"> & Partial<Pick<InkObject, "id" | "at" | "extra">>;
 
 /** Returns a stroke with its bounds, and with a new `id` unless `props` has one. */
 export function createStroke(
@@ -241,8 +264,10 @@ export interface SavedInkDocument {
     strokes: Iterable<Stroke>;
     images?: Iterable<InkImage>;
     texts?: Iterable<InkTextBox>;
+    opaque?: Iterable<OpaqueObject>;
     sheets?: SheetSpec[];
     legacyPdf?: string;
+    extra?: Record<string, unknown>;
 }
 
 /**
@@ -251,9 +276,10 @@ export interface SavedInkDocument {
  * not encode every point again.
  */
 export function serializeInkDocument({
-    paper, layout = "pages", view, strokes, images = [], texts = [], sheets = [], legacyPdf
+    paper, layout = "pages", view, strokes, images = [], texts = [], opaque = [], sheets = [], legacyPdf,
+    extra = {}
 }: SavedInkDocument): string {
-    const objects: { order: number, json: string }[] = [];
+    const objects: OpaqueObject[] = [ ...opaque ];
     for (const stroke of strokes) {
         objects.push({ order: stroke.order, json: serializeStroke(stroke) });
     }
@@ -277,7 +303,8 @@ export function serializeInkDocument({
             sheets: sheets.map(({ width, height, source }) => [
                 round(width, 10), round(height, 10), ...(source ? [ pdfs.indexOf(source.url), source.page ] : [])
             ])
-        })
+        }),
+        ...extra
     };
     return `${JSON.stringify(fields).slice(0, -1)},"objects":[${objects.map(({ json }) => json).join(",")}]}`;
 }
@@ -295,23 +322,25 @@ export function serializeStroke(stroke: Stroke): string {
             ...(stroke.sensitivity !== undefined && { k: stroke.sensitivity }),
             p: encodePoints(stroke.points)
         };
-        stroke.json = JSON.stringify(serialized);
+        stroke.json = JSON.stringify({ ...serialized, ...stroke.extra });
     }
     return stroke.json;
 }
 
-function serializeImage({ id, at, url, x, y, width, height }: InkImage) {
+function serializeImage({ id, at, url, x, y, width, height, extra }: InkImage) {
     return JSON.stringify({
         o: "image", id, ...(at !== undefined && { at }), url,
-        x: round(x, 10), y: round(y, 10), w: round(width, 10), h: round(height, 10)
+        x: round(x, 10), y: round(y, 10), w: round(width, 10), h: round(height, 10),
+        ...extra
     });
 }
 
-function serializeTextBox({ id, at, x, y, width, fontSize, html }: InkTextBox) {
+function serializeTextBox({ id, at, x, y, width, fontSize, html, extra }: InkTextBox) {
     return JSON.stringify({
         o: "text", id, ...(at !== undefined && { at }),
         x: round(x, 10), y: round(y, 10), w: round(width, 10),
-        ...(fontSize !== undefined && { s: round(fontSize, 10) }), html
+        ...(fontSize !== undefined && { s: round(fontSize, 10) }), html,
+        ...extra
     });
 }
 
@@ -336,14 +365,18 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const strokes: Stroke[] = [];
     const images: InkImage[] = [];
     const texts: InkTextBox[] = [];
+    const opaque: OpaqueObject[] = [];
     const ids = new Set<string>();
     // An object without an `id` of its own takes one from its place, which every instance that
     // reads the document gives alike.
-    const readObject = (entry: Record<string, unknown>, order: number, prefix: string) => {
+    const readObject = (
+        entry: Record<string, unknown>, order: number, prefix: string, fields: Set<string>
+    ) => {
         let id = typeof entry.id === "string" && entry.id ? entry.id : `${prefix}${order + 1}`;
         while (ids.has(id)) id += "_";
         ids.add(id);
-        return { id, order, ...(isFiniteNumber(entry.at) && { at: entry.at }) };
+        const extra = getExtra(entry, fields);
+        return { id, order, ...(isFiniteNumber(entry.at) && { at: entry.at }), ...(extra && { extra }) };
     };
     for (const [ order, entry ] of saved.entries()) {
         if (!isRecord(entry)) continue;
@@ -351,11 +384,13 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
         const image = entry.o === "image" && parseImage(entry);
         const text = entry.o === "text" && parseTextBox(entry);
         if (stroke) {
-            strokes.push(createStroke({ ...stroke, ...readObject(entry, order, "s") }));
+            strokes.push(createStroke({ ...stroke, ...readObject(entry, order, "s", STROKE_FIELDS) }));
         } else if (image) {
-            images.push(createImage({ ...image, ...readObject(entry, order, "i") }));
+            images.push(createImage({ ...image, ...readObject(entry, order, "i", IMAGE_FIELDS) }));
         } else if (text) {
-            texts.push({ ...text, ...readObject(entry, order, "t") });
+            texts.push({ ...text, ...readObject(entry, order, "t", TEXT_FIELDS) });
+        } else {
+            opaque.push({ order, json: JSON.stringify(entry) });
         }
     }
 
@@ -376,9 +411,11 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
         }
     }
     const legacyPdf = sheets.length ? undefined : single;
+    const extra = getExtra(raw, DOCUMENT_FIELDS);
     return {
         version, paper, layout, strokes, images, texts,
         view: parseView(raw.view),
+        ...(opaque.length && { opaque }), ...(extra && { extra }),
         ...(sheets.length && { sheets }), ...(legacyPdf && { legacyPdf })
     };
 }
@@ -393,6 +430,17 @@ function getLegacyObjects(raw: Partial<SerializedDocument>) {
     const withKind = (objects: unknown, o: string) => (Array.isArray(objects) ? objects : [])
         .map((object) => (isRecord(object) ? { ...object, o } : object));
     return [ ...withKind(raw.images, "image"), ...raw.strokes, ...withKind(raw.texts, "text") ];
+}
+
+/** Returns the fields of `saved` that are not among `fields`, or `undefined` when it has none. */
+function getExtra(saved: Record<string, unknown>, fields: Set<string>) {
+    let extra: Record<string, unknown> | undefined;
+    for (const key in saved) {
+        if (fields.has(key)) continue;
+        extra ??= {};
+        extra[key] = saved[key];
+    }
+    return extra;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

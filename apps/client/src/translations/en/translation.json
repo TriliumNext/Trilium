@@ -4418,7 +4418,8 @@
     "image_failed": "The image \"{{name}}\" could not be added.",
     "text": "Text",
     "text_box_empty": "Double-click to type",
-    "delete_text_box": "Remove text box"
+    "delete_text_box": "Remove text box",
+    "newer_version": "This note was saved by a newer version of Trilium. To edit it, update Trilium on this device."
   },
   "mind-map": {
     "addChild": "Add child",

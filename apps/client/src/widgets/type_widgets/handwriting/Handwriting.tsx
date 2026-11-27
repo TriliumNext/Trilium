@@ -196,7 +196,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         // Set before the document is loaded, as loading one can ask for a save.
         isNewerRef.current = doc.version > HANDWRITING_FORMAT_VERSION;
         setNewer(isNewerRef.current);
-        surface.readOnly ||= isNewerRef.current;
         surface.load(doc);
         setTextBoxes(doc.texts ?? []);
         if (!previous || previous !== noteId) {
@@ -210,7 +209,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     async function saveMissingThumbnail(surface: InkSurface, shown: FNote) {
         const attachments = await shown.getAttachments();
         if (attachments.some((attachment) => attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting)) return;
-        if (surface.readOnly || shownNoteIdRef.current !== shown.noteId) return;
+        if (surface.readOnly || isNewerRef.current || shownNoteIdRef.current !== shown.noteId) return;
 
         surface.invalidateThumbnail();
         const thumbnail = await exportThumbnail(surface);

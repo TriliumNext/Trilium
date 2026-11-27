@@ -223,7 +223,34 @@ describe("ink document", () => {
             expect(read.version).toBe(1);
             expect([ ...read.images ?? [], ...read.strokes ].map(({ id, order }) => [ id, order ])).toEqual([ [ "i1", 0 ], [ "s2", 1 ] ]);
         }
+    });
+
+    it("writes back what it does not know, and tells a note of a later version", () => {
+        const saved = JSON.stringify({
+            version: 2, paper: "ruled", layout: "pages", audio: { url: "api/attachments/abc/open" },
+            objects: [
+                { id: "a", w: 4, p: [ 0, 0, 128 ], tilt: [ 1, 2 ] },
+                { o: "shape", id: "b", kind: "ellipse" },
+                { o: "text", id: "c", x: 0, y: 0, w: 100, html: "<p>a</p>", rotation: 90 },
+                { o: "image", id: "d", url: "https://example.com/tracker.png", x: 0, y: 0, w: 10, h: 10 },
+                { id: "e", w: 4, p: "packed" },
+                7
+            ]
+        });
+        const parsed = parseInkDocument(saved);
+        expect(parsed.extra).toEqual({ audio: { url: "api/attachments/abc/open" } });
+        expect(parsed.strokes.map(({ id, extra }) => [ id, extra ])).toEqual([ [ "a", { tilt: [ 1, 2 ] } ] ]);
+        expect(parsed.texts?.[0].extra).toEqual({ rotation: 90 });
+        // An object of another kind, and one that cannot be read, are neither shown nor lost.
+        expect(parsed.images).toEqual([]);
+        expect(parsed.opaque?.map(({ order }) => order)).toEqual([ 1, 3, 4 ]);
+
+        const again = JSON.parse(serializeInkDocument({ ...parsed, layout: "pages" }));
+        expect(again).toEqual({ ...JSON.parse(saved), objects: JSON.parse(saved).objects.slice(0, 5) });
+
+        expect(parsed.version).toBe(2);
         expect(parseInkDocument(JSON.stringify({ version: 3, paper: "ruled", objects: [] })).version).toBe(3);
+        expect(parseInkDocument(JSON.stringify({ version: 3, pages: [] })).version).toBe(3);
         expect(parseInkDocument(JSON.stringify({ strokes: [] })).version).toBe(1);
     });
 

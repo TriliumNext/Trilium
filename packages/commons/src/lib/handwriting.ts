@@ -12,9 +12,11 @@ export function isHandwritingNote(type: string | null | undefined, mime: string 
 }
 
 /**
- * The version of the saved content that this build writes, which lists the strokes, the images
- * and the text boxes of a note as its `objects`. `parseInkDocument()` of the client reads any
- * version up to it.
+ * The version of the saved content that this build writes. `parseInkDocument()` of the client
+ * reads any version up to it, and shows a note of a later version read-only, as it cannot tell
+ * what a save would lose. A build that adds to the content keeps this version for a note that
+ * older builds still show right, which keep the fields and the objects they do not know, and
+ * writes a later one only for a note they would show wrong.
  */
 export const HANDWRITING_FORMAT_VERSION = 2;
 

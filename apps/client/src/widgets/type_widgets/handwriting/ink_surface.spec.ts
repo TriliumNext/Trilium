@@ -662,6 +662,19 @@ describe("ink surface input", () => {
             expect(objects().map(({ o }) => o)).toEqual([ "image", "image", undefined, undefined, "text", undefined ]);
         });
 
+        it("writes back what a later build saved and this one does not read", () => {
+            const saved = JSON.stringify({
+                version: 2, paper: "blank", layout: "infinite", audio: "api/attachments/abc/open",
+                objects: [ { id: "a", w: 3, p: [ 0, 0, 128, 10, 0, 0 ], tilt: 4 }, { o: "shape", id: "b" } ]
+            });
+            surface.load(parseInkDocument(saved));
+            swipe("pen", 1, 100);
+            const again = JSON.parse(surface.serialize());
+            expect(again.audio).toBe("api/attachments/abc/open");
+            expect(again.objects.slice(0, 2)).toEqual(JSON.parse(saved).objects);
+            expect(again.objects).toHaveLength(3);
+        });
+
         it("moves, resizes and deletes the selected image with the select tool, each in one step to undo", () => {
             surface.addImage(URL, 1000, 500);
             surface.tool = "select";

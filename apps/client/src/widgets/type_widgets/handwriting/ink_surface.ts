@@ -2,7 +2,7 @@ import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getStrokePath,
     HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout, type InkTextBox, type InkTool,
-    type InkView, PAGE_GAP,
+    type InkView, type OpaqueObject, PAGE_GAP,
     getPdfUrls, PAGE_HEIGHT, PAGE_WIDTH, PageLayout, type PaperStyle, type SheetSpec, serializeInkDocument, serializeStroke, splitStroke, type Stroke,
     strokeHitsSegment, StrokeIndex
 } from "./ink_document";
@@ -125,6 +125,9 @@ export default class InkSurface {
     private nextOrder = 0;
     /** The text boxes, which `TextBoxLayer` shows and changes. The surface only saves them. */
     private texts: InkTextBox[] = [];
+    /** What the loaded document holds that this build does not read, for `serialize()` to write back. */
+    private opaque: OpaqueObject[] = [];
+    private extra: Record<string, unknown> | undefined;
     private penErasing = false;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
@@ -301,8 +304,10 @@ export default class InkSurface {
         this.texts = doc.texts ?? [];
         const images = doc.images ?? [];
         this.images.load(images);
+        this.opaque = doc.opaque ?? [];
+        this.extra = doc.extra;
         this.nextOrder = 0;
-        for (const { order } of [ ...doc.strokes, ...images, ...this.texts ]) {
+        for (const { order } of [ ...doc.strokes, ...images, ...this.texts, ...this.opaque ]) {
             this.nextOrder = Math.max(this.nextOrder, Math.floor(order) + 1);
         }
         this.generation++;
@@ -348,8 +353,10 @@ export default class InkSurface {
             strokes: this.strokes,
             images: this.images.getAll(),
             texts: this.texts,
+            opaque: this.opaque,
             sheets: this.pages.sizes,
-            legacyPdf: this.legacyPdf
+            legacyPdf: this.legacyPdf,
+            extra: this.extra
         });
     }
 
@@ -369,7 +376,7 @@ export default class InkSurface {
         }
         if (above === Infinity) return this.takeOrder();
         let below = above - 1;
-        for (const { order } of this.images.getAll()) {
+        for (const { order } of [ ...this.images.getAll(), ...this.opaque ]) {
             if (order < above) below = Math.max(below, order);
         }
         return (below + above) / 2;
