@@ -12,6 +12,7 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isIOS } from "../../../services/utils";
 import Admonition from "../../react/Admonition";
+import FormFileUpload from "../../react/FormFileUpload";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
 import { useFullscreen } from "../../react/hooks/dom";
@@ -555,33 +556,25 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             {!isReadOnly && tool === "eraser" && <EraserRail mode={eraserMode} onChange={setEraserMode} />}
 
             {/* The browser's own file choosers, which the items of `InsertMenu` open. */}
-            <input
-                ref={imageInputRef}
-                type="file"
-                className="handwriting-image-input"
+            <FormFileUpload
+                inputRef={imageInputRef}
+                hidden
                 accept="image/*"
                 multiple
-                onChange={(e) => {
-                    const files = [ ...(e.currentTarget.files ?? []) ];
-                    e.currentTarget.value = "";
-                    void insertImages(files);
+                clearAfterChange
+                onChange={(files) => {
+                    if (files?.length) void insertImages([ ...files ]);
                 }}
-                tabIndex={-1}
-                aria-hidden="true"
             />
-            <input
-                ref={pdfInputRef}
-                type="file"
-                className="handwriting-image-input"
+            <FormFileUpload
+                inputRef={pdfInputRef}
+                hidden
                 accept="application/pdf"
                 multiple
-                onChange={(e) => {
-                    const files = [ ...(e.currentTarget.files ?? []) ];
-                    e.currentTarget.value = "";
-                    void insertPdfs(files);
+                clearAfterChange
+                onChange={(files) => {
+                    if (files?.length) void insertPdfs([ ...files ]);
                 }}
-                tabIndex={-1}
-                aria-hidden="true"
             />
 
             {state.layout === "pages" && (
