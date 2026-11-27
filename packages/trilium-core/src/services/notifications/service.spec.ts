@@ -556,6 +556,20 @@ describe("sensitive notifications", () => {
         expect(storedRow(notification.notificationId)?.content).not.toContain("bank");
     });
 
+    it("clears only the private text with the empty root text of a patch", () => {
+        protectedSessionService.setDataKey(DATA_KEY);
+        createStored({ id: "spec:sens:clear", title: "A reminder is due",
+            description: "Open the app", protectedTitle: "Call the bank",
+            protectedDescription: "At noon" });
+
+        const { title, description, protectedTitle, protectedDescription } =
+            update("spec:sens:clear", { title: "", description: "" });
+        expect({ title, description, protectedTitle, protectedDescription }).toEqual({
+            title: "A reminder is due", description: "Open the app",
+            protectedTitle: undefined, protectedDescription: undefined
+        });
+    });
+
     it("takes a notification about a protected note, or one it lacks, as sensitive", () => {
         protectedSessionService.setDataKey(DATA_KEY);
         const note = createNote("Secret note", true);

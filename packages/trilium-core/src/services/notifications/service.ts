@@ -1070,8 +1070,8 @@ function getBudgetKey(producer: NotificationProducer) {
 
 /**
  * Applies a patch to a content. An empty text clears its field. Where the text is private, the
- * title and the description go to the text that the private text takes, the progress label is
- * dropped and the captions of the actions are left empty.
+ * title and the description, empty or not, go to the private text and the public ones are kept;
+ * the progress label is dropped and the captions of the actions are left empty.
  */
 function patchContent(
     content: NotificationContent,
@@ -1082,10 +1082,10 @@ function patchContent(
     const text: PrivateText = {};
     for (const field of [ "title", "description" ] as const) {
         const value = patch[field];
-        if (value === "") {
-            delete patched[field];
-        } else if (value !== undefined && isTextPrivate) {
+        if (value !== undefined && isTextPrivate) {
             text[field] = value;
+        } else if (value === "") {
+            delete patched[field];
         } else if (value !== undefined) {
             patched[field] = value;
         }
