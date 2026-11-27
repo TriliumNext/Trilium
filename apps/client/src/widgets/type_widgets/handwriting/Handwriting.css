@@ -177,6 +177,11 @@
             padding-top: 0;
         }
 
+        .ck.ck-editor__editable_inline {
+            padding: 0;
+            border-width: 0;
+        }
+
         .ck.ck-editor__editable_inline > :first-child {
             margin-top: 0;
         }
