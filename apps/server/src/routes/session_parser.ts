@@ -4,6 +4,7 @@ import type express from "express";
 import session, { Store } from "express-session";
 
 import config from "../services/config.js";
+import { isInteractiveSession } from "../services/login_session.js";
 import sessionSecret from "../services/session_secret.js";
 import sql from "../services/sql.js";
 import sqlInit from "../services/sql_init.js";
@@ -199,7 +200,7 @@ function isLoggedInSessionCookie(pair: string) {
 
     const data = sql.getValue<string>(/*sql*/`SELECT data FROM sessions WHERE id = ?`, sid);
     try {
-        return !!data && JSON.parse(data).loggedIn === true;
+        return !!data && isInteractiveSession(JSON.parse(data));
     } catch {
         return false;
     }
@@ -220,17 +221,32 @@ export function startSessionCleanup() {
  * Logs out every session when `passwordVerificationHash` changes, whether the password is changed
  * or reset here or the new hash arrives by sync. A changed password must also cut off a stolen
  * session cookie, including its open WebSocket connection.
+ *
+ * A row with the hash last seen logs nobody out: sync applies every row of the same date, so a
+ * repair of the options sector or a sync peer would otherwise log everyone out.
  */
 export function startSessionRevocationOnPasswordChange() {
+    let lastSeenHash = sqlInit.isDbInitialized()
+        ? sql.getValue<string>(
+            /*sql*/`SELECT value FROM options WHERE name = 'passwordVerificationHash'`
+        )
+        : undefined;
+    const revokeOnAnotherHash = (hash: string) => {
+        if (hash !== lastSeenHash) {
+            lastSeenHash = hash;
+            revokeAllSessions();
+        }
+    };
+
     events.subscribe(events.ENTITY_CHANGED, ({ entityName, entity }) => {
         if (entityName === "options" && entity.name === "passwordVerificationHash") {
-            revokeAllSessions();
+            revokeOnAnotherHash(entity.value);
         }
     });
 
     events.subscribe(events.ENTITY_CHANGE_SYNCED, ({ entityName, entityRow }) => {
         if (entityName === "options" && entityRow.name === "passwordVerificationHash") {
-            revokeAllSessions();
+            revokeOnAnotherHash(entityRow.value);
         }
     });
 }

@@ -1,4 +1,4 @@
-import { options } from "@triliumnext/core";
+import { device_records, options, TOTP_STEP_MS } from "@triliumnext/core";
 import { generateConfig, Hotp, Totp } from "time2fa";
 
 import recoveryCodesService from "./encryption/recovery_codes.js";
@@ -128,12 +128,43 @@ function verifyTOTP(submittedPasscode: string): boolean {
     const secret = getTotpSecret();
     if (!secret) return false;
 
-    const lastUsedStep = Number(options.getOptionOrNull("totpLastUsedStep")) || -Infinity;
+    const lastUsedStep = getLastUsedStep();
     const step = findTimeStep(secret, submittedPasscode, CLOCK_DRIFT_STEPS, lastUsedStep);
     if (step === null) return false;
 
     options.setOption("totpLastUsedStep", String(step));
     return true;
+}
+
+/**
+ * Returns the time step of the last accepted code. A step that has stayed later than now for a day,
+ * which a clock running ahead wrote, is cleared; until then it refuses every code.
+ */
+function getLastUsedStep(): number {
+    const step = Number(options.getOptionOrNull("totpLastUsedStep"));
+    if (!(step > 0)) {
+        return -Infinity;
+    }
+
+    if (device_records.isTimeAheadForADay("totpLastUsedStep", step * TOTP_STEP_MS)) {
+        options.setOption("totpLastUsedStep", "");
+        device_records.addDeviceRecordEntries("startupRepairRecord", [ "totpLastUsedStep" ]);
+        return -Infinity;
+    }
+    return step;
+}
+
+/**
+ * Returns when codes are accepted again after a clock running ahead stored the time step of the
+ * last accepted code, or `null` while codes are checked.
+ */
+function getStepWaitUntil(now = Date.now()): number | null {
+    const step = Number(options.getOptionOrNull("totpLastUsedStep"));
+    const currentStep = Math.floor(now / TOTP_STEP_MS);
+    if (!(step >= currentStep + CLOCK_DRIFT_STEPS)) {
+        return null;
+    }
+    return (step - CLOCK_DRIFT_STEPS + 1) * TOTP_STEP_MS;
 }
 
 function resetTotp(): void {
@@ -150,5 +181,6 @@ export default {
     validateTOTP,
     validateTOTPForSecret,
     verifyTOTP,
+    getStepWaitUntil,
     resetTotp
 };

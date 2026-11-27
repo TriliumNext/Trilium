@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { getContext } from "./context.js";
 import { getSql } from "./sql/index.js";
 import consistency_checks from "./consistency_checks.js";
+import entityChangesService from "./entity_changes.js";
 import eraseService from "./erase.js";
 import { getLog } from "./log.js";
 import syncOptions from "./sync_options.js";
@@ -559,5 +560,30 @@ describe("Consistency checks over a corrupted database", () => {
             vi.clearAllTimers();
             vi.useRealTimers();
         }
+    });
+
+    it("gives a notification its missing entity change, and keeps a mark that waits", () => {
+        const at = "2026-11-27 12:00:00.000Z";
+        getContext().init(() => {
+            insertRow("notifications", {
+                notificationId: "CCnotification0000001", id: "spec:cc", raisedAt: at, tag: null,
+                noteId: null, category: "general", type: "standard", attentionLevel: "low",
+                isSensitive: 0, producer: "client", content: "{\"v\":1}", utcDateCreated: at,
+                utcDateModified: at
+            });
+            insertRow("notification_marks", {
+                markId: "CCwaiting000000000001r", notificationId: "CCwaiting000000000001",
+                kind: "read", utcDateCreated: at
+            });
+            entityChangesService.putEntityChange({
+                entityName: "notification_marks", entityId: "CCwaiting000000000001r", hash: "h",
+                isErased: false, utcDateChanged: at, isSynced: true
+            });
+            consistency_checks.runEntityChangesChecks();
+        });
+
+        expect(exists("entity_changes", "entityId", "CCnotification0000001")).toBe(true);
+        expect(exists("notification_marks", "markId", "CCwaiting000000000001r")).toBe(true);
+        expect(exists("entity_changes", "entityId", "CCwaiting000000000001r")).toBe(true);
     });
 });

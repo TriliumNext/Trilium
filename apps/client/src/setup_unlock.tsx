@@ -4,6 +4,7 @@ import logo from "./assets/icon-color.svg?url";
 import { t } from "./services/i18n";
 import { setSetupAuthToken } from "./services/setup_auth";
 import CredentialsForm, { type Credentials } from "./widgets/react/CredentialsForm";
+import SetupPage from "./widgets/react/SetupPage";
 
 /**
  * The credentials of the knowledge base the wizard is standing over.
@@ -25,6 +26,17 @@ import CredentialsForm, { type Credentials } from "./widgets/react/CredentialsFo
  * @module
  */
 export default function SetupUnlock({ onUnlocked }: { onUnlocked: () => void }) {
+    if (window.glob.setupLockedWithoutPassword) {
+        return (
+            <SetupPage
+                className="setup-unlock"
+                title={t("login.heading")}
+                illustration={<img src={logo} alt="" className="illustration-logo" />}
+                description={t("setup.unlock-no-password")}
+            />
+        );
+    }
+
     async function submit({ password, totpToken }: Credentials) {
         try {
             // `fetch` rather than `server.post`, as on the login screen: the status carries the

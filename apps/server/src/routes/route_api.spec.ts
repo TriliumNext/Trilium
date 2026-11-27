@@ -1,3 +1,4 @@
+import { NOTIFICATION_SOUND_MAX_BYTES } from "@triliumnext/commons";
 import { cls, getLog, NotFoundError } from "@triliumnext/core";
 import express from "express";
 import { existsSync, rmSync } from "fs";
@@ -26,9 +27,13 @@ vi.mock("fs/promises", async (importOriginal) => {
 });
 
 import {
+    MULTIPART_CONTENT_TYPE, multipartFile, postChunked
+} from "../../spec/support/chunked_request.js";
+import {
     apiResultHandler,
     asyncRoute,
     createShareTargetMiddleware,
+    createSoundUploadMiddleware,
     importMiddlewareWithErrorHandling,
     multipartBoundary,
     route,
@@ -191,6 +196,58 @@ describe("uploadMiddlewareWithErrorHandling (in-memory)", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.hasFile).toBe(false);
+    });
+});
+
+describe("createSoundUploadMiddleware", () => {
+    /** The parser between a probe of the headers and a handler that reports the file. */
+    function buildSoundApp() {
+        const app = express();
+        const headers: http.IncomingHttpHeaders[] = [];
+        const handler = vi.fn((req: express.Request, res: express.Response) => {
+            res.json({ size: req.file?.buffer.length });
+        });
+        app.post("/sound", (req, _res, next) => {
+            headers.push(req.headers);
+            next();
+        }, createSoundUploadMiddleware(), handler);
+        return { app, headers, handler };
+    }
+
+    const post = (app: express.Application, ...content: Buffer[]) => postChunked(app, "/sound",
+        { "content-type": MULTIPART_CONTENT_TYPE },
+        multipartFile({ fileName: "sound.mp3", type: "audio/mpeg" }, ...content));
+
+    it("refuses a file past the limit without a declared length, before the handler", async () => {
+        const { app, headers, handler } = buildSoundApp();
+        const answer = await post(app, Buffer.alloc(NOTIFICATION_SOUND_MAX_BYTES), Buffer.alloc(1));
+
+        expect(headers[0]).toMatchObject({ "transfer-encoding": "chunked" });
+        expect(headers[0]["content-length"]).toBeUndefined();
+        expect(answer).toEqual({ status: 400, body: JSON.stringify({ code: "too-large" }) });
+        expect(handler).not.toHaveBeenCalled();
+
+        const atLimit = await post(app, Buffer.alloc(NOTIFICATION_SOUND_MAX_BYTES));
+        expect(atLimit).toEqual({
+            status: 200, body: JSON.stringify({ size: NOTIFICATION_SOUND_MAX_BYTES })
+        });
+    });
+
+    it("refuses a body that carries anything but one file in the upload field", async () => {
+        const { app, handler } = buildSoundApp();
+        for (const [ label, sent ] of [
+            [ "a text field", request(app).post("/sound").field("note", "x")
+                .attach("upload", Buffer.from("a"), "a.mp3") ],
+            [ "two files", request(app).post("/sound").attach("upload", Buffer.from("a"), "a.mp3")
+                .attach("upload", Buffer.from("b"), "b.mp3") ],
+            [ "another field", request(app).post("/sound")
+                .attach("sound", Buffer.from("a"), "a.mp3") ]
+        ] as const) {
+            const res = await sent;
+            expect(res.status, label).toBe(400);
+            expect(res.body, label).toEqual({ code: "invalid-input" });
+        }
+        expect(handler).not.toHaveBeenCalled();
     });
 });
 

@@ -1,0 +1,89 @@
+:where(:root) {
+    --notification-channel-enabled-color: var(--admonition-tip-accent-color, #40c025);
+    --notification-channel-changed-color: var(--admonition-warning-accent-color, #e2aa03);
+    --notification-channel-found-color: var(--muted-text-color);
+    --notification-forwarding-icon-color: var(--muted-text-color);
+}
+
+.notification-channels {
+    .notification-forwarding {
+        display: flex;
+        align-items: center;
+        gap: .5em;
+
+        .tn-icon {
+            color: var(--notification-forwarding-icon-color);
+            font-size: 1.2em;
+        }
+    }
+
+    :is(.notification-forwarding-off, .notification-forwarding-record,
+        .notification-forwarding-pause) .admonition {
+        margin-bottom: 0;
+    }
+
+    .notification-forwarding-pause {
+        p,
+        ul {
+            margin-bottom: .5em;
+        }
+    }
+
+    .notification-forwarding-actions,
+    .notification-channel-notice-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5em;
+    }
+
+    .notification-channel-title {
+        display: flex;
+        align-items: center;
+        gap: .5em;
+        min-width: 0;
+
+        > .tn-icon {
+            font-size: 1.2em;
+        }
+    }
+
+    .notification-channel-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .notification-channel-state {
+        &.enabled {
+            --color: var(--notification-channel-enabled-color);
+        }
+
+        &.changed {
+            --color: var(--notification-channel-changed-color);
+        }
+
+        &.found {
+            --color: var(--notification-channel-found-color);
+        }
+    }
+
+    .notification-channel-notice {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5em;
+    }
+
+    .notification-channel-notice-text {
+        flex: 1 1 auto;
+    }
+
+    .notification-channel-test-code {
+        margin-inline-start: .5em;
+    }
+
+    .notification-channel-diagnostic {
+        margin: .5em 0 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+}

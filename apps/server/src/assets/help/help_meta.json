@@ -137,6 +137,9 @@
             ]}
         ]},
         {"id":"_help_rC3pL2aptaRE","title":"Zen mode","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/concepts/zen-mode"},{"type":"label","name":"iconClass","value":"bx bxs-yin-yang"}]},
+        {"id":"_help_Q2MCMjHbxohz","title":"Notifications","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/concepts/notifications"},{"type":"label","name":"iconClass","value":"bx bx-bell"}],"children":[
+            {"id":"_help_hEKnvzPYgJsx","title":"Notification channels","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/concepts/notifications/channels"},{"type":"label","name":"iconClass","value":"bx bx-broadcast"}]}
+        ]},
         {"id":"_help_YzMcWlCVeW09","title":"Active content","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/concepts/active-content"},{"type":"label","name":"iconClass","value":"bx bxs-widget"}]}
     ]},
     {"id":"_help_s3YCWHBfmYuM","title":"Quick Start","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/quick-start"},{"type":"label","name":"iconClass","value":"bx bx-run"}]},
@@ -359,6 +362,7 @@
             {"id":"_help_ApVHZ8JY5ofC","title":"Day.js","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/script-api/day.js"},{"type":"label","name":"iconClass","value":"bx bx-calendar"}]}
         ]},
         {"id":"_help_vElnKeDNPSVl","title":"Logging","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/logging"},{"type":"label","name":"iconClass","value":"bx bx-terminal"}]},
+        {"id":"_help_cpyUatFJZklS","title":"Notifications in scripts","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/notifications"},{"type":"label","name":"iconClass","value":"bx bx-bell"}]},
         {"id":"_help_cNpC0ITcfX0N","title":"Breaking changes","type":"book","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/breaking-changes"},{"type":"label","name":"iconClass","value":"bx bx-up-arrow-alt"}],"children":[
             {"id":"_help_IjZS7iK5EXtb","title":"v0.107.0: Removal of the old layout","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/breaking-changes/old-layout-removal"},{"type":"label","name":"iconClass","value":"bx bx-layout"}]},
             {"id":"_help_kTx7WqLdZ3Ry","title":"v0.106.0: Removal of cheerio","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/scripts/breaking-changes/cheerio-removal"},{"type":"label","name":"iconClass","value":"bx bx-file"}]},

@@ -24,6 +24,19 @@ export interface CoreConfig {
         sqlConsoleEnabled: boolean;
         allowLanAccess: boolean;
     };
+    /** The host's switches of the channels that forward notifications; absent on standalone. */
+    Notifications?: {
+        /** Runs no channel at all, for a copy of a database without a sync server. */
+        channelsDisabled: boolean;
+        /** Whether a webhook can be allowed to reach the local network. On by default. */
+        allowLocalNetworkWebhooks: boolean;
+    };
+    /** The OpenID settings of the server; absent when none are configured. */
+    MultiFactorAuthentication?: {
+        oauthBaseUrl: string;
+        oauthClientId: string;
+        oauthClientSecret: string;
+    };
 }
 
 const EMPTY_CONFIG: CoreConfig = {

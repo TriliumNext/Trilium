@@ -34,6 +34,10 @@
         justify-content: space-evenly;
     }
 
+    body.mobile #mobile-bottom-bar .launcher-slot > :is(.launcher-button, .right-dropdown-widget) {
+        margin-inline: min(var(--launcher-pane-button-margin, 0px), 4px);
+    }
+
     body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
     body.mobile .tn-popover-backdrop {
         background-color: var(--mobile-backdrop-color);

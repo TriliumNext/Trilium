@@ -10,7 +10,7 @@ import { Trans } from "react-i18next";
 
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import server from "../../../services/server";
+import server, { type Credentials } from "../../../services/server";
 import toast from "../../../services/toast";
 import utils from "../../../services/utils";
 import Admonition from "../../react/Admonition";
@@ -23,6 +23,7 @@ import FormTextBox from "../../react/FormTextBox";
 import { useStaticTooltip } from "../../react/hooks/tooltip";
 import Modal from "../../react/Modal";
 import { RawHtmlBlock } from "../../react/RawHtml";
+import { useCredentialsPrompt } from "./components/CredentialsModal";
 import MfaStatusBadge from "./components/MfaStatusBadge";
 
 /**
@@ -41,6 +42,8 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
     const [ showEnroll, setShowEnroll ] = useState(false);
     // Freshly regenerated recovery codes, shown once so the user can save them (dismissed with "Done").
     const [ regeneratedCodes, setRegeneratedCodes ] = useState<string[]>();
+    const [ askCredentials, credentialsModal ] = useCredentialsPrompt();
+    const isCodeAsked = totpStatus?.isCodeAsked ?? false;
 
     const refreshRecoveryKeys = useCallback(async () => {
         const result = await server.get<TOTPRecoveryKeysResponse>("totp_recovery/enabled");
@@ -72,14 +75,21 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
         if (!await dialog.confirm(t("multi_factor_authentication.totp_remove_confirm"))) {
             return;
         }
+        const credentials = await askCredentials({
+            title: t("multi_factor_authentication.totp_remove_label"),
+            isCodeAsked
+        });
+        if (!credentials) {
+            return;
+        }
 
-        await server.post("totp/reset");
+        await server.withCredentials("POST", "totp/reset", {}, credentials);
         toast.showMessage(t("multi_factor_authentication.totp_removed"));
         // The secret and recovery codes are gone server-side; refresh so the section drops back to
         // its "not set up" state (method selector shown) right away.
         refreshTotpStatus();
         refreshRecoveryKeys();
-    }, [ refreshTotpStatus, refreshRecoveryKeys ]);
+    }, [ refreshTotpStatus, refreshRecoveryKeys, askCredentials, isCodeAsked ]);
 
     // Issues a fresh batch of recovery codes for the (already enrolled) secret, replacing the old
     // ones. The server refuses if no secret is set, so this can't mint codes for an inactive TOTP.
@@ -87,8 +97,16 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
         if (!await dialog.confirm(t("multi_factor_authentication.recovery_keys_regenerate_confirm"))) {
             return;
         }
+        const credentials = await askCredentials({
+            title: t("multi_factor_authentication.recovery_keys_regenerate"),
+            isCodeAsked
+        });
+        if (!credentials) {
+            return;
+        }
 
-        const result = await server.post<TOTPRecoveryKeysResponse>("totp_recovery/regenerate");
+        const result = await server.withCredentials<TOTPRecoveryKeysResponse>(
+            "POST", "totp_recovery/regenerate", {}, credentials);
         if (!result.success || !result.recoveryCodes) {
             toast.showError(t("multi_factor_authentication.recovery_keys_error"));
             return;
@@ -96,7 +114,7 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
 
         setRegeneratedCodes(result.recoveryCodes);
         refreshRecoveryKeys();
-    }, [ refreshRecoveryKeys ]);
+    }, [ refreshRecoveryKeys, askCredentials, isCodeAsked ]);
 
     useEffect(() => {
         // The TOTP secret status is fetched by the parent; here we only load the recovery codes.
@@ -145,6 +163,7 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
                 show={showEnroll}
                 onHidden={() => setShowEnroll(false)}
                 onComplete={onEnrollmentComplete}
+                askCredentials={(request) => askCredentials({ ...request, isCodeAsked })}
             />,
             document.body
         )}
@@ -153,6 +172,7 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
             <RecoveryCodesModal codes={regeneratedCodes} onHidden={() => setRegeneratedCodes(undefined)} />,
             document.body
         )}
+        {credentialsModal}
     </>);
 }
 
@@ -166,11 +186,13 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
  *     they lose their authenticator. Finishing (`totp/enable`) is the single point that persists the
  *     secret + codes and actually enables TOTP.
  */
-function TotpEnrollmentModal({ show, onHidden, onComplete }: {
+function TotpEnrollmentModal({ show, onHidden, onComplete, askCredentials }: {
     show: boolean,
     onHidden: () => void,
     /** Called when TOTP has been committed (enabled), so the surrounding section can refresh. */
-    onComplete: () => void
+    onComplete: () => void,
+    /** Asks for the credentials that the server checks before it stores a secret. */
+    askCredentials: (request: { title: string }) => Promise<Credentials | null>
 }) {
     const [ secret, setSecret ] = useState<string>();
     // The `otpauth://` URL for the secret, rendered as a scannable QR code alongside the manual secret.
@@ -254,10 +276,17 @@ function TotpEnrollmentModal({ show, onHidden, onComplete }: {
             return;
         }
 
+        const credentials = await askCredentials({
+            title: t("multi_factor_authentication.totp_enroll_title")
+        });
+        if (!credentials) {
+            return;
+        }
         setEnabling(true);
 
         try {
-            const result = await server.post<TOTPEnableResponse>("totp/enable", { secret, recoveryCodes });
+            const result = await server.withCredentials<TOTPEnableResponse>(
+                "POST", "totp/enable", { secret, recoveryCodes }, credentials);
 
             if (!result.success) {
                 toast.showError(t("multi_factor_authentication.totp_enroll_enable_error"));
@@ -271,7 +300,7 @@ function TotpEnrollmentModal({ show, onHidden, onComplete }: {
             // the failure itself).
             setEnabling(false);
         }
-    }, [ secret, recoveryCodes, acknowledged, enabling, onComplete, onHidden ]);
+    }, [ secret, recoveryCodes, acknowledged, enabling, onComplete, onHidden, askCredentials ]);
 
     const inRecoveryStep = !!recoveryCodes;
 

@@ -1,4 +1,5 @@
 import type { LlmStreamChunk } from "./llm_api.js";
+import type { TransientNotification } from "./notifications.js";
 import type { ResourceDownloadProgress } from "./resources.js";
 
 export interface EntityChange {
@@ -230,4 +231,25 @@ export type WebSocketMessage = AllTaskDefinitions | {
 } | {
     type: "resource-download";
     download: ResourceDownloadProgress;
+} | {
+    /** A pending notification of level `medium` or `high` that came in within 10 minutes. */
+    type: "notification-alert";
+    notificationId: string;
+} | {
+    /** A generation or an erasure dated ahead came within the hour, so the view changed. */
+    type: "notifications-due";
+} | {
+    /**
+     * The transient notifications that changed or ended since the last such message. `seq` counts
+     * the messages, so a client that misses one loads the list.
+     */
+    type: "transient-notifications";
+    seq: number;
+    changed: TransientNotification[];
+    removed: string[];
+} | {
+    /** A delivery of a frontend channel is due, and a tab can claim it. */
+    type: "notification-forward";
+    deliveryKey: string;
+    channelId: string;
 }

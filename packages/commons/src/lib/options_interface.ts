@@ -132,6 +132,29 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     recoveryCodeInitialVector: string;
     recoveryCodeSecurityKey: string;
     recoveryCodesEncrypted: string;
+    /**
+     * Device option: `legacy` for a factor sealed with a key from the database, `blocked` for one
+     * whose row a sync peer planted, `removed` after `TRILIUM_RESET_SECOND_FACTOR` removed it.
+     */
+    secondFactorState: string;
+    /**
+     * Device option, JSON {@link WrongCodeCount}: the wrong TOTP codes sent after a right password.
+     */
+    totpWrongCodeCount: string;
+    /**
+     * Device option, JSON {@link DeviceRecordEntry}`[]`: right passwords sent without a right code.
+     */
+    signInAttemptRecord: string;
+    /**
+     * Device option, JSON {@link DeviceRecordEntry}`[]`: the options a start repaired after a peer
+     * wrote them.
+     */
+    startupRepairRecord: string;
+    /**
+     * Device option, JSON: when each stored time (a backup date, the TOTP step) was first
+     * found ahead.
+     */
+    clockAheadMarks: string;
 
     lastSyncedPull: number;
     lastSyncedPush: number;
@@ -202,6 +225,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     effectiveSyncServerHost: string;
     /** Whether config.ini or an environment variable supplies the sync address. Read-only. */
     syncServerHostOverridden: boolean;
+    /** Whether the last sync of a device without a sync server did not finish. Read-only. */
+    isLastSyncUnfinished: boolean;
+    /**
+     * Whether the second factor is in the `legacy` state, so that downloads ask for credentials.
+     * Read-only.
+     */
+    isSecondFactorLegacy: boolean;
     hasUserBackendScripts: boolean;
     isPasswordSet: boolean;
     overrideThemeFonts: boolean;
@@ -395,6 +425,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
+    /** Whether the toast of a notification plays a sound. */
+    notificationSoundEnabled: boolean;
+    /** JSON array of the notification categories that are turned off. */
+    notificationDisabledCategories: string;
+    /** Silences the toasts and the sound of notifications on this device. */
+    notificationsSilent: boolean;
+
     // AI / LLM
     /** Whether the AI/LLM features (chat sidebar, LLM chat notes) are enabled. */
     aiEnabled: boolean;
@@ -414,6 +451,21 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     ocrLanguage: string;
     ocrAutoProcessImages: boolean;
     ocrMinConfidence: string;
+}
+
+/** One entry of a record that a device keeps for its security records card. */
+export interface DeviceRecordEntry {
+    /** An option name, an entity name, or the kind of a sign-in attempt. */
+    name: string;
+    count: number;
+    /** UTC date time of the last time it was recorded. */
+    lastAt: string;
+}
+
+/** The wrong TOTP codes counted for the server, and when the last one was sent. */
+export interface WrongCodeCount {
+    count: number;
+    lastAt: string;
 }
 
 export type OptionNames = keyof OptionDefinitions;

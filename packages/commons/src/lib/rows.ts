@@ -1,6 +1,14 @@
 // TODO: Booleans should probably be numbers instead (as SQLite does not have booleans.);
 // TODO: check against schema.sql which properties really are "optional"
 
+import type {
+    NotificationAttentionLevel,
+    NotificationCategory,
+    NotificationChannelRecordKind,
+    NotificationMarkKind,
+    NotificationType
+} from "./notifications.js";
+
 export interface AttachmentRow {
     attachmentId?: string;
     ownerId: string;
@@ -77,6 +85,50 @@ export interface EtapiTokenRow {
     utcDateCreated?: string;
     utcDateModified?: string;
     isDeleted?: boolean;
+}
+
+/** One generation of a notification. `notificationId` is computed from `id` and `raisedAt`. */
+export interface NotificationRow {
+    notificationId: string;
+    id: string;
+    raisedAt: string;
+    tag: string | null;
+    noteId: string | null;
+    category: NotificationCategory;
+    type: NotificationType;
+    attentionLevel: NotificationAttentionLevel;
+    /** Whether this version was written by an instance that knew the notification as sensitive. */
+    isSensitive: boolean;
+    producer: string;
+    /** JSON of a `NotificationContent`. */
+    content: string;
+    utcDateCreated: string;
+    utcDateModified: string;
+}
+
+/** A fact about a generation. `markId` is the `notificationId` and the letter of the kind. */
+export interface NotificationMarkRow {
+    markId: string;
+    notificationId: string;
+    kind: NotificationMarkKind;
+    utcDateCreated: string;
+}
+
+export interface NotificationPrivateTextRow {
+    notificationId: string;
+    /** JSON of a `NotificationPrivateContent`. */
+    content: string;
+    utcDateCreated: string;
+    utcDateModified: string;
+}
+
+export interface NotificationChannelRecordRow {
+    recordId: string;
+    channelId: string;
+    kind: NotificationChannelRecordKind;
+    content: string;
+    utcDateCreated: string;
+    utcDateModified: string;
 }
 
 export interface BlobRow {

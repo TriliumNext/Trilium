@@ -95,10 +95,12 @@ describe("CompositeMessagingProvider", () => {
         const { ipc, ws, composite } = build();
         const httpServer = {} as unknown as HttpServer;
         const sessionParser = (() => {}) as unknown as express.RequestHandler;
+        const isValidCsrfToken = () => true;
 
-        composite.attachToHttpServer(httpServer, sessionParser);
+        composite.attachToHttpServer(httpServer, sessionParser, isValidCsrfToken);
 
-        expect(ws.attachToHttpServer).toHaveBeenCalledWith(httpServer, sessionParser);
+        expect(ws.attachToHttpServer)
+            .toHaveBeenCalledWith(httpServer, sessionParser, isValidCsrfToken);
         expect(ipc.attachToHttpServer).not.toHaveBeenCalled();
     });
 

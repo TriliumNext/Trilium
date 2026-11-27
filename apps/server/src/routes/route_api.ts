@@ -1,3 +1,4 @@
+import { NOTIFICATION_SOUND_MAX_BYTES, type NotificationErrorBody } from "@triliumnext/commons";
 import { entity_changes as entityChangesService, HttpError, MAX_BLOB_CONTENT_LENGTH, routes, utils as coreUtils } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
@@ -263,6 +264,32 @@ function createShareTargetUploadMiddleware(maxFileSize: number): RequestHandler 
     return multer(options).array("files");
 }
 
+/**
+ * Parses the upload of a notification sound, which holds the file and nothing else. A file past
+ * the limit is refused once the parser has read the limit, whether or not the request declares
+ * its length: multer keeps nothing more and reads the rest of the request before the answer, so
+ * that the client gets it. A refusal answers with its code, as the notification routes do.
+ */
+export function createSoundUploadMiddleware(): RequestHandler {
+    const options = baseMulterOptions();
+    options.limits = {
+        ...options.limits, fileSize: NOTIFICATION_SOUND_MAX_BYTES, files: 1, fields: 0
+    };
+    const upload = multer(options).single("upload");
+
+    return (req, res, next) => {
+        upload(req, res, (err: unknown) => {
+            if (err) {
+                const isTooLarge = (err as { code?: unknown }).code === "LIMIT_FILE_SIZE";
+                const code = isTooLarge ? "too-large" : "invalid-input";
+                res.status(400).json({ code } satisfies NotificationErrorBody);
+                return;
+            }
+            next();
+        });
+    };
+}
+
 /** The `boundary` parameter of a multipart `Content-Type`, quoted or not. */
 export function multipartBoundary(contentType: string | undefined): string | undefined {
     const match = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(contentType ?? "");
@@ -316,6 +343,7 @@ function tmpDirStorage(): multer.StorageEngine {
 
 const uploadMiddleware = createUploadMiddleware();
 const importUploadMiddleware = createImportUploadMiddleware();
+export const soundUploadMiddleware = createSoundUploadMiddleware();
 
 /** Maps the multer field-nesting guard to a clean 400; returns true when the request was already answered. */
 function rejectedNestedField(err: { code?: string } | undefined, res: express.Response): boolean {

@@ -78,4 +78,44 @@ describe("Toast rendering", () => {
 
         expect(el.querySelector(".toast.no-title .toast-body")?.className).toContain("monospace");
     });
+
+    it("runs its default action on a click outside its buttons, and tells a close apart", () => {
+        const onClick = vi.fn(({ dismissToast }: { dismissToast: () => void }) => dismissToast());
+        const onDismiss = vi.fn();
+        const onRemove = vi.fn();
+        const button = vi.fn();
+        const el = renderToasts([ {
+            id: "alert", icon: "bx bx-bell", title: "Reminder", message: "Dentist",
+            onClick, onDismiss, onRemove, buttons: [ { text: "Snooze", onClick: button } ]
+        } ]);
+        const toast = el.querySelector<HTMLElement>(".toast");
+        expect(toast?.classList).toContain("clickable");
+        expect(toast?.tabIndex).toBe(0);
+
+        el.querySelector<HTMLButtonElement>(".toast-buttons button")?.click();
+        expect(button).toHaveBeenCalledOnce();
+        expect(onClick).not.toHaveBeenCalled();
+
+        toast?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        expect(onClick).toHaveBeenCalledOnce();
+        expect(onRemove).toHaveBeenCalledOnce();
+        expect(onDismiss).not.toHaveBeenCalled();
+    });
+
+    it("calls onDismiss for its close button alone", () => {
+        const onDismiss = vi.fn();
+        const el = renderToasts([
+            { id: "closed", icon: "bx bx-bell", message: "Closed", onDismiss },
+            { id: "plain", icon: "bx bx-bell", message: "Plain" }
+        ]);
+        const [ closed, plain ] = el.querySelectorAll<HTMLElement>(".toast");
+        expect(plain.classList).not.toContain("clickable");
+        expect(plain.getAttribute("tabindex")).toBeNull();
+
+        // A click on a toast without a default action does nothing.
+        plain.querySelector<HTMLElement>(".toast-body")?.click();
+        closed.querySelector<HTMLButtonElement>(".btn-close")?.click();
+        expect(onDismiss).toHaveBeenCalledOnce();
+        expect(toasts.value.map(({ id }) => id)).toEqual([ "plain" ]);
+    });
 });

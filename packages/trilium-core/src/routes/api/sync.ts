@@ -6,6 +6,7 @@ import consistencyChecksService from "../../services/consistency_checks.js";
 import contentHashService from "../../services/content_hash.js";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
+import { getNotificationForwarder } from "../../services/notifications/index.js";
 import optionService from "../../services/options.js";
 import { getSql } from "../../services/sql/index.js";
 import sqlInit from "../../services/sql_init.js";
@@ -210,7 +211,7 @@ const partialRequests: Record<
     }
 > = {};
 
-function update(req: Request) {
+async function update(req: Request) {
     let { body } = req;
 
     const pageCount = parseInt(req.get("pageCount") as string);
@@ -247,8 +248,15 @@ function update(req: Request) {
     }
 
     const { entities, instanceId } = body;
+    // Without it the changes would be stored under this instance's own ID.
+    if (typeof instanceId !== "string" || !instanceId) {
+        throw new ValidationError("A push must name the instance ID of its sender.");
+    }
 
-    getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
+    // The delivery record of the channels takes the batch before it is applied.
+    const nowMs = Date.now();
+    await getNotificationForwarder().takeSyncBatch(entities, nowMs, () => getSql().transactional(
+        () => syncUpdateService.updateEntities(entities, instanceId, nowMs)));
 }
 
 /** Drops paged pushes that received no page for 20 minutes, which their client has abandoned. */
@@ -264,6 +272,18 @@ export function cleanUpPartialRequests() {
 
 /* v8 ignore next -- module-level timer, not invoked in tests */
 setInterval(cleanUpPartialRequests, 60 * 1000);
+
+/**
+ * Confirms that a device without a sync server no longer syncs, so that the consistency checks fix
+ * problems instead of waiting for a sync to finish.
+ */
+function confirmAlone() {
+    if (syncOptions.isSyncSetup()) {
+        throw new ValidationError("A sync server is set.");
+    }
+
+    optionService.setOption("syncIncomplete", "false");
+}
 
 function syncFinished() {
     // after the first sync finishes, the application is ready to be used
@@ -291,6 +311,7 @@ export default {
     getChanged,
     update,
     getStats,
+    confirmAlone,
     syncFinished,
     queueSector,
     checkEntityChanges

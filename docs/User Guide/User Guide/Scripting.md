@@ -13,6 +13,7 @@ So we have frontend and backend, each with their own set of responsibilities, bu
 ## Use cases
 
 *   <a class="reference-link" href="Scripting/Frontend%20Basics/Examples/New%20Task%20launcher%20button.md">"New Task" launcher button</a>
+*   <a class="reference-link" href="Scripting/Notifications%20in%20scripts.md">Notifications in scripts</a>
 
 ## Action handler
 

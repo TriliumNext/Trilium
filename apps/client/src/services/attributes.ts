@@ -114,9 +114,18 @@ async function removeAttributeById(noteId: string, attributeId: string) {
     await server.remove(`notes/${noteId}/attributes/${attributeId}`);
 }
 
-export async function removeOwnedAttributesByNameOrType(note: FNote, type: AttributeType, name: string) {
+/**
+ * Removes the attributes of a type and name that the note owns. Inherited ones stay.
+ *
+ * @param value the value to match; without it, attributes of any value are removed.
+ */
+export async function removeOwnedAttributesByNameOrType(
+    note: FNote, type: AttributeType, name: string, value?: string
+) {
     for (const attr of note.getOwnedAttributes()) {
-        if (attr.type === type && attr.name === name) {
+        const isMatch = attr.type === type && attr.name === name
+            && (value === undefined || attr.value === value);
+        if (isMatch) {
             await server.remove(`notes/${note.noteId}/attributes/${attr.attributeId}`);
         }
     }

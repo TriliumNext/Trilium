@@ -107,6 +107,12 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.isProtectedSessionAvailable).toBe(false);
         expect(items.theme).toBe("next");
         expect(items.appCssNoteIds).toContain(appCssNoteId);
+
+        // The tabs of one database name their channel by it, and the page never learns the ID.
+        const documentId = options.getOption("documentId");
+        expect(items.documentIdHash).toMatch(/^[A-Za-z0-9]{20}$/);
+        expect(items.documentIdHash).not.toContain(documentId);
+        expect(fullPayload("next").documentIdHash).toBe(items.documentIdHash);
     });
 
     it("maps each built-in theme to its stylesheet URL", () => {

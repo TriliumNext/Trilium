@@ -28,7 +28,9 @@ vi.mock("ai", async (importOriginal) => {
 // core keeps its real implementation.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, getNote: (noteId: string) => ({ noteId, isLabelTruthy: () => false } as any) } };
+    return { default: Object.assign(Object.create(actual.default), {
+        getNote: (noteId: string) => ({ noteId, isLabelTruthy: () => false } as any)
+    }) };
 });
 
 vi.mock("../tools/helpers.js", async (importOriginal) => {

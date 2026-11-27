@@ -494,6 +494,7 @@ export function BackupList({ backups, backupFolderPath }: BackupListProps) {
             files={backups}
             fileBadges={fileBadges}
             downloadEndpoint="api/database/backup/download"
+            downloadKind="backup"
             downloadText={t("backup.download")}
             emptyIcon="bx bx-archive"
             emptyText={t("backup.no_backup_yet")}

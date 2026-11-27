@@ -1,6 +1,13 @@
-import type { SetupSecondFactor } from "@triliumnext/core";
+import type { WrongCodeCount } from "@triliumnext/commons";
+import { date_utils as dateUtils, type SetupSecondFactor } from "@triliumnext/core";
 
-import recoveryCodeService from "./encryption/recovery_codes.js";
+import recoveryCodeService, { RECOVERY_CODE_SHAPE } from "./encryption/recovery_codes.js";
+import {
+    getSecondFactorCheck,
+    getWaitUntil,
+    matchesResetWords,
+    readWrongCodes
+} from "./second_factor.js";
 import totp from "./totp.js";
 
 /**
@@ -10,15 +17,16 @@ import totp from "./totp.js";
  * server's business, and the builds without a server have none. See `setup_auth` in core for what it
  * is used for and why the answer is checked without being spent.
  *
- * Everything here is a read. The TOTP secret is decrypted with a salt of its own rather than with
- * the password-derived data key, so no protected session is involved, and every option it needs is
- * read through the fallback that serves a database which is attached but has no becca over it.
+ * Everything here only reads. The wizard works on a database that no start has migrated, so the
+ * factor can be sealed with the key file or still in the legacy form. Wrong codes are counted in
+ * memory, starting from the count of the server, and the password alone is never enough when the
+ * factor cannot be read.
  *
  * @module
  */
 export const setupSecondFactor: SetupSecondFactor = {
     isRequired() {
-        return totp.isTotpEnabled();
+        return getSecondFactorCheck() !== "none";
     },
 
     /**
@@ -35,6 +43,31 @@ export const setupSecondFactor: SetupSecondFactor = {
             return false;
         }
 
-        return totp.validateTOTP(answer) || recoveryCodeService.matchesRecoveryCode(answer);
+        const check = getSecondFactorCheck();
+        if (check === "unreadable") {
+            return false;
+        }
+        if (check === "code" && RECOVERY_CODE_SHAPE.test(answer)) {
+            return recoveryCodeService.matchesRecoveryCode(answer);
+        }
+
+        wrongCodes ??= readWrongCodes();
+        if (getWaitUntil(wrongCodes) !== null) {
+            return false;
+        }
+
+        const isRight = check === "words" ? matchesResetWords(answer) : totp.validateTOTP(answer);
+        if (!isRight) {
+            wrongCodes = { count: wrongCodes.count + 1, lastAt: dateUtils.utcNowDateTime() };
+        }
+        return isRight;
     }
 };
+
+/** The wrong codes sent to the wizard, starting from the count of the server. */
+let wrongCodes: WrongCodeCount | undefined;
+
+/** Forgets the count, for the tests that need one process to look like a fresh one. */
+export function resetSetupWrongCodes() {
+    wrongCodes = undefined;
+}

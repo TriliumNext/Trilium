@@ -1,15 +1,19 @@
 import "./DatabaseFileList.css";
 
+import type { TOTPStatus } from "@triliumnext/commons";
 import { ComponentChildren } from "preact";
 import { useMemo } from "preact/hooks";
 
 import { type DatabaseFile, describeDatabaseFile } from "../../../../services/database_files";
 import { t } from "../../../../services/i18n";
 import open from "../../../../services/open";
+import options from "../../../../services/options";
+import server from "../../../../services/server";
 import ActionButton from "../../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../../react/Card";
 import DatabaseFileBadges from "../../../react/DatabaseFileBadges";
 import NoItems from "../../../react/NoItems";
+import { useCredentialsPrompt } from "./CredentialsModal";
 
 export type { DatabaseFile };
 
@@ -21,6 +25,8 @@ interface DatabaseFileListProps<T extends DatabaseFile> {
     files: T[];
     /** Endpoint the per-file download links point to; the file path is appended as a query parameter. */
     downloadEndpoint: string;
+    /** The file kind that a download token is issued for while `isSecondFactorLegacy` is set. */
+    downloadKind: "backup" | "anonymized";
     downloadText: string;
     /**
      * Offers to remove a file, beside the download of it. Left out where the files are not the
@@ -39,8 +45,28 @@ interface DatabaseFileListProps<T extends DatabaseFile> {
 }
 
 export default function DatabaseFileList<T extends DatabaseFile>(props: DatabaseFileListProps<T>) {
-    const { title, description, files, downloadEndpoint, downloadText, onDelete } = props;
+    const {
+        title, description, files, downloadEndpoint, downloadKind, downloadText, onDelete
+    } = props;
     const { emptyIcon, emptyText, fileBadges, children } = props;
+    const [ askCredentials, credentialsModal ] = useCredentialsPrompt();
+
+    // An older copy of the database holds a `legacy` second factor next to its key.
+    async function download(filePath: string) {
+        let tokenParameter = "";
+        if (options.is("isSecondFactorLegacy")) {
+            const { isCodeAsked } = await server.get<TOTPStatus>("totp/status");
+            const credentials = await askCredentials({ title: downloadText, isCodeAsked });
+            if (!credentials) {
+                return;
+            }
+            const { token } = await server.withCredentials<{ token: string }>(
+                "POST", "database/download-token", { kind: downloadKind, filePath }, credentials);
+            tokenParameter = `&downloadToken=${encodeURIComponent(token)}`;
+        }
+
+        downloadFile(downloadEndpoint, filePath, tokenParameter);
+    }
 
     const sortedFiles = useMemo(() => [...files].sort((a, b) => {
         if (a.mtime < b.mtime) return 1;
@@ -65,7 +91,7 @@ export default function DatabaseFileList<T extends DatabaseFile>(props: Database
                         <ActionButton
                             icon="bx bx-download"
                             text={downloadText}
-                            onClick={() => downloadFile(downloadEndpoint, file.filePath)}
+                            onClick={() => void download(file.filePath)}
                         />
 
                         {/* Labelled from the shared catalogue rather than per list: removing a
@@ -87,12 +113,13 @@ export default function DatabaseFileList<T extends DatabaseFile>(props: Database
             )}
 
             {children}
+            {credentialsModal}
         </Card>
     );
 }
 
-function downloadFile(downloadEndpoint: string, filePath: string) {
-    const url = `${downloadEndpoint}?filePath=${encodeURIComponent(filePath)}`;
+function downloadFile(downloadEndpoint: string, filePath: string, tokenParameter: string) {
+    const url = `${downloadEndpoint}?filePath=${encodeURIComponent(filePath)}${tokenParameter}`;
 
     open.download(open.getUrlForDownload(url));
 }

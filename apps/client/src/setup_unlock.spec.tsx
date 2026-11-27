@@ -78,6 +78,19 @@ afterEach(() => {
 });
 
 describe("unlocking a wizard that is standing over a knowledge base", () => {
+    it("says that nothing unlocks it where no password is set, and asks for none", async () => {
+        window.glob.setupLockedWithoutPassword = true;
+        try {
+            renderScreen();
+            await settle();
+
+            expect(container.textContent).toContain("setup.unlock-no-password");
+            expect(password()).toBeNull();
+        } finally {
+            window.glob.setupLockedWithoutPassword = undefined;
+        }
+    });
+
     it("asks the one question the login screen asks, and says nothing else about it", async () => {
         renderScreen();
         await settle();

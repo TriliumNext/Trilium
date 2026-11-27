@@ -1,17 +1,30 @@
-import { attributes, authenticateSetup, enterSetupMode, leaveSetupMode, options, password as passwordService, password_encryption as passwordEncryptionService, resetSetupAuth } from "@triliumnext/core";
+import {
+    attributes,
+    authenticateSetup,
+    device_records,
+    enterSetupMode,
+    leaveSetupMode,
+    options,
+    password as passwordService,
+    password_encryption as passwordEncryptionService,
+    resetSetupAuth
+} from "@triliumnext/core";
+import { withServerTexts } from "@triliumnext/core/src/test/translations.js";
 import type { NextFunction, Request, Response } from "express";
 import { Application } from "express";
 import supertest from "supertest";
 import { generateConfig, Totp } from "time2fa";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import auth, { refreshAuth, verifyLoginCredentials } from "./auth";
+import auth, { describeRefusal, refreshAuth, verifyLoginCredentials } from "./auth";
 import { cls } from "@triliumnext/core";
 import config from "./config";
 import { markAsInternalElectronRequest } from "./electron_request";
 import recoveryCodeService from "./encryption/recovery_codes";
 import etapiTokens from "./etapi_tokens";
 import openID from "./open_id";
+import { markEnrolled, readWrongCodes, takeResetWords } from "./second_factor";
+import sqlService from "./sql";
 import sqlInit from "./sql_init";
 import totp from "./totp";
 
@@ -223,12 +236,18 @@ describe("Auth", () => {
 
         it("checkAuth destroys the session and redirects when auth state changed", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
             const destroy = vi.fn((cb: (err?: Error) => void) => cb());
             const res = makeRes();
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy }
+                    session: {
+                        loggedIn: true,
+                        sessionKind: "interactive",
+                        lastAuthState: { totpEnabled: false, ssoEnabled: false },
+                        destroy
+                    }
                 }),
                 res as never,
                 vi.fn()
@@ -241,7 +260,12 @@ describe("Auth", () => {
             const destroyErr = vi.fn((cb: (err?: Error) => void) => cb(new Error("boom")));
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy: destroyErr }
+                    session: {
+                        loggedIn: true,
+                        sessionKind: "interactive",
+                        lastAuthState: { totpEnabled: false, ssoEnabled: false },
+                        destroy: destroyErr
+                    }
                 }),
                 makeRes() as never,
                 vi.fn()
@@ -257,7 +281,11 @@ describe("Auth", () => {
             const nextOk = vi.fn();
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true } },
+                    session: {
+                        loggedIn: true,
+                        sessionKind: "interactive",
+                        lastAuthState: { totpEnabled: false, ssoEnabled: true }
+                    },
                     oidc: { isAuthenticated: () => true }
                 }),
                 makeRes() as never,
@@ -290,7 +318,12 @@ describe("Auth", () => {
             const next = vi.fn();
             // save() flushes the loggedIn:false flip before handoff; invoke its callback so next() runs.
             const save = vi.fn((cb: (err?: unknown) => void) => cb());
-            const session = { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true }, save };
+            const session = {
+                loggedIn: true,
+                sessionKind: "interactive",
+                lastAuthState: { totpEnabled: false, ssoEnabled: true },
+                save
+            };
             auth.checkAuth(
                 makeReq({ session, oidc: { isAuthenticated: () => false } }),
                 res as never,
@@ -313,6 +346,7 @@ describe("Auth", () => {
             const saveError = new Error("store unavailable");
             const session = {
                 loggedIn: true,
+                sessionKind: "interactive",
                 lastAuthState: { totpEnabled: false, ssoEnabled: true },
                 save: (cb: (err?: unknown) => void) => cb(saveError)
             };
@@ -332,7 +366,13 @@ describe("Auth", () => {
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
             const next = vi.fn();
             auth.checkAuth(
-                makeReq({ session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false } } }),
+                makeReq({
+                    session: {
+                        loggedIn: true,
+                        sessionKind: "interactive",
+                        lastAuthState: { totpEnabled: false, ssoEnabled: false }
+                    }
+                }),
                 makeRes() as never,
                 next
             );
@@ -381,8 +421,52 @@ describe("Auth", () => {
 
             // logged in -> next
             const next3 = vi.fn();
-            auth.checkApiAuth(makeReq({ session: { loggedIn: true } }), makeRes() as never, next3);
+            auth.checkApiAuth(
+                makeReq({ session: { loggedIn: true, sessionKind: "interactive" } }),
+                makeRes() as never,
+                next3
+            );
             expect(next3).toHaveBeenCalled();
+        });
+
+        it("checkApiAuth refuses a sync session and a logged-in session without a kind", () => {
+            for (const session of [ { loggedIn: true, sessionKind: "sync" }, { loggedIn: true } ]) {
+                const res = makeRes();
+                auth.checkApiAuth(makeReq({ session }), res as never, vi.fn());
+                expect(res.statusCode).toBe(401);
+            }
+        });
+
+        it("checkSyncAuth takes a sync session alone, and what passes every route as today", () => {
+            const pass = (req: never) => {
+                const next = vi.fn();
+                const res = makeRes();
+                auth.checkSyncAuth(req, res as never, next);
+                return next.mock.calls.length > 0 ? "passed" : res.statusCode;
+            };
+
+            expect(pass(makeReq({ session: { loggedIn: true, sessionKind: "sync" } })))
+                .toBe("passed");
+            expect(pass(makeReq({ session: { loggedIn: true, sessionKind: "interactive" } })))
+                .toBe(401);
+            expect(pass(makeReq({ session: { loggedIn: true } }))).toBe(401);
+
+            const electronReq = makeReq();
+            markAsInternalElectronRequest(electronReq as object);
+            expect(pass(electronReq)).toBe("passed");
+
+            const dbSpy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+            expect(pass(makeReq())).toBe("passed");
+            dbSpy.mockRestore();
+
+            config.General.noAuthentication = true;
+            refreshAuth();
+            try {
+                expect(pass(makeReq())).toBe("passed");
+            } finally {
+                config.General.noAuthentication = false;
+                refreshAuth();
+            }
         });
 
         it("checkAppInitialized always calls next", () => {
@@ -523,6 +607,7 @@ describe("Auth", () => {
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
             vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             const verifyPasswordSpy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "verifyTOTP").mockImplementation((token) => token === "123456");
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
@@ -559,9 +644,9 @@ describe("Auth", () => {
             expect(valid.next).toHaveBeenCalled();
 
             recoverySpy.mockReturnValue(true);
-            const recovery = await call({ "trilium-totp": "recovery-code" });
+            const recovery = await call({ "trilium-totp": "AAAAAAAAAAAAAAAAAAAAAA==" });
             expect(recovery.next).toHaveBeenCalled();
-            expect(recoverySpy).toHaveBeenLastCalledWith("recovery-code");
+            expect(recoverySpy).toHaveBeenLastCalledWith("AAAAAAAAAAAAAAAAAAAAAA==");
         });
 
         // `checkCredentials` runs as middleware, before the route handler opens a CLS context, and
@@ -606,10 +691,12 @@ describe("Auth", () => {
         it("does not consume a recovery code when the password is wrong", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
-            expect(await verifyLoginCredentials("wrong-password", RECOVERY_CODE)).toBe("password");
+            expect(await cls.init(() => verifyLoginCredentials("wrong-password", RECOVERY_CODE)))
+                .toEqual({ factor: "password" });
 
             // The second factor must never be evaluated when the password is wrong: verifying a
             // recovery code consumes it, so doing so here would burn a single-use code on a login
@@ -623,7 +710,7 @@ describe("Auth", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
             const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
 
-            expect(await verifyLoginCredentials("correct", "")).toBeNull();
+            expect(await cls.init(() => verifyLoginCredentials("correct", ""))).toBeNull();
             // With TOTP disabled the second factor is skipped entirely.
             expect(validateSpy).not.toHaveBeenCalled();
         });
@@ -631,10 +718,11 @@ describe("Auth", () => {
         it("returns null for a correct password with a valid TOTP token, without touching recovery codes", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             vi.spyOn(totp, "verifyTOTP").mockReturnValue(true);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
-            expect(await verifyLoginCredentials("correct", "123456")).toBeNull();
+            expect(await cls.init(() => verifyLoginCredentials("correct", "123456"))).toBeNull();
             // A valid TOTP token short-circuits, so recovery codes are never inspected.
             expect(recoverySpy).not.toHaveBeenCalled();
         });
@@ -642,20 +730,141 @@ describe("Auth", () => {
         it("consumes a recovery code only after the password is verified", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
-            expect(await verifyLoginCredentials("correct", RECOVERY_CODE)).toBeNull();
+            expect(await cls.init(() => verifyLoginCredentials("correct", RECOVERY_CODE)))
+                .toBeNull();
             expect(recoverySpy).toHaveBeenCalledWith(RECOVERY_CODE);
         });
 
         it("rejects a correct password paired with an invalid second factor", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
             vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
-            expect(await verifyLoginCredentials("correct", "000000")).toBe("totp");
+            expect(await cls.init(() => verifyLoginCredentials("correct", "000000")))
+                .toEqual({ factor: "totp" });
+        });
+
+        describe("wrong codes, waits and states of the factor", () => {
+            const verify = (token: string) =>
+                cls.init(() => verifyLoginCredentials("correct", token));
+            const attempts = () => device_records.readDeviceRecord("signInAttemptRecord")
+                .map(({ name, count }) => `${name}:${count}`);
+
+            beforeEach(() => {
+                vi.spyOn(passwordEncryptionService, "verifyPassword")
+                    .mockResolvedValue(true as never);
+                vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+                vi.spyOn(totp, "getTotpSecret").mockReturnValue("JBSWY3DPEHPK3PXP");
+                cls.init(() => {
+                    for (const name of [
+                        "totpWrongCodeCount",
+                        "signInAttemptRecord",
+                        "secondFactorState"
+                    ] as const) {
+                        options.setOption(name, "");
+                    }
+                });
+            });
+
+            it("starts a wait after five wrong codes; recovery codes pass uncounted", async () => {
+                const verifyCode = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
+                const recovery = vi.spyOn(recoveryCodeService, "verifyRecoveryCode")
+                    .mockReturnValue(false);
+                for (let i = 0; i < 5; i++) {
+                    expect(await verify("000000")).toEqual({ factor: "totp" });
+                }
+
+                verifyCode.mockReturnValue(true);
+                const waiting = await verify("123456");
+                expect(waiting).toMatchObject({ factor: "totp", reason: "wait" });
+                expect(waiting?.waitUntil).toBeGreaterThan(Date.now());
+                expect(describeRefusal(waiting as never)).toContain("Try again after");
+
+                recovery.mockReturnValue(true);
+                expect(await verify(RECOVERY_CODE)).toBeNull();
+                recovery.mockReturnValue(false);
+                expect(await verify(RECOVERY_CODE)).toEqual({ factor: "totp" });
+                expect(attempts()).toEqual([ "wrong-code:6", "wrong-recovery-code:1" ]);
+                expect(readWrongCodes().count).toBe(5);
+            });
+
+            it("refuses a code while the stored step lies ahead, without counting it", async () => {
+                vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
+                vi.spyOn(totp, "getStepWaitUntil").mockReturnValue(Date.now() + 3600 * 1000);
+
+                const refusal = await verify("123456");
+
+                expect(refusal).toMatchObject({ factor: "totp", reason: "step-ahead" });
+                expect(describeRefusal(refusal as never)).toContain("server clock was ahead");
+                expect(options.getOption("totpWrongCodeCount")).toBe("");
+            });
+
+            it("refuses every code of a factor that cannot be checked, and says why", async () => {
+                vi.spyOn(totp, "getTotpSecret").mockReturnValue(null);
+
+                const refusal = await verify("123456");
+
+                expect(refusal).toEqual({ factor: "totp", reason: "unreadable" });
+                expect(describeRefusal(refusal as never)).toContain("TRILIUM_RESET_SECOND_FACTOR");
+                expect(attempts()).toEqual([ "wrong-code:1" ]);
+            });
+
+            it("refuses logins without the reset words while the factor is removed", async () => {
+                cls.init(() => options.setOption("secondFactorState", "removed"));
+                expect(await verify("")).toEqual({ factor: "totp", reason: "removed" });
+                expect(describeRefusal({ factor: "totp", reason: "removed" }))
+                    .toContain("was removed");
+                expect(attempts()).toEqual([ "no-code:1" ]);
+
+                process.env.TRILIUM_RESET_SECOND_FACTOR = "the owner's long words of reset";
+                takeResetWords();
+                expect(await verify("123456")).toEqual({ factor: "totp" });
+                expect(await verify("the owner's long words of reset")).toBeNull();
+                expect(readWrongCodes().count).toBe(1);
+                cls.init(() => markEnrolled());
+            });
+
+            it("records a right password without a code, which starts no wait", async () => {
+                for (let i = 0; i < 10; i++) {
+                    expect(await verify("")).toEqual({ factor: "totp" });
+                }
+
+                expect(attempts()).toEqual([ "no-code:10" ]);
+                expect(readWrongCodes().count).toBe(0);
+                expect(describeRefusal({ factor: "totp" })).toBe("Incorrect TOTP token");
+            });
+
+            it("describes refusals in the server's language, wrong codes in English", async () => {
+                const waitUntil = Date.parse("2026-01-01T00:00:00.000Z");
+                const texts = {
+                    "second_factor.refused-wait": "wait {{time}}",
+                    "second_factor.refused-step-ahead": "ahead {{time}}",
+                    "second_factor.refused-unreadable": "unreadable",
+                    "second_factor.refused-removed": "removed"
+                };
+
+                const messages = await withServerTexts(texts, () => [
+                    describeRefusal({ factor: "totp", reason: "wait", waitUntil }),
+                    describeRefusal({ factor: "totp", reason: "step-ahead", waitUntil }),
+                    describeRefusal({ factor: "totp", reason: "unreadable" }),
+                    describeRefusal({ factor: "totp", reason: "removed" }),
+                    describeRefusal({ factor: "totp" })
+                ]);
+
+                expect(messages).toEqual([
+                    "wait 2026-01-01T00:00:00.000Z",
+                    "ahead 2026-01-01T00:00:00.000Z",
+                    "unreadable",
+                    "removed",
+                    "Incorrect TOTP token"
+                ]);
+            });
         });
     });
 }, 60_000);
@@ -757,6 +966,23 @@ describe("the setup wizard's gate", () => {
         leaveSetupMode();
 
         expect(callGate()).toMatchObject({ passed: true });
+    });
+
+    it("stays locked where no password is set, since the row of the password syncs", () => {
+        const hash = sqlService.getValue<string>(
+            "SELECT value FROM options WHERE name = 'passwordVerificationHash'"
+        );
+        sqlService.execute("UPDATE options SET value = '' WHERE name = 'passwordVerificationHash'");
+        try {
+            expect(callGate()).toEqual({ passed: false, status: 401 });
+            expect(callGate({ middleware: "checkApiAuth" }))
+                .toEqual({ passed: false, status: 401 });
+        } finally {
+            sqlService.execute(
+                "UPDATE options SET value = ? WHERE name = 'passwordVerificationHash'",
+                [ hash ]
+            );
+        }
     });
 
     describe("and the rest of the API, which stands down for the same reason", () => {

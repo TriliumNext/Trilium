@@ -3,7 +3,7 @@ import { WebSocketMessage } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
-import frocaUpdater from "./froca_updater.js";
+import frocaUpdater, { getLoggableEntityChange } from "./froca_updater.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
@@ -12,6 +12,8 @@ import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
+/** The listeners of {@link subscribeToReconnect}. */
+const reconnectListeners: (() => void)[] = [];
 
 let ws: WebSocket;
 // In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
@@ -25,6 +27,18 @@ let lastProcessedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastPingTs: number;
 let unansweredPingSince: number | null = null;
 let frontendUpdateDataQueue: EntityChange[] = [];
+
+/** The close code that the backend sends when it refuses the CSRF token of a connection. */
+const CSRF_REFUSED_CLOSE_CODE = 4403;
+/** Whether the token was renewed after a refusal since the last admitted connection. */
+let isCsrfTokenRenewed = false;
+let isRenewingCsrfToken = false;
+/** Whether the renewed token was refused too, after which the socket stays closed. */
+let areLiveUpdatesRefused = false;
+/** Whether the backend has admitted the current connection, which its first message tells. */
+let isConnectionAdmitted = false;
+/** Whether the backend has admitted a connection since the page loaded. */
+let wasConnectionAdmitted = false;
 
 function sendOutgoing(message: object): boolean {
     if (ipcWs) {
@@ -66,6 +80,14 @@ export function subscribeToMessages(messageHandler: MessageHandler) {
 
 export function unsubscribeToMessage(messageHandler: MessageHandler) {
     messageHandlers = messageHandlers.filter(handler => handler !== messageHandler);
+}
+
+/**
+ * Calls `listener` each time the backend admits a connection after an earlier one. The messages
+ * sent in between are lost, so a listener loads what it shows again.
+ */
+export function subscribeToReconnect(listener: () => void) {
+    reconnectListeners.push(listener);
 }
 
 /**
@@ -139,7 +161,8 @@ function logRows(entityChanges: EntityChange[]) {
     const filteredRows = entityChanges.filter((row) => !processedEntityChangeIds.has(row.id) && (row.entityName !== "options" || row.entityId !== "openNoteContexts"));
 
     if (filteredRows.length > 0) {
-        console.debug(utils.now(), "Frontend update data: ", filteredRows);
+        console.debug(utils.now(), "Frontend update data: ",
+            filteredRows.map(getLoggableEntityChange));
     }
 }
 
@@ -215,6 +238,17 @@ async function runInUpdateQueue(task: () => Promise<void>) {
  * This is only used in WebSocket mode (not standalone).
  */
 async function handleWebSocketMessage(event: MessageEvent<string>) {
+    // Messages arrive only over a connection that the backend admitted.
+    isCsrfTokenRenewed = false;
+    if (!isConnectionAdmitted) {
+        isConnectionAdmitted = true;
+        if (wasConnectionAdmitted) {
+            for (const listener of reconnectListeners) {
+                listener();
+            }
+        }
+        wasConnectionAdmitted = true;
+    }
     const message = JSON.parse(event.data) as WebSocketMessage;
     await dispatchMessage(message);
 }
@@ -275,7 +309,8 @@ async function consumeFrontendUpdateData() {
                 // if there's an error in updating the frontend, then the easy option to recover is to reload the frontend completely
                 utils.reloadFrontendApp(`processing entity changes failed: ${e.message}`);
             } else {
-                console.log("nonProcessedEntityChanges causing the timeout", nonProcessedEntityChanges);
+                console.log("nonProcessedEntityChanges causing the timeout",
+                    nonProcessedEntityChanges.map(getLoggableEntityChange));
 
                 toastService.showError(t("ws.encountered-error", { message: e.message }));
             }
@@ -304,11 +339,48 @@ function connectWebSocket() {
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
-    ws.onopen = () => console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    isConnectionAdmitted = false;
+    ws.onopen = () => {
+        // The backend admits a connection only when its first message is the page's CSRF token.
+        ws.send(JSON.stringify({ type: "csrf-token", token: glob.csrfToken }));
+        console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    };
     ws.onmessage = handleWebSocketMessage;
-    // we're not handling ws.onclose here because reconnection is done in sendPing()
+    // Reconnection is done in sendPing(), except after a refused token.
+    ws.onclose = (event) => {
+        if (event.code === CSRF_REFUSED_CLOSE_CODE) {
+            void renewRefusedToken();
+        }
+    };
 
     return ws;
+}
+
+/** Connects again once with a new CSRF token, and stops after a second refusal. */
+async function renewRefusedToken() {
+    if (isCsrfTokenRenewed) {
+        areLiveUpdatesRefused = true;
+        showLostConnectionToast();
+        return;
+    }
+
+    isCsrfTokenRenewed = true;
+    isRenewingCsrfToken = true;
+    try {
+        await server.refreshCsrfToken();
+    } finally {
+        isRenewingCsrfToken = false;
+    }
+    ws = connectWebSocket();
+}
+
+function showLostConnectionToast() {
+    toastService.showPersistent({
+        id: "lost-websocket-connection",
+        title: t("ws.lost-websocket-connection-title"),
+        message: t("ws.lost-websocket-connection-message"),
+        icon: "no-signal"
+    });
 }
 
 async function sendPing() {
@@ -330,12 +402,7 @@ async function sendPing() {
 
     if (isConnectionLost) {
         console.warn(utils.now(), "Lost websocket connection to the backend");
-        toastService.showPersistent({
-            id: "lost-websocket-connection",
-            title: t("ws.lost-websocket-connection-title"),
-            message: t("ws.lost-websocket-connection-message"),
-            icon: "no-signal"
-        });
+        showLostConnectionToast();
     }
 
     if (ws.readyState === ws.OPEN) {
@@ -355,7 +422,8 @@ async function sendPing() {
         if (unansweredPingSince === null) {
             unansweredPingSince = now;
         }
-        if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
+        const isReconnectHeld = isRenewingCsrfToken || areLiveUpdatesRefused;
+        if ((ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) && !isReconnectHeld) {
             console.log(utils.now(), "WS closed or closing, trying to reconnect");
 
             ws = connectWebSocket();

@@ -8,7 +8,8 @@ import { NoteContextContext, POPUP_EDITOR_NTX_ID } from "./react_utils";
 
 interface HelpButtonProps {
     className?: string;
-    helpPage: string;
+    /** The help page that the button opens. Without one, a press does nothing. */
+    helpPage?: string;
     title?: string;
     style?: CSSProperties;
 }
@@ -20,7 +21,7 @@ export default function HelpButton({ className, helpPage, title, style }: HelpBu
         <button
             class={`${className ?? ""} icon-action bx bx-help-circle`}
             type="button"
-            onClick={() => openHelpPageFor(helpPage, noteContext?.ntxId)}
+            onClick={() => helpPage && openHelpPageFor(helpPage, noteContext?.ntxId)}
             title={title ?? t("open-help-page")}
             style={style}
         />

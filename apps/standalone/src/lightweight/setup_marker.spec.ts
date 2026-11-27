@@ -5,9 +5,11 @@ import { consumeSetupMarker, hasSetupMarker, removeSetupMarker, writeSetupMarker
 
 /** Stands in for the origin's private filesystem, which is where the marker lives here. */
 let files: Map<string, string>;
+let isWriteFailing: boolean;
 
 beforeEach(() => {
     files = new Map();
+    isWriteFailing = false;
     vi.stubGlobal("navigator", {
         storage: {
             getDirectory: async () => ({
@@ -21,10 +23,22 @@ beforeEach(() => {
 
                     return {
                         getFile: async () => ({ text: async () => files.get(name) ?? "" }),
-                        createWritable: async () => ({
-                            write: async (text: string) => { files.set(name, text); },
-                            close: async () => {}
-                        })
+                        // As in a browser, the stream writes to a copy that only `close()` commits.
+                        createWritable: async () => {
+                            let copy = "";
+                            return {
+                                write: async (text: string) => {
+                                    if (isWriteFailing) {
+                                        throw new Error("QuotaExceededError");
+                                    }
+                                    copy += text;
+                                },
+                                close: async () => {
+                                    files.set(name, copy);
+                                },
+                                abort: async () => undefined
+                            };
+                        }
                     };
                 },
                 removeEntry: async (name: string) => {
@@ -65,6 +79,15 @@ describe("writing the marker", () => {
         await writeSetupMarker({ lang: "de", targetScreen: "restore-backup" });
 
         await expect(consumeSetupMarker()).resolves.toEqual({ lang: "de", targetScreen: "restore-backup" });
+    });
+
+    it("leaves the marker that was there when a write fails", async () => {
+        await writeSetupMarker({ lang: "de" });
+
+        isWriteFailing = true;
+        await expect(writeSetupMarker({ lang: "ro", targetScreen: "restore-backup" }))
+            .rejects.toThrow("QuotaExceededError");
+        await expect(consumeSetupMarker()).resolves.toEqual({ lang: "de" });
     });
 
     it("can be taken back, whether or not there was one", async () => {

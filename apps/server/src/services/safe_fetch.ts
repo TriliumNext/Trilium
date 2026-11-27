@@ -26,12 +26,23 @@ const ALLOWED_IP_RANGES = new Set(["unicast"]);
  */
 const ALLOWED_IP_RANGES_INCLUDING_PRIVATE = new Set(["unicast", "loopback", "private", "uniqueLocal", "carrierGradeNat"]);
 
+/** The ranges of private networks, which `LocalRanges.allowPrivate` allows. */
+const PRIVATE_IP_RANGES = [ "private", "uniqueLocal", "carrierGradeNat" ];
+
 /**
  * Cloud metadata endpoints inside an allowed range, refused under every policy: Alibaba Cloud's
  * in carrier-grade NAT and AWS's IPv6 one in unique-local. Listed in `ipaddr.js` `toString()`
  * form, which `isBlockedIP` compares against.
  */
 const METADATA_ADDRESSES = new Set(["100.100.100.200", "fd00:ec2::254"]);
+
+/** The local ranges that a destination the user configured can be in, each allowed on its own. */
+export interface LocalRanges {
+    /** RFC1918, unique-local and carrier-grade NAT addresses. */
+    allowPrivate: boolean;
+    /** Loopback addresses: this machine. */
+    allowLoopback: boolean;
+}
 
 /** How hard an address is vetted, and how long the caller is prepared to wait for it. */
 export interface SafeFetchPolicy {
@@ -40,6 +51,13 @@ export interface SafeFetchPolicy {
      * the operator configured themselves; never for one that arrived in note content.
      */
     allowPrivateNetwork?: boolean;
+    /** Allows private networks and loopback each on its own. Replaces `allowPrivateNetwork`. */
+    localRanges?: LocalRanges;
+    /**
+     * Sends plain HTTP only when every pinned address lies in an allowed local range, so that no
+     * URL or header crosses a public network in clear text.
+     */
+    isPlainHttpLocalOnly?: boolean;
     /**
      * Deadline imposed when the caller passes no signal of its own. `null` for a request that
      * must not have one — a chat completion runs for as long as the model takes.
@@ -54,21 +72,35 @@ export interface SafeFetchPolicy {
     maxRedirects?: number;
 }
 
+/** A request that `safeFetch()` refused to send: for its destination, or for a redirect. */
+export class SafeFetchRefusal extends ValidationError {
+
+    constructor(readonly reason: "destination" | "redirect", message: string) {
+        super(message);
+        this.name = "SafeFetchRefusal";
+    }
+
+}
+
 /**
  * Checks whether an IP address is private/reserved using ipaddr.js.
  * Returns true if the IP should be blocked.
  */
 function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>): boolean {
     try {
-        let parsed = ipaddr.parse(ip);
-        // For IPv4-mapped IPv6 addresses, extract and check the IPv4 part
-        if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
-            parsed = (parsed as ipaddr.IPv6).toIPv4Address();
-        }
+        const parsed = parseAddress(ip);
         return METADATA_ADDRESSES.has(parsed.toString()) || !allowedRanges.has(parsed.range());
     } catch {
         return true; // unparseable → treat as blocked
     }
+}
+
+/** Parses an IP address, an IPv4-mapped IPv6 address as its IPv4 part. */
+function parseAddress(ip: string) {
+    const parsed = ipaddr.parse(ip);
+    return parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()
+        ? (parsed as ipaddr.IPv6).toIPv4Address()
+        : parsed;
 }
 
 /**
@@ -76,7 +108,14 @@ function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>): boolean {
  * Returns the validated addresses so they can be pinned for the actual connection.
  */
 async function validateHostResolution(hostname: string, allowPrivateNetwork = false): Promise<dns.LookupAddress[]> {
-    const allowedRanges = allowPrivateNetwork ? ALLOWED_IP_RANGES_INCLUDING_PRIVATE : ALLOWED_IP_RANGES;
+    return resolveAllowedAddresses(hostname, getAllowedRanges({ allowPrivateNetwork }));
+}
+
+/** Resolves the hostname and refuses it unless every address lies in `allowedRanges`. */
+async function resolveAllowedAddresses(
+    hostname: string,
+    allowedRanges: ReadonlySet<string>
+): Promise<dns.LookupAddress[]> {
     // `URL.hostname` hands back an IPv6 literal still wrapped in its brackets ("[::1]"), which is
     // not a form either net.isIP or ipaddr.js recognises. Left as-is, such an address would be
     // taken for a name and looked up as one instead of being checked as the address it is.
@@ -85,7 +124,7 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
     // If the hostname is already an IP literal, check it directly
     if (net.isIP(host)) {
         if (isBlockedIP(host, allowedRanges)) {
-            throw new ValidationError(blockedAddressMessage(allowPrivateNetwork));
+            throw new SafeFetchRefusal("destination", blockedAddressMessage(allowedRanges));
         }
         return [{ address: host, family: net.isIP(host) as 4 | 6 }];
     }
@@ -99,11 +138,24 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
 
     for (const addr of addresses) {
         if (isBlockedIP(addr.address, allowedRanges)) {
-            throw new ValidationError(blockedAddressMessage(allowPrivateNetwork));
+            throw new SafeFetchRefusal("destination", blockedAddressMessage(allowedRanges));
         }
     }
 
     return addresses;
+}
+
+/** The ranges that a policy allows: public addresses, and the local ranges that it names. */
+function getAllowedRanges(policy: SafeFetchPolicy): ReadonlySet<string> {
+    const { allowPrivateNetwork, localRanges } = policy;
+    if (!localRanges) {
+        return allowPrivateNetwork ? ALLOWED_IP_RANGES_INCLUDING_PRIVATE : ALLOWED_IP_RANGES;
+    }
+    return new Set([
+        ...ALLOWED_IP_RANGES,
+        ...(localRanges.allowLoopback ? [ "loopback" ] : []),
+        ...(localRanges.allowPrivate ? PRIVATE_IP_RANGES : [])
+    ]);
 }
 
 /**
@@ -111,10 +163,17 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
  * permit private addresses must not be told its address was refused for being one — for those
  * the only refusals left are the metadata ranges.
  */
-function blockedAddressMessage(allowPrivateNetwork: boolean): string {
-    return allowPrivateNetwork
+function blockedAddressMessage(allowedRanges: ReadonlySet<string>): string {
+    const isPrivateAllowed = [ ...ALLOWED_IP_RANGES_INCLUDING_PRIVATE ]
+        .every((range) => allowedRanges.has(range));
+    return isPrivateAllowed
         ? "URLs pointing to link-local addresses or a cloud metadata endpoint are not allowed"
         : "URLs pointing to private/internal networks are not allowed";
+}
+
+/** Whether a pinned address is a public one, which plain HTTP must not reach under the policy. */
+function isPublicAddress({ address }: dns.LookupAddress) {
+    return parseAddress(address).range() === "unicast";
 }
 
 /**
@@ -218,7 +277,8 @@ function withDispatcherCleanup(response: UndiciResponse, dispatcher: Agent): Res
  * an address out of note content. See {@link SafeFetchPolicy} for what a caller relaxes and why.
  */
 async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFetchPolicy = {}): Promise<Response> {
-    const { allowPrivateNetwork = false, timeoutMs = FETCH_TIMEOUT_MS, maxRedirects = MAX_REDIRECTS } = policy;
+    const { timeoutMs = FETCH_TIMEOUT_MS, maxRedirects = MAX_REDIRECTS } = policy;
+    const allowedRanges = getAllowedRanges(policy);
     let currentUrl = url;
 
     // Imported here rather than at module scope so undici lands in a lazy chunk:
@@ -234,7 +294,13 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
 
     for (let i = 0; i <= maxRedirects; i++) {
         const parsed = validateUrl(currentUrl);
-        const validatedAddresses = await validateHostResolution(parsed.hostname, allowPrivateNetwork);
+        const validatedAddresses = await resolveAllowedAddresses(parsed.hostname, allowedRanges);
+        // Checks the addresses that the connection is pinned to, never those of a second lookup.
+        if (policy.isPlainHttpLocalOnly && parsed.protocol === "http:"
+            && validatedAddresses.some(isPublicAddress)) {
+            throw new SafeFetchRefusal("destination",
+                "Plain HTTP is allowed only to addresses on the local network");
+        }
 
         // Use a custom dispatcher that pins DNS to the validated IPs,
         // preventing a second DNS lookup from resolving to a different (private) IP.
@@ -255,12 +321,21 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
             signal: options.signal ?? (timeoutMs === null ? undefined : AbortSignal.timeout(timeoutMs)),
             dispatcher
         } as UndiciRequestInit;
-        const response = await undiciFetch(currentUrl, fetchOptions); // codeql[js/request-forgery]
+        let response: UndiciResponse;
+        try {
+            response = await undiciFetch(currentUrl, fetchOptions); // codeql[js/request-forgery]
+        } catch (e) {
+            // Closes the connection of a request that failed or whose signal aborted it.
+            void dispatcher.destroy();
+            throw e;
+        }
 
         if (response.status >= 300 && response.status < 400) {
             if (maxRedirects === 0) {
-                void dispatcher.close();
-                throw new ValidationError(`Refusing to follow a redirect from ${currentUrl}`);
+                // Closes the connection without reading the body of the redirect.
+                void dispatcher.destroy();
+                throw new SafeFetchRefusal("redirect",
+                    `Refusing to follow a redirect from ${currentUrl}`);
             }
             const location = response.headers.get("location");
             if (!location) throw new Error("Redirect without Location header");

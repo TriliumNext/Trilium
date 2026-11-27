@@ -47,10 +47,12 @@ describe("llm skill sheets", () => {
         for (const reference of SKILLS.flatMap((skill) => skill.reference ?? [])) {
             const generated = interfaceMembers(readFileSync(join(SKILLS_DIR, reference), "utf-8"), false);
             expect(generated.size, reference).toBeGreaterThan(0);
-            for (const [ name, members ] of generated) {
-                const declared = source.get(`Script${name}`) ?? source.get(name);
-                expect(declared, `${reference}: ${name} is not in script_api.ts`).toBeDefined();
-                expect([ ...members ].sort(), `${reference}: ${name}`).toEqual([ ...(declared ?? []) ].sort());
+            for (const [ name, { members } ] of generated) {
+                const declared = source.has(`Script${name}`) ? `Script${name}` : name;
+                expect(source.has(declared), `${reference}: ${name} is not in script_api.ts`)
+                    .toBe(true);
+                expect([ ...members ].sort(), `${reference}: ${name}`)
+                    .toEqual(writtenMembers(declared, source, generated));
             }
         }
     });
@@ -90,20 +92,24 @@ describe("llm skill sheets", () => {
     });
 });
 
+/** Interfaces by name, with their member names and the interfaces they extend. */
+type Interfaces = Map<string, { members: Set<string>; parents: string[] }>;
+
 /**
  * The member names of each interface in TypeScript source, one member per line at a 4-space indent.
  * With `skipDeprecated`, a member whose doc comment carries `@deprecated` is left out, as the
  * generated references leave it out.
  */
-function interfaceMembers(source: string, skipDeprecated: boolean) {
-    const interfaces = new Map<string, Set<string>>();
+function interfaceMembers(source: string, skipDeprecated: boolean): Interfaces {
+    const interfaces: Interfaces = new Map();
     let members: Set<string> | undefined;
     let comment = "";
     for (const line of source.split("\n")) {
-        const start = /^(?:export )?interface (\w+)/.exec(line);
+        const start = /^(?:export )?interface (\w+)(?: extends ([\w, ]+))?/.exec(line);
         if (start) {
             members = new Set();
-            interfaces.set(start[1], members);
+            const parents = start[2]?.split(",").map((parent) => parent.trim()) ?? [];
+            interfaces.set(start[1], { members, parents });
             continue;
         }
         if (line.startsWith("}")) {
@@ -127,4 +133,21 @@ function interfaceMembers(source: string, skipDeprecated: boolean) {
         }
     }
     return interfaces;
+}
+
+/**
+ * The members a reference writes on an interface of script_api.ts: its own, and every member of
+ * each parent that the reference does not write itself.
+ */
+function writtenMembers(name: string, source: Interfaces, generated: Interfaces) {
+    const { members, parents } = source.get(name) ?? { members: new Set<string>(), parents: [] };
+    const inlined = parents.filter((parent) => !generated.has(parent.replace(/^Script/, "")));
+    const inherited = inlined.flatMap((parent) => allMembers(parent, source));
+    return [ ...new Set([ ...members, ...inherited ]) ].sort();
+}
+
+/** The members of an interface of script_api.ts, inherited ones included. */
+function allMembers(name: string, source: Interfaces): string[] {
+    const { members, parents } = source.get(name) ?? { members: new Set<string>(), parents: [] };
+    return [ ...members, ...parents.flatMap((parent) => allMembers(parent, source)) ];
 }

@@ -91,6 +91,10 @@ function mockWebsocket() {
         // Do nothing.
     }
 
+    function subscribeToReconnect(_callback: () => void) {
+        // Do nothing.
+    }
+
     // Awaited before reading back what the server wrote. No write happens under test.
     async function waitForMaxKnownEntityChangeId() {}
 
@@ -103,6 +107,7 @@ function mockWebsocket() {
         // the subscription effect throw, which silently skips every later effect of the component
         subscribeToMessages,
         unsubscribeToMessage,
+        subscribeToReconnect,
         waitForMaxKnownEntityChangeId,
         // Code that reports a failure this way is usually in a catch block, so an undefined export
         // here throws over the error being handled and loses whatever the component did about it.
@@ -174,7 +179,10 @@ function mockServer() {
             // these; without them the write rejects and surfaces as an unhandled rejection rather
             // than as whatever the test was actually asserting.
             async put(_url: string, _data?: object) {},
-            async remove(_url: string) {}
+            async remove(_url: string) {},
+
+            // `ws.ts` calls this to renew the page's token after a refusal.
+            async refreshCsrfToken() {}
         }
     };
 }

@@ -103,21 +103,64 @@ describe("TOTP API", () => {
         expect(typeof status.set).toBe("boolean");
     });
 
-    it("exposes the configured secret (empty when none is set)", () => {
-        expect(cls.init(() => totpRoute.getSecret())).toBeFalsy();
-
-        runEnable({ secret: SECRET, recoveryCodes: [ "recovery-code" ] });
-        expect(cls.init(() => totpRoute.getSecret())).toBe(SECRET);
-    });
-
     it("resetTOTP removes the secret and the recovery codes, deactivating TOTP", () => {
         runEnable({ secret: SECRET, recoveryCodes: [ "recovery-code" ] });
-        expect(totpRoute.getTOTPStatus()).toEqual({ success: true, message: true, set: true });
+        expect(totpRoute.getTOTPStatus()).toEqual(
+            { success: true, message: true, set: true, isCodeAsked: true });
 
         expect(cls.init(() => totpRoute.resetTOTP())).toEqual({ success: true });
 
-        expect(totpRoute.getTOTPStatus()).toEqual({ success: true, message: false, set: false });
+        expect(totpRoute.getTOTPStatus()).toEqual(
+            { success: true, message: false, set: false, isCodeAsked: false });
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
+    });
+
+    it("enableSecret clears the legacy state: a new secret makes older copies worthless", () => {
+        cls.init(() => options.setOption("secondFactorState", "legacy"));
+
+        runEnable({ secret: SECRET, recoveryCodes: [ "recovery-code" ] });
+
+        expect(options.getOption("secondFactorState")).toBe("");
+    });
+
+    it("writes the sign-in method, and refuses one it does not know", () => {
+        const setMethod = (method: unknown) =>
+            cls.init(() => totpRoute.setMethod({ body: { method } } as unknown as Request));
+
+        expect(setMethod("oauth")).toEqual({ success: true });
+        expect(options.getOption("mfaMethod")).toBe("oauth");
+        expect(() => setMethod("")).toThrow("Unknown sign-in method");
+        expect(setMethod("totp")).toEqual({ success: true });
+    });
+
+    it("hands the page of the sign-in settings what this device holds", () => {
+        cls.init(() => {
+            options.setOption("secondFactorState", "legacy");
+            options.setOption("totpWrongCodeCount", JSON.stringify({
+                count: 5, lastAt: new Date().toISOString()
+            }));
+            options.setOption("startupRepairRecord", JSON.stringify([
+                { name: "mfaMethod", count: 1, lastAt: new Date().toISOString() }
+            ]));
+        });
+        try {
+            const records = totpRoute.getSignInRecords();
+
+            expect(records).toMatchObject(
+                { secondFactorState: "legacy", wrongCodeCount: 5, attempts: [] });
+            expect(records.repairs.map(({ name }) => name)).toEqual([ "mfaMethod" ]);
+            expect(records.waitUntil).toBeGreaterThan(Date.now());
+        } finally {
+            cls.init(() => {
+                for (const name of [
+                    "secondFactorState",
+                    "totpWrongCodeCount",
+                    "startupRepairRecord"
+                ] as const) {
+                    options.setOption(name, "");
+                }
+            });
+        }
     });
 });
 

@@ -61,6 +61,8 @@ To do so:
 4.  This will redirect you to your authentication provider, where you can sign in or confirm the action if needed.
 5.  Once you are authenticated you will be redirected back to the Trilium application.
 
+Changing _Sign-in with_ and disconnecting the account ask for your password. See _What the second factor protects against_ in <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> for what this sign-in method protects against.
+
 ## Logging out
 
 When logging out of Trilium, a request is made to the authentication provider to log out from there as well. This feature depends on the authentication provider, so it may not be honored (Google and Authelia are known cases in which they don't respect the logout feature).

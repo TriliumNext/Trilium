@@ -2,10 +2,11 @@ import { ForbiddenError, password as passwordService, ValidationError } from "@t
 import type { Request, Response } from 'express';
 import rateLimit from "express-rate-limit";
 
-import { verifyLoginCredentials } from "../services/auth.js";
+import { type LoginRefusal, verifyLoginCredentials } from "../services/auth.js";
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
 import { getLog } from "@triliumnext/core";
+import { markLoggedIn, markLoggedOut } from "../services/login_session.js";
 import openID from '../services/open_id.js';
 import totp from '../services/totp.js';
 import { isElectron } from "../services/utils.js";
@@ -49,7 +50,11 @@ async function setPassword(req: Request, res: Response) {
         throw new ValidationError("Password must be at least 4 characters long.");
     }
 
-    await passwordService.setPassword(password1);
+    // A refusal returns 400, which `loginRateLimiter` counts, since the route checks a password.
+    const result = await passwordService.setPassword(password1);
+    if (!result.success) {
+        throw new ValidationError(result.message);
+    }
 
     res.redirect("login");
 }
@@ -63,9 +68,9 @@ async function login(req: Request, res: Response) {
     const submittedPassword = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    const failedFactor = await verifyLoginCredentials(submittedPassword, submittedTotpToken);
-    if (failedFactor) {
-        sendLoginError(req, res, failedFactor);
+    const refusal = await verifyLoginCredentials(submittedPassword, submittedTotpToken);
+    if (refusal) {
+        sendLoginError(req, res, refusal);
         return;
     }
 
@@ -84,7 +89,7 @@ async function login(req: Request, res: Response) {
             ssoEnabled: openID.isOpenIDEnabled()
         };
 
-        req.session.loggedIn = true;
+        markLoggedIn(req.session, "interactive");
         // The client submits via fetch (following this redirect, which applies the new
         // session cookie) and then navigates to the app. The 302 also keeps the login
         // rate limiter skipping successful attempts (it only counts >= 400 responses).
@@ -92,22 +97,18 @@ async function login(req: Request, res: Response) {
     });
 }
 
-function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
+function sendLoginError(req: Request, res: Response, { factor, reason, waitUntil }: LoginRefusal) {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
-    if (totp.isTotpEnabled()) {
-        getLog().warn(`Wrong ${errorType} from ${req.ip}, rejecting.`);
-    } else {
-        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
-    }
+    getLog().warn(`Wrong ${factor} from ${req.ip}, rejecting.`);
 
     // The client submits via fetch; report the failed factor as JSON. The 401 keeps the
     // login rate limiter counting failed attempts (it skips successful, <400 responses).
-    res.status(401).json({ success: false, factor: errorType });
+    res.status(401).json({ success: false, factor, reason, waitUntil });
 }
 
 function logout(req: Request, res: Response) {
     req.session.regenerate(() => {
-        req.session.loggedIn = false;
+        markLoggedOut(req.session);
 
         if (openID.isOpenIDEnabled() && openIDEncryption.isSubjectIdentifierSaved() && res.oidc) {
             // oidc.logout() already issues the redirect (to the provider's end-session

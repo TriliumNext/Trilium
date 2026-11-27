@@ -158,3 +158,33 @@ describe("the sync settings", () => {
             .toBe("sync_2.effective_server_disabled");
     });
 });
+
+describe("an unfinished sync", () => {
+    const confirmButton = () =>
+        host.querySelector<HTMLButtonElement>("button[name='confirm-alone-button']");
+
+    it("says the last sync did not finish, and marks the device as not syncing", async () => {
+        mocks.stored.isLastSyncUnfinished = "true";
+        open();
+        expect(host.textContent).toContain("sync_2.unfinished_description");
+
+        const button = confirmButton();
+        expect(button).not.toBeNull();
+        await act(async () => button?.click());
+
+        expect(mocks.post).toHaveBeenCalledWith("sync/confirm-alone");
+        expect(confirmButton()).toBeNull();
+    });
+
+    it("says nothing once a sync server is entered, or while the last sync finished", () => {
+        mocks.stored.isLastSyncUnfinished = "true";
+        mocks.stored.syncServerHost = "https://sync.example";
+        open();
+        expect(confirmButton()).toBeNull();
+
+        render(null, host);
+        mocks.stored = { isLastSyncUnfinished: "false" };
+        open();
+        expect(confirmButton()).toBeNull();
+    });
+});

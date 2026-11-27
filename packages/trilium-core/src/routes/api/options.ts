@@ -10,6 +10,7 @@ import { getLog } from "../../services/log.js";
 import optionService from "../../services/options.js";
 import searchService from "../../services/search/services/search.js";
 import { getSql } from "../../services/sql/index.js";
+import sqlInit from "../../services/sql_init.js";
 import syncOptions from "../../services/sync_options.js";
 import { ValidationError } from "../../errors.js";
 
@@ -164,7 +165,9 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "splitEditorOrientation",
     "seenCallToActions",
     "experimentalFeatures",
-    "mfaMethod",
+    "notificationSoundEnabled",
+    "notificationDisabledCategories",
+    "notificationsSilent",
     // LLM options
     "aiEnabled",
     "llmProviders",
@@ -180,7 +183,9 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
 // Options the client reads but only the backend writes.
 const READ_ONLY_OPTIONS = new Set<OptionNames>([
     // The desktop's main process stores it from its folder picker.
-    "customDbBackupDir"
+    "customDbBackupDir",
+    // Written by `PUT /api/totp/method`, which asks for the password and a code.
+    "mfaMethod"
 ]);
 
 // Options that contain secrets (API keys, tokens, etc.).
@@ -190,7 +195,18 @@ const WRITE_ONLY_OPTIONS = new Set<string>([
     "anthropicApiKey"
 ]);
 
+/**
+ * Refuses the route on a database that has not been opened. During a first sync every request
+ * passes without a login, and writing a device option would make the database count as opened.
+ */
+function ensureDatabaseOpened() {
+    if (!sqlInit.isDbInitialized()) {
+        throw new ValidationError("Options are not available before the database opens.");
+    }
+}
+
 function getOptions() {
+    ensureDatabaseOpened();
     const optionMap = optionService.getOptionMap();
     const resultMap: Record<string, string> = {};
 
@@ -218,6 +234,9 @@ function getOptions() {
     const syncServerHost = syncOptions.isSyncSetup() ? syncOptions.getSyncServerHost() : null;
     resultMap["effectiveSyncServerHost"] = syncServerHost ? stripSyncCredentials(syncServerHost) : "";
     resultMap["syncServerHostOverridden"] = config.Sync.syncServerHost ? "true" : "false";
+    resultMap["isLastSyncUnfinished"] =
+        !syncServerHost && optionMap.syncIncomplete === "true" ? "true" : "false";
+    resultMap["isSecondFactorLegacy"] = optionMap.secondFactorState === "legacy" ? "true" : "false";
 
     // Detect if the user has any backend scripts with #run labels (backendStartup, hourly, daily).
     // Filter by MIME type since #run can also appear on frontend scripts.
@@ -236,6 +255,7 @@ function getOptions() {
 }
 
 async function updateOption(req: Request<{ name: string; value: string }>) {
+    ensureDatabaseOpened();
     const { name, value } = req.params;
 
     if (!update(name, value)) {
@@ -248,6 +268,7 @@ async function updateOption(req: Request<{ name: string; value: string }>) {
 }
 
 async function updateOptions(req: Request) {
+    ensureDatabaseOpened();
     // The route is registered with asyncApiRoute (no automatic transaction wrapping) because the
     // synchronous sql.transactional() cannot await promises — the transaction would commit at the
     // first await and changeLanguage() would run outside it. Wrap the option-setting loop manually

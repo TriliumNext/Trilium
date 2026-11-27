@@ -27,7 +27,7 @@ vi.mock("ai", async (importOriginal) => {
 
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, ...beccaStub } };
+    return { default: Object.assign(Object.create(actual.default), beccaStub) };
 });
 
 vi.mock("../../../services/log.js", async (importOriginal) => {

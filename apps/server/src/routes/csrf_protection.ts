@@ -1,5 +1,7 @@
+import cookieParser from "cookie-parser";
 import { doubleCsrf } from "csrf-csrf";
 import type { NextFunction, Request, Response } from "express";
+import type { IncomingMessage } from "http";
 
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import sessionSecret from "../services/session_secret.js";
@@ -37,6 +39,24 @@ const doubleCsrfUtilities = doubleCsrf({
 });
 
 export const { generateCsrfToken } = doubleCsrfUtilities;
+
+const parseCookies = cookieParser();
+
+/**
+ * Whether a token is the page's CSRF token for the request that opened a WebSocket, checked like
+ * `doubleCsrfProtection` checks a request header: against its cookie and its session.
+ */
+export function isValidCsrfToken(req: IncomingMessage, token: unknown): boolean {
+    if (typeof token !== "string" || !token) {
+        return false;
+    }
+
+    const view = Object.assign(Object.create(req), {
+        headers: { ...req.headers, "x-csrf-token": token }
+    }) as Request;
+    parseCookies(view, {} as Response, () => {});
+    return doubleCsrfUtilities.validateRequest(view);
+}
 
 // Skip CSRF validation only for requests dispatched via the `trilium-app://`
 // custom protocol from our own renderer — Express sessions don't round-trip

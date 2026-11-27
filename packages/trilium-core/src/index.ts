@@ -21,7 +21,19 @@ import { type CoreConfig, initConfig } from "./services/config";
 
 export { default as LogService, getLog } from "./services/log";
 export { default as FileBasedLogService, type LogFileInfo, type LogFileTail } from "./services/file_based_log";
-export { default as BackupService, getBackup, initBackup, type BackupOptionsService } from "./services/backup";
+export {
+    default as BackupService,
+    getBackup,
+    initBackup,
+    type BackupOptionsService,
+    TOTP_STEP_MS
+} from "./services/backup";
+export * as device_records from "./services/device_records";
+export * as notifications from "./services/notifications/index";
+export type {
+    ChannelAddressState, ChannelSendRequest, DeliveryRecordPort, NotificationChannelType
+} from "./services/notifications/channels/types";
+export { ChannelSendError } from "./services/notifications/channels/types";
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
 export { default as sql_init } from "./services/sql_init";

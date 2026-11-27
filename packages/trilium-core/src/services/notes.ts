@@ -24,6 +24,8 @@ import { getLinkTargetParameters } from "./export/rewrite_links.js";
 import imageService from "./image.js";
 import { downloadImages, storeLinkPreviewPictures } from "./image_download.js";
 import noteTypesService from "./note_types.js";
+import { getNotificationService } from "./notifications/index.js";
+import { NotificationError } from "./notifications/model.js";
 import optionService from "./options.js";
 import revisionService from "./revisions.js";
 import { evaluateTemplateSafe } from "./safe_template.js";
@@ -499,6 +501,9 @@ function protectNote(note: BNote, protect: boolean) {
         }
 
         revisionService.protectRevisions(note);
+        if (protect) {
+            protectNotificationsAbout(note.noteId);
+        }
 
         for (const attachment of note.getAttachments()) {
             if (protect !== attachment.isProtected) {
@@ -521,6 +526,19 @@ function protectNote(note: BNote, protect: boolean) {
         log.error(`Could not un/protect note '${note.noteId}'`);
 
         throw e;
+    }
+}
+
+/**
+ * Moves the text of the note's notifications to their private text. A failure protects the note
+ * all the same: housekeeping then drops the text that it left in their rows.
+ */
+function protectNotificationsAbout(noteId: string) {
+    try {
+        getNotificationService().protectNotificationsAbout(noteId);
+    } catch (e) {
+        const code = e instanceof NotificationError ? e.code : "internal";
+        getLog().error(`Could not make the notifications of note '${noteId}' private: ${code}.`);
     }
 }
 

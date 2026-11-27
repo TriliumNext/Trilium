@@ -358,3 +358,17 @@ async function writeHostLauncher(binary: string, hostBinary: string, hostPath?: 
 function shellQuote(value: string): string {
     return `'${value.replaceAll("'", `'\\''`)}'`;
 }
+
+/**
+ * Returns the server's environment for an agent program, without its `TRILIUM_` variables, which
+ * can hold the OpenID client secret and the words that remove a second factor.
+ */
+export function getAgentEnvironment(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {};
+    for (const [ name, value ] of Object.entries(process.env)) {
+        if (!/^TRILIUM_/i.test(name)) {
+            env[name] = value;
+        }
+    }
+    return { ...env, ...extra };
+}

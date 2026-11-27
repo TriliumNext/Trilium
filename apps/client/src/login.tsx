@@ -97,7 +97,18 @@ export function PasswordLogin({ illustration, totpEnabled, initialError }: {
                 return t("login.too-many-attempts");
             }
 
-            const factor = resp.status === 401 ? (await resp.json().catch(() => ({}))).factor : undefined;
+            const refusal: {
+                factor?: string;
+                reason?: string;
+                waitUntil?: number;
+            } = resp.status === 401
+                ? await resp.json().catch(() => ({}))
+                : {};
+            const { factor } = refusal;
+            const reasonMessage = describeSecondFactorRefusal(refusal);
+            if (reasonMessage) {
+                return reasonMessage;
+            }
             if (factor === "totp") {
                 // This field accepts either a 6-digit TOTP or a recovery code (22 chars + "=="),
                 // so tailor the message to what was actually entered. This keys off the user's
@@ -148,3 +159,23 @@ function initialSsoError(config: typeof window.glob.login): string | null {
 // index.ts holds the splash up until the page has rendered. The render under test imports
 // the components directly, so it skips this one.
 export const ready = import.meta.env.MODE !== "test" ? main() : Promise.resolve();
+
+/** Returns the message for a second factor refused for a reason other than a wrong code. */
+function describeSecondFactorRefusal({ reason, waitUntil }: {
+    reason?: string;
+    waitUntil?: number;
+}) {
+    const time = waitUntil ? new Date(waitUntil).toLocaleString() : "";
+    switch (reason) {
+        case "wait":
+            return t("login.totp-wait", { time });
+        case "step-ahead":
+            return t("login.totp-step-ahead", { time });
+        case "unreadable":
+            return t("login.factor-unreadable");
+        case "removed":
+            return t("login.factor-removed");
+        default:
+            return null;
+    }
+}

@@ -45,6 +45,11 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection = new Database(buffer, dbOpts);
     }
 
+    serialize(): Uint8Array {
+        if (!this.dbConnection) throw new Error("DB not open.");
+        return this.dbConnection.serialize();
+    }
+
     detach() {
         // Closing is what folds the -wal file back into the database and lets the file be replaced;
         // on Windows it cannot even be renamed while a handle is open.

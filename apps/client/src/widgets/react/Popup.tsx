@@ -180,8 +180,9 @@ export default function Popup({ anchor, placement = "bottom-start", offset: gap 
             swallowStrayClick(target);
         };
         const onKeyDown = (e: KeyboardEvent) => {
-            // A popup open inside this one takes Escape first.
-            if (e.key !== "Escape" || !escapes.current || layers.current.size) return;
+            // A popup open inside this one, or a context menu over it, takes Escape first.
+            if (e.key !== "Escape" || !escapes.current || layers.current.size
+                || document.body.classList.contains("context-menu-shown")) return;
             // A dialog under it stays open.
             e.stopPropagation();
             dismiss.current?.("escape");

@@ -5,6 +5,7 @@ import glob from "../services/glob.js";
 import { t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
 import { setupLinkHandlers } from "../services/link.js";
+import notificationStore from "../services/notifications.js";
 import toastService from "../services/toast.js";
 import utils from "../services/utils.js";
 import { preloadCommonNoteTypes } from "../widgets/note_types.js";
@@ -21,8 +22,9 @@ import zoomComponent from "./zoom.js";
 /**
  * Builds the application on top of `appContext` around `root`, a layout that Preact has already
  * rendered: sets up the globals, the components that execute commands and the handlers of links and
- * pasted images, restores the tabs once froca has the note tree, then preloads the common note
- * types. A failure to start shows a critical error. Resolves to whether the app started.
+ * pasted images, restores the tabs once froca has the note tree, then starts the notification
+ * store and preloads the common note types. A failure to start shows a critical error. Resolves to
+ * whether the app started.
  *
  * `mobile.ts` calls it after the first render, and `desktop_startup.ts`, which adds what only the
  * desktop layout has. Only an entry point imports this module. `app_context.ts` holds the command
@@ -50,6 +52,7 @@ export async function startAppAroundLayout(root: HTMLElement) {
         return false;
     }
 
+    notificationStore.start();
     setTimeout(() => bundleService.executeStartupBundles(), 2000);
     preloadCommonNoteTypes();
     return true;

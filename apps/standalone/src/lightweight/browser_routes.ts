@@ -337,6 +337,8 @@ export function registerRoutes(router: BrowserRouter): void {
         apiResultHandler,
         checkApiAuth: noopMiddleware,
         checkApiAuthOrElectron: noopMiddleware,
+        checkSyncAuth: noopMiddleware,
+        checkBackupDownload: noopMiddleware,
         checkAppNotInitialized,
         // Nothing reaches this build but the page it is part of: there is no port, no session and
         // nobody else who could ask. The wizard's password gate exists for instances served over a
@@ -346,6 +348,8 @@ export function registerRoutes(router: BrowserRouter): void {
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
         importMiddlewareWithErrorHandling: importUploadMiddleware,
+        // The page posts a file it holds already, and the route refuses one over the limit.
+        soundUploadMiddleware: noopMiddleware,
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);

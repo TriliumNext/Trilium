@@ -198,6 +198,11 @@ export const CONTENT_CATEGORIES: ContentCategory[] = [
         ]
     },
     {
+        id: "notificationChannels",
+        titleKey: "content_manager.category_notification_channels",
+        filter: "#notificationChannel OR #disabled:notificationChannel"
+    },
+    {
         id: "backendScripts",
         titleKey: "content_manager.category_backend_scripts",
         filter: "#run = backendStartup OR #run = hourly OR #run = daily"

@@ -11,6 +11,7 @@ import config from "./config.js";
 import { getContext } from "./context.js";
 import zipExportService from "./export/zip.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
+import { getNotificationService } from "./notifications/index.js";
 import sql_init from "./sql_init.js";
 import treeService from "./tree.js";
 import ws from "./ws.js";
@@ -233,6 +234,52 @@ describe("BackendScriptApi against the database", () => {
             originEntityId: "root"
         });
         expect(send.mock.calls[1][0]).toMatchObject({ script: "() => 1", params: null, originEntityId: null });
+    });
+
+    it("raises, changes and dismisses notifications, naming the script's note", async () => {
+        const api = makeApi();
+        const inContext = <T>(fn: () => T) => getContext().init(fn);
+        try {
+            const raised = await inContext(() => api.notifications.create({
+                id: "spec:script", title: "From a script", type: "persistent", tag: "spec:tag"
+            }));
+            expect(raised).toMatchObject({ id: "spec:script", producer: "script:root" });
+            if (!raised) {
+                throw new Error("Nothing was raised.");
+            }
+            await expect(inContext(() => api.notifications.create({ id: "trilium:x", title: "T" })))
+                .rejects.toThrow("reserved-name");
+
+            const updated = await inContext(
+                () => api.notifications.update(raised, { title: "Changed" }));
+            expect(updated?.title).toBe("Changed");
+            // A notification whose revision changed, or an ID without one, resolves to null.
+            expect(await inContext(() => api.notifications.update(raised, { title: "Stale" })))
+                .toBeNull();
+            expect(await inContext(() => api.notifications.update("spec:missing", {}))).toBeNull();
+            expect((await api.notifications.getByTag("spec:tag")).map(({ title }) => title))
+                .toEqual([ "Changed" ]);
+
+            // A script dismisses a persistent notification as its handler does.
+            await inContext(() => api.notifications.dismiss("spec:script"));
+            expect(await api.notifications.getById("spec:script")).toBeNull();
+
+            const handle = api.notifications.createTransientNotification(
+                { title: "Working", progress: 0 });
+            handle.setProgress(0.5);
+            expect(getNotificationService().getPage().transients).toEqual([
+                expect.objectContaining({ id: handle.id, producer: "script:root", progress: 0.5 })
+            ]);
+            handle.dismiss();
+            expect(getNotificationService().getPage().transients).toEqual([]);
+            for (let index = 0; index < 10; index++) {
+                api.notifications.createTransientNotification({ title: `Operation ${index}` });
+            }
+            expect(() => api.notifications.createTransientNotification({ title: "One more" }))
+                .toThrow("transient-limit");
+        } finally {
+            getNotificationService().stop();
+        }
     });
 
     describe("createOrUpdateLauncher", () => {

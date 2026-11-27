@@ -25,7 +25,10 @@ const optionsCtrl = vi.hoisted(() => ({ is: vi.fn(() => false) }));
 vi.mock("./toast.js", () => ({ default: toast, showUnhandledError }));
 vi.mock("./bundle.js", () => ({ default: bundle }));
 vi.mock("../components/app_context.js", () => ({ default: appCtx }));
-vi.mock("./froca_updater.js", () => ({ default: frocaUpdater }));
+vi.mock("./froca_updater.js", async (orig) => ({
+    ...(await orig<typeof import("./froca_updater.js")>()),
+    default: frocaUpdater
+}));
 vi.mock("./options.js", () => ({ default: optionsCtrl }));
 vi.mock("./utils.js", async (orig) => {
     const actual = (await orig()) as Record<string, unknown>;
@@ -200,6 +203,28 @@ describe("frontend-update / executeFrontendUpdate", () => {
         expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("boom"));
     });
 
+    it("prints a change of notifications by its entity, ID and number, never its row", async () => {
+        const ws = await loadWs();
+        const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        utilsCtrl.timeLimit
+            .mockRejectedValueOnce(Object.assign(new Error("boom3"), { stack: "stk" }));
+        optionsCtrl.is.mockReturnValue(true);
+        const changes = [
+            { id: 301, entityName: "notifications", entityId: "nKey",
+                entity: { protectedTitle: "Recognizable private title" } },
+            { id: 302, entityName: "notification_private_texts", entityId: "nKey",
+                entity: { protectedDescription: "Recognizable private description" } }
+        ];
+
+        await ws.dispatchMessage(
+            { type: "frontend-update", data: { entityChanges: changes } } as any);
+        const printed = JSON.stringify([ debug.mock.calls, log.mock.calls ]);
+        expect(printed).toContain("nKey");
+        expect(printed).not.toContain("Recognizable");
+        expect(toast.showError).toHaveBeenCalled();
+    });
+
     it("shows a toast instead of reloading when debug mode is enabled", async () => {
         const ws = await loadWs();
         utilsCtrl.timeLimit.mockRejectedValueOnce(Object.assign(new Error("boom2"), { stack: "stk" }));
@@ -367,6 +392,7 @@ class FakeSocket {
     readyState = 1;
     onopen: (() => void) | null = null;
     onmessage: ((e: MessageEvent<string>) => void) | null = null;
+    onclose: ((e: CloseEvent) => void) | null = null;
     sent: string[] = [];
     url: string;
     constructor(url: string) {
@@ -508,6 +534,88 @@ describe("WebSocket transport", () => {
         vi.advanceTimersByTime(1000);
         // a brand-new socket was created by connectWebSocket()
         expect(lastSocket).not.toBe(first);
+    });
+
+    it("tells the reconnect listeners when a connection is admitted after another", async () => {
+        const ws = await loadWsFresh();
+        const listener = vi.fn();
+        ws.subscribeToReconnect(listener);
+        vi.advanceTimersByTime(0);
+        const ping = { data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>;
+
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).not.toHaveBeenCalled();
+
+        const first = lastSocket;
+        first.readyState = FakeSocket.CLOSED;
+        vi.advanceTimersByTime(1000);
+        expect(lastSocket).not.toBe(first);
+        // The backend sends nothing before it admits a connection.
+        expect(listener).not.toHaveBeenCalled();
+        lastSocket.onmessage?.(ping);
+        lastSocket.onmessage?.(ping);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it("sends the page's CSRF token as the first message of a connection", async () => {
+        (window as any).glob = { ...baseGlob, dbInitialized: true, csrfToken: "page-token" };
+        await loadWsFresh();
+        vi.advanceTimersByTime(0);
+
+        lastSocket.onopen?.();
+
+        expect(JSON.parse(lastSocket.sent[0])).toEqual({ type: "csrf-token", token: "page-token" });
+    });
+
+    it("reconnects with a new token after a refusal, but not after a second one", async () => {
+        (window as any).glob = { ...baseGlob, dbInitialized: true, csrfToken: "stale-token" };
+        await loadWsFresh();
+        const { default: server } = await import("./server.js");
+        const refresh = vi.spyOn(server, "refreshCsrfToken").mockImplementation(async () => {
+            (window as any).glob.csrfToken = "fresh-token";
+        });
+        vi.advanceTimersByTime(0);
+        const refused = lastSocket;
+        refused.readyState = FakeSocket.CLOSED;
+
+        refused.onclose?.({ code: 4403 } as CloseEvent);
+        // The ping loop does not reconnect while the token is renewed.
+        vi.advanceTimersByTime(1000);
+        expect(lastSocket).toBe(refused);
+        await vi.waitFor(() => expect(lastSocket).not.toBe(refused));
+
+        expect(refresh).toHaveBeenCalledOnce();
+        lastSocket.onopen?.();
+        expect(JSON.parse(lastSocket.sent[0]))
+            .toEqual({ type: "csrf-token", token: "fresh-token" });
+
+        const second = lastSocket;
+        second.readyState = FakeSocket.CLOSED;
+        second.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(toast.showPersistent).toHaveBeenCalledWith(
+            expect.objectContaining({ id: "lost-websocket-connection" })
+        ));
+        vi.advanceTimersByTime(5000);
+        expect(lastSocket).toBe(second);
+        expect(refresh).toHaveBeenCalledOnce();
+    });
+
+    it("renews a refused token again once a connection was served since", async () => {
+        await loadWsFresh();
+        const { default: server } = await import("./server.js");
+        const refresh = vi.spyOn(server, "refreshCsrfToken").mockResolvedValue(undefined);
+        vi.advanceTimersByTime(0);
+
+        lastSocket.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+        lastSocket.onmessage?.({ data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>);
+        lastSocket.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
+
+        // After any other close, the ping loop reconnects.
+        lastSocket.onclose?.({ code: 1006 } as CloseEvent);
+        expect(refresh).toHaveBeenCalledTimes(2);
     });
 
     it("does not bootstrap a socket in print mode", async () => {

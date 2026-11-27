@@ -1014,6 +1014,250 @@ export interface ScriptLinkOptions {
     titleSuffix?: string;
 }
 
+/** A button of a notification. Pressing it runs the notification's handler. */
+export interface ScriptNotificationAction {
+    /** Tells the handler which button was pressed. */
+    id: string;
+    /** The text of the button. */
+    caption: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+}
+
+/**
+ * What a script passes to `api.notifications.create()`.
+ *
+ * Every text is plain text: no HTML is rendered from it. `id` and `tag` are stored in plain text
+ * on every device, also for a notification about a protected note, so build them from note IDs and
+ * times, never from what a note says. IDs, tags and handlers that start with `trilium:` belong to
+ * built-in features, and a script's are refused.
+ */
+export interface ScriptNotificationInput {
+    /**
+     * Identifies the notification: ASCII letters, digits and `_ . : -`, at most 100 characters.
+     * Devices that raise the same event pass the same `id` and `raisedAt`, and show one
+     * notification. Raising an `id` again with a later time replaces the earlier one. Without an
+     * `id`, every call adds a notification.
+     */
+    id?: string;
+    /**
+     * The public text. `title` is required unless `noteId`, `link` or a private text is given; the
+     * note's own title is shown then.
+     */
+    title?: string;
+    description?: string;
+    /**
+     * The private text of a sensitive notification. It is stored encrypted where a protected
+     * session is open, and shown only while one is. A `title` and a `description` passed beside it
+     * stay public as written, so they must not repeat it; passed alone for a sensitive
+     * notification, they become the private text.
+     */
+    protectedTitle?: string;
+    protectedDescription?: string;
+    /** An icon class, `bx` prefix included. Without one, the icon of the category shows. */
+    icon?: string;
+    /**
+     * The note that the notification is about. A notification about a protected note is
+     * sensitive, and the notification is erased when its note is deleted.
+     */
+    noteId?: string;
+    /**
+     * Where a click on the notification goes: a link hash such as `#root/abc?block=xyz`, which is
+     * `#`, a note path and the parameters of an internal link. Anything else is refused.
+     */
+    link?: string;
+    /** Groups notifications for `getByTag()`. Several notifications can share a tag. */
+    tag?: string;
+    /** `general` by default. The user can turn a category off, and then nothing is stored. */
+    category?: "general" | "reminder" | "softwareUpdate";
+    /**
+     * `standard` by default. A `persistent` notification leaves only when its handler dismisses it,
+     * or when the user confirms "Dismiss anyway".
+     */
+    type?: "standard" | "persistent";
+    /**
+     * `medium` by default. A fresh `medium` or `high` notification shows a toast and plays a sound;
+     * the toast of a `high` one stays until it is closed. A `low` one only counts in the bell.
+     */
+    attentionLevel?: "low" | "medium" | "high";
+    /**
+     * From 0 to 1, and a negative value shows a bar without a known end. Progress belongs to
+     * transient notifications: each change of a stored notification syncs to every device.
+     */
+    progress?: number;
+    progressLabel?: string;
+    /**
+     * At most five buttons. They show only where the frontend has registered the `handler`, and
+     * nowhere without one.
+     */
+    actions?: ScriptNotificationAction[];
+    /**
+     * The name under which a frontend script registers the handler of the actions, with
+     * `api.notifications.registerActionHandler()`.
+     */
+    handler?: string;
+    /**
+     * When the event happened, in UTC, as `YYYY-MM-DD HH:mm:ss.SSSZ`, at most an hour ahead.
+     * Without it, the current time.
+     */
+    raisedAt?: string;
+    /** `true` makes the notification sensitive. Nothing makes a sensitive one plain again. */
+    sensitive?: boolean;
+}
+
+/** A stored notification, as `api.notifications` gives it. */
+export interface ScriptNotification extends ScriptNotificationInput {
+    /** The key of this generation of the `id`, which a raise again with a later time replaces. */
+    notificationId: string;
+    id: string;
+    raisedAt: string;
+    updatedAt: string;
+    /** Changes whenever the stored text changes. `update()` with a notification compares it. */
+    revision: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    type: "standard" | "persistent";
+    attentionLevel: "low" | "medium" | "high";
+    state: "pending" | "seen" | "read";
+    /** What raised the notification: a built-in feature, `script:<noteId>` or `client`. */
+    producer: string;
+}
+
+/** One generation of a notification: what a handler was given. */
+export interface ScriptNotificationRef {
+    id: string;
+    raisedAt: string;
+}
+
+/**
+ * What `api.notifications.update()` changes. An empty text clears its field, and `sensitive: true`
+ * or a private text makes the notification sensitive.
+ */
+export type ScriptNotificationPatch = Partial<Pick<ScriptNotificationInput,
+    "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "progress"
+    | "progressLabel" | "actions" | "sensitive">>;
+
+/**
+ * A notification of an ongoing operation, which is never stored. Its backend holds it in memory
+ * and shows it to its own clients only, pinned at the top of the panel and without a toast. At
+ * most 2 KiB.
+ */
+export type ScriptTransientNotificationInput = Pick<ScriptNotificationInput,
+    "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "noteId"
+    | "progress" | "progressLabel" | "actions" | "handler" | "sensitive">;
+
+/** A transient notification, as an action handler gets it. */
+export interface ScriptTransientNotification extends ScriptTransientNotificationInput {
+    id: string;
+    /** Tells a transient notification apart from a stored one. */
+    type: "transient";
+    producer: string;
+    createdAt: string;
+}
+
+/** Changes a transient notification. Each setter replaces its field; an empty text clears it. */
+export interface ScriptTransientNotificationHandle {
+    readonly id: string;
+    setTitle(title: string): void;
+    setDescription(description: string): void;
+    setProtectedTitle(title: string): void;
+    setProtectedDescription(description: string): void;
+    setIcon(icon: string): void;
+    setProgress(progress: number): void;
+    setProgressLabel(label: string): void;
+    setActions(actions: ScriptNotificationAction[]): void;
+    /** Ends the notification. */
+    dismiss(): void;
+}
+
+/**
+ * What an action handler asks for: nothing, which marks a standard notification read; the
+ * dismissal of the notification that it was given; or an update of it. An update is dropped when
+ * the notification changed while the handler ran, and a dismissal when it was raised again.
+ */
+export type ScriptNotificationActionResult =
+    | void
+    | { dismiss: true }
+    | { update: ScriptNotificationPatch };
+
+/** What an action handler is called with. */
+export interface ScriptNotificationActionContext {
+    /** The pressed action, or `null` for a click on the notification itself. */
+    action: ScriptNotificationAction | null;
+    notification: ScriptNotification | ScriptTransientNotification;
+}
+
+export type ScriptNotificationActionHandler = (
+    context: ScriptNotificationActionContext
+) => ScriptNotificationActionResult | Promise<ScriptNotificationActionResult>;
+
+/**
+ * What a notification channel script receives as `api.notification`. A sensitive notification
+ * comes with its public text and without `noteId`.
+ */
+export interface ScriptChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+export interface ScriptChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /**
+     * Aborts when the attempt times out, after 30 seconds. Pass it to what the script waits for,
+     * such as `fetch(url, { signal })`: the channel takes no other attempt until the script's
+     * promise settles.
+     */
+    signal: AbortSignal;
+}
+
+/** `api.notifications`: raises and changes the notifications that the bell shows. */
+export interface ScriptNotificationApi {
+    /**
+     * Raises a notification. Resolves to `null` when none is stored: its category is turned off,
+     * it was dismissed, or a later one of its `id` exists. Rejects with an error whose message is
+     * a code, such as `invalid-input`, `reserved-name`, `budget` or `full`.
+     */
+    create(input: ScriptNotificationInput): Promise<ScriptNotification | null>;
+    /**
+     * With an ID, changes the current notification of that ID. With a notification, changes it
+     * only while its `revision` is still the stored one, and resolves to `null` otherwise.
+     */
+    update(
+        target: string | ScriptNotification, patch: ScriptNotificationPatch
+    ): Promise<ScriptNotification | null>;
+    /**
+     * With an ID, dismisses the current notification of that ID, persistent ones included. With a
+     * ref, dismisses that generation only: one raised again in the meantime stays.
+     */
+    dismiss(target: string | ScriptNotificationRef): Promise<void>;
+    getById(id: string): Promise<ScriptNotification | null>;
+    /** Every notification with the tag, newest first. */
+    getByTag(tag: string): Promise<ScriptNotification[]>;
+    /** Shows a transient notification, and returns its handle at once. */
+    createTransientNotification(
+        input: ScriptTransientNotificationInput
+    ): ScriptTransientNotificationHandle;
+}
+
+/** `api.notifications` of frontend scripts, with the handlers of actions. */
+export interface ScriptFrontendNotificationApi extends ScriptNotificationApi {
+    /**
+     * Registers the handler of the notifications whose `handler` is `name`, such as
+     * `myscript:reminder`. The cards of the panel show their buttons as soon as it is registered.
+     * A name that starts with `trilium:` is refused.
+     */
+    registerActionHandler(name: string, handler: ScriptNotificationActionHandler): void;
+    getActionHandler(name: string): ScriptNotificationActionHandler | undefined;
+}
+
 /**
  * The `api` global available inside **frontend** script notes
  * (`application/javascript;env=frontend`).
@@ -1174,6 +1418,43 @@ export interface FrontendApi {
      * @returns the created note and its branch, resolved from the frontend cache
      */
     createNote(parentNotePath: string, opts?: ScriptCreateNoteOpts): Promise<{ note: ScriptFNote | null; branch: ScriptFBranch | undefined }>;
+    /**
+     * Sets the value of the first label of that name that the note owns, or adds a label that is
+     * not inheritable when the note owns none. Works on the frontend, without backend scripting,
+     * and resolves once the frontend cache holds the change.
+     *
+     * @param noteId the note to change
+     * @param name the name of the label, without `#`
+     * @param value the value; an empty string when omitted
+     */
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /**
+     * Removes the labels of that name that the note owns. Inherited labels stay. Works like
+     * `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the label, without `#`
+     * @param value the value to match; when omitted, labels of any value are removed
+     */
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /**
+     * Sets the target of the first relation of that name that the note owns, or adds a relation
+     * that is not inheritable when the note owns none. Works like `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the relation, without `~`
+     * @param targetNoteId the ID of the note that the relation points to
+     */
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+    /**
+     * Removes the relations of that name that the note owns. Inherited relations stay. Works like
+     * `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the relation, without `~`
+     * @param targetNoteId the target to match; when omitted, relations to any note are removed
+     */
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
     /**
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
@@ -1447,6 +1728,27 @@ export interface FrontendApi {
 
     /** The Preact API surface (components, hooks) for render scripts. */
     preact: ScriptPreact;
+
+    /**
+     * The notifications of the bell: raise, change and dismiss them, show transient notifications
+     * of an operation, and register the handlers of their actions. A notification raised here
+     * stores what it says on every device that syncs.
+     */
+    notifications: ScriptFrontendNotificationApi;
+
+    /**
+     * In a notification channel script, the notification that the attempt forwards. Absent in
+     * other scripts.
+     */
+    notification?: ScriptChannelPayload;
+    /** In a notification channel script, the attempt. Absent in other scripts. */
+    delivery?: ScriptChannelDelivery;
+    /**
+     * In a notification channel script, the owned labels of the channel note as its enabling
+     * reviewed them. Read a destination from here: `getLabelValue()` also answers with inherited
+     * labels, which no review covers.
+     */
+    channelSettings?: Record<string, string>;
 }
 
 /** A branch (note→parent placement) as seen by backend scripts (subset of `BBranch`). */
@@ -3119,4 +3421,29 @@ export interface BackendApi {
      * @returns the note and the branch of the newly created note.
      */
     duplicateSubtree(origNoteId: string, newParentNoteId: string): ScriptNoteAndBranch;
+
+    /**
+     * The notifications of the bell: raise, change and dismiss them, and show transient
+     * notifications of an operation, with the script's note as their source. Each call works at
+     * once, inside the script's transaction. A script raises at most 30 notifications a minute and
+     * 500 a day, updates included. The handlers of actions run in the frontend only.
+     *
+     * A custom request handler that raises notifications lets whoever can reach its URL put text
+     * into the bell and into the channels that forward notifications.
+     */
+    notifications: ScriptNotificationApi;
+
+    /**
+     * In a notification channel script, the notification that the attempt forwards. Absent in
+     * other scripts.
+     */
+    notification?: ScriptChannelPayload;
+    /** In a notification channel script, the attempt. Absent in other scripts. */
+    delivery?: ScriptChannelDelivery;
+    /**
+     * In a notification channel script, the owned labels of the channel note as its enabling
+     * reviewed them. Read a destination from here: `getLabelValue()` also answers with inherited
+     * labels, which no review covers.
+     */
+    channelSettings?: Record<string, string>;
 }

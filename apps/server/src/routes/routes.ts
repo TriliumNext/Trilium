@@ -19,6 +19,7 @@ import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
+import downloadTokenRoute, { checkDownloadToken } from "./api/download_token.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
 import filesRoute from "./api/files.js";
 // API routes
@@ -26,6 +27,7 @@ import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
 import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
+import notificationSecretsRoute from "./api/notification_secrets.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
 import recoveryCodes from './api/recovery_codes.js';
@@ -38,10 +40,15 @@ import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import {
+    apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route,
+    router, shareTargetMiddlewareWithErrorHandling, soundUploadMiddleware,
+    uploadMiddlewareWithErrorHandling
+} from "./route_api.js";
 
 const GET = "get",
     PST = "post",
+    PUT = "put",
     PATCH = "patch",
     DEL = "delete";
 
@@ -54,7 +61,9 @@ function register(app: express.Application) {
     route(GET, "/bootstrap", [ auth.checkAuth ], indexRoute.bootstrap);
     asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login, null);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
-    asyncRoute(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword, null);
+    asyncRoute(PST, "/set-password",
+        [auth.checkAppInitialized, auth.checkPasswordNotSet, loginRateLimiter],
+        loginRoute.setPassword, null);
 
     // Restoring a backup, which only the setup screen offers: `checkAppNotInitialized` is what keeps
     // it from ever running against a live database, since before the database exists there is no
@@ -74,21 +83,49 @@ function register(app: express.Application) {
     asyncRoute(GET, "/api/setup/restore/status", [], setupRestoreRoute.status, apiResultHandler);
 
 
+    // Changes to the second factor ask for the password and, when a factor is set, a current code.
+    const withCredentials = [
+        auth.checkApiAuth,
+        csrfMiddleware,
+        loginRateLimiter,
+        auth.checkCredentials
+    ];
+
     apiRoute(GET, '/api/totp/generate', totp.generateSecret);
     apiRoute(PST, '/api/totp/verify', totp.verifySecret);
-    apiRoute(PST, '/api/totp/enable', totp.enableSecret);
+    route(PST, '/api/totp/enable', withCredentials, totp.enableSecret, apiResultHandler);
     apiRoute(GET, '/api/totp/status', totp.getTOTPStatus);
-    apiRoute(GET, '/api/totp/get', totp.getSecret);
-    apiRoute(PST, '/api/totp/reset', totp.resetTOTP);
+    route(PST, '/api/totp/reset', withCredentials, totp.resetTOTP, apiResultHandler);
+    route(PUT, '/api/totp/method', withCredentials, totp.setMethod, apiResultHandler);
 
     apiRoute(GET, '/api/oauth/status', openID.getOAuthStatus);
     asyncApiRoute(GET, '/api/oauth/validate', openID.isTokenValid);
-    apiRoute(PST, '/api/oauth/disconnect', openID.clearSavedUser);
+    route(PST, '/api/oauth/disconnect', withCredentials, openID.clearSavedUser, apiResultHandler);
 
-    apiRoute(PST, '/api/totp_recovery/verify', recoveryCodes.verifyRecoveryCode);
-    apiRoute(PST, '/api/totp_recovery/regenerate', recoveryCodes.regenerateRecoveryCodes);
+    route(PST, '/api/totp_recovery/regenerate', withCredentials,
+        recoveryCodes.regenerateRecoveryCodes, apiResultHandler);
     apiRoute(GET, '/api/totp_recovery/enabled', recoveryCodes.checkForRecoveryKeys);
     apiRoute(GET, '/api/totp_recovery/used', recoveryCodes.getUsedRecoveryCodes);
+    apiRoute(GET, '/api/sign-in/records', totp.getSignInRecords);
+
+    route(PST, '/api/database/download-token', withCredentials,
+        downloadTokenRoute.issueDownloadToken, apiResultHandler);
+
+    // The secrets of a webhook channel. A change is refused before the password is checked on an
+    // instance that does not forward or that has no password.
+    const withChannelSecretCredentials = [
+        auth.checkApiAuth,
+        csrfMiddleware,
+        loginRateLimiter,
+        notificationSecretsRoute.checkSecretChange,
+        auth.checkCredentials
+    ];
+    asyncApiRoute(GET, "/api/notification-channels/:channelId/secret",
+        notificationSecretsRoute.getSecret);
+    asyncRoute(PUT, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.putSecret, apiResultHandler);
+    asyncRoute(DEL, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.deleteSecret, apiResultHandler);
 
     routes.buildSharedApiRoutes({
         route,
@@ -100,12 +137,15 @@ function register(app: express.Application) {
         apiResultHandler,
         checkApiAuth: auth.checkApiAuth,
         checkApiAuthOrElectron: auth.checkApiAuthOrElectron,
+        checkSyncAuth: auth.checkSyncAuth,
+        checkBackupDownload: checkDownloadToken("backup"),
         checkAppNotInitialized: auth.checkAppNotInitialized,
         checkSetupAuth: auth.checkSetupAuth,
         checkCredentials: auth.checkCredentials,
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
         importMiddlewareWithErrorHandling,
+        soundUploadMiddleware,
         csrfMiddleware
     });
 
@@ -147,7 +187,9 @@ function register(app: express.Application) {
 
     asyncRoute(PST, "/api/database/anonymize/:type", [auth.checkApiAuthOrElectron, csrfMiddleware], databaseRoute.anonymize, apiResultHandler);
     apiRoute(GET, "/api/database/anonymized-databases", databaseRoute.getExistingAnonymizedDatabases);
-    route(GET, "/api/database/anonymized/download", [auth.checkApiAuthOrElectron], databaseRoute.downloadAnonymizedDatabase);
+    route(GET, "/api/database/anonymized/download",
+        [auth.checkApiAuthOrElectron, checkDownloadToken("anonymized")],
+        databaseRoute.downloadAnonymizedDatabase);
     apiRoute(DEL, "/api/database/anonymized", databaseRoute.deleteAnonymizedDatabase);
 
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {

@@ -18,6 +18,7 @@ import syncUpdateService from "./sync_update.js";
 import { isStandalone, randomString, timeLimit } from "./utils/index.js";
 import ws from "./ws.js";
 import getInstanceId from "./instance_id.js";
+import { getNotificationForwarder } from "./notifications/index.js";
 import request, { CookieJar, ExecOpts } from "./request.js";
 import entity_constructor from "../../src/becca/entity_constructor.js";
 import becca_loader from "../becca/becca_loader.js";
@@ -268,10 +269,12 @@ async function doLogin(): Promise<SyncContext> {
     const hash = getCrypto().hmac(documentSecret, timestamp);
 
     const syncContext: SyncContext = { cookieJar: {} };
+    // The pull cursor lets a sync server see that its data directory was rolled back.
     const resp = await syncRequest<SyncResponse>(syncContext, "POST", "/api/login/sync", {
         timestamp,
         syncVersion: appInfo.syncVersion,
-        hash
+        hash,
+        pullCursor: getLastSyncedPull()
     });
 
     if (!resp) {
@@ -393,28 +396,32 @@ async function pullChangeBatches(syncContext: SyncContext) {
             prefetchedChunk.catch(() => {});
         }
 
-        // Apply phase: all fetched chunks in a single transaction.
+        // Apply phase: all fetched chunks in a single transaction, once the delivery record of the
+        // channels has taken them.
         const applyStart = Date.now();
         let batchChanges = 0;
+        const nowMs = Date.now();
 
-        getSql().transactional(() => {
-            for (const resp of batch) {
-                if (syncContext.instanceId) {
-                    syncUpdateService.updateEntities(resp.entityChanges, syncContext.instanceId);
+        await getNotificationForwarder().takeSyncBatch(batch.flatMap((resp) => resp.entityChanges),
+            nowMs, () => getSql().transactional(() => {
+                for (const resp of batch) {
+                    if (syncContext.instanceId) {
+                        syncUpdateService.updateEntities(
+                            resp.entityChanges, syncContext.instanceId, nowMs);
+                    }
+
+                    batchChanges += resp.entityChanges.length;
+
+                    // Drop the applied chunk's rows (and their multi-MB content strings) right
+                    // away instead of keeping the whole batch alive until the loop ends — on the
+                    // WASM build the renderer is memory-capped and peak size is what kills it.
+                    resp.entityChanges = [];
                 }
 
-                batchChanges += resp.entityChanges.length;
-
-                // Drop the applied chunk's rows (and their multi-MB content strings) right away
-                // instead of keeping the whole batch alive until the loop ends — on the WASM build
-                // the renderer is memory-capped and peak size is what kills it.
-                resp.entityChanges = [];
-            }
-
-            if (getLastSyncedPull() !== cursor) {
-                setLastSyncedPull(cursor);
-            }
-        });
+                if (getLastSyncedPull() !== cursor) {
+                    setLastSyncedPull(cursor);
+                }
+            }));
 
         if (batch.length > 0) {
             /* v8 ignore next -- the first response of a pull sets totalPullCount to at least its own length */

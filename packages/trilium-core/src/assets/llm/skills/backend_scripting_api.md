@@ -112,6 +112,14 @@ interface BackendApi {
     backupNow(backupName: string): Promise<string>;
     /** Enables the complete duplication of the specified original note and all its children into the specified parent note. */
     duplicateSubtree(origNoteId: string, newParentNoteId: string): NoteAndBranch;
+    /** The notifications of the bell: raise, change and dismiss them, and show transient notifications of an operation, with the script's note as their source. */
+    notifications: NotificationApi;
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: ChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: ChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note as its enabling reviewed them. */
+    channelSettings?: Record<string, string>;
 }
 
 /** A note as seen by backend scripts (subset of trilium-core's `BNote`). */
@@ -562,6 +570,21 @@ interface Sql {
     transactional<T>(func: () => T): T;
 }
 
+/** `api.notifications`: raises and changes the notifications that the bell shows. */
+interface NotificationApi {
+    /** Raises a notification. */
+    create(input: NotificationInput): Promise<Notification | null>;
+    /** With an ID, changes the current notification of that ID. */
+    update(target: string | Notification, patch: NotificationPatch): Promise<Notification | null>;
+    /** With an ID, dismisses the current notification of that ID, persistent ones included. */
+    dismiss(target: string | NotificationRef): Promise<void>;
+    getById(id: string): Promise<Notification | null>;
+    /** Every notification with the tag, newest first. */
+    getByTag(tag: string): Promise<Notification[]>;
+    /** Shows a transient notification, and returns its handle at once. */
+    createTransientNotification(input: TransientNotificationInput): TransientNotificationHandle;
+}
+
 /** A date as day.js wraps it (subset). */
 interface DayjsInstance {
     /** Formats the date, such as `"YYYY-MM-DD"` for `2026-10-22`. */
@@ -572,6 +595,21 @@ interface DayjsInstance {
     subtract(value: number, unit: string): DayjsInstance;
     /** Returns the date as a JavaScript `Date`. */
     toDate(): Date;
+}
+
+/** Changes a transient notification. */
+interface TransientNotificationHandle {
+    readonly id: string;
+    setTitle(title: string): void;
+    setDescription(description: string): void;
+    setProtectedTitle(title: string): void;
+    setProtectedDescription(description: string): void;
+    setIcon(icon: string): void;
+    setProgress(progress: number): void;
+    setProgressLabel(label: string): void;
+    setActions(actions: NotificationAction[]): void;
+    /** Ends the notification. */
+    dismiss(): void;
 }
 
 /** A label or relation attached to a note. */
@@ -681,6 +719,27 @@ interface AppInfo {
     utcDateTime: string;
 }
 
+/** What a notification channel script receives as `api.notification`. */
+interface ChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+interface ChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /** Aborts when the attempt times out, after 30 seconds. */
+    signal: AbortSignal;
+}
+
 /** Options accepted by the subtree traversal helpers on `BNote`. */
 interface SubtreeOpts {
     /** Whether to include archived notes and their descendants. */
@@ -739,5 +798,86 @@ interface CloneResponse {
     branchId?: string;
     /** The path of the clone, as note IDs from `root` joined by `/`, ending in the note's ID. */
     notePath?: string;
+}
+
+/** What a script passes to `api.notifications.create()`. */
+interface NotificationInput {
+    /** Identifies the notification: ASCII letters, digits and `_ . : -`, at most 100 characters. */
+    id?: string;
+    /** The public text. `title` is required unless `noteId`, `link` or a private text is given; the note's own title is shown then. */
+    title?: string;
+    description?: string;
+    /** The private text of a sensitive notification. */
+    protectedTitle?: string;
+    protectedDescription?: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+    /** The note that the notification is about. */
+    noteId?: string;
+    /** Where a click on the notification goes: a link hash such as `#root/abc?block=xyz`, which is `#`, a note path and the parameters of an internal link. */
+    link?: string;
+    /** Groups notifications for `getByTag()`. */
+    tag?: string;
+    /** `general` by default. */
+    category?: "general" | "reminder" | "softwareUpdate";
+    /** `standard` by default. */
+    type?: "standard" | "persistent";
+    /** `medium` by default. */
+    attentionLevel?: "low" | "medium" | "high";
+    /** From 0 to 1, and a negative value shows a bar without a known end. */
+    progress?: number;
+    progressLabel?: string;
+    /** At most five buttons. */
+    actions?: NotificationAction[];
+    /** The name under which a frontend script registers the handler of the actions, with `api.notifications.registerActionHandler()`. */
+    handler?: string;
+    /** When the event happened, in UTC, as `YYYY-MM-DD HH:mm:ss.SSSZ`, at most an hour ahead. */
+    raisedAt?: string;
+    /** `true` makes the notification sensitive. */
+    sensitive?: boolean;
+}
+
+/** A stored notification, as `api.notifications` gives it. */
+interface Notification extends NotificationInput {
+    /** The key of this generation of the `id`, which a raise again with a later time replaces. */
+    notificationId: string;
+    /** Identifies the notification: ASCII letters, digits and `_ . : -`, at most 100 characters. */
+    id: string;
+    /** When the event happened, in UTC, as `YYYY-MM-DD HH:mm:ss.SSSZ`, at most an hour ahead. */
+    raisedAt: string;
+    updatedAt: string;
+    /** Changes whenever the stored text changes. `update()` with a notification compares it. */
+    revision: string;
+    /** `general` by default. */
+    category: "general" | "reminder" | "softwareUpdate";
+    /** `standard` by default. */
+    type: "standard" | "persistent";
+    /** `medium` by default. */
+    attentionLevel: "low" | "medium" | "high";
+    state: "pending" | "seen" | "read";
+    /** What raised the notification: a built-in feature, `script:<noteId>` or `client`. */
+    producer: string;
+}
+
+/** What `api.notifications.update()` changes. */
+type NotificationPatch = Partial<Pick<NotificationInput, "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "progress" | "progressLabel" | "actions" | "sensitive">>;
+
+/** One generation of a notification: what a handler was given. */
+interface NotificationRef {
+    id: string;
+    raisedAt: string;
+}
+
+/** A notification of an ongoing operation, which is never stored. */
+type TransientNotificationInput = Pick<NotificationInput, "title" | "description" | "protectedTitle" | "protectedDescription" | "icon" | "noteId" | "progress" | "progressLabel" | "actions" | "handler" | "sensitive">;
+
+/** A button of a notification. */
+interface NotificationAction {
+    /** Tells the handler which button was pressed. */
+    id: string;
+    /** The text of the button. */
+    caption: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
 }
 ```

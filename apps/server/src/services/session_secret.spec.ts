@@ -30,15 +30,16 @@ describe("session_secret", () => {
         return { secret, writeFileSync, readFileSync, info };
     }
 
-    it("generates, logs and persists a 64-char secret when none exists", async () => {
+    it("generates, logs and persists a 64-char secret that only its owner can read", async () => {
         const { secret, writeFileSync, info } = await loadSecret({ exists: false });
         // Truncated from the longer token to exactly 64 chars by the slice.
         expect(secret).toHaveLength(64);
         expect(info).toHaveBeenCalledOnce();
+        // Readable only by the server's user.
         expect(writeFileSync).toHaveBeenCalledWith(
             "/test/data/session_secret.txt",
             secret,
-            "ascii"
+            { encoding: "ascii", mode: 0o600 }
         );
     });
 

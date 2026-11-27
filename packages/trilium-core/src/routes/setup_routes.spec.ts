@@ -156,12 +156,15 @@ function captureRegistrations(): { builders: Map<string, string>; middleware: Ma
         apiResultHandler: stub("apiResultHandler"),
         checkApiAuth: stub("checkApiAuth"),
         checkApiAuthOrElectron: stub("checkApiAuthOrElectron"),
+        checkSyncAuth: stub("checkSyncAuth"),
+        checkBackupDownload: stub("checkBackupDownload"),
         checkAppNotInitialized: stub("checkAppNotInitialized"),
         checkSetupAuth: stub("checkSetupAuth"),
         checkCredentials: stub("checkCredentials"),
         loginRateLimiter: stub("loginRateLimiter"),
         uploadMiddlewareWithErrorHandling: stub("uploadMiddlewareWithErrorHandling"),
         importMiddlewareWithErrorHandling: stub("importMiddlewareWithErrorHandling"),
+        soundUploadMiddleware: stub("soundUploadMiddleware"),
         csrfMiddleware: stub("csrfMiddleware")
     });
 

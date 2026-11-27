@@ -141,6 +141,41 @@ describe("options service (real DB)", () => {
             expect(readFromDb(syncedName)).toBe("synced-value");
             expect(readFromDb(localName)).toBe("local-value");
         });
+
+        it("creates an option with the date it is given", () => {
+            const name = uniqueName();
+
+            getContext().init(() =>
+                optionService.createOption(name as any, "v", true, "1970-01-01 00:00:00.000Z"));
+
+            expect(getSql().getValue(
+                "SELECT utcDateModified FROM options WHERE name = ?",
+                [ name ]
+            )).toBe("1970-01-01 00:00:00.000Z");
+        });
+
+        it("refuses to create an option only an opening creates, before the database opens", () => {
+            const zoomFactor = readFromDb("zoomFactor");
+            getContext().init(() => {
+                getSql().execute("DELETE FROM options WHERE name = 'zoomFactor'");
+                getSql().execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+            });
+            try {
+                expect(() => getContext().init(() =>
+                    optionService.createOption("zoomFactor", "1.5", false)))
+                    .toThrow("created only when the database opens");
+                expect(readFromDb("zoomFactor")).toBeNull();
+            } finally {
+                getContext().init(() => {
+                    getSql().execute(
+                        "UPDATE options SET value = 'true' WHERE name = 'initialized'"
+                    );
+                    getSql().execute(/*sql*/`INSERT INTO options
+                        (name, value, isSynced, utcDateModified)
+                        VALUES ('zoomFactor', ?, 0, '2020-01-01 00:00:00.000Z')`, [ zoomFactor ]);
+                });
+            }
+        });
     });
 
     describe("setOption", () => {

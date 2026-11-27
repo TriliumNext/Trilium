@@ -2,6 +2,10 @@
  * Shared helpers for LLM tools — content conversion, metadata building, and previews.
  */
 
+import {
+    NOTIFICATION_CHANNEL_LABEL, NOTIFICATION_CHANNEL_WIDGET_RELATION
+} from "@triliumnext/commons";
+
 import type BAttachment from "../../../becca/entities/battachment.js";
 import type BAttribute from "../../../becca/entities/battribute.js";
 import becca from "../../../becca/becca.js";
@@ -35,9 +39,32 @@ export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lb
 /** Label that hides a note from the LLM tools, and its subtree too when the label is inheritable. */
 export const EXCLUDE_FROM_LLM_LABEL = "excludeFromLlm";
 
-/** Whether the LLM must not see a note: it owns or inherits a truthy {@link EXCLUDE_FROM_LLM_LABEL}. */
+/**
+ * Whether the LLM must not see a note: it owns or inherits a truthy {@link EXCLUDE_FROM_LLM_LABEL},
+ * or it belongs to a notification channel (see {@link isChannelPart}).
+ */
 export function isExcludedFromLlm(note: BNote) {
-    return note.isLabelTruthy(EXCLUDE_FROM_LLM_LABEL);
+    return note.isLabelTruthy(EXCLUDE_FROM_LLM_LABEL) || isChannelPart(note);
+}
+
+/**
+ * Whether a note belongs to a notification channel: it owns `#notificationChannel`, it is the
+ * note of a channel's own `~configWidget`, or it lies below either.
+ */
+function isChannelPart(note: BNote) {
+    const roots = new Set<string>();
+    for (const label of becca.findAttributes("label", NOTIFICATION_CHANNEL_LABEL)) {
+        roots.add(label.noteId);
+    }
+    if (roots.size === 0) {
+        return false;
+    }
+    for (const relation of becca.findAttributes("relation", NOTIFICATION_CHANNEL_WIDGET_RELATION)) {
+        if (roots.has(relation.noteId)) {
+            roots.add(relation.value);
+        }
+    }
+    return roots.has(note.noteId) || note.getAncestors().some(({ noteId }) => roots.has(noteId));
 }
 
 /** Returns the note, or `null` when it is missing or excluded, so the LLM cannot tell the two apart. */

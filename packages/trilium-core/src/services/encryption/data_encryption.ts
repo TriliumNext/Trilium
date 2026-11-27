@@ -59,39 +59,61 @@ function decrypt(key: Uint8Array, cipherText: string | Uint8Array): Uint8Array |
     }
 
     try {
-        const cipherTextStr = typeof cipherText === "string" ? cipherText : decodeUtf8(cipherText);
-        const cipherTextUint8ArrayWithIv = decodeBase64(cipherTextStr);
-
-        // old encrypted data can have IV of length 13, see some details here: https://github.com/zadam/trilium/issues/3017
-        const ivLength = cipherTextUint8ArrayWithIv.length % 16 === 0 ? 16 : 13;
-
-        const iv = cipherTextUint8ArrayWithIv.slice(0, ivLength);
-
-        const cipherTextUint8Array = cipherTextUint8ArrayWithIv.slice(ivLength);
-
-        const decipher = getCrypto().createDecipheriv("aes-128-cbc", pad(key), pad(iv));
-
-        const decryptedBytes = concat2(decipher.update(cipherTextUint8Array), decipher.final());
-
-        const digest = decryptedBytes.slice(0, 4);
-        const payload = decryptedBytes.slice(4);
-
-        const computedDigest = shaArray(payload).slice(0, 4);
-
-        if (!arraysIdentical(digest, computedDigest)) {
-            return false;
-        }
-
-        return payload;
+        return decryptWithoutRecovery(key, cipherText);
     } catch (e: any) {
         // recovery from https://github.com/zadam/trilium/issues/510
-        if (e.message?.includes("WRONG_FINAL_BLOCK_LENGTH") || e.message?.includes("wrong final block length")) {
+        if (e.message?.includes("WRONG_FINAL_BLOCK_LENGTH")
+            || e.message?.includes("wrong final block length")) {
             getLog().info("Caught WRONG_FINAL_BLOCK_LENGTH, returning cipherText instead");
 
             return (ArrayBuffer.isView(cipherText) ? cipherText : encodeUtf8(cipherText));
         }
         throw e;
     }
+}
+
+/**
+ * Decrypts a value whose checksum must match, without the recovery of issue 510, which returns the
+ * stored value: a value that a peer without the key planted gives `false`.
+ */
+function decryptStrictly(key: Uint8Array, cipherText: string): Uint8Array | false {
+    try {
+        return decryptWithoutRecovery(key, cipherText);
+    } catch {
+        return false;
+    }
+}
+
+/** @throws when the value is not a ciphertext under the key. */
+function decryptWithoutRecovery(
+    key: Uint8Array,
+    cipherText: string | Uint8Array
+): Uint8Array | false {
+    const cipherTextStr = typeof cipherText === "string" ? cipherText : decodeUtf8(cipherText);
+    const cipherTextUint8ArrayWithIv = decodeBase64(cipherTextStr);
+
+    // old encrypted data can have IV of length 13, see some details here:
+    // https://github.com/zadam/trilium/issues/3017
+    const ivLength = cipherTextUint8ArrayWithIv.length % 16 === 0 ? 16 : 13;
+
+    const iv = cipherTextUint8ArrayWithIv.slice(0, ivLength);
+
+    const cipherTextUint8Array = cipherTextUint8ArrayWithIv.slice(ivLength);
+
+    const decipher = getCrypto().createDecipheriv("aes-128-cbc", pad(key), pad(iv));
+
+    const decryptedBytes = concat2(decipher.update(cipherTextUint8Array), decipher.final());
+
+    const digest = decryptedBytes.slice(0, 4);
+    const payload = decryptedBytes.slice(4);
+
+    const computedDigest = shaArray(payload).slice(0, 4);
+
+    if (!arraysIdentical(digest, computedDigest)) {
+        return false;
+    }
+
+    return payload;
 }
 
 function decryptString(dataKey: Uint8Array, cipherText: string | Uint8Array) {
@@ -111,5 +133,6 @@ function decryptString(dataKey: Uint8Array, cipherText: string | Uint8Array) {
 export default {
     encrypt,
     decrypt,
+    decryptStrictly,
     decryptString
 };

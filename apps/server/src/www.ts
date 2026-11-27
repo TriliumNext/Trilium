@@ -15,6 +15,7 @@ import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
 import { registerServerLlmExtensions } from "./services/llm/index.js";
 import { listListeningUrls } from "./services/network_addresses.js";
+import { registerWebhookChannelType } from "./services/notifications/notification_secrets.js";
 import port from "./services/port.js";
 import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
@@ -69,19 +70,22 @@ export default async function startTriliumServer(): Promise<Express> {
         process.exit(1);
     }
 
+    // Before the app starts the notification channels, which load the registered types once.
+    registerWebhookChannelType();
     const app = await buildApp();
     anonymizationService.removeLeftoverStagingFiles();
     const httpServer = startHttpServer(app);
 
-    // Only providers that serve clients over the TCP listener need the HTTP server
-    // and session parser (the server's WebSocket provider, or the desktop composite
-    // when LAN access is on). A pure Electron-IPC provider isn't HTTP-attachable, so
+    // Only providers that serve clients over the TCP listener need the HTTP server, the
+    // session parser and the CSRF token check (the server's WebSocket provider, or the desktop
+    // composite when LAN access is on). A pure Electron-IPC provider isn't HTTP-attachable, so
     // it's skipped here and no WS endpoint is bound. Gating on the capability rather
     // than a concrete type keeps www.ts platform-agnostic.
     const messaging = getMessagingProvider();
     if (isHttpAttachableMessagingProvider(messaging)) {
         const sessionParser = (await import("./routes/session_parser.js")).default;
-        messaging.attachToHttpServer(httpServer, sessionParser);
+        const { isValidCsrfToken } = await import("./routes/csrf_protection.js");
+        messaging.attachToHttpServer(httpServer, sessionParser, isValidCsrfToken);
     }
 
     const { ws } = await import("@triliumnext/core");

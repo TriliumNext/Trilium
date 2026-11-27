@@ -35,6 +35,9 @@ export const ATTR_HELP: AttrHelpMap = {
         pageSize: t("attribute_detail.page_size"),
         customRequestHandler: { description: t("attribute_detail.custom_request_handler"), helpPage: "J5Ex1ZrMbyJ6" },
         customResourceProvider: { description: t("attribute_detail.custom_resource_provider"), helpPage: "J5Ex1ZrMbyJ6" },
+        notificationChannel: {
+            description: t("attribute_detail.notification_channel"), helpPage: "hEKnvzPYgJsx"
+        },
         widget: t("attribute_detail.widget"),
         workspace: t("attribute_detail.workspace"),
         workspaceIconClass: t("attribute_detail.workspace_icon_class"),
@@ -227,6 +230,7 @@ export const ATTR_HELP: AttrHelpMap = {
         inherit: t("attribute_detail.inherit"),
         renderNote: t("attribute_detail.render_note"),
         widget: t("attribute_detail.widget_relation"),
+        configWidget: t("attribute_detail.config_widget"),
         shareCss: t("attribute_detail.share_css"),
         shareJs: t("attribute_detail.share_js"),
         shareTemplate: t("attribute_detail.share_template"),

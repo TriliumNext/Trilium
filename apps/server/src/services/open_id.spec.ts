@@ -257,7 +257,7 @@ describe("open_id", () => {
                     user: { sub: "sub-1", name: "Alice", email: "alice@example.com" },
                     fetchUserInfo: vi.fn().mockResolvedValue({})
                 },
-                session: sessionWith({ loggedIn: true })
+                session: sessionWith({ loggedIn: true, sessionKind: "interactive" })
             } as never;
             const session = { marker: 3 } as never;
 
@@ -276,7 +276,7 @@ describe("open_id", () => {
             const fetchUserInfo = vi.fn().mockResolvedValue({ name: "Alice", email: "alice@example.com" });
             const req = {
                 oidc: { user: { sub: "sub-1" }, fetchUserInfo },
-                session: sessionWith({ loggedIn: true })
+                session: sessionWith({ loggedIn: true, sessionKind: "interactive" })
             } as never;
 
             await cfg.afterCallback(req, {} as never, { marker: 7 } as never);
@@ -294,7 +294,7 @@ describe("open_id", () => {
                     user: { sub: "sub-1", name: "Alice", email: "alice@example.com" },
                     fetchUserInfo: vi.fn().mockRejectedValue(new Error("network down"))
                 },
-                session: sessionWith({ loggedIn: true })
+                session: sessionWith({ loggedIn: true, sessionKind: "interactive" })
             } as never;
 
             await cfg.afterCallback(req, {} as never, { marker: 8 } as never);
@@ -312,7 +312,7 @@ describe("open_id", () => {
                     user: { sub: "sub-1", name: "Alice", email: "alice@example.com" },
                     fetchUserInfo: vi.fn().mockRejectedValue("userinfo endpoint down")
                 },
-                session: sessionWith({ loggedIn: true })
+                session: sessionWith({ loggedIn: true, sessionKind: "interactive" })
             } as never;
 
             await cfg.afterCallback(req, {} as never, { marker: 10 } as never);
@@ -320,6 +320,22 @@ describe("open_id", () => {
             expect(info).toHaveBeenCalledWith("OAuth enrollment: UserInfo fetch failed, using ID token claims only. userinfo endpoint down");
             expect(saveSpy).toHaveBeenCalledWith("sub-1", "Alice", "alice@example.com");
             expect((req as { session: { loggedIn: boolean } }).session.loggedIn).toBe(true);
+        });
+
+        it("refuses enrollment from a sync session, binding no account of the peer", async () => {
+            const cfg = buildConfig();
+            vi.spyOn(openIDEncryption, "isSubjectIdentifierSaved").mockReturnValue(false);
+            const saveSpy = vi.spyOn(openIDEncryption, "saveUser").mockReturnValue(true);
+            const req = {
+                oidc: { user: { sub: "peer", name: "Peer", email: "peer@example.com" } },
+                session: sessionWith({ loggedIn: true, sessionKind: "sync" })
+            } as never;
+
+            await cfg.afterCallback(req, {} as never, { marker: 5 } as never);
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect((req as { session: { ssoError?: string } }).session.ssoError)
+                .toBe("not_enrolled");
         });
 
         it("refuses enrollment from an unauthenticated session (no first-login claim)", async () => {

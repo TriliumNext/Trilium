@@ -1,6 +1,13 @@
-import type { ToMarkdownResponse } from "@triliumnext/commons";
+import type {
+    FrontendNotificationApi, NotificationChannelDelivery, NotificationChannelPayload,
+    ToMarkdownResponse
+} from "@triliumnext/commons";
+import { BUILT_IN_NOTIFICATION_PREFIX } from "@triliumnext/commons/src/lib/notifications.js";
+import type {
+    FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote,
+    ScriptFrontendNotificationApi, ScriptLinkOptions
+} from "@triliumnext/commons/src/lib/script_api.js";
 import { formatLogMessage } from "@triliumnext/commons/src/lib/utils.js";
-import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote, ScriptLinkOptions } from "@triliumnext/commons/src/lib/script_api.js";
 import DOMPurify from "dompurify";
 
 import appContext from "../components/app_context.js";
@@ -11,6 +18,7 @@ import type FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
+import attributeService, { removeOwnedAttributesByNameOrType } from "./attributes.js";
 import { BackendScriptingDisabledError, showBackendScriptingDisabledToast } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
 import { dayjs } from "./dayjs.js";
@@ -21,6 +29,7 @@ import { t } from "./i18n.js";
 import linkService from "./link.js";
 import noteCreateService, { type CreateNoteOpts } from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import notificationStore, { NotificationRequestError } from "./notifications.js";
 import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
@@ -125,6 +134,14 @@ export interface Api {
 
     createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
+
     getInstanceName(): string | null;
 
     formatDateISO: typeof utils.formatDateISO;
@@ -215,13 +232,32 @@ export interface Api {
     log(...args: unknown[]): void;
 
     preact: typeof preactAPI;
+
+    notifications: FrontendNotificationApi;
+
+    /** In a frontend notification channel: the notification that it forwards. */
+    notification?: NotificationChannelPayload;
+
+    /** In a frontend notification channel: this attempt, whose signal aborts after 30 seconds. */
+    delivery?: NotificationChannelDelivery;
+
+    /**
+     * In a frontend notification channel: the owned labels of its note, as its enabling has them.
+     */
+    channelSettings?: Record<string, string>;
 }
+
+/** What a run of a frontend notification channel adds to the API of the channel's note. */
+export type ScriptApiParams = Required<Pick<Api, "notification" | "delivery" | "channelSettings">>;
 
 /**
  * <p>This is the main frontend API interface for scripts. All the properties and methods are published in the "api" object
  * available in the JS frontend notes. You can use e.g. <code>api.showMessage(api.startNote.title);</code></p>
  */
-function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, originEntity: Entity | null = null, $container: JQuery<HTMLElement> | null = null) {
+function FrontendScriptApi(
+    this: Api, startNote: FNote, currentNote: FNote, originEntity: Entity | null = null,
+    $container: JQuery<HTMLElement> | null = null, params?: ScriptApiParams
+) {
     this.$container = $container;
     this.startNote = startNote;
     this.currentNote = currentNote;
@@ -357,6 +393,12 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.getNotes = async (noteIds, silentNotFoundError = false) => await froca.getNotes(noteIds, silentNotFoundError);
     this.reloadNotes = async (noteIds) => await froca.reloadNotes(noteIds);
     this.createNote = async (parentNotePath, opts = {}) => await noteCreateService.createNote(parentNotePath, opts);
+    this.setLabel = (noteId, name, value = "") => setOwnedAttribute(noteId, "label", name, value);
+    this.removeLabel = (noteId, name, value) => removeOwnedAttributes(noteId, "label", name, value);
+    this.setRelation = (noteId, name, targetNoteId) =>
+        setOwnedAttribute(noteId, "relation", name, targetNoteId);
+    this.removeRelation = (noteId, name, targetNoteId) =>
+        removeOwnedAttributes(noteId, "relation", name, targetNoteId);
     this.getInstanceName = () => window.glob.instanceName;
     this.formatDateISO = utils.formatDateISO;
     this.parseDate = utils.parseDate;
@@ -498,11 +540,81 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     };
 
     this.preact = preactAPI;
+    this.notifications = scriptNotifications;
+
+    if (params) {
+        this.notification = params.notification;
+        this.delivery = params.delivery;
+        this.channelSettings = params.channelSettings;
+    }
 }
 
 export default FrontendScriptApi as any as {
-    new(startNote: FNote, currentNote: FNote, originEntity: Entity | null, $container: JQuery<HTMLElement> | null): Api;
+    new(
+        startNote: FNote, currentNote: FNote, originEntity: Entity | null,
+        $container: JQuery<HTMLElement> | null, params?: ScriptApiParams
+    ): Api;
 };
+
+/** The names that a notification can give as its handler. */
+const HANDLER_NAME = /^[A-Za-z0-9_.:-]{1,100}$/;
+
+/**
+ * `api.notifications`: the notification store, which refuses to register a handler under a name
+ * that a notification cannot give or that belongs to built-in features.
+ */
+const scriptNotifications: FrontendNotificationApi = {
+    create: (input) => notificationStore.create(input),
+    update: (target, patch) => notificationStore.update(target, patch),
+    dismiss: (target) => notificationStore.dismiss(target),
+    getById: (id) => notificationStore.getById(id),
+    getByTag: (tag) => notificationStore.getByTag(tag),
+    createTransientNotification: (input) => notificationStore.createTransientNotification(input),
+    registerActionHandler: (name, handler) => {
+        if (typeof name !== "string" || !HANDLER_NAME.test(name) || typeof handler !== "function") {
+            throw new NotificationRequestError("invalid-input");
+        }
+        if (name.startsWith(BUILT_IN_NOTIFICATION_PREFIX)) {
+            throw new NotificationRequestError("reserved-name");
+        }
+        notificationStore.registerActionHandler(name, handler);
+    },
+    getActionHandler: (name) => notificationStore.getActionHandler(name)
+};
+
+/** Sets the owned attribute of a type and name, or adds one, and waits until froca holds it. */
+async function setOwnedAttribute(
+    noteId: string, type: "label" | "relation", name: string, value: string
+) {
+    await getNoteToChange(noteId, name);
+    const set = type === "label" ? attributeService.setLabel : attributeService.setRelation;
+    await set(noteId, name, value);
+    await ws.waitForMaxKnownEntityChangeId();
+}
+
+/**
+ * Removes the owned attributes of a type and name, of any value or of `value`, and waits until
+ * froca holds the change.
+ */
+async function removeOwnedAttributes(
+    noteId: string, type: "label" | "relation", name: string, value: string | undefined
+) {
+    const note = await getNoteToChange(noteId, name);
+    await removeOwnedAttributesByNameOrType(note, type, name, value);
+    await ws.waitForMaxKnownEntityChangeId();
+}
+
+/** The note whose attribute a script changes. Throws for a missing note or a prefixed name. */
+async function getNoteToChange(noteId: string, name: string) {
+    if (typeof name !== "string" || !name || name.startsWith("#") || name.startsWith("~")) {
+        throw new Error(`Invalid attribute name '${name}': give it without '#' or '~'.`);
+    }
+    const note = await froca.getNote(noteId, true);
+    if (!note) {
+        throw new Error(`Note '${noteId}' not found.`);
+    }
+    return note;
+}
 
 // --- Drift guards -----------------------------------------------------------
 // The public script API surface lives in @triliumnext/commons (self-contained so
@@ -524,3 +636,10 @@ const _undeclaredApiGuard: [_UndeclaredApiMembers] extends [never] ? true : _Und
 const _fnoteDriftGuard: [_MissingFNoteMembers] extends [never] ? true : _MissingFNoteMembers = true;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _linkOptionsDriftGuard: [_MissingLinkOptions] extends [never] ? true : _MissingLinkOptions = true;
+type _NotificationApiDrift =
+    | Exclude<keyof ScriptFrontendNotificationApi, keyof FrontendNotificationApi>
+    | Exclude<keyof FrontendNotificationApi, keyof ScriptFrontendNotificationApi>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _notificationApiDriftGuard: [_NotificationApiDrift] extends [never]
+    ? true
+    : _NotificationApiDrift = true;

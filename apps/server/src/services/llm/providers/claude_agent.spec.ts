@@ -59,7 +59,7 @@ vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (impor
 // The Windows `.cmd` shim delegates to child_process.spawn; the provider never
 // spawns otherwise, so mocking the whole module is safe.
 const spawnMock = vi.hoisted(() => vi.fn());
-vi.mock("child_process", () => ({ spawn: spawnMock }));
+vi.mock("child_process", () => ({ spawn: spawnMock, execFile: vi.fn() }));
 
 // Records the sessions the provider keeps warm, so a test can reach one.
 vi.mock("./claude_session_pool.js", async (importOriginal) => {

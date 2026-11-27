@@ -276,6 +276,13 @@ describe("Popup", () => {
         pressOn(outside);
         expect(onDismiss).toHaveBeenCalledWith("outside");
 
+        // A context menu opened over it takes Escape first.
+        onDismiss.mockClear();
+        document.body.classList.add("context-menu-shown");
+        popup.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        document.body.classList.remove("context-menu-shown");
+        expect(onDismiss).not.toHaveBeenCalled();
+
         const dialogHeard = vi.fn();
         document.addEventListener("keydown", dialogHeard);
         popup.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));

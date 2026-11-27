@@ -85,12 +85,15 @@ describe("buildLaunchBarConfig", () => {
             "_lbMobileBookmarks",
             "_lbMobileSyncStatus"
         ]);
+        // The bell comes last, where a database of before gets it too, since a launcher that is new
+        // to a database is added at the end of its parent.
         expect(mobileVisibleLaunchers.map((l) => l.id)).toEqual([
             "_lbMobileBackInHistory",
             "_lbMobileForwardInHistory",
             "_lbMobileJumpTo",
             "_lbMobileCalendar",
-            "_lbMobileTabSwitcher"
+            "_lbMobileTabSwitcher",
+            "_lbMobileNotifications"
         ]);
     });
 
@@ -119,6 +122,8 @@ describe("buildLaunchBarConfig", () => {
         expect(byId(config.desktopAvailableLaunchers, "_lbSidebarChat").builtinWidget).toBe("sidebarChat");
         expect(byId(config.desktopAvailableLaunchers, "_lbBackInHistory").builtinWidget).toBe("backInHistoryButton");
         expect(byId(config.desktopAvailableLaunchers, "_lbForwardInHistory").builtinWidget).toBe("forwardInHistoryButton");
+        expect(byId(config.mobileVisibleLaunchers, "_lbMobileNotifications").builtinWidget)
+            .toBe("notifications");
     });
 
     it("points target-note launchers at the right hidden notes", () => {

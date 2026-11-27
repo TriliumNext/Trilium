@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { createContext } from "preact";
+import { type ComponentChildren, createContext } from "preact";
 import { useContext } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
@@ -7,7 +7,7 @@ import type { ContextMenuEvent } from "../../menus/context_menu";
 import type { ShowLauncherContextMenuOptions } from "../../menus/launcher_button_context_menu";
 import { isMobile } from "../../services/utils";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
-import Dropdown, { DropdownPanel, DropdownProps } from "../react/Dropdown";
+import Dropdown, { DropdownPanel, type DropdownPanelProps } from "../react/Dropdown";
 import { useNoteLabel, useNoteProperty } from "../react/hooks/note";
 import Icon from "../react/Icon";
 
@@ -54,19 +54,28 @@ export function LaunchBarActionButton({ className, launcherNote, onContextMenu, 
     );
 }
 
-export function LaunchBarDropdownButton({
-    children, icon, launcherNote, parentNoteId, buttonProps, panel, ...props
-}: Pick<
-    DropdownProps, "title" | "children" | "onShown" | "ready" | "autoClose" | "dropdownRef"
-        | "buttonProps" | "filterable" | "keepOrder"
+type LaunchBarDropdownButtonProps = Pick<
+    DropdownPanelProps, "title" | "children" | "onShown" | "ready" | "autoClose" | "dropdownRef"
+        | "buttonProps" | "filterable" | "keepOrder" | "dropdownContainerClassName"
+        | "keepOpenSelector"
 > & {
-    icon: string,
     launcherNote?: FNote,
     /** The launch bar section that shows the button. See `ShowLauncherContextMenuOptions`. */
     parentNoteId?: string,
     /** Opens a {@link DropdownPanel} rather than a menu, for content other than `FormList` rows. */
     panel?: boolean
-}) {
+} & (
+    | { icon: string, text?: undefined }
+    | {
+        icon?: undefined,
+        /** Shown in place of the icon, by a launcher that draws a state over it. */
+        text: ComponentChildren
+    }
+);
+
+export function LaunchBarDropdownButton({
+    children, icon, text, launcherNote, parentNoteId, buttonProps, panel, ...props
+}: LaunchBarDropdownButtonProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     const titlePosition = getTitlePosition(isHorizontalLayout);
 
@@ -80,7 +89,7 @@ export function LaunchBarDropdownButton({
             className="right-dropdown-widget"
             buttonClassName="right-dropdown-button launcher-button"
             hideToggleArrow
-            text={<Icon icon={icon} />}
+            text={text ?? <Icon icon={icon} />}
             titlePosition={titlePosition}
             titleOptions={DROPDOWN_TITLE_OPTIONS}
             placement={titlePosition}

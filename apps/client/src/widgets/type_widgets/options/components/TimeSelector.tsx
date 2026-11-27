@@ -1,12 +1,15 @@
-import { OptionDefinitions } from "@triliumnext/commons";
-import FormTextBox from "../../../react/FormTextBox";
-import FormSelect from "../../../react/FormSelect";
-import { useEffect, useMemo, useState } from "preact/hooks";
-import { t } from "../../../../services/i18n";
-import { useTriliumOption } from "../../../react/hooks/options";
-import toast from "../../../../services/toast";
+import "./TimeSelector.css";
 
-type TimeSelectorScale = "seconds" | "minutes" | "hours" | "days";
+import { OptionDefinitions } from "@triliumnext/commons";
+import { useEffect, useMemo, useState } from "preact/hooks";
+
+import { t } from "../../../../services/i18n";
+import toast from "../../../../services/toast";
+import FormSelect from "../../../react/FormSelect";
+import FormTextBox from "../../../react/FormTextBox";
+import { useTriliumOption } from "../../../react/hooks/options";
+
+export type TimeSelectorScale = "seconds" | "minutes" | "hours" | "days";
 
 interface TimeSelectorProps {
     id?: string;
@@ -17,35 +20,64 @@ interface TimeSelectorProps {
     minimumSeconds?: number;
 }
 
+export interface ControlledTimeSelectorProps {
+    id?: string;
+    name: string;
+    /** The duration, in seconds. */
+    seconds: number;
+    /** The seconds of the unit that the duration is shown in: `1`, `60`, `3600` or `86400`. */
+    scale: string;
+    onChange(seconds: number): void;
+    onScaleChange(scale: string): void;
+    includedTimeScales?: Set<TimeSelectorScale>;
+    minimumSeconds?: number;
+    maximumSeconds?: number;
+}
+
 interface TimeScaleInfo {
     value: string;
     unit: string;
 }
 
-export default function TimeSelector({ id, name, includedTimeScales, optionValueId, optionTimeScaleId, minimumSeconds }: TimeSelectorProps) {
-    const values = useMemo(() => {
-        const values: TimeScaleInfo[] = [];
-        const timeScalesWithDefault = includedTimeScales ?? new Set(["seconds", "minutes", "hours", "days"]);
+const TIME_SCALES: { scale: TimeSelectorScale; value: string }[] = [
+    { scale: "seconds", value: "1" },
+    { scale: "minutes", value: "60" },
+    { scale: "hours", value: "3600" },
+    { scale: "days", value: "86400" }
+];
 
-        if (timeScalesWithDefault.has("seconds")) {
-            values.push({ value: "1", unit: t("duration.seconds") });
-            values.push({ value: "60", unit: t("duration.minutes") });
-            values.push({ value: "3600", unit: t("duration.hours") });
-            values.push({ value: "86400", unit: t("duration.days") });
-        }
-        return values;
-    }, [ includedTimeScales ]);
-
+/** A duration in a number box and a unit, both stored in options. */
+export default function TimeSelector({
+    optionValueId, optionTimeScaleId, ...props
+}: TimeSelectorProps) {
     const [ storedValue, setValue ] = useTriliumOption(optionValueId);
     const [ storedScale, setScale ] = useTriliumOption(optionTimeScaleId);
-    const [ displayedTime, setDisplayedTime ] = useState("");
 
     // An option that has never been written answers with an empty string, which is no duration at
     // all — and `convertTime` rightly refuses one. Read as zero seconds instead, so a row whose
     // option is missing still draws and the first edit stores something real, rather than the whole
     // page going down over a setting nobody has touched yet.
-    const seconds = toWholeNumber(storedValue, 0);
-    const scale = String(toWholeNumber(storedScale, 1, 1));
+    return (
+        <ControlledTimeSelector
+            {...props}
+            seconds={toWholeNumber(storedValue, 0)}
+            scale={String(toWholeNumber(storedScale, 1, 1))}
+            onChange={setValue}
+            onScaleChange={setScale}
+        />
+    );
+}
+
+/** A duration in a number box and a unit, controlled by the caller. */
+export function ControlledTimeSelector({
+    id, name, seconds, scale, onChange, onScaleChange, includedTimeScales, minimumSeconds,
+    maximumSeconds
+}: ControlledTimeSelectorProps) {
+    const values = useMemo<TimeScaleInfo[]>(() => TIME_SCALES
+        .filter((timeScale) => !includedTimeScales || includedTimeScales.has(timeScale.scale))
+        .map(({ scale: timeScale, value }) => ({ value, unit: t(`duration.${timeScale}`) })),
+    [ includedTimeScales ]);
+    const [ displayedTime, setDisplayedTime ] = useState("");
 
     // React to changes in scale and value.
     useEffect(() => {
@@ -54,7 +86,7 @@ export default function TimeSelector({ id, name, includedTimeScales, optionValue
     }, [ seconds, scale ]);
 
     return (
-        <div class="d-flex gap-2">
+        <div className="time-selector">
             <FormTextBox
                 id={id}
                 name={name}
@@ -75,22 +107,27 @@ export default function TimeSelector({ id, name, includedTimeScales, optionValue
                     // stored in seconds, so that is what the floor is applied to.
                     if (newTime === null || newTime < minimumSecondsOrDefault) {
                         toast.showError(t("time_selector.minimum_input", { minimumSeconds: minimumSecondsOrDefault }));
-                        setValue(minimumSecondsOrDefault);
+                        onChange(minimumSecondsOrDefault);
                         return;
                     }
 
-                    setValue(newTime);
+                    if (maximumSeconds !== undefined && newTime > maximumSeconds) {
+                        toast.showError(t("time_selector.maximum_input", { maximumSeconds }));
+                        onChange(maximumSeconds);
+                        return;
+                    }
+
+                    onChange(newTime);
                 }}
             />
 
             <FormSelect
                 values={values}
                 keyProperty="value" titleProperty="unit"
-                style={{ width: "auto" }}
-                currentValue={scale} onChange={setScale}
+                currentValue={scale} onChange={onScaleChange}
             />
         </div>
-    )
+    );
 }
 
 /**

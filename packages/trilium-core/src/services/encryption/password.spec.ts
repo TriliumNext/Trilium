@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { withServerTexts } from "../../test/translations.js";
+import events from "../events.js";
 import options from "../options.js";
 import { getContext } from "../context.js";
 import protectedSessionService from "../protected_session.js";
+import { encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import passwordEncryptionService from "./password_encryption.js";
 import passwordService from "./password.js";
+import scryptService from "./scrypt.js";
 
 // The global server spec setup (apps/server/spec/setup.ts) calls initializeCore
 // with an in-memory copy of the fixture DB, which already has a password set
@@ -89,17 +93,136 @@ describe("password service (real DB)", () => {
             expect(Array.from(dataKeyAfter)).toEqual(Array.from(dataKeyBefore));
         });
 
-        it("leaves the stored data key alone when it cannot be recovered", async () => {
+        it("refuses while the data key cannot be read, says why, and changes nothing", async () => {
             vi.spyOn(passwordEncryptionService, "getDataKey").mockResolvedValueOnce(false);
-            const encryptedDataKey = options.getOption("encryptedDataKey");
+            const before = passwordOptions();
 
-            const result = await getContext().init(() =>
-                passwordService.changePassword("brandNewPass-123", "thirdPass-789")
+            const result = await withServerTexts(
+                { "password.change-data-key-unreadable": "unreadable" },
+                () => getContext().init(() =>
+                    passwordService.changePassword("brandNewPass-123", "thirdPass-789"))
             );
 
-            expect(result.success).toBe(true);
+            expect(result).toEqual({
+                success: false,
+                message: "unreadable",
+                code: "data-key-unreadable"
+            });
+            expect(passwordOptions()).toEqual(before);
+            expect(await passwordEncryptionService.verifyPassword("brandNewPass-123")).toBe(true);
+        });
+
+        it("refuses a data key planted for the recovery path, as getDataKey does", async () => {
+            const stored = options.getOption("encryptedDataKey");
+            try {
+                for (const length of [ 12, 20 ]) {
+                    const planted = encodeBase64(Uint8Array.from({ length }, (_, i) => i + 1));
+                    getContext().init(() => options.setOption("encryptedDataKey", planted));
+
+                    expect(
+                        await passwordEncryptionService.getDataKey("brandNewPass-123"),
+                        String(length)
+                    ).toBe(false);
+                    const result = await getContext().init(() =>
+                        passwordService.changePassword("brandNewPass-123", "thirdPass-789"));
+                    expect(result.code).toBe("data-key-unreadable");
+                    expect(options.getOption("encryptedDataKey")).toBe(planted);
+                }
+            } finally {
+                getContext().init(() => options.setOption("encryptedDataKey", stored));
+            }
+        });
+
+        it("keeps the old password and its key when a change fails half way", async () => {
+            const getScryptHash = scryptService.getScryptHash;
+            for (const failingCall of [ 1, 2 ]) {
+                let call = 0;
+                vi.spyOn(scryptService, "getScryptHash")
+                    .mockImplementation(async (password, salt) => {
+                        call++;
+                        if (call === failingCall) {
+                            throw new Error("scrypt failed");
+                        }
+                        return getScryptHash(password, salt);
+                    });
+
+                await expect(getContext().init(() =>
+                    passwordService.changePassword("brandNewPass-123", "thirdPass-789")
+                )).rejects.toThrow("scrypt failed");
+                vi.restoreAllMocks();
+
+                expect(await passwordEncryptionService.verifyPassword("brandNewPass-123"))
+                    .toBe(true);
+                expect(await passwordEncryptionService.getDataKey("brandNewPass-123"))
+                    .toBeInstanceOf(Uint8Array);
+            }
+        });
+
+        it("opens a data key of 24 bytes, as set before 2026-04-12, and one of 16", async () => {
+            const dataKey = (await passwordEncryptionService.getDataKey(
+                "brandNewPass-123"
+            )) as Uint8Array;
+            try {
+                for (const key of [
+                    encodeUtf8(encodeBase64(Uint8Array.from({ length: 16 }, (_, i) => 200 - i))),
+                    Uint8Array.from({ length: 16 }, (_, i) => i * 3)
+                ]) {
+                    await getContext().init(() =>
+                        passwordEncryptionService.setDataKey("brandNewPass-123", key));
+
+                    const opened = await passwordEncryptionService.getDataKey("brandNewPass-123");
+                    expect(Array.from(opened as Uint8Array)).toEqual(Array.from(key));
+                }
+            } finally {
+                await getContext().init(() =>
+                    passwordEncryptionService.setDataKey("brandNewPass-123", dataKey));
+            }
+        });
+
+        it("ends the protected session only when sync brings a different password hash", () => {
+            protectedSessionService.setDataKey(Uint8Array.from([ 1, 2, 3 ]));
+            const stored = options.getOption("passwordVerificationHash");
+
+            getContext().init(() => events.emit(events.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "passwordVerificationHash", value: stored }
+            }));
+            expect(protectedSessionService.isProtectedSessionAvailable()).toBe(true);
+
+            getContext().init(() => events.emit(events.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "passwordVerificationHash", value: "a-peer's-hash" }
+            }));
+            expect(protectedSessionService.isProtectedSessionAvailable()).toBe(false);
+
+            // Written back as sync would write it, now that the listener knows the peer's hash.
+            getContext().init(() => events.emit(events.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "passwordVerificationHash", value: stored }
+            }));
+        });
+    });
+
+    describe("setPassword where only the row of the hash was emptied", () => {
+        it("restores only the password that opens the data key, and keeps the key", async () => {
+            const encryptedDataKey = options.getOption("encryptedDataKey");
+            getContext().init(() => options.setOption("passwordVerificationHash", ""));
+
+            const refused = await withServerTexts({ "password.restore-refused": "not restored" },
+                () => getContext().init(() => passwordService.setPassword("a-visitor's-password")));
+            expect(refused).toEqual({
+                success: false,
+                message: "not restored",
+                code: "password-not-restored"
+            });
+            expect(passwordService.isPasswordSet()).toBe(false);
             expect(options.getOption("encryptedDataKey")).toBe(encryptedDataKey);
-            expect(await passwordEncryptionService.verifyPassword("thirdPass-789")).toBe(true);
+
+            const restored = await getContext().init(() =>
+                passwordService.setPassword("brandNewPass-123"));
+            expect(restored.success).toBe(true);
+            expect(await passwordEncryptionService.verifyPassword("brandNewPass-123")).toBe(true);
+            expect(options.getOption("encryptedDataKey")).toBe(encryptedDataKey);
         });
     });
 
@@ -146,3 +269,14 @@ describe("password service (real DB)", () => {
         });
     });
 });
+
+/** The four stored password options. */
+function passwordOptions() {
+    return ([
+        "passwordVerificationSalt",
+        "passwordDerivedKeySalt",
+        "passwordVerificationHash",
+        "encryptedDataKey"
+    ] as const)
+        .map((name) => options.getOption(name));
+}

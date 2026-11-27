@@ -15,7 +15,8 @@ const state = vi.hoisted(() => {
         clientOptions: { theme: "next" } as Record<string, string>,
         cpuArchMismatch: undefined as boolean | undefined,
         csrfToken: "csrf-test-token" as string | undefined,
-        logInfo: [] as string[]
+        logInfo: [] as string[],
+        secondFactorCheck: "none"
     });
     return { defaults, current: defaults() };
 });
@@ -48,7 +49,9 @@ vi.mock("./csrf_protection.js", () => ({ generateCsrfToken: () => state.current.
 vi.mock("../services/open_id.js", () => ({
     default: { isOpenIDEnabled: () => false, getSSOIssuerName: () => "", getSSOIssuerIcon: () => "" }
 }));
-vi.mock("../services/totp.js", () => ({ default: { isTotpEnabled: () => false } }));
+vi.mock("../services/second_factor.js", () => ({
+    getSecondFactorCheck: () => state.current.secondFactorCheck
+}));
 vi.mock("./api/system_info.js", () => ({ getKnownCpuArchMismatch: () => state.current.cpuArchMismatch }));
 
 vi.mock("@triliumnext/core", () => ({
@@ -56,7 +59,10 @@ vi.mock("@triliumnext/core", () => ({
     BNote: class {},
     getSharedBootstrapItems: () => state.current.sharedItems,
     icon_packs: { getIconPacks: () => [], generateCss: () => "", MIME_TO_EXTENSION_MAPPINGS: {} },
-    options: { getOptionMap: () => state.current.optionMap },
+    options: {
+        getOptionMap: () => state.current.optionMap,
+        getOptionOrNull: (name: string) => state.current.optionMap[name] ?? null
+    },
     routes: { getClientOptions: () => state.current.clientOptions },
     password: { isPasswordSet: () => state.current.isPasswordSet },
     sql_init: { isDbInitialized: () => state.current.isDbInitialized },
@@ -77,9 +83,12 @@ function makeReq(overrides: {
     cookies?: Record<string, string>;
     userAgent?: string;
     session?: Record<string, unknown>;
+    sessionKind?: "interactive" | "sync";
 } = {}): Request {
+    const loggedIn = overrides.loggedIn ?? false;
+    const kind = loggedIn ? { sessionKind: overrides.sessionKind ?? "interactive" } : {};
     const req = {
-        session: Object.assign(overrides.session ?? {}, { loggedIn: overrides.loggedIn ?? false }),
+        session: Object.assign(overrides.session ?? {}, { loggedIn }, kind),
         query: overrides.query ?? {},
         headers: overrides.userAgent ? { "user-agent": overrides.userAgent } : {},
         cookies: overrides.cookies ?? {}
@@ -120,6 +129,19 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
         expect(body().csrfToken).toBe("csrf-test-token");
     });
 
+    it("serves a sync session, and a logged-in session without a kind, as logged out", () => {
+        for (const session of [ { sessionKind: "sync" }, { sessionKind: undefined } ]) {
+            const { res, body } = makeRes();
+            bootstrap(makeReq({ loggedIn: true, session: {} }), res);
+            const req = makeReq({ loggedIn: true });
+            Object.assign(req.session, session);
+            bootstrap(req, res);
+
+            expect(body().loggedIn).toBe(false);
+            expect(body().csrfToken).toBeUndefined();
+        }
+    });
+
     it("bypasses the login screen for the trusted desktop renderer with no web session", () => {
         const { res, body } = makeRes();
         bootstrap(makeReq({ loggedIn: false, internal: true }), res);
@@ -135,6 +157,21 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
 });
 
 describe("bootstrap payloads", () => {
+    it("shows the code field of the login wherever it asks for more than the password", () => {
+        for (const [ check, isShown ] of [
+            [ "none", false ],
+            [ "code", true ],
+            [ "unreadable", true ],
+            [ "words", true ]
+        ] as const) {
+            state.current.secondFactorCheck = check;
+            const login = makeRes();
+            bootstrap(makeReq({ loggedIn: false }), login.res);
+
+            expect(login.body().login.totpEnabled).toBe(isShown);
+        }
+    });
+
     it("sends the font options only once the user is signed in", () => {
         state.current.sharedItems = { ...state.current.sharedItems, fontCss: "html:root {}" };
 
@@ -179,7 +216,18 @@ describe("bootstrap payloads", () => {
 
         const browser = makeRes();
         bootstrap(makeReq(), browser.res);
-        expect(browser.body()).toMatchObject({ passwordSet: false, setPasswordInDesktopApp: true, hasNativeTitleBar: false });
+        expect(browser.body()).toMatchObject({
+            passwordSet: false,
+            setPasswordInDesktopApp: true,
+            hasNativeTitleBar: false,
+            passwordRemoved: false
+        });
+
+        // Only the hash row was emptied, and the data key of protected notes was kept.
+        state.current.optionMap = { encryptedDataKey: "a-key" };
+        const removed = makeRes();
+        bootstrap(makeReq(), removed.res);
+        expect(removed.body()).toMatchObject({ passwordSet: false, passwordRemoved: true });
 
         state.current.config.General = { noAuthentication: true };
         const open = makeRes();
@@ -188,7 +236,11 @@ describe("bootstrap payloads", () => {
     });
 
     it("exempts the renderer and an unauthenticated instance from the setup password gate", () => {
-        state.current.sharedItems = { setupAuthRequired: true, setupSecondFactorRequired: true };
+        state.current.sharedItems = {
+            hasExistingData: true,
+            setupAuthRequired: true,
+            setupSecondFactorRequired: true
+        };
         const gates = (req: Request) => {
             const { res, body } = makeRes();
             bootstrap(req, res);
@@ -199,6 +251,30 @@ describe("bootstrap payloads", () => {
         expect(gates(makeReq({ internal: true }))).toEqual([ false, false ]);
         state.current.config.General = { noAuthentication: true };
         expect(gates(makeReq())).toEqual([ false, false ]);
+    });
+
+    it("locks the wizard over the network without a password, and says nothing unlocks it", () => {
+        state.current.isDbInitialized = false;
+        state.current.isPasswordSet = false;
+        state.current.sharedItems = {
+            hasExistingData: true,
+            setupAuthRequired: false,
+            setupSecondFactorRequired: false
+        };
+        const lock = (req: Request) => {
+            const { res, body } = makeRes();
+            bootstrap(req, res);
+            return [ body().setupAuthRequired, body().setupLockedWithoutPassword ];
+        };
+
+        expect(lock(makeReq())).toEqual([ true, true ]);
+        expect(lock(makeReq({ internal: true }))).toEqual([ false, false ]);
+
+        state.current.isPasswordSet = true;
+        expect(lock(makeReq())).toEqual([ true, false ]);
+
+        state.current.sharedItems = { hasExistingData: false };
+        expect(lock(makeReq())).toEqual([ false, false ]);
     });
 
     it("hands the login screen a pending SSO error once, and reduces a connection failure to a flag", () => {
@@ -221,7 +297,11 @@ describe("bootstrap payloads", () => {
         const first = makeRes();
         bootstrap(makeReq({ loggedIn: true, session }), first.res);
         expect(first.body()).toMatchObject({ oauthJustEnrolled: true, oauthConnectionFailed: "TLS rejected" });
-        expect(session).toEqual({ loggedIn: true, csrfInitialized: true });
+        expect(session).toEqual({
+            loggedIn: true,
+            sessionKind: "interactive",
+            csrfInitialized: true
+        });
 
         const second = makeRes();
         bootstrap(makeReq({ loggedIn: true, session }), second.res);

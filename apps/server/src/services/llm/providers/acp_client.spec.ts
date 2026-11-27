@@ -30,7 +30,7 @@ class FakeProc extends EventEmitter {
 }
 
 const spawnMock = vi.hoisted(() => vi.fn());
-vi.mock("child_process", () => ({ spawn: spawnMock }));
+vi.mock("child_process", () => ({ spawn: spawnMock, execFile: vi.fn() }));
 
 // The real Worker, recorded so a test can watch it; `workers.standIn`, when set, is returned instead.
 const workers = vi.hoisted(() => ({ started: [] as import("worker_threads").Worker[], standIn: undefined as object | undefined }));
@@ -81,13 +81,17 @@ describe("AcpClient", () => {
         }
     });
 
-    it("spawns with exactly the given args and the process environment", () => {
+    it("spawns with exactly the given args and process.env without its TRILIUM_ variables", () => {
         AcpClient.start("/usr/bin/copilot", { cwd: "/tmp", args: ["--acp", "--no-color"] });
         expect(spawnMock).toHaveBeenCalledWith(
             "/usr/bin/copilot",
             ["--acp", "--no-color"],
-            expect.objectContaining({ cwd: "/tmp", env: process.env })
+            expect.objectContaining({ cwd: "/tmp" })
         );
+        const env = spawnMock.mock.lastCall?.[2]?.env as NodeJS.ProcessEnv;
+        expect(Object.keys(process.env).some((name) => name.startsWith("TRILIUM_"))).toBe(true);
+        expect(Object.keys(env).filter((name) => name.startsWith("TRILIUM_"))).toEqual([]);
+        expect(env.PATH).toBe(process.env.PATH);
 
         AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp" });
         expect(spawnMock).toHaveBeenLastCalledWith("/opt/agy/agy_acp_server.par", [], expect.anything());

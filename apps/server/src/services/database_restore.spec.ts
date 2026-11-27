@@ -7,9 +7,13 @@ import {
     getBackup,
     getLog,
     getSql,
+    notifications,
     OLDEST_SUPPORTED_DB_VERSION,
     sql_init as sqlInit
 } from "@triliumnext/core";
+import {
+    onAddressChanged
+} from "@triliumnext/core/src/services/notifications/channels/registry.js";
 import Database from "better-sqlite3";
 import fs from "fs";
 import os from "os";
@@ -66,6 +70,7 @@ let counter = 0;
 /** The database being replaced, and the files a restore leaves beside it. */
 const DOCUMENT_FILES = [ "", "-wal", "-shm", ".pre-restore", ".restore-in-progress" ]
     .map((suffix) => `${dataDir.DOCUMENT_PATH}${suffix}`);
+const SECRETS_PATH = path.join(dataDir.TRILIUM_DATA_DIR, "notification-channel-secrets.json");
 
 beforeEach(() => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -121,6 +126,15 @@ function fileWith(content: string, name = `file-${counter++}.bin`) {
     fs.writeFileSync(filePath, content);
 
     return filePath;
+}
+
+/** An entry of the webhook secrets file, as the file stores it. */
+function storedSecretEntry(channelId: string) {
+    return {
+        channelId, url: "https://hooks.example/unguessable", headers: [], values: [],
+        network: { allowPrivate: false, allowLoopback: false }, configurationId: "configuration",
+        changedAt: "2026-01-01 00:00:00.000Z", templateHash: "", documentId: "document", version: 1
+    };
 }
 
 describe("reading what a backup file is", () => {
@@ -669,6 +683,52 @@ describe("putting a restored database in place", () => {
         expect(db.log()).toContain("already current");
         expect(db.log()).toMatch(/opening the restored database$/m);
         expect(db.log()).toContain("finished in");
+    });
+
+    it("sets the webhook secrets aside before the exchange, and tells their channels", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(SECRETS_PATH, JSON.stringify({
+            entries: [ storedSecretEntry("channelRestored") ], removed: []
+        }));
+        const told = vi.fn();
+        const stopListening = onAddressChanged(told);
+        const request = { path: validDatabase(), fileName: "backup.db", consumable: false };
+
+        try {
+            await restoreDatabase(request);
+        } finally {
+            stopListening();
+        }
+
+        expect(fs.existsSync(SECRETS_PATH)).toBe(false);
+        const setAside = fs.readdirSync(dataDir.TRILIUM_DATA_DIR)
+            .filter((name) => name.startsWith("notification-channel-secrets.set-aside-"));
+        expect(setAside).toHaveLength(1);
+        expect(told).toHaveBeenCalledExactlyOnceWith("channelRestored");
+        expect(told).toHaveBeenCalledBefore(db.detach);
+        // The delivery record holds the pause before the database is replaced.
+        expect(notifications.getNotificationForwarder().record.getState()?.pause?.causes)
+            .toEqual([ "restore" ]);
+        fs.rmSync(path.join(dataDir.TRILIUM_DATA_DIR, setAside[0]));
+    });
+
+    it("stops before the exchange when the webhook secrets cannot be set aside", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database it had");
+        fs.writeFileSync(SECRETS_PATH, JSON.stringify({ entries: [], removed: [] }));
+        vi.spyOn(fs.promises, "rename").mockRejectedValueOnce(
+            Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
+        const request = { path: validDatabase(), fileName: "backup.db", consumable: false };
+
+        await expect(restoreDatabase(request))
+            .rejects.toMatchObject({
+                reason: "swap-failed",
+                message: "notification-channel-secrets.json cannot be set aside: EPERM"
+            });
+
+        expect(db.detach).not.toHaveBeenCalled();
+        expect(fs.readFileSync(document, "utf-8")).toBe("the database it had");
+        fs.rmSync(SECRETS_PATH);
     });
 
     it("migrates an older locked backup it was given, and takes on the password that opened it", async () => {

@@ -7,6 +7,7 @@ import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { hasDesktopLaunchBar, isElectron, isMobile, isTablet } from "../../services/utils";
+import { NotificationLauncher } from "../notifications/NotificationBell";
 import { useIsTablet } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
@@ -160,6 +161,8 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
             return isElectron() ? <LazyRecordMeetingButton launcherNote={note} /> : undefined;
         case "colorSchemeSwitcher":
             return <ColorSchemeSwitcher launcherNote={note} />;
+        case "notifications":
+            return <NotificationLauncher launcherNote={note} />;
         default:
             console.warn(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }

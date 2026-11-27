@@ -107,6 +107,20 @@ describe("data_encryption", () => {
         });
     });
 
+    describe("decryptStrictly", () => {
+        it("opens only what the key encrypted, and gives false where decrypt() recovers", () => {
+            const cipherText = dataEncryption.encrypt(KEY, "the data key");
+            expect(decodeUtf8(dataEncryption.decryptStrictly(KEY, cipherText) as Uint8Array))
+                .toBe("the data key");
+
+            expect(dataEncryption.decryptStrictly(OTHER_KEY, cipherText)).toBe(false);
+            for (const length of [ 12, 20, 40, 16, 0 ]) {
+                const planted = encodeBase64(Uint8Array.from({ length }, (_, i) => i));
+                expect(dataEncryption.decryptStrictly(KEY, planted), String(length)).toBe(false);
+            }
+        });
+    });
+
     describe("digest check", () => {
         /** Encrypts `plainText` as stored, without the SHA-1 digest prefix `encrypt()` adds. */
         function encryptRaw(plainText: Uint8Array) {

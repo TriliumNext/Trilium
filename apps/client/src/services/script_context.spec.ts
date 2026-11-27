@@ -29,6 +29,29 @@ describe("ScriptContext", () => {
         expect(requireFn("ModuleA")).toBe(exportsA);
     });
 
+    it("gives the values of a channel run to the API of the start note alone", async () => {
+        const startNote = buildNote({ title: "Channel" });
+        const moduleNote = buildNote({ title: "Helper" });
+        const params = {
+            notification: {
+                key: "k1", title: "Done", category: "general", attentionLevel: "high",
+                raisedAt: "2026-11-27 10:00:00.000Z"
+            },
+            delivery: { key: "k1", attempt: 1, signal: new AbortController().signal },
+            channelSettings: { topic: "alerts" }
+        } as const;
+
+        const ctx = await ScriptContext(startNote.noteId, [ startNote.noteId, moduleNote.noteId ],
+            null, null, params);
+
+        const startApi = ctx.apis[startNote.noteId];
+        expect(startApi.notification).toBe(params.notification);
+        expect(startApi.delivery).toBe(params.delivery);
+        expect(startApi.channelSettings).toBe(params.channelSettings);
+        expect(ctx.apis[moduleNote.noteId].notification).toBeUndefined();
+        expect(ctx.apis[moduleNote.noteId].channelSettings).toBeUndefined();
+    });
+
     it("require throws when the requested module title is not among the allowed note ids", async () => {
         const startNote = buildNote({ title: "Start2" });
         const moduleA = buildNote({ title: "ModA2" });

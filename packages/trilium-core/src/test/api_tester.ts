@@ -249,12 +249,15 @@ export class CoreApiTester {
             apiResultHandler: noop,
             checkApiAuth: noop,
             checkApiAuthOrElectron: noop,
+            checkSyncAuth: noop,
+            checkBackupDownload: noop,
             checkAppNotInitialized: noop,
             checkSetupAuth: noop,
             checkCredentials: noop,
             loginRateLimiter: noop,
             uploadMiddlewareWithErrorHandling: noop,
             importMiddlewareWithErrorHandling: noop,
+            soundUploadMiddleware: noop,
             csrfMiddleware: noop
         });
     }

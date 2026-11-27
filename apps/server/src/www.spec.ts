@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
     writeCpuProfile: vi.fn(),
     registerOcrHandlers: vi.fn(),
     registerServerLlmExtensions: vi.fn(),
+    registerWebhookChannelType: vi.fn(),
     registerPdfTocGenerator: vi.fn(),
     listListeningUrls: vi.fn(),
     installProcessErrorHandlers: vi.fn(),
@@ -37,6 +38,7 @@ const mocks = vi.hoisted(() => ({
     isScriptingEnabled: vi.fn(),
     publishHealthcheckTarget: vi.fn(),
     sessionParser: vi.fn(),
+    isValidCsrfToken: vi.fn(),
     removeLeftoverStagingFiles: vi.fn()
 }));
 
@@ -81,6 +83,9 @@ vi.mock("./services/handlers.js", () => ({ registerOcrHandlers: mocks.registerOc
 vi.mock("./services/host.js", () => ({ get default() { return state.host; } }));
 vi.mock("./services/port.js", () => ({ get default() { return state.port; } }));
 vi.mock("./services/llm/index.js", () => ({ registerServerLlmExtensions: mocks.registerServerLlmExtensions }));
+vi.mock("./services/notifications/notification_secrets.js", () => ({
+    registerWebhookChannelType: mocks.registerWebhookChannelType
+}));
 vi.mock("./services/toc/pdf.js", () => ({ registerPdfTocGenerator: mocks.registerPdfTocGenerator }));
 vi.mock("./services/network_addresses.js", () => ({ listListeningUrls: mocks.listListeningUrls }));
 vi.mock("./services/process_errors.js", () => ({
@@ -92,6 +97,7 @@ vi.mock("./services/utils.js", () => ({ get isElectron() { return state.isElectr
 vi.mock("./services/healthcheck.js", () => ({ publishHealthcheckTarget: mocks.publishHealthcheckTarget }));
 vi.mock("./services/sql_init.js", () => ({ getDbSize: () => 2 }));
 vi.mock("./routes/session_parser.js", () => ({ default: mocks.sessionParser }));
+vi.mock("./routes/csrf_protection.js", () => ({ isValidCsrfToken: mocks.isValidCsrfToken }));
 
 import startTriliumServer from "./www.js";
 
@@ -203,8 +209,11 @@ describe("startTriliumServer", () => {
         expect(app.get("port")).toBe(8080);
         expect(app.get("host")).toBe("0.0.0.0");
 
-        expect(state.messaging.attachToHttpServer).toHaveBeenCalledWith(server, mocks.sessionParser);
+        expect(state.messaging.attachToHttpServer)
+            .toHaveBeenCalledWith(server, mocks.sessionParser, mocks.isValidCsrfToken);
         expect(mocks.installProcessErrorHandlers.mock.invocationCallOrder[0])
+            .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
+        expect(mocks.registerWebhookChannelType.mock.invocationCallOrder[0])
             .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
         expect(mocks.removeLeftoverStagingFiles).toHaveBeenCalledOnce();
         const steps = [

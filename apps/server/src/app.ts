@@ -18,7 +18,9 @@ import routes from "./routes/routes.js";
 import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
 import { desktopNetworkAccessGate } from "./services/desktop_network_gate.js";
+import { createDeliveryRecordFile } from "./services/notifications/delivery_record_file.js";
 import { createReactiveOidcMiddleware } from "./services/open_id.js";
+import { startSecondFactor, takeResetWords } from "./services/second_factor.js";
 import { setupSecondFactor } from "./services/setup_second_factor.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
@@ -133,7 +135,12 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    const { sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n } = await import("@triliumnext/core");
+    const {
+        sync, consistency_checks, initSetupSecondFactor, scheduler, sql_init, becca_loader, i18n,
+        notifications
+    } = await import("@triliumnext/core");
+    // Before a pull or a route can make the forwarder of the notification channels.
+    notifications.initDeliveryRecordPort(createDeliveryRecordFile());
     sync.startSyncTimer();
 
     // What the setup wizard asks for besides the password, where this instance has one. Registered
@@ -141,6 +148,9 @@ export default async function buildApp() {
     // at all: the browser-only build never runs this file. Desktop reaches it through the same
     // www.js → buildApp path, and is exempt from the wizard's gate for its own reasons.
     initSetupSecondFactor(setupSecondFactor);
+    // Deleted from `process.env` right away, before any child process can inherit them.
+    takeResetWords();
+    void becca_loader.beccaLoaded.then(() => startSecondFactor());
 
     // Server-side i18next always boots on "en" (initTranslations runs before initSql in initializeCore),
     // so re-sync it with the document's stored locale before the scheduler's dbReady.then(checkHiddenSubtree)
@@ -154,6 +164,7 @@ export default async function buildApp() {
 
     consistency_checks.startConsistencyChecks();
     scheduler.startScheduler();
+    void becca_loader.beccaLoaded.then(() => notifications.startNotifications());
 
     erase.startScheduledCleanup();
 
