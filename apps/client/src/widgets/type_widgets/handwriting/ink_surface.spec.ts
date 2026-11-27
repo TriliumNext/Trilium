@@ -527,6 +527,36 @@ describe("ink surface input", () => {
         pointer("pointerup", "mouse", 4, 100, 50);
     });
 
+    it("draws the end of a stroke on a canvas just around it, which follows the pen", async () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 2000, 1500));
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
+        surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+        // Far down the canvas, where the screen shows world y 2000 to 3500.
+        surface.showView({ x: 1000, y: 2750, zoom: 1 });
+        const live = container.querySelector<HTMLCanvasElement>(".handwriting-live-layer canvas:last-child");
+        if (!live) throw new Error("expected the live canvas");
+
+        pointer("pointerdown", "pen", 1, 100, 400);
+        for (let x = 420; x <= 600; x += 20) pointer("pointermove", "pen", 1, 100, x);
+        await nextFrame();
+        // The stroke spans 400 to 600 across at 100 down the screen, and the canvas that much and
+        // 128 px around it.
+        expect(live.width).toBeLessThan(500);
+        expect(parseFloat(live.style.left)).toBeGreaterThan(250);
+        expect(parseFloat(live.style.left)).toBeLessThan(400);
+        expect(live.style.width).toBe(`${live.width}px`);
+        expect(live.height).toBeGreaterThan(200);
+        expect(parseFloat(live.style.top)).toBe(0);
+
+        // Once the start of a long stroke has settled, the canvas covers only its end.
+        for (let x = 620; x <= 1900; x += 20) pointer("pointermove", "pen", 1, 100, x);
+        await nextFrame();
+        expect(parseFloat(live.style.left)).toBeGreaterThan(600);
+        expect(parseFloat(live.style.left) + live.width).toBeGreaterThanOrEqual(1900);
+        pointer("pointerup", "pen", 1, 100, 1900);
+    });
+
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
         vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
         pointer("pointerdown", "pen", 1, 100);

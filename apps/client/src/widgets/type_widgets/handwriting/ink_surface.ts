@@ -170,6 +170,7 @@ export default class InkSurface {
             toWorld: (clientX, clientY) => this.toWorld(clientX, clientY),
             getZoom: () => this.zoom,
             applyWorldTransform: (ctx) => this.applyWorldTransform(ctx),
+            getWorldTransform: () => ({ scale: this.zoom * this.dpr, x: this.tx, y: this.ty }),
             getAutoColor: () => this.autoColor
         });
         this.eraserRing = document.createElement("div");

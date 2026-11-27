@@ -13,6 +13,8 @@ export interface LiveStrokeHost {
     getZoom(): number;
     /** Sets `ctx` to draw in world units in the current view. */
     applyWorldTransform(ctx: CanvasRenderingContext2D): void;
+    /** The device pixels per world unit, and the device position of the world origin. */
+    getWorldTransform(): { scale: number, x: number, y: number };
     /** The color of a stroke of `AUTO_COLOR`. */
     getAutoColor(): string;
 }
@@ -35,12 +37,16 @@ const SETTLE_CHUNK = 48;
  * The outline of a point depends on its neighbors, so the runs overlap where theirs differ.
  */
 const SETTLE_OVERLAP = 8;
+/** The room left around the end of the stroke when `liveCanvas` is placed over it, in CSS pixels. */
+const LIVE_CANVAS_MARGIN = 128;
 
 /**
  * The stroke being drawn, on two canvases above the finished strokes: `settledCanvas` holds the
  * part of the stroke that further points no longer change, and `liveCanvas` its end, drawn again
  * on each animation frame. The cost of a frame therefore does not grow with the length of the
- * stroke. A pointer that rests at the end of a stroke makes a line or another shape of it.
+ * stroke. `liveCanvas` covers only the end of the stroke and moves with it: the browser composites
+ * the whole of a canvas that changes, which at the size of the surface takes longer than a frame on
+ * a large screen. A pointer that rests at the end of a stroke makes a line or another shape of it.
  */
 export default class LiveStroke {
 
@@ -49,6 +55,11 @@ export default class LiveStroke {
     private liveCanvas: HTMLCanvasElement;
     private settled: CanvasRenderingContext2D;
     private live: CanvasRenderingContext2D;
+    /** The size of the surface, in device pixels. */
+    private surfaceWidth = 0;
+    private surfaceHeight = 0;
+    /** Where `liveCanvas` lies on the surface, in device pixels. */
+    private liveRect: DeviceRect = { x: 0, y: 0, width: 0, height: 0 };
 
     private stroke: Stroke | undefined;
     private builder: StrokeBuilder | undefined;
@@ -88,12 +99,13 @@ export default class LiveStroke {
         return this.stroke !== undefined;
     }
 
-    /** Sizes the canvases, in device pixels. */
+    /** Sizes the canvases to the surface, in device pixels. */
     resize(width: number, height: number) {
-        for (const canvas of [ this.settledCanvas, this.liveCanvas ]) {
-            canvas.width = width;
-            canvas.height = height;
-        }
+        this.settledCanvas.width = width;
+        this.settledCanvas.height = height;
+        this.surfaceWidth = width;
+        this.surfaceHeight = height;
+        this.placeLiveCanvas({ x: 0, y: 0, width: 0, height: 0 });
     }
 
     start(e: PointerEvent, stroke: Pick<Stroke, "tool" | "color" | "size" | "order" | "sensitivity">) {
@@ -233,14 +245,12 @@ export default class LiveStroke {
         const builder = this.builder;
         if (!stroke || !builder) return;
 
-        clearCanvas(this.live, this.liveCanvas);
-        this.host.applyWorldTransform(this.live);
         if (this.snapped) {
-            this.fill(this.live, stroke, getStrokeOutline(stroke));
+            this.drawLive(stroke, getStrokeOutline(stroke));
             return;
         }
         if (stroke.points.length <= 6) {
-            this.fill(this.live, stroke, getShortStrokeOutline(stroke));
+            this.drawLive(stroke, getShortStrokeOutline(stroke));
             return;
         }
 
@@ -257,7 +267,43 @@ export default class LiveStroke {
 
         const tail = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP));
         tail.push(...builder.preview(this.predicted));
-        this.fill(this.live, stroke, outlineStrokePoints(stroke, tail));
+        this.drawLive(stroke, outlineStrokePoints(stroke, tail));
+    }
+
+    /** Draws `outline` alone on `liveCanvas`, first moving the canvas over it if it lies outside. */
+    private drawLive(stroke: Stroke, outline: number[][]) {
+        const world = this.host.getWorldTransform();
+        const needed = getDeviceBounds(outline, world);
+        const rect = this.liveRect;
+        if (needed && (needed.x < rect.x || needed.y < rect.y
+            || needed.x + needed.width > rect.x + rect.width || needed.y + needed.height > rect.y + rect.height)) {
+            const margin = LIVE_CANVAS_MARGIN * (window.devicePixelRatio || 1);
+            const left = Math.max(0, needed.x - margin);
+            const top = Math.max(0, needed.y - margin);
+            this.placeLiveCanvas({
+                x: left,
+                y: top,
+                width: Math.max(0, Math.min(this.surfaceWidth, needed.x + needed.width + margin) - left),
+                height: Math.max(0, Math.min(this.surfaceHeight, needed.y + needed.height + margin) - top)
+            });
+        }
+        clearCanvas(this.live, this.liveCanvas);
+        this.live.setTransform(world.scale, 0, 0, world.scale, world.x - this.liveRect.x, world.y - this.liveRect.y);
+        this.fill(this.live, stroke, outline);
+    }
+
+    /** Moves and sizes `liveCanvas` to `rect` of the surface, in device pixels, which clears it. */
+    private placeLiveCanvas(rect: DeviceRect) {
+        this.liveRect = rect;
+        this.liveCanvas.width = rect.width;
+        this.liveCanvas.height = rect.height;
+        const dpr = window.devicePixelRatio || 1;
+        Object.assign(this.liveCanvas.style, {
+            left: `${rect.x / dpr}px`,
+            top: `${rect.y / dpr}px`,
+            width: `${rect.width / dpr}px`,
+            height: `${rect.height / dpr}px`
+        });
     }
 
     /**
@@ -268,6 +314,35 @@ export default class LiveStroke {
         ctx.fillStyle = stroke.color === AUTO_COLOR ? this.host.getAutoColor() : stroke.color;
         ctx.fill(outlineToPath(outline));
     }
+}
+
+/** A rectangle of the surface in whole device pixels. */
+interface DeviceRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** The whole device pixels that `outline`, in world units, covers in the view `world`. */
+function getDeviceBounds(
+    outline: number[][], world: { scale: number, x: number, y: number }
+): DeviceRect | undefined {
+    let [ minX, minY, maxX, maxY ] = [ Infinity, Infinity, -Infinity, -Infinity ];
+    for (const [ x, y ] of outline) {
+        const deviceX = world.scale * x + world.x;
+        const deviceY = world.scale * y + world.y;
+        minX = Math.min(minX, deviceX);
+        minY = Math.min(minY, deviceY);
+        maxX = Math.max(maxX, deviceX);
+        maxY = Math.max(maxY, deviceY);
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(minY)) return undefined;
+    // The path curves through the midpoints of the outline, never past its points; a pixel of
+    // room covers the antialiased edge.
+    const x = Math.floor(minX) - 1;
+    const y = Math.floor(minY) - 1;
+    return { x, y, width: Math.ceil(maxX) + 1 - x, height: Math.ceil(maxY) + 1 - y };
 }
 
 export function createCanvas(parent: HTMLElement) {
