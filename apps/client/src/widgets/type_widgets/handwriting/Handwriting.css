@@ -32,6 +32,24 @@
             cursor: grab;
         }
 
+        /* Drawn as the eraser's cursor above, 8px being `ERASER_RADIUS` in ink_surface.ts. */
+        .handwriting-eraser-ring {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #e53935;
+            border-radius: 50%;
+            background-color: rgb(229 57 53 / 25%);
+            box-shadow: 0 0 0 1px white, inset 0 0 0 1px white;
+            pointer-events: none;
+
+            &[hidden] {
+                display: none;
+            }
+        }
+
         .handwriting-live-layer,
         canvas {
             position: absolute;

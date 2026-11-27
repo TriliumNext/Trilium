@@ -505,6 +505,28 @@ describe("ink surface input", () => {
         expect(strokes()).toHaveLength(0);
     });
 
+    it("shows the eraser at a pen while it erases, as Windows hides the cursor of a pen on the screen", () => {
+        surface.tool = "eraser";
+        const ring = () => container.querySelector<HTMLElement>(".handwriting-eraser-ring");
+        expect(ring()?.hidden).toBe(true);
+
+        pointer("pointerdown", "pen", 1, 100, 50);
+        expect(ring()?.hidden).toBe(false);
+        expect(ring()?.style.transform).toBe("translate(50px, 100px)");
+        pointer("pointermove", "pen", 1, 120, 70);
+        expect(ring()?.style.transform).toBe("translate(70px, 120px)");
+        pointer("pointerup", "pen", 1, 120, 70);
+        expect(ring()?.hidden).toBe(true);
+
+        // The eraser end of a pen shows it too, but not a mouse, which keeps its cursor.
+        pointer("pointerdown", "pen", 2, 100, 50, 32);
+        expect(ring()?.hidden).toBe(false);
+        pointer("pointerup", "pen", 2, 100, 50);
+        pointer("pointerdown", "mouse", 4, 100, 50);
+        expect(ring()?.hidden).toBe(true);
+        pointer("pointerup", "mouse", 4, 100, 50);
+    });
+
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
         vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
         pointer("pointerdown", "pen", 1, 100);

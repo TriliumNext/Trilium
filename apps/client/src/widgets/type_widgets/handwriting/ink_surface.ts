@@ -92,6 +92,11 @@ export default class InkSurface {
     private baseCanvas: HTMLCanvasElement;
     private base: CanvasRenderingContext2D;
     private liveStroke: LiveStroke;
+    /**
+     * The outline of the eraser while a pen or a finger erases. Windows hides the cursor of a pen
+     * that touches the screen, and a finger has none.
+     */
+    private eraserRing: HTMLElement;
     private resizeObserver: ResizeObserver;
     private abort = new AbortController();
 
@@ -167,6 +172,10 @@ export default class InkSurface {
             applyWorldTransform: (ctx) => this.applyWorldTransform(ctx),
             getAutoColor: () => this.autoColor
         });
+        this.eraserRing = document.createElement("div");
+        this.eraserRing.className = "handwriting-eraser-ring";
+        this.eraserRing.hidden = true;
+        container.append(this.eraserRing);
 
         const listener = { signal: this.abort.signal };
         container.addEventListener("pointerdown", (e) => this.onPointerDown(e), listener);
@@ -196,6 +205,7 @@ export default class InkSurface {
         clearTimeout(this.warmTimer);
         clearInterval(this.gestureTimer);
         this.baseCanvas.remove();
+        this.eraserRing.remove();
     }
 
     load(doc: InkDocument) {
@@ -502,6 +512,8 @@ export default class InkSurface {
         } else if (mode === "erase") {
             this.erased = [];
             this.erasePieces.clear();
+            this.eraserRing.hidden = e.pointerType === "mouse";
+            this.moveEraserRing(e);
             this.eraseAlong(e.clientX, e.clientY, e.clientX, e.clientY);
         }
     }
@@ -536,6 +548,7 @@ export default class InkSurface {
         if (this.mode === "draw") {
             this.liveStroke.move(e, this.lastX, this.lastY);
         } else if (this.mode === "erase") {
+            this.moveEraserRing(e);
             this.eraseAlong(this.lastX, this.lastY, e.clientX, e.clientY);
         } else if (this.mode === "pan") {
             this.panByClient(e.clientX - this.lastX, e.clientY - this.lastY);
@@ -614,6 +627,7 @@ export default class InkSurface {
     }
 
     private endGesture() {
+        this.eraserRing.hidden = true;
         clearInterval(this.gestureTimer);
         this.gestureTimer = undefined;
         this.mode = "idle";
@@ -649,6 +663,12 @@ export default class InkSurface {
         }
         this.updatePageCount();
         this.options.onChange();
+    }
+
+    private moveEraserRing(e: PointerEvent) {
+        if (this.eraserRing.hidden) return;
+        const rect = this.container.getBoundingClientRect();
+        this.eraserRing.style.transform = `translate(${e.clientX - rect.left}px, ${e.clientY - rect.top}px)`;
     }
 
     private eraseAlong(fromX: number, fromY: number, toX: number, toY: number) {
