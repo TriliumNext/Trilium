@@ -8,5 +8,6 @@ The new [Handwriting](https://docs.triliumnotes.org/user-guide/note-types/handwr
 *   Write on pages of ruled, grid or dotted paper, or on a canvas without bounds, with a pressure-sensitive pen, a highlighter and an eraser.
 *   Fingers pan and zoom while the pen writes, and a palm resting on the screen is ignored.
 *   Draw a line, a rectangle, a triangle, a circle or an arrow and hold the pen still at the end, and it becomes a clean shape.
+*   Add a photo or a screenshot, such as the exercise being worked on, and write over it.
 *   Collections and text notes show a picture of the note's first page.
 *   Documents of RNote (`.rnote`) are imported as handwriting notes, with their pen strokes, and those holding only typed text and images as text notes.

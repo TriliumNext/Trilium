@@ -681,6 +681,47 @@ describe("notes service (real DB)", () => {
         });
     });
 
+    describe("handwriting images", () => {
+        const sheet = (...urls: string[]) => JSON.stringify({
+            version: 1, paper: "ruled", layout: "pages",
+            images: urls.map((url) => ({ url, x: 0, y: 0, w: 100, h: 50 })),
+            strokes: []
+        });
+        const urlOf = (attachmentId: string | undefined) => `api/attachments/${attachmentId}/image/a.png`;
+        const isScheduled = (attachmentId: string | undefined) =>
+            !!becca.getAttachment(attachmentId ?? "")?.utcDateScheduledForErasureSince;
+
+        it("keeps the images on the sheet and the thumbnail, and schedules the others for erasure", () => {
+            const { note } = createNote("root", { type: "handwriting", mime: "application/json", content: sheet() });
+            const [ used, removed, thumbnail ] = getContext().init(() => [
+                note.saveAttachment(PNG),
+                note.saveAttachment({ ...PNG, title: "removed.png" }),
+                note.saveAttachment({ ...PNG, mime: "image/svg+xml", title: "handwriting-export.svg" })
+            ]);
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(urlOf(used.attachmentId))));
+            expect([ used, removed, thumbnail ].map((attachment) => isScheduled(attachment.attachmentId)))
+                .toStrictEqual([ false, true, false ]);
+
+            // Undoing the removal puts the image back on the sheet, which keeps its attachment.
+            getContext().init(() => noteService.updateNoteData(note.noteId,
+                sheet(urlOf(used.attachmentId), urlOf(removed.attachmentId))));
+            expect(isScheduled(removed.attachmentId)).toBe(false);
+        });
+
+        it("gives a duplicated note images of its own", async () => {
+            const { note } = createNote("root", { type: "handwriting", mime: "application/json", content: sheet() });
+            const image = getContext().init(() => note.saveAttachment(PNG));
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(urlOf(image.attachmentId))));
+
+            const copy = getContext().init(() => noteService.duplicateSubtree(note.noteId, "root")).note;
+            await vi.waitFor(() => expect(copy.getAttachmentsByRole("image")).toHaveLength(1));
+            const [ copied ] = copy.getAttachmentsByRole("image");
+            expect(copied.attachmentId).not.toBe(image.attachmentId);
+            expect(copy.getContent()).toBe(sheet(urlOf(copied.attachmentId)));
+        });
+    });
+
     describe("asyncPostProcessContent", () => {
         it("sets the link preview picture download going", async () => {
             // The pass itself is covered in image_download.spec.ts. What matters here is the wiring:

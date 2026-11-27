@@ -1,14 +1,16 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getPageCount as countPages, getPageTop,
-    getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH,
-    type PaperStyle, serializeInkDocument, serializeStroke, splitStroke, type Stroke, strokeHitsSegment, StrokeIndex
+    AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getPageCount as countPages,
+    getPageTop, getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout,
+    type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
+    splitStroke, type Stroke, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
+import ImageLayer, { type Picture, placeImage } from "./ink_images";
 import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
 import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
 
-export type SurfaceTool = InkTool | "eraser" | "pan";
+export type SurfaceTool = InkTool | "eraser" | "select" | "pan";
 
 /** Whether the eraser removes each stroke it touches whole, or only the parts of strokes it covers. */
 export const ERASER_MODES = [ "stroke", "partial" ] as const;
@@ -25,10 +27,12 @@ export interface InkSurfaceState {
     /** The index of the page that fills most of the view, counted from zero. */
     page: number;
     pageCount: number;
+    /** Whether an image is selected. */
+    hasSelection: boolean;
 }
 
 interface InkSurfaceOptions {
-    /** Called after the strokes or the paper change through the surface, not after `load()`. */
+    /** Called after the strokes, the images or the paper change through the surface, not after `load()`. */
     onChange(): void;
     /**
      * Called when a stroke or an erase starts, before it changes anything, and then every
@@ -36,14 +40,18 @@ interface InkSurfaceOptions {
      */
     onGesture(): void;
     onStateChange(state: InkSurfaceState): void;
+    /** Loads the picture of an image of the note. Without it, images show as empty rectangles. */
+    loadImage?(url: string): Promise<Picture | undefined>;
 }
 
 interface HistoryEntry {
     added: Stroke[];
     removed: Stroke[];
+    addedImages?: InkImage[];
+    removedImages?: InkImage[];
 }
 
-type Mode = "idle" | "draw" | "erase" | "pan" | "pinch";
+type Mode = "idle" | "draw" | "erase" | "image" | "pan" | "pinch";
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 8;
@@ -77,13 +85,11 @@ const MAX_FIT_WIDTH_ZOOM = 2;
  */
 export default class InkSurface {
 
-    tool: SurfaceTool = "pen";
     color = AUTO_COLOR;
     size = 3;
     /** The pressure sensitivity of the pen strokes drawn from now on, from 0 to 100. */
     sensitivity = DEFAULT_PRESSURE_SENSITIVITY;
     eraserMode: EraserMode = "stroke";
-    readOnly = false;
     /** Whether one finger draws. Otherwise fingers only pan and zoom, and only a pen or a mouse draws. */
     fingerDrawing = false;
     /** Whether a pen or a mouse pans instead of drawing, as while the space bar is held. */
@@ -100,13 +106,14 @@ export default class InkSurface {
     private resizeObserver: ResizeObserver;
     private abort = new AbortController();
 
+    private currentTool: SurfaceTool = "pen";
+    private isReadOnly = false;
     private strokes = new Set<Stroke>();
     private index = new StrokeIndex();
-    private thumbnail = new InkThumbnail({
-        getAll: () => this.strokes,
-        query: (bounds) => this.index.query(bounds)
-    });
+    private images: ImageLayer;
+    private thumbnail: InkThumbnail;
     private nextOrder = 0;
+    private nextImageOrder = 0;
     private penErasing = false;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
@@ -137,6 +144,8 @@ export default class InkSurface {
     private settleTimer: ReturnType<typeof setTimeout> | undefined;
     private autoColor = "#000";
     private backgroundColor = "#fff";
+    /** Whether the theme's background is dark, in which images are shown dark too. */
+    private isDark = false;
     /** The theme's `--note-list-view-content-background` around the pages, if it has one. */
     private deskColor: string | undefined;
 
@@ -177,6 +186,27 @@ export default class InkSurface {
         this.eraserRing.className = "handwriting-eraser-ring";
         this.eraserRing.hidden = true;
         container.append(this.eraserRing);
+        this.images = new ImageLayer(container, {
+            loadImage: async (url) => this.options.loadImage?.(url),
+            toWorld: (clientX, clientY) => this.toWorld(clientX, clientY),
+            getView: () => this.getView(),
+            redrawBounds: (bounds) => this.redrawBounds(bounds),
+            onChange: (before, after) => {
+                this.thumbnail.markChanged(before);
+                this.thumbnail.markChanged(after);
+                this.pushHistory({ added: [], removed: [], addedImages: [ after ], removedImages: [ before ] });
+                this.updatePageCount();
+                this.options.onChange();
+            },
+            onSelectionChange: () => this.reportState()
+        });
+        this.thumbnail = new InkThumbnail({
+            getAll: () => this.strokes,
+            query: (bounds) => this.index.query(bounds),
+            getImages: () => this.images.getAll(),
+            getPicture: (image) => this.images.getPicture(image),
+            whenImagesLoaded: () => this.images.whenLoaded()
+        });
 
         const listener = { signal: this.abort.signal };
         container.addEventListener("pointerdown", (e) => this.onPointerDown(e), listener);
@@ -207,6 +237,26 @@ export default class InkSurface {
         clearInterval(this.gestureTimer);
         this.baseCanvas.remove();
         this.eraserRing.remove();
+        this.images.destroy();
+    }
+
+    get tool() {
+        return this.currentTool;
+    }
+
+    /** Picks the tool. Only the select tool keeps an image selected. */
+    set tool(tool: SurfaceTool) {
+        this.currentTool = tool;
+        if (tool !== "select") this.images.select(undefined);
+    }
+
+    get readOnly() {
+        return this.isReadOnly;
+    }
+
+    set readOnly(readOnly: boolean) {
+        this.isReadOnly = readOnly;
+        if (readOnly) this.images.select(undefined);
     }
 
     load(doc: InkDocument) {
@@ -217,10 +267,13 @@ export default class InkSurface {
             this.index.add(stroke);
         }
         this.nextOrder = doc.strokes.length;
+        const images = doc.images ?? [];
+        this.images.load(images);
+        this.nextImageOrder = images.length;
         this.paper = doc.paper;
         this.layout = doc.layout;
         this.thumbnail.reset(doc.layout);
-        this.pageCount = countPages(doc.strokes);
+        this.pageCount = countPages(this.getItems());
         this.viewShown = false;
         this.undoStack = [];
         this.redoStack = [];
@@ -248,7 +301,42 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout);
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll());
+    }
+
+    /**
+     * Adds the image at `url`, whose picture is `naturalWidth` by `naturalHeight` pixels, in the
+     * middle of the view, and selects it.
+     */
+    addImage(url: string, naturalWidth: number, naturalHeight: number) {
+        const { x, y, zoom } = this.getCenterView();
+        const visible = {
+            x, y,
+            width: this.baseCanvas.width / this.dpr / zoom,
+            height: this.baseCanvas.height / this.dpr / zoom
+        };
+        const image = createImage({
+            url,
+            ...placeImage(naturalWidth, naturalHeight, visible, this.layout),
+            order: this.nextImageOrder++
+        });
+        this.pushHistory({ added: [], removed: [], addedImages: [ image ] });
+        this.applyHistory([], [], [ image ]);
+        this.images.select(image);
+        this.options.onChange();
+    }
+
+    /** Removes the selected image from the note. */
+    deleteSelection() {
+        const image = this.images.selection;
+        if (!image || this.images.isDragging) return;
+        this.pushHistory({ added: [], removed: [], removedImages: [ image ] });
+        this.applyHistory([], [], [], [ image ]);
+        this.options.onChange();
+    }
+
+    clearSelection() {
+        this.images.select(undefined);
     }
 
     /** Returns the picture that previews show, or `undefined` while the saved one is current. */
@@ -303,6 +391,7 @@ export default class InkSurface {
         this.cancelZoomPreview();
         this.redrawAll();
         this.liveStroke.redraw();
+        this.images.updateBox();
         this.reportState();
     }
 
@@ -318,11 +407,11 @@ export default class InkSurface {
             ? { minX: 0, minY: 0, maxX: PAGE_WIDTH }
             : { minX: Infinity, minY: Infinity, maxX: -Infinity };
         if (this.layout === "infinite") {
-            if (!this.strokes.size) return { x: width / 2, y: height / 2, zoom: 1 };
-            for (const stroke of this.strokes) {
-                bounds.minX = Math.min(bounds.minX, stroke.bounds.minX);
-                bounds.minY = Math.min(bounds.minY, stroke.bounds.minY);
-                bounds.maxX = Math.max(bounds.maxX, stroke.bounds.maxX);
+            if (!this.strokes.size && !this.images.size) return { x: width / 2, y: height / 2, zoom: 1 };
+            for (const item of this.getItems()) {
+                bounds.minX = Math.min(bounds.minX, item.bounds.minX);
+                bounds.minY = Math.min(bounds.minY, item.bounds.minY);
+                bounds.maxX = Math.max(bounds.maxX, item.bounds.maxX);
             }
         }
 
@@ -387,7 +476,7 @@ export default class InkSurface {
     undo() {
         const entry = this.undoStack.pop();
         if (!entry) return;
-        this.applyHistory(entry.removed, entry.added);
+        this.applyHistory(entry.removed, entry.added, entry.removedImages, entry.addedImages);
         this.redoStack.push(entry);
         this.reportState();
         this.options.onChange();
@@ -396,7 +485,7 @@ export default class InkSurface {
     redo() {
         const entry = this.redoStack.pop();
         if (!entry) return;
-        this.applyHistory(entry.added, entry.removed);
+        this.applyHistory(entry.added, entry.removed, entry.addedImages, entry.removedImages);
         this.undoStack.push(entry);
         this.reportState();
         this.options.onChange();
@@ -437,7 +526,8 @@ export default class InkSurface {
                 return;
             }
             if (this.touches.size > 2 || this.mode !== "idle") return;
-            this.begin(this.fingerDrawing && !this.pans() ? this.inkMode(e) : "pan", e);
+            if (this.selects()) this.begin(this.selectMode(e), e);
+            else this.begin(this.fingerDrawing && !this.pans() ? this.inkMode(e) : "pan", e);
             return;
         }
 
@@ -446,17 +536,28 @@ export default class InkSurface {
         }
         if (this.mode !== "idle") return;
         if (e.pointerType === "pen") {
-            this.begin(this.pans() || (e.buttons & PEN_MIDDLE_BUTTON) ? "pan" : this.inkMode(e), e);
+            if (this.pans() || (e.buttons & PEN_MIDDLE_BUTTON)) this.begin("pan", e);
+            else this.begin(this.selects() ? this.selectMode(e) : this.inkMode(e), e);
         } else if (e.button === 1 || (e.button === 0 && this.pans())) {
             this.begin("pan", e);
         } else if (e.button === 0) {
-            this.begin(this.inkMode(e), e);
+            this.begin(this.selects() ? this.selectMode(e) : this.inkMode(e), e);
         }
     }
 
     /** Whether a pen or the main button of a mouse pans instead of drawing or erasing. */
     private pans() {
         return this.readOnly || this.spacePanning || this.tool === "pan";
+    }
+
+    /** Whether a pen, a mouse or a finger selects and drags images. */
+    private selects() {
+        return this.tool === "select" && !this.pans();
+    }
+
+    /** Starts dragging the image under the pointer of `e`. On no image, the pointer pans. */
+    private selectMode(e: PointerEvent): Mode {
+        return this.images.begin(e) ? "image" : "pan";
     }
 
     /** Ends the gesture of the fingers on the screen, such as a resting palm, for a pen to draw. */
@@ -495,7 +596,7 @@ export default class InkSurface {
         this.lastY = e.clientY;
         this.panRemainderX = 0;
         this.panRemainderY = 0;
-        if (mode === "draw" || mode === "erase") {
+        if (mode === "draw" || mode === "erase" || mode === "image") {
             this.options.onGesture();
             clearInterval(this.gestureTimer);
             this.gestureTimer = setInterval(() => this.options.onGesture(), GESTURE_INTERVAL);
@@ -551,6 +652,8 @@ export default class InkSurface {
         } else if (this.mode === "erase") {
             this.moveEraserRing(e);
             this.eraseAlong(this.lastX, this.lastY, e.clientX, e.clientY);
+        } else if (this.mode === "image") {
+            this.images.move(e);
         } else if (this.mode === "pan") {
             this.panByClient(e.clientX - this.lastX, e.clientY - this.lastY);
         }
@@ -590,6 +693,9 @@ export default class InkSurface {
             this.erasePieces.clear();
             this.updatePageCount();
             this.options.onChange();
+        } else if (this.mode === "image") {
+            if (e.type === "pointercancel") this.images.cancel();
+            else this.images.end();
         }
         this.endGesture();
     }
@@ -619,6 +725,7 @@ export default class InkSurface {
 
     private cancelGesture() {
         this.liveStroke.cancel();
+        this.images.cancel();
         if (this.erased.length) {
             this.applyHistory(this.erased, [ ...this.erasePieces ]);
             this.erased = [];
@@ -709,7 +816,21 @@ export default class InkSurface {
         this.reportState();
     }
 
-    private applyHistory(add: Stroke[], remove: Stroke[]) {
+    private applyHistory(
+        add: Stroke[], remove: Stroke[], addImages: InkImage[] = [], removeImages: InkImage[] = []
+    ) {
+        // An image put back in the place of the selected one, as by undoing a move, stays selected.
+        const selection = this.images.selection;
+        const reselect = selection && removeImages.includes(selection) && addImages.length === 1;
+        for (const image of removeImages) {
+            this.images.remove(image);
+            this.thumbnail.markChanged(image);
+        }
+        for (const image of addImages) {
+            this.images.add(image);
+            this.thumbnail.markChanged(image);
+        }
+        if (reselect) this.images.select(addImages[0]);
         for (const stroke of remove) {
             this.strokes.delete(stroke);
             this.index.remove(stroke);
@@ -725,9 +846,15 @@ export default class InkSurface {
         this.updatePageCount();
     }
 
-    /** Adds an empty page after the last one holding ink, or drops the pages after it. */
+    /** The strokes and the images, for what needs only their bounds. */
+    private *getItems(): Iterable<{ bounds: Bounds }> {
+        yield* this.strokes;
+        yield* this.images.getAll();
+    }
+
+    /** Adds an empty page after the last one holding ink or an image, or drops the pages after it. */
     private updatePageCount() {
-        const count = countPages(this.strokes);
+        const count = countPages(this.getItems());
         if (count === this.pageCount) return;
         const from = Math.min(count, this.pageCount);
         const to = Math.max(count, this.pageCount);
@@ -757,6 +884,7 @@ export default class InkSurface {
         this.zoom = zoom;
         this.schedulePreviewFrame();
         this.liveStroke.redraw();
+        this.images.updateBox();
         this.reportState();
     }
 
@@ -793,6 +921,7 @@ export default class InkSurface {
         this.tx += wholeX;
         this.ty += wholeY;
         this.liveStroke.redraw();
+        this.images.updateBox();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
 
         const { width, height } = this.baseCanvas;
@@ -840,6 +969,7 @@ export default class InkSurface {
         }
         this.redrawAll();
         this.liveStroke.redraw();
+        this.images.updateBox();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
     }
 
@@ -853,7 +983,8 @@ export default class InkSurface {
             canRedo: this.redoStack.length > 0,
             penErasing: this.penErasing,
             page: this.reportedPage,
-            pageCount: this.pageCount
+            pageCount: this.pageCount,
+            hasSelection: !!this.images.selection
         });
     }
 
@@ -940,6 +1071,7 @@ export default class InkSurface {
         const style = getComputedStyle(this.container);
         this.autoColor = style.color;
         this.backgroundColor = style.backgroundColor;
+        this.isDark = isDarkColor(style.backgroundColor);
         this.deskColor = style.getPropertyValue("--note-list-view-content-background").trim() || undefined;
         this.redrawRegion(0, 0, this.baseCanvas.width, this.baseCanvas.height);
     }
@@ -971,13 +1103,14 @@ export default class InkSurface {
         drawPaper(ctx, x, y, width, height, this.getPaperScene());
         this.applyWorldTransform(ctx);
 
-        const strokes = this.index.query({
+        const bounds = {
             minX: (x - this.tx) / scale,
             minY: (y - this.ty) / scale,
             maxX: (x + width - this.tx) / scale,
             maxY: (y + height - this.ty) / scale
-        });
-        for (const stroke of strokes) {
+        };
+        this.images.draw(ctx, bounds, this.autoColor, this.isDark);
+        for (const stroke of this.index.query(bounds)) {
             this.fillStroke(ctx, stroke);
         }
         ctx.restore();
@@ -1017,6 +1150,14 @@ export default class InkSurface {
 /** Whether the eraser end or the barrel button of the pen of `e` is pressed. */
 function isPenErasing(e: PointerEvent) {
     return (e.buttons & (PEN_ERASER_BUTTON | PEN_BARREL_BUTTON)) !== 0;
+}
+
+/** Whether a computed color, `rgb(r, g, b)` or `color(srgb r g b)`, is nearer to black than to white. */
+export function isDarkColor(color: string) {
+    const channels = (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+    if (channels.length < 3) return false;
+    const range = color.startsWith("rgb") ? 255 : 1;
+    return (0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]) / range < 0.5;
 }
 
 function isWithinSlop(touch: { x: number, y: number, downX: number, downY: number }) {

@@ -50,10 +50,31 @@ export interface Stroke {
     json?: string;
 }
 
+/** A picture on the paper, under the ink. An image does not change: moving it makes a new one. */
+export interface InkImage {
+    /** Where the attachment holding the picture is served from, which matches {@link IMAGE_URL_PATTERN}. */
+    url: string;
+    /** The top left corner and the size, in world units. */
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    bounds: Bounds;
+    /** The position of the image in the drawing order of the images. */
+    order: number;
+}
+
+/**
+ * The URL of an image attachment of a note. The server's `checkImageAttachments()` finds the
+ * attachments a note uses by this shape, and no other URL is loaded from a saved document.
+ */
+export const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#]*$/;
+
 export interface InkDocument {
     paper: PaperStyle;
     layout: InkLayout;
     strokes: Stroke[];
+    images?: InkImage[];
     /** The view the note was last saved at. */
     view?: InkView;
 }
@@ -65,10 +86,19 @@ export interface InkView {
     zoom: number;
 }
 
+interface SerializedImage {
+    url: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
 interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
     layout?: InkLayout;
+    images?: SerializedImage[];
     strokes: SerializedStroke[];
     view?: InkView;
 }
@@ -90,12 +120,18 @@ export function createStroke(
     };
 }
 
+export function createImage(props: Omit<InkImage, "bounds">): InkImage {
+    const { x, y, width, height } = props;
+    return { ...props, bounds: { minX: x, minY: y, maxX: x + width, maxY: y + height } };
+}
+
 /**
  * Returns the saved document. It joins the JSON of each stroke, which `serializeStroke()` computes
  * once per stroke, so saving a large document does not encode every point again.
  */
 export function serializeInkDocument(
-    paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages"
+    paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
+    images: InkImage[] = []
 ): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
@@ -105,7 +141,10 @@ export function serializeInkDocument(
     const savedView = view
         ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView},"strokes":[${parts.join(",")}]}`;
+    const savedImages = images.length
+        ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
+        : "";
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${savedImages},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -124,8 +163,16 @@ export function serializeStroke(stroke: Stroke): string {
     return stroke.json;
 }
 
+function serializeImage(image: InkImage): SerializedImage {
+    return {
+        url: image.url,
+        x: round(image.x, 10), y: round(image.y, 10),
+        w: round(image.width, 10), h: round(image.height, 10)
+    };
+}
+
 export function parseInkDocument(content: string | null | undefined): InkDocument {
-    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [] };
+    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [], images: [] };
     if (!content) return empty;
 
     let raw: Partial<SerializedDocument>;
@@ -157,7 +204,20 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const layout = INK_LAYOUTS.includes(raw.layout as InkLayout)
         ? raw.layout as InkLayout
         : strokes.length ? "infinite" : "pages";
-    return { paper, layout, strokes, view: parseView(raw.view) };
+    return { paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view) };
+}
+
+function parseImages(raw: unknown): InkImage[] {
+    const images: InkImage[] = [];
+    if (!Array.isArray(raw)) return images;
+    for (const serialized of raw as Partial<SerializedImage>[]) {
+        const { url, x, y, w, h } = serialized ?? {};
+        if (typeof url !== "string" || !IMAGE_URL_PATTERN.test(url)) continue;
+        if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || !isFiniteNumber(h)) continue;
+        if (w <= 0 || h <= 0) continue;
+        images.push(createImage({ url, x, y, width: w, height: h, order: images.length }));
+    }
+    return images;
 }
 
 function parseView(view: unknown): InkView | undefined {
@@ -194,13 +254,16 @@ export function getVisiblePage(top: number, bottom: number, pageCount: number) {
     return visible;
 }
 
-/** How many pages a note shows: those up to the last one holding ink, and an empty one after it. */
-export function getPageCount(strokes: Iterable<Stroke>) {
-    let lastInked = -1;
-    for (const stroke of strokes) {
-        lastInked = Math.max(lastInked, Math.floor(stroke.bounds.maxY / (PAGE_HEIGHT + PAGE_GAP)));
+/**
+ * How many pages a note shows: those up to the last one holding one of `items`, its strokes and
+ * images, and an empty one after it.
+ */
+export function getPageCount(items: Iterable<{ bounds: Bounds }>) {
+    let lastUsed = -1;
+    for (const { bounds } of items) {
+        lastUsed = Math.max(lastUsed, Math.floor(bounds.maxY / (PAGE_HEIGHT + PAGE_GAP)));
     }
-    return lastInked + 2;
+    return lastUsed + 2;
 }
 
 function isFiniteNumber(value: unknown): value is number {

@@ -2,8 +2,8 @@ import { getStroke } from "perfect-freehand";
 import { describe, expect, it } from "vitest";
 
 import {
-    AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, getVisiblePage, outlineStrokePoints,
-    parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
+    AUTO_COLOR, buildStrokePoints, createImage, createStroke, getPageCount, getStrokeOutline, getVisiblePage,
+    outlineStrokePoints, parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
     strokeHitsSegment, StrokeIndex, trimPrediction
 } from "./ink_document";
 
@@ -91,9 +91,40 @@ describe("ink document", () => {
         expect(parseInkDocument(JSON.stringify({ ...older, layout: "scroll" })).layout).toBe("infinite");
     });
 
+    it("saves the images in drawing order, and reads back only those of the note's attachments", () => {
+        const url = "api/attachments/abc_123/image/exercise%201.png";
+        const first = createImage({ url, x: 10.04, y: 20, width: 300.26, height: 150, order: 0 });
+        const second = createImage({ url, x: 0, y: 2000, width: 50, height: 50, order: 1 });
+        expect(serializeInkDocument("ruled", [], undefined, "pages")).not.toContain("images");
+
+        const saved = serializeInkDocument("ruled", [], undefined, "pages", [ second, first ]);
+        expect(JSON.parse(saved).images).toEqual([
+            { url, x: 10, y: 20, w: 300.3, h: 150 },
+            { url, x: 0, y: 2000, w: 50, h: 50 }
+        ]);
+        const images = parseInkDocument(saved).images ?? [];
+        expect(images.map((image) => image.order)).toEqual([ 0, 1 ]);
+        expect(images[0].bounds).toEqual({ minX: 10, minY: 20, maxX: 310.3, maxY: 170 });
+        // The second image is on the second page, which shows a third one after it.
+        expect(getPageCount(images)).toBe(3);
+
+        const rect = { x: 0, y: 0, w: 10, h: 10 };
+        const parsed = parseInkDocument(JSON.stringify({ version: 1, paper: "ruled", strokes: [], images: [
+            { ...rect, url: "https://example.com/tracker.png" },
+            { ...rect, url: "api/attachments/abc/image/a.png?x=1" },
+            { ...rect, url: "api/attachments/abc/image/../../notes/a" },
+            { ...rect, url, w: 0 },
+            { ...rect, url, x: "1" },
+            null,
+            { ...rect, url }
+        ] }));
+        expect(parsed.images).toHaveLength(1);
+        expect(parseInkDocument(JSON.stringify({ version: 1, strokes: [], images: "none" })).images).toEqual([]);
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
-            expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [] });
+            expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [], images: [] });
         }
         expect(parseInkDocument(JSON.stringify({ paper: "plaid", strokes: [] })).paper).toBe("ruled");
     });

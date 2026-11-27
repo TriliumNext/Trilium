@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AUTO_COLOR, createStroke, parseInkDocument } from "./ink_document";
-import InkSurface from "./ink_surface";
+import { darkenPicture } from "./ink_images";
+import InkSurface, { isDarkColor } from "./ink_surface";
 
 describe("ink surface input", () => {
     let container: HTMLDivElement;
@@ -15,9 +16,12 @@ describe("ink surface input", () => {
     const fillRectStyles: unknown[] = [];
     /** The `fillStyle` of each `fill()` call on any canvas. */
     const fills: unknown[] = [];
+    /** The arguments of each `drawImage()` call on any canvas. */
+    const drawImages: unknown[][] = [];
 
     beforeEach(() => {
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects, fillRectStyles, fills));
+        drawImages.length = 0;
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects, fillRectStyles, fills, drawImages));
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
         Element.prototype.setPointerCapture ??= () => {};
@@ -557,6 +561,168 @@ describe("ink surface input", () => {
         pointer("pointerup", "pen", 1, 100, 1900);
     });
 
+    describe("images", () => {
+        const URL = "api/attachments/abc/image/exercise.png";
+        const picture = document.createElement("canvas");
+        const loadImage = vi.fn();
+        const images = () => JSON.parse(surface.serialize()).images;
+        const box = () => container.querySelector<HTMLElement>(".handwriting-image-box");
+        const hasSelection = () => onStateChange.mock.lastCall?.[0].hasSelection;
+
+        beforeEach(() => {
+            loadImage.mockReset().mockResolvedValue(picture);
+            surface.destroy();
+            vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+            surface = new InkSurface(container, { onChange, onGesture, onStateChange, loadImage });
+            surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+        });
+
+        function dragHandle(handle: string, toX: number, toY: number) {
+            const element = container.querySelector(`[data-handle="${handle}"]`);
+            expect(element).not.toBeNull();
+            element?.dispatchEvent(new PointerEvent("pointerdown", {
+                pointerId: 9, pointerType: "mouse", clientX: 0, clientY: 0, button: 0, buttons: 1, bubbles: true
+            }));
+            pointer("pointermove", "mouse", 9, toY, toX);
+            pointer("pointerup", "mouse", 9, toY, toX);
+        }
+
+        it("adds an image to the middle of the view, under the ink, and draws its picture once loaded", async () => {
+            // A picture of 1000 by 500 pixels fills 80% of the view of 400 by 300.
+            surface.addImage(URL, 1000, 500);
+            expect(images()).toEqual([ { url: URL, x: 40, y: 70, w: 320, h: 160 } ]);
+            expect(loadImage).toHaveBeenCalledExactlyOnceWith(URL);
+            expect(onChange).toHaveBeenCalledOnce();
+            expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasSelection: true, canUndo: true }));
+            expect(box()?.hidden).toBe(false);
+            expect(box()?.style).toMatchObject({ left: "40px", top: "70px", width: "320px", height: "160px" });
+            // Until the picture loads, a tint of the text color fills its place.
+            expect(fillRects).toContainEqual([ 40, 70, 320, 160, 0.08 ]);
+            expect(drawImages).toEqual([]);
+
+            await new Promise((resolve) => setTimeout(resolve));
+            expect(drawImages).toContainEqual([ picture, 40, 70, 320, 160 ]);
+
+            // The pen writes over the image, which stays where it is.
+            swipe("pen", 1, 100);
+            expect(parseInkDocument(surface.serialize()).strokes).toHaveLength(1);
+            expect(images()).toHaveLength(1);
+
+            // The view follows the image, and a note reloaded asks for no picture again.
+            surface.zoomBy(2);
+            expect(box()?.style).toMatchObject({ width: "640px", height: "320px" });
+            surface.load(parseInkDocument(surface.serialize()));
+            expect(hasSelection()).toBe(false);
+            expect(loadImage).toHaveBeenCalledOnce();
+        });
+
+        it("moves, resizes and deletes the selected image with the select tool, each in one step to undo", () => {
+            surface.addImage(URL, 1000, 500);
+            surface.tool = "select";
+            onChange.mockClear();
+
+            // A drag on the image moves it, with a pen, a mouse or a finger.
+            pointer("pointerdown", "pen", 1, 100, 50);
+            pointer("pointermove", "pen", 1, 130, 70);
+            pointer("pointerup", "pen", 1, 130, 70);
+            expect(images()).toEqual([ { url: URL, x: 60, y: 100, w: 320, h: 160 } ]);
+            expect(onChange).toHaveBeenCalledOnce();
+            expect(onGesture).toHaveBeenCalled();
+            pointer("pointerdown", "touch", 2, 150, 100);
+            pointer("pointermove", "touch", 2, 140, 90);
+            pointer("pointerup", "touch", 2, 140, 90);
+            expect(images()[0]).toMatchObject({ x: 50, y: 90 });
+            surface.undo();
+            surface.undo();
+            expect(images()[0]).toMatchObject({ x: 40, y: 70 });
+            expect(hasSelection()).toBe(true);
+            surface.redo();
+            expect(images()[0]).toMatchObject({ x: 60, y: 100 });
+
+            // A press that does not move, or a drag that the pointer cancels, changes nothing.
+            onChange.mockClear();
+            pointer("pointerdown", "mouse", 3, 150, 100);
+            pointer("pointerup", "mouse", 3, 150, 100);
+            pointer("pointerdown", "mouse", 4, 150, 100);
+            pointer("pointermove", "mouse", 4, 250, 200);
+            pointer("pointercancel", "mouse", 4, 250, 200);
+            expect(images()[0]).toMatchObject({ x: 60, y: 100 });
+            expect(onChange).not.toHaveBeenCalled();
+
+            // A handle resizes it from the opposite corner, keeping its proportions.
+            dragHandle("se", 220, 110);
+            expect(images()).toEqual([ { url: URL, x: 60, y: 100, w: 160, h: 80 } ]);
+            dragHandle("nw", 20, 170);
+            expect(images()).toEqual([ { url: URL, x: 20, y: 80, w: 200, h: 100 } ]);
+            expect(box()?.style).toMatchObject({ left: "20px", top: "80px", width: "200px" });
+
+            surface.deleteSelection();
+            expect(images()).toBeUndefined();
+            expect(hasSelection()).toBe(false);
+            expect(box()?.hidden).toBe(true);
+            surface.undo();
+            expect(images()).toHaveLength(1);
+        });
+
+        it("selects only with the select tool, and pans from outside the images", async () => {
+            surface.addImage(URL, 1000, 500);
+            surface.tool = "pen";
+            expect(hasSelection()).toBe(false);
+
+            surface.tool = "select";
+            pointer("pointerdown", "mouse", 1, 100, 50);
+            pointer("pointerup", "mouse", 1, 100, 50);
+            expect(hasSelection()).toBe(true);
+
+            // A drag that starts beside the image pans, and lets go of the selection.
+            pointer("pointerdown", "mouse", 2, 10, 10);
+            pointer("pointermove", "mouse", 2, 40, 10);
+            pointer("pointerup", "mouse", 2, 40, 10);
+            await nextFrame();
+            expect(hasSelection()).toBe(false);
+            expect(surface.getView().y).toBe(30);
+            expect(images()[0]).toMatchObject({ x: 40, y: 70 });
+
+            // A read-only note pans from anywhere.
+            surface.readOnly = true;
+            pointer("pointerdown", "mouse", 3, 150, 100);
+            pointer("pointermove", "mouse", 3, 160, 100);
+            pointer("pointerup", "mouse", 3, 160, 100);
+            await nextFrame();
+            expect(hasSelection()).toBe(false);
+            expect(surface.getView().y).toBe(40);
+            expect(images()[0]).toMatchObject({ x: 40, y: 70 });
+        });
+
+        it("keeps a new image inside the page in view, and shows a page after the last image", () => {
+            surface.load({ paper: "blank", layout: "pages", strokes: [] });
+            surface.showView({ x: 700, y: 1200, zoom: 1 });
+            // The middle of the view is on the second page, which spans 1147 to 2270.
+            surface.addImage(URL, 2000, 1000);
+            expect(images()).toEqual([ { url: URL, x: 0, y: 1147, w: 794, h: 397 } ]);
+            expect(surface.getPageCount()).toBe(3);
+            surface.undo();
+            expect(surface.getPageCount()).toBe(1);
+        });
+
+        it("turns a picture dark for a dark theme", () => {
+            expect([ "rgb(30, 30, 30)", "rgba(255, 255, 255, 1)", "color(srgb 0.1 0.1 0.2)", "" ].map(isDarkColor))
+                .toEqual([ true, false, true, false ]);
+
+            // White paper turns nearly black, black print nearly white, and red a lighter red.
+            const pixels = { data: new Uint8ClampedArray([ 255, 255, 255, 255, 0, 0, 0, 128, 255, 0, 0, 255 ]) };
+            const putImageData = vi.fn();
+            vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue(
+                { drawImage() {}, getImageData: () => pixels, putImageData } as unknown as CanvasRenderingContext2D);
+            const source = Object.assign(document.createElement("canvas"), { width: 4096, height: 1024 });
+            const dark = darkenPicture(source) as HTMLCanvasElement;
+            expect(dark).not.toBe(source);
+            expect([ dark.width, dark.height ]).toEqual([ 2048, 512 ]);
+            expect([ ...pixels.data ]).toEqual([ 18, 18, 18, 255, 237, 237, 237, 128, 255, 144, 144, 255 ]);
+            expect(putImageData).toHaveBeenCalledOnce();
+        });
+    });
+
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
         vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
         pointer("pointerdown", "pen", 1, 100);
@@ -598,8 +764,9 @@ describe("ink surface input", () => {
  * calls are recorded in `fillRects` with their `fillStyle` in `fillRectStyles`, and the `fillStyle`
  * of `fill()` calls in `fills`.
  */
-function stubContext(fillRects: number[][], fillRectStyles: unknown[], fills: unknown[]) {
+function stubContext(fillRects: number[][], fillRectStyles: unknown[], fills: unknown[], drawImages: unknown[][]) {
     const target: Record<string | symbol, unknown> = { globalAlpha: 1 };
+    target.drawImage = (...args: unknown[]) => drawImages.push(args);
     target.fillRect = (x: number, y: number, width: number, height: number) => {
         fillRects.push([ x, y, width, height, target.globalAlpha as number ]);
         fillRectStyles.push(target.fillStyle);

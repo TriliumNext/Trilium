@@ -1,19 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTO_COLOR, createStroke, getPageTop, type Stroke, StrokeIndex } from "./ink_document";
+import { AUTO_COLOR, createImage, createStroke, getPageTop, type InkImage, type Stroke, StrokeIndex } from "./ink_document";
 import InkThumbnail from "./ink_thumbnail";
 
 describe("ink thumbnail", () => {
     /** The color of each stroke filled on the thumbnail. */
     let fills: string[];
+    /** What each call drew, in order: `"picture"` for an image and the color for a stroke. */
+    let drawn: string[];
     let strokes: Set<Stroke>;
+    let images: InkImage[];
+    const picture = document.createElement("canvas");
     let index: StrokeIndex;
     let thumbnail: InkThumbnail;
 
     beforeEach(() => {
         fills = [];
+        drawn = [];
+        images = [];
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
-            const ctx = { fillStyle: "", globalAlpha: 1, setTransform() {}, fill: () => fills.push(ctx.fillStyle) };
+            const ctx = {
+                fillStyle: "", globalAlpha: 1, setTransform() {},
+                fill: () => {
+                    fills.push(ctx.fillStyle);
+                    drawn.push(ctx.fillStyle);
+                },
+                drawImage: () => drawn.push("picture")
+            };
             return ctx as unknown as CanvasRenderingContext2D;
         });
         vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
@@ -22,7 +35,13 @@ describe("ink thumbnail", () => {
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         strokes = new Set();
         index = new StrokeIndex();
-        thumbnail = new InkThumbnail({ getAll: () => strokes, query: (bounds) => index.query(bounds) });
+        thumbnail = new InkThumbnail({
+            getAll: () => strokes,
+            query: (bounds) => index.query(bounds),
+            getImages: () => images,
+            getPicture: (image) => (image.url.includes("loaded") ? picture : undefined),
+            whenImagesLoaded: async () => {}
+        });
         thumbnail.reset("pages");
     });
 
@@ -79,6 +98,40 @@ describe("ink thumbnail", () => {
         expect(fills).toEqual([]);
         await thumbnail.export();
         expect(fills).toEqual([ "#00ff00" ]);
+    });
+
+    it("draws the pictures of the images under the ink, as a WebP", async () => {
+        const toBlob = vi.mocked(HTMLCanvasElement.prototype.toBlob);
+        const add = (url: string, y: number) => {
+            const image = createImage({ url, x: 100, y, width: 200, height: 100, order: images.length });
+            images.push(image);
+            thumbnail.markChanged(image);
+            return image;
+        };
+        draw(100, 100, "#ff0000");
+        thumbnail.markSaved((await thumbnail.export())?.version ?? -1);
+        expect(toBlob).toHaveBeenLastCalledWith(expect.anything(), "image/png", expect.anything());
+
+        // An image on another page, or one whose picture did not load, leaves the thumbnail as it is.
+        add("api/attachments/loaded1/image/a.png", getPageTop(1) + 10);
+        expect(await thumbnail.export()).toBeUndefined();
+        add("api/attachments/missing/image/a.png", 100);
+        drawn = [];
+        expect(await thumbnail.export()).toBeDefined();
+        expect(drawn).toEqual([ "#ff0000" ]);
+        expect(toBlob).toHaveBeenLastCalledWith(expect.anything(), "image/png", expect.anything());
+
+        const shown = add("api/attachments/loaded2/image/a.png", 100);
+        drawn = [];
+        await thumbnail.export();
+        expect(drawn).toEqual([ "picture", "#ff0000" ]);
+        expect(toBlob).toHaveBeenLastCalledWith(expect.anything(), "image/webp", expect.anything());
+
+        // On a canvas without bounds, the thumbnail fits the images as well as the ink, which
+        // starts 3 units before the image, with 16 units around them.
+        images = [ shown ];
+        thumbnail.setLayout("infinite");
+        expect((await thumbnail.export())?.svg).toMatch(/^<svg [^>]*width="235" height="135"/);
     });
 
     it("fits the strokes of a canvas without bounds, and grows past a stroke outside them", async () => {

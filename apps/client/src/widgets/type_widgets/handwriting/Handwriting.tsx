@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
+import toast from "../../../services/toast";
 import { isIOS } from "../../../services/utils";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
@@ -36,6 +37,7 @@ const TOOLS: ToolbarTool[] = [
         key: "p", shift: true
     },
     { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser"), key: "e" },
+    { tool: "select", icon: "bx-pointer", title: () => t("handwriting.select"), key: "v" },
     { tool: "pan", icon: "bx-move", title: () => t("handwriting.pan"), key: "h" }
 ];
 
@@ -116,11 +118,12 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const shownNoteIdRef = useRef<string | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
-    const inkTool: InkTool | undefined = tool === "eraser" || tool === "pan" ? undefined : tool;
+    const inkTool: InkTool | undefined = tool === "pen" || tool === "highlighter" ? tool : undefined;
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
         zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
-        page: 0, pageCount: 1
+        page: 0, pageCount: 1, hasSelection: false
     });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
@@ -136,7 +139,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
      */
     let activeTool: SurfaceTool = tool;
     if (spaceHeld) activeTool = "pan";
-    else if (state.penErasing && tool !== "pan") activeTool = "eraser";
+    else if (state.penErasing && inkTool) activeTool = "eraser";
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -208,7 +211,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 spacedUpdate.scheduleUpdate();
             },
             onGesture: () => spacedUpdate.resetUpdateTimer(),
-            onStateChange: setState
+            onStateChange: setState,
+            loadImage: loadPicture
         });
         surfaceRef.current = surface;
         if (pendingDocRef.current) {
@@ -238,6 +242,27 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
 
     useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
+    /**
+     * Uploads `files` as attachments of the note and adds each to the middle of the view. The
+     * select tool is picked, for the image to be moved to its place.
+     */
+    async function insertImages(files: Iterable<File>) {
+        const noteId = note?.noteId;
+        if (!noteId || isReadOnly) return;
+        for (const file of files) {
+            if (!file.type.startsWith("image/")) continue;
+            const url = await uploadImage(noteId, file);
+            const picture = url ? await loadPicture(url) : undefined;
+            if (!url || !picture?.naturalWidth || !picture.naturalHeight) {
+                toast.showError(t("handwriting.image_failed", { name: file.name }));
+                continue;
+            }
+            if (shownNoteIdRef.current !== noteId || !surfaceRef.current) return;
+            surfaceRef.current.addImage(url, picture.naturalWidth, picture.naturalHeight);
+            setTool("select");
+        }
+    }
+
     function updateInk(changes: Partial<InkSettings>) {
         if (!inkTool) return;
         setInkSettings((current) => ({ ...current, [inkTool]: { ...current[inkTool], ...changes } }));
@@ -262,7 +287,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         const key = e.key.toLowerCase();
         const modifier = e.ctrlKey || e.metaKey;
         let handled = true;
-        if (modifier && !e.altKey && key === "z") {
+        if (state.hasSelection && (e.key === "Delete" || e.key === "Backspace")) {
+            surfaceRef.current?.deleteSelection();
+        } else if (state.hasSelection && e.key === "Escape") {
+            surfaceRef.current?.clearSelection();
+        } else if (modifier && !e.altKey && key === "z") {
             if (e.shiftKey) surfaceRef.current?.redo();
             else surfaceRef.current?.undo();
         } else if (modifier && !e.altKey && !e.shiftKey && key === "y") {
@@ -294,6 +323,22 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             }}
             onBlur={() => setSpaceHeld(false)}
             onPointerDown={() => containerEl?.focus({ preventScroll: true })}
+            onPaste={(e) => {
+                const files = getImageFiles(e.clipboardData);
+                if (!files.length || isReadOnly) return;
+                e.preventDefault();
+                void insertImages(files);
+            }}
+            onDragOver={(e) => {
+                if (!isReadOnly && e.dataTransfer?.types.includes("Files")) e.preventDefault();
+            }}
+            onDrop={(e) => {
+                const files = getImageFiles(e.dataTransfer);
+                if (!files.length || isReadOnly) return;
+                e.preventDefault();
+                e.stopPropagation();
+                void insertImages(files);
+            }}
         >
             <div
                 ref={surfaceElRef}
@@ -332,6 +377,22 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                             disabled={!state.canRedo}
                             onClick={() => surfaceRef.current?.redo()}
                         />
+                    </OverlayControlGroup>
+
+                    <OverlayControlGroup titlePosition="bottom">
+                        <OverlayControlButton
+                            title={t("handwriting.insert_image")}
+                            icon="bx-image-add"
+                            onClick={() => imageInputRef.current?.click()}
+                        />
+                        {state.hasSelection && (
+                            <OverlayControlButton
+                                title={t("handwriting.delete_image")}
+                                icon="bx-trash"
+                                shortcut="Delete"
+                                onClick={() => surfaceRef.current?.deleteSelection()}
+                            />
+                        )}
                     </OverlayControlGroup>
 
                     <OverlayControlGroup titlePosition="bottom">
@@ -405,6 +466,22 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             {!isReadOnly && inkTool && (
                 <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
             )}
+
+            {/* The browser's own file chooser, which the insert image button opens. */}
+            <input
+                ref={imageInputRef}
+                type="file"
+                className="handwriting-image-input"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                    const files = [ ...(e.currentTarget.files ?? []) ];
+                    e.currentTarget.value = "";
+                    void insertImages(files);
+                }}
+                tabIndex={-1}
+                aria-hidden="true"
+            />
 
             {state.layout === "pages" && (
                 <OverlayControlGroup placement="bottom-start" className="handwriting-pages">
@@ -599,7 +676,7 @@ const MIN_CURSOR_DIAMETER = 4;
  * `undefined` for the eraser, whose cursor is in the stylesheet.
  */
 function getInkCursor(tool: SurfaceTool, size: number, zoom: number) {
-    if (tool === "eraser" || tool === "pan") return undefined;
+    if (tool !== "pen" && tool !== "highlighter") return undefined;
     const width = tool === "highlighter" ? size * HIGHLIGHTER_WIDTH_FACTOR : size;
     const diameter = Math.min(MAX_CURSOR_DIAMETER, Math.max(MIN_CURSOR_DIAMETER, width * zoom));
     const box = Math.ceil(diameter) + 4;
@@ -705,6 +782,44 @@ function disableEditablesOutside(element: HTMLElement) {
     return () => {
         for (const editable of disabled) editable.inert = false;
     };
+}
+
+/** The image files of a paste or a drop. */
+function getImageFiles(data: DataTransfer | null | undefined) {
+    return [ ...(data?.files ?? []) ].filter((file) => file.type.startsWith("image/"));
+}
+
+/** Uploads `file` as an image attachment of the note and returns the URL that serves it. */
+async function uploadImage(noteId: string, file: File) {
+    try {
+        const result = await server.upload(`notes/${noteId}/attachments/upload`, file, undefined, "POST") as
+            { uploaded?: boolean, url?: string };
+        return result?.uploaded ? result.url : undefined;
+    } catch (e) {
+        console.error(`Could not upload an image to the handwriting note '${noteId}'`, e);
+        return undefined;
+    }
+}
+
+/** The pictures loaded in this session, by URL. The URL of an attachment always serves the same picture. */
+const pictures = new Map<string, Promise<HTMLImageElement | undefined>>();
+
+/** Loads the picture at `url`, or returns `undefined` when the browser cannot show it. */
+function loadPicture(url: string): Promise<HTMLImageElement | undefined> {
+    let picture = pictures.get(url);
+    if (!picture) {
+        picture = new Promise((resolve) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => {
+                pictures.delete(url);
+                resolve(undefined);
+            };
+            image.src = url;
+        });
+        pictures.set(url, picture);
+    }
+    return picture;
 }
 
 /** The thumbnail of `surface`, or `undefined` when the saved one is current or it cannot be drawn. */

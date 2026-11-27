@@ -1,7 +1,8 @@
 import {
-    AUTO_COLOR, type Bounds, getStrokePath, HIGHLIGHTER_ALPHA, type InkLayout, PAGE_HEIGHT, PAGE_WIDTH,
-    type Stroke
+    AUTO_COLOR, type Bounds, getStrokePath, HIGHLIGHTER_ALPHA, type InkImage, type InkLayout, PAGE_HEIGHT,
+    PAGE_WIDTH, type Stroke
 } from "./ink_document";
+import type { Picture } from "./ink_images";
 
 /** The largest size of a thumbnail, in pixels: a page fits it exactly. */
 const MAX_WIDTH = 600;
@@ -12,13 +13,25 @@ const MARGIN = 16;
 const THUMBNAIL_AUTO_COLOR = "#000";
 /** Matches `DRAWING_DARK_FILTER` of the canvas notes, so both pictures darken alike. */
 const DARK_FILTER = "invert(93%) hue-rotate(180deg)";
+/**
+ * The format of a thumbnail that shows pictures, which a PNG would make several times heavier.
+ * WebP keeps the transparency around them, and a browser that cannot write it writes a PNG.
+ */
+const PICTURE_TYPE = "image/webp";
+const PICTURE_QUALITY = 0.85;
 const FIRST_PAGE: Bounds = { minX: 0, minY: 0, maxX: PAGE_WIDTH, maxY: PAGE_HEIGHT };
 
-/** The strokes of the note that a thumbnail draws. */
-export interface ThumbnailStrokes {
+/** The strokes and the images of the note that a thumbnail draws. */
+export interface ThumbnailContent {
     getAll(): Iterable<Stroke>;
     /** Returns the strokes whose bounds intersect `bounds`, in drawing order. */
     query(bounds: Bounds): Stroke[];
+    /** Returns the images in drawing order. */
+    getImages(): InkImage[];
+    /** Returns the picture of `image`, or `undefined` for one that is not loaded. */
+    getPicture(image: InkImage): Picture | undefined;
+    /** Resolves once the pictures of the images have loaded or failed. */
+    whenImagesLoaded(): Promise<void>;
 }
 
 /** A picture of a thumbnail, and the version of the thumbnail that it shows. */
@@ -29,9 +42,9 @@ export interface ThumbnailExport {
 
 /**
  * The picture of a handwriting note that previews and image embeds show: the first page, or all
- * the strokes of a canvas without bounds. A finished stroke is drawn onto it at once, and a removed
- * stroke or a stroke outside the area it shows makes it draw all its strokes again at the next
- * export.
+ * the strokes and the images of a canvas without bounds. A finished stroke is drawn onto it at once,
+ * and a removed stroke, a stroke outside the area it shows or a change to an image makes it draw
+ * everything again at the next export.
  */
 export default class InkThumbnail {
 
@@ -44,8 +57,10 @@ export default class InkThumbnail {
     /** Counts the changes to the picture; it is saved while `savedVersion` matches. */
     private version = 0;
     private savedVersion = 0;
+    /** Whether the canvas holds the picture of an image, and not only ink. */
+    private hasPictures = false;
 
-    constructor(private strokes: ThumbnailStrokes) {}
+    constructor(private content: ThumbnailContent) {}
 
     /** Starts over for a document just loaded, whose saved picture is taken to be current. */
     reset(layout: InkLayout) {
@@ -83,22 +98,28 @@ export default class InkThumbnail {
         }
     }
 
-    /** Draws the strokes again at the next export, for `stroke` removed or put back in its place. */
-    markChanged(stroke: Stroke) {
-        if (this.shows(stroke.bounds)) this.invalidate();
+    /**
+     * Draws everything again at the next export, for `item`, a stroke or an image, removed, added
+     * under the ink or put back in its place.
+     */
+    markChanged(item: { bounds: Bounds }) {
+        if (this.shows(item.bounds)) this.invalidate();
     }
 
     /** Returns the picture as an SVG document, or `undefined` while the saved one is current. */
     async export(): Promise<ThumbnailExport | undefined> {
         if (!this.isChanged) return undefined;
         const version = this.version;
-        if (this.isStale) this.redraw();
+        if (this.isStale) {
+            await this.content.whenImagesLoaded();
+            this.redraw();
+        }
         const { canvas, area } = this;
         if (!canvas || !area || !canvas.width || !canvas.height) {
             return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"></svg>`, version };
         }
 
-        const png = await toDataUrl(canvas);
+        const png = await toDataUrl(canvas, this.hasPictures ? PICTURE_TYPE : "image/png");
         const { width, height } = canvas;
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
             + `<style>@media (prefers-color-scheme: dark) { svg { filter: ${DARK_FILTER}; } }</style>`
@@ -117,7 +138,10 @@ export default class InkThumbnail {
 
     private redraw() {
         this.isStale = false;
-        const area = this.layout === "pages" ? FIRST_PAGE : getContentArea(this.strokes.getAll());
+        const images = this.content.getImages();
+        const area = this.layout === "pages"
+            ? FIRST_PAGE
+            : getContentArea([ ...this.content.getAll(), ...images ]);
         this.area = area;
         if (!area) {
             if (this.canvas) this.canvas.width = this.canvas.height = 0;
@@ -136,7 +160,14 @@ export default class InkThumbnail {
         if (!ctx) return;
 
         ctx.setTransform(scale, 0, 0, scale, -area.minX * scale, -area.minY * scale);
-        for (const stroke of this.strokes.query(area)) {
+        this.hasPictures = false;
+        for (const image of images) {
+            const picture = intersects(area, image.bounds) && this.content.getPicture(image);
+            if (!picture) continue;
+            ctx.drawImage(picture, image.x, image.y, image.width, image.height);
+            this.hasPictures = true;
+        }
+        for (const stroke of this.content.query(area)) {
             fillStroke(ctx, stroke);
         }
     }
@@ -149,10 +180,10 @@ function fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
     ctx.globalAlpha = 1;
 }
 
-/** The bounds of all `strokes` with a margin around them, or `undefined` for no strokes. */
-function getContentArea(strokes: Iterable<Stroke>): Bounds | undefined {
+/** The bounds of all `items` with a margin around them, or `undefined` for no items. */
+function getContentArea(items: Iterable<{ bounds: Bounds }>): Bounds | undefined {
     let area: Bounds | undefined;
-    for (const { bounds } of strokes) {
+    for (const { bounds } of items) {
         area = area
             ? {
                 minX: Math.min(area.minX, bounds.minX), minY: Math.min(area.minY, bounds.minY),
@@ -175,8 +206,8 @@ function contains(outer: Bounds, inner: Bounds) {
         && inner.maxX <= outer.maxX && inner.maxY <= outer.maxY;
 }
 
-/** Encodes `canvas` as a PNG data URL without blocking the page, as `toDataURL()` would. */
-function toDataUrl(canvas: HTMLCanvasElement) {
+/** Encodes `canvas` as a data URL of `type` without blocking the page, as `toDataURL()` would. */
+function toDataUrl(canvas: HTMLCanvasElement, type: string) {
     return new Promise<string>((resolve, reject) => {
         canvas.toBlob((blob) => {
             if (!blob) {
@@ -187,6 +218,6 @@ function toDataUrl(canvas: HTMLCanvasElement) {
             reader.onload = () => resolve(String(reader.result));
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(blob);
-        }, "image/png");
+        }, type, PICTURE_QUALITY);
     });
 }

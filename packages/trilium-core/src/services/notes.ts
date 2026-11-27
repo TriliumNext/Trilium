@@ -577,10 +577,10 @@ export function checkImageAttachments(note: BNote, content: string) {
     if (!isCanvas) {
         let match;
 
-        // Spreadsheet and mind map content is JSON storing images as bare
+        // Spreadsheet, mind map and handwriting content is JSON storing images as bare
         // `api/attachments/{id}/image/...` URLs (no `src="..."` wrapper), so they scan with the same
         // loose pattern as Markdown.
-        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet" || note.type === "mindMap")
+        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet" || note.type === "mindMap" || note.type === "handwriting")
             ? [
                 // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
                 { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/image/g },
@@ -638,6 +638,11 @@ export function checkImageAttachments(note: BNote, content: string) {
 
         // Likewise for the mind map SVG export preview, which the map JSON never references.
         if (note.type === "mindMap" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap) {
+            continue;
+        }
+
+        // Likewise for the picture of a handwriting note, which its JSON never references.
+        if (note.type === "handwriting" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting) {
             continue;
         }
 
@@ -1188,7 +1193,7 @@ function stripStaleSrcset(content: string): string {
 
 
 export function saveLinks(note: BNote, content: string | Uint8Array) {
-    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && note.type !== "mindMap" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
+    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && note.type !== "mindMap" && note.type !== "handwriting" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
             content
@@ -1227,6 +1232,11 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
         findMindMapLinks(content, foundLinks);
         // Mind map node images are stored as attachments referenced by URL from the map JSON; scan
         // for orphans (inserted-then-removed images) so they get scheduled for erasure.
+        ({ forceFrontendReload, content } = checkImageAttachments(note, content));
+    } else if (note.type === "handwriting" && typeof content === "string") {
+        // The images of a handwriting note are attachments referenced by URL from its JSON; scan for
+        // orphans (inserted-then-removed images) so they get scheduled for erasure, and for the
+        // images of the note it was duplicated from, which it takes copies of.
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "relationMap" && typeof content === "string") {
         findRelationMapLinks(content, foundLinks);
@@ -1642,7 +1652,7 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
 }
 
 /** The note types `saveLinks()` reads links out of, minus the ones whose content holds none. */
-const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmChat"];
+const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmChat", "handwriting"];
 
 function scanForLinks(note: BNote, content: string | Uint8Array) {
     // Scanned here as well as on save, so that a note arriving by import carries its links to the

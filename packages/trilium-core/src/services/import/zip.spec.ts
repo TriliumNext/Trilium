@@ -238,6 +238,47 @@ describe("processNoteContent", () => {
         expect(content).not.toContain("mapPicture1");
     });
 
+    it("points the images of an imported handwriting note at the attachments as they were recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "handwritingNote1",
+                title: "Exercise",
+                type: "handwriting",
+                mime: "application/json",
+                dataFileName: "Exercise.json",
+                attachments: [{
+                    attachmentId: "sheetPicture1",
+                    title: "exercise.png",
+                    role: "image",
+                    mime: "image/png",
+                    position: 10,
+                    dataFileName: "Exercise_exercise.png"
+                }]
+            }]
+        };
+        const sheet = {
+            version: 1, paper: "ruled", layout: "pages",
+            images: [{ url: "api/attachments/sheetPicture1/image/exercise.png", x: 0, y: 0, w: 240, h: 180 }],
+            strokes: []
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Exercise.json": JSON.stringify(sheet),
+            "Exercise_exercise.png": Buffer.from("fake image data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ picture ] = importedNote.getAttachmentsByRole("image");
+        const content = importedNote.getContent() as string;
+
+        expect(picture.attachmentId).not.toBe("sheetPicture1");
+        expect(content).toContain(`api/attachments/${picture.attachmentId}/image/exercise.png`);
+        expect(content).not.toContain("sheetPicture1");
+    });
+
     it("points an imported embed at its attachment as it was recreated", async () => {
         const metaFile = {
             formatVersion: 2,

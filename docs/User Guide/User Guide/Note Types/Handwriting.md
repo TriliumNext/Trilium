@@ -73,6 +73,23 @@ A shape drawn by hand can be turned into a clean one. Draw the shape in a single
 > [!NOTE]
 > Writing a large letter such as "O" and resting the pen at its end turns it into an ellipse. Lift the pen without pausing to keep the letter as written.
 
+## Images
+
+A picture, such as a photo of an exercise or a screenshot of a slide, can be placed on the paper and written over. Images always lie under the ink.
+
+*   To add an image, press the <span class="tn-icon bx bx-image-add"></span> _Insert image_ button of the toolbar and choose one or more files. On a phone or a tablet, the same button also offers the camera.
+*   Alternatively, paste an image from the clipboard with <kbd>Ctrl</kbd>+<kbd>V</kbd>, or drag an image file onto the note.
+*   A new image appears in the middle of the view, at its own size or smaller: on pages it fits inside the page, and on an infinite canvas inside the view. It is selected, and the _Select_ tool is picked, ready for the image to be moved into place.
+*   To select an image later, pick the <span class="tn-icon bx bx-pointer"></span> _Select_ tool and press the image. With this tool, a drag that starts outside the images moves the page.
+*   To move the selected image, drag it. To resize it, drag one of the handles at its corners; the image keeps its proportions.
+*   To delete the selected image, press <kbd>Delete</kbd> or the <span class="tn-icon bx bx-trash"></span> button of the toolbar.
+*   Adding, moving, resizing and deleting an image are undone and redone like ink.
+*   The pen, the highlighter and the eraser leave images as they are, so ink on an image can be erased without removing the image.
+
+In a dark theme, images are shown with their colors inverted, as the paper is: a white sheet with dark print becomes a dark sheet with light print, so ink in the _Text color_ stays readable over it. A photo therefore looks like a negative in a dark theme.
+
+Each image is saved as an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the note, and is compressed as the images of <a class="reference-link" href="Text.md">Text</a> notes are. The attachment of a deleted image is kept for a while, in case the deletion is undone, and then erased.
+
 ## Configuration
 
 The layout and the paper are set from the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and are saved with the note.
@@ -88,7 +105,7 @@ The paper is _Ruled_, _Grid_, _Dots_ or _Blank_. The rules and the dots follow t
 
 ## Previews
 
-Wherever a handwriting note appears outside its own editor, it is shown as a picture: in the previews of <a class="reference-link" href="../Collections.md">Collections</a>, and when it is inserted as an image into a <a class="reference-link" href="Text.md">Text</a> note (including a shared one). The picture shows the first page, or all the ink of an infinite canvas, and is updated each time the note is saved. Ink in the _Text color_ turns light when the picture is viewed in a dark theme.
+Wherever a handwriting note appears outside its own editor, it is shown as a picture: in the previews of <a class="reference-link" href="../Collections.md">Collections</a>, and when it is inserted as an image into a <a class="reference-link" href="Text.md">Text</a> note (including a shared one). The picture shows the first page, or all the ink and the images of an infinite canvas, and is updated each time the note is saved. Ink in the _Text color_ turns light when the picture is viewed in a dark theme, and images are inverted as in the note.
 
 ## Read-only mode
 
@@ -101,13 +118,16 @@ A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) h
 | <kbd>P</kbd> | Select the pen. |
 | <kbd>Shift</kbd>+<kbd>P</kbd> | Select the highlighter. |
 | <kbd>E</kbd> | Select the eraser. |
+| <kbd>V</kbd> | Select the select tool. |
 | <kbd>H</kbd> | Select the pan tool. |
 | <kbd>[</kbd> and <kbd>]</kbd> | Make the line thinner or thicker. |
 | <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo. |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Redo. |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd> | Add the image on the clipboard. |
+| <kbd>Delete</kbd> or <kbd>Backspace</kbd> | Delete the selected image. |
 | <kbd>Space</kbd> (held) | Move the page by dragging with the pen or the mouse. |
 | <kbd>Page Up</kbd> and <kbd>Page Down</kbd> | Go to the previous or next page. |
-| <kbd>Esc</kbd> | Leave fullscreen. |
+| <kbd>Esc</kbd> | Deselect the image, or leave fullscreen. |
 
 ## Importing from RNote
 
@@ -116,7 +136,7 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 *   Pen strokes keep their position, color, thickness and pressure. Black ink becomes ink in the _Text color_, so it stays readable in a dark theme, and translucent ink becomes highlighter ink.
 *   Lines and rectangles drawn with the shape tool become ordinary ink.
 *   The note uses the infinite canvas, with the paper nearest to the background pattern of the document, and opens at the top of its ink, fitting its width.
-*   Typed text, images and the other shapes are left out, as a handwriting note cannot hold them.
+*   Typed text and the other shapes are left out, as a handwriting note cannot hold them. The images of a document with ink are not imported yet.
 *   A document with no ink, only typed text and images, is imported as a <a class="reference-link" href="Text.md">Text</a> note instead. Each text box becomes a paragraph, from the top of the document down, keeping its line breaks and colors, and each image is attached to the note and shown at the size it had in the document. A document with none of these is imported as a <a class="reference-link" href="File.md">File</a> note.
 
 ## Limitations
@@ -129,8 +149,9 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 *   Outside the note itself, only a picture of the first page is shown (see _Previews_ above), and a handwriting note [shared](../Advanced%20Usage/Sharing.md) on a page of its own is not displayed.
 *   The buttons of a pen work only if the tablet driver reports them as mouse buttons. A button mapped to a keystroke has no effect.
 *   On an iPad or iPhone with a 120 Hz screen, Safari shows web pages at 60 frames per second, so the ink trails the pen further than in a native app. To draw at 120 frames per second, open _Settings_ → _Apps_ → _Safari_ → _Advanced_ → _Feature Flags_ on the device, turn off _Prefer Page Rendering Updates near 60fps_, and force-quit Safari. The flag applies to every website in Safari.
-*   Text, images and other kinds of content cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
+*   Images cannot be rotated or cropped, and always lie under the ink.
+*   Typed text and other kinds of content cannot be added. For those, use a <a class="reference-link" href="Canvas.md">Canvas</a> note.
 
 ## Under the hood
 
-A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points, and the images with their position, their size and the address of their attachment. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.

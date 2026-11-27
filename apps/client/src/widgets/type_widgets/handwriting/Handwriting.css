@@ -32,6 +32,61 @@
             cursor: grab;
         }
 
+        &[data-tool="select"] {
+            cursor: default;
+        }
+
+        .handwriting-image-box {
+            position: absolute;
+            outline: 2px solid var(--main-link-color, #4d99e6);
+            pointer-events: none;
+
+            &[hidden] {
+                display: none;
+            }
+        }
+
+        .handwriting-image-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            margin: -7px;
+            border: 2px solid var(--main-link-color, #4d99e6);
+            border-radius: 50%;
+            background-color: var(--main-background-color);
+            pointer-events: auto;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: -10px;
+            }
+
+            &[data-handle="nw"] {
+                top: 0;
+                left: 0;
+                cursor: nwse-resize;
+            }
+
+            &[data-handle="ne"] {
+                top: 0;
+                right: 0;
+                cursor: nesw-resize;
+            }
+
+            &[data-handle="sw"] {
+                bottom: 0;
+                left: 0;
+                cursor: nesw-resize;
+            }
+
+            &[data-handle="se"] {
+                right: 0;
+                bottom: 0;
+                cursor: nwse-resize;
+            }
+        }
+
         /* Drawn as the eraser's cursor above, 8px being `ERASER_RADIUS` in ink_surface.ts. */
         .handwriting-eraser-ring {
             position: absolute;
@@ -120,7 +175,8 @@
         background: currentColor;
     }
 
-    .handwriting-custom-color {
+    .handwriting-custom-color,
+    .handwriting-image-input {
         position: absolute;
         width: 0;
         height: 0;

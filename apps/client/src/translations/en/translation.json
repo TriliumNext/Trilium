@@ -4406,7 +4406,11 @@
     "color_orange": "Orange",
     "color_custom": "Custom color...",
     "page_counter": "{{current}} / {{total}}",
-    "pan": "Pan"
+    "pan": "Pan",
+    "select": "Select",
+    "insert_image": "Insert image...",
+    "delete_image": "Delete image",
+    "image_failed": "The image \"{{name}}\" could not be added."
   },
   "mind-map": {
     "addChild": "Add child",
