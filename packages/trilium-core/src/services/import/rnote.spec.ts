@@ -195,6 +195,28 @@ describe("convertRnote", () => {
         expect([ ...unzlibSync(png.png.slice(41, 41 + idatLength)) ]).toEqual([ 0, 255, 0, 0, 255, 0, 128, 0, 128 ]);
     });
 
+    it("stretches the pixels of an image to the shape RNote shows it at", () => {
+        const pixels = btoa(String.fromCharCode(255, 0, 0, 255, 0, 64, 0, 128));
+        // 2 by 1 pixels shown 100 by 200: the rows are repeated, four times as tall as wide.
+        const image = {
+            bitmapimage: {
+                image: { data: pixels, pixel_width: 2, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                rectangle: { cuboid: { half_extents: [ 1, 0.5 ] }, transform: { affine: [ 50, 0, 0, 0, 400, 0, 0, 0, 1 ] } }
+            }
+        };
+        const converted = convertRnote(rnote([ image ]));
+        if (converted?.type !== "text") throw new Error("The file was not converted to text.");
+        const [ block ] = converted.blocks;
+        if (block.type !== "image") throw new Error("No image.");
+        expect([ block.width, block.height ]).toEqual([ 100, 400 ]);
+
+        const view = new DataView(block.png.buffer, block.png.byteOffset);
+        expect([ view.getUint32(16), view.getUint32(20) ]).toEqual([ 2, 8 ]);
+        const row = [ 0, 255, 0, 0, 255, 0, 128, 0, 128 ];
+        const idatLength = view.getUint32(33);
+        expect([ ...unzlibSync(block.png.slice(41, 41 + idatLength)) ]).toEqual(Array.from({ length: 8 }, () => row).flat());
+    });
+
     it("returns nothing for a file that is not an RNote document or holds nothing it can convert", () => {
         expect(convertRnote(strToU8("not gzipped"))).toBeUndefined();
         expect(convertRnote(gzipSync(strToU8("not JSON")))).toBeUndefined();

@@ -77,6 +77,8 @@ interface RnoteElement {
 const EVEN_PRESSURE = 0.5;
 /** The only pixel format of an image that `convertImage()` reads. */
 const PREMULTIPLIED_RGBA = "R8g8b8a8Premultiplied";
+/** The longest side, in pixels, that `stretchPixels()` stretches a picture to. */
+const MAX_STRETCHED_SIDE = 8192;
 
 const GZIP_MAGIC = [ 0x1f, 0x8b ];
 
@@ -306,16 +308,39 @@ function convertImage(image: JsonRecord) {
     const [ a, b, , c, d, , tx, ty ] = affine;
     const halfWidth = Math.abs(extents[0]) * Math.hypot(a, b);
     const halfHeight = Math.abs(extents[1]) * Math.hypot(c, d);
+    const stretched = stretchPixels(data, width, height, halfWidth / halfHeight);
     return {
         top: ty - halfHeight,
         left: tx - halfWidth,
         block: {
             type: "image" as const,
-            png: encodePng(data, width, height),
+            png: encodePng(stretched.data, stretched.width, stretched.height),
             width: Math.round(2 * halfWidth),
             height: Math.round(2 * halfHeight)
         }
     };
+}
+
+/**
+ * Returns RGBA pixels stretched to the shape `ratio` (width over height) by repeating rows or
+ * columns, as a text note shows a picture in its own proportions. The side that grows stays
+ * within `MAX_STRETCHED_SIDE` pixels, or the side it had.
+ */
+function stretchPixels(data: Uint8Array, width: number, height: number, ratio: number) {
+    if (!Number.isFinite(ratio) || ratio <= 0) return { data, width, height };
+    const targetWidth = Math.max(width, Math.min(MAX_STRETCHED_SIDE, Math.round(height * ratio)));
+    const targetHeight = Math.max(height, Math.min(MAX_STRETCHED_SIDE, Math.round(width / ratio)));
+    if (targetWidth === width && targetHeight === height) return { data, width, height };
+
+    const stretched = new Uint8Array(targetWidth * targetHeight * 4);
+    for (let y = 0; y < targetHeight; y++) {
+        const fromRow = Math.floor(y * height / targetHeight) * width;
+        for (let x = 0; x < targetWidth; x++) {
+            const from = (fromRow + Math.floor(x * width / targetWidth)) * 4;
+            stretched.set(data.subarray(from, from + 4), (y * targetWidth + x) * 4);
+        }
+    }
+    return { data: stretched, width: targetWidth, height: targetHeight };
 }
 
 /** Encodes premultiplied RGBA pixels as a PNG of straight RGBA, each row unfiltered. */
