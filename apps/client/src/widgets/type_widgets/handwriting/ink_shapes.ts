@@ -1,11 +1,7 @@
-import { pointToSegmentSquared } from "./ink_document";
+import type { Line } from "@triliumnext/commons";
+import { pathToPoints, polygonToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
 
-export interface Line {
-    fromX: number;
-    fromY: number;
-    toX: number;
-    toY: number;
-}
+import { pointToSegmentSquared } from "./ink_document";
 
 /** How far a stroke can stray from the line between its ends, as a share of that line's length. */
 const LINE_DEVIATION = 0.1;
@@ -38,19 +34,6 @@ export function recognizeLine(points: number[], minLength: number): Line | undef
     return { fromX, fromY, toX, toY };
 }
 
-/**
- * Returns the flat `x, y, pressure` triples of a stroke along `line` at one pressure, so at one
- * width. The point in the middle keeps the stroke out of the outline of a two-point stroke, which
- * gives its middle a pressure of its own.
- */
-export function lineToPoints({ fromX, fromY, toX, toY }: Line, pressure: number): number[] {
-    return [
-        fromX, fromY, pressure,
-        (fromX + toX) / 2, (fromY + toY) / 2, pressure,
-        toX, toY, pressure
-    ];
-}
-
 /** The step between the angles tried for the box around a stroke, in degrees. */
 const ANGLE_STEP = 0.5;
 /** How close to an axis, in degrees, the sides of a rectangle are drawn to be laid along it. */
@@ -68,8 +51,6 @@ const MIN_ROUND = 0.75;
 const MAX_ROUND = 1.35;
 /** How far apart the ends of a closed stroke can be, as a share of half the perimeter. */
 const CLOSING_GAP = 0.12;
-/** The distance from a corner of a shape to the first point after it, in world units. */
-const CORNER_STEP = 1;
 /**
  * How far a stroke can stray from an ellipse, as a share of the way from the center of the
  * ellipse to its edge. The corners of a rectangle are 41% outside the ellipse in its box.
@@ -496,55 +477,6 @@ function findCorners(points: number[]): number[][] | undefined {
         }
     }
     return corners;
-}
-
-/**
- * Returns the flat `x, y, pressure` triples of a stroke around the closed polygon of `corners`, at
- * one pressure. The stroke starts and ends in the middle of the first side, where its two ends
- * make no corner.
- */
-export function polygonToPoints(corners: number[][], pressure: number): number[] {
-    const [ first, second ] = corners;
-    const start = [ (first[0] + second[0]) / 2, (first[1] + second[1]) / 2 ];
-    return pathToPoints([ start, ...corners.slice(1), first, start ], pressure);
-}
-
-/**
- * Returns the flat `x, y, pressure` triples of a stroke along the straight segments between
- * `vertices`, at one pressure. `StrokeBuilder` moves each point only part of the way to the next,
- * which rounds a corner by about the distance between the points around it, so the points lie
- * `CORNER_STEP` from each vertex between two segments and twice as far apart with each step away
- * from it.
- */
-function pathToPoints(vertices: number[][], pressure: number): number[] {
-    const points = [ vertices[0][0], vertices[0][1], pressure ];
-    for (let index = 0; index + 1 < vertices.length; index++) {
-        const [ fromX, fromY ] = vertices[index];
-        const [ toX, toY ] = vertices[index + 1];
-        const length = Math.hypot(toX - fromX, toY - fromY);
-        if (!length) continue;
-        const add = (distance: number) => points.push(
-            fromX + (toX - fromX) * distance / length, fromY + (toY - fromY) * distance / length, pressure
-        );
-        const steps: number[] = [];
-        for (let step = CORNER_STEP; step < length / 2; step *= 2) {
-            steps.push(step);
-        }
-
-        if (index > 0) {
-            for (const step of steps) {
-                add(step);
-            }
-        }
-        add(length / 2);
-        if (index + 2 < vertices.length) {
-            for (let i = steps.length - 1; i >= 0; i--) {
-                add(length - steps[i]);
-            }
-        }
-        add(length);
-    }
-    return points;
 }
 
 /** The box of the smallest area around a stroke, at any angle from 0 to 90 degrees. */

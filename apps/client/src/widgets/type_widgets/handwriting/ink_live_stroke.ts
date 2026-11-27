@@ -1,8 +1,10 @@
+import { lineToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
+
 import {
     AUTO_COLOR, createStroke, getShortStrokeOutline, getStrokeOutline, HIGHLIGHTER_ALPHA, outlineStrokePoints,
     outlineToPath, type Stroke, StrokeBuilder, trimPrediction
 } from "./ink_document";
-import { lineToPoints, recognizeLine, shapeToPoints } from "./ink_shapes";
+import { recognizeLine, shapeToPoints } from "./ink_shapes";
 
 /** What `LiveStroke` reads from the surface it draws on. */
 export interface LiveStrokeHost {

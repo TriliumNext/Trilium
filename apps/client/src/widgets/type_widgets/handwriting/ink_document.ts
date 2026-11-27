@@ -1,3 +1,5 @@
+import type { SerializedStroke } from "@triliumnext/commons";
+import { decodePoints, encodePoints, MAX_STROKE_SIZE } from "@triliumnext/commons/src/lib/handwriting.js";
 import { getStroke, getStrokeOutlinePoints, type StrokePoint } from "perfect-freehand";
 
 export const PAPER_STYLES = [ "ruled", "grid", "dots", "blank" ] as const;
@@ -63,23 +65,6 @@ export interface InkView {
     zoom: number;
 }
 
-interface SerializedStroke {
-    /** `"h"` for the highlighter; the pen is left out. */
-    t?: "h";
-    /** The color, left out for {@link AUTO_COLOR}. */
-    c?: string;
-    w: number;
-    /** `1` when the pressure is simulated. */
-    s?: 1;
-    /** The pressure sensitivity, left out for {@link DEFAULT_PRESSURE_SENSITIVITY}. */
-    k?: number;
-    /**
-     * Flat `x, y, pressure` triples: positions in tenths of a world unit and the pressure between
-     * 0 and 255. Every triple after the first holds the difference from the previous one.
-     */
-    p: number[];
-}
-
 interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
@@ -88,10 +73,6 @@ interface SerializedDocument {
     view?: InkView;
 }
 
-const POSITION_SCALE = 10;
-/** The widest stroke a document can hold: the highlighter at its largest thickness. */
-const MAX_STROKE_SIZE = 60;
-const PRESSURE_SCALE = 255;
 /**
  * The pressure sensitivity of a stroke that saved none: perfect-freehand's `thinning` of 0.6,
  * which every stroke had before the sensitivity could be set.
@@ -229,41 +210,6 @@ function isFiniteNumber(value: unknown): value is number {
 /** Rounds `value` to a multiple of `1 / precision`. */
 function round(value: number, precision: number) {
     return Math.round(value * precision) / precision;
-}
-
-function encodePoints(points: number[]) {
-    const encoded: number[] = [];
-    let previous = [ 0, 0, 0 ];
-    for (let i = 0; i + 2 < points.length; i += 3) {
-        const current = [
-            Math.round(points[i] * POSITION_SCALE),
-            Math.round(points[i + 1] * POSITION_SCALE),
-            Math.round(points[i + 2] * PRESSURE_SCALE)
-        ];
-        encoded.push(current[0] - previous[0], current[1] - previous[1], current[2] - previous[2]);
-        previous = current;
-    }
-    return encoded;
-}
-
-/** Returns the points of a saved stroke, or `undefined` when one of its values is not a finite number. */
-function decodePoints(encoded: unknown[]) {
-    const points: number[] = [];
-    const current = [ 0, 0, 0 ];
-    for (let i = 0; i + 2 < encoded.length; i += 3) {
-        const [ dx, dy, dp ] = [ encoded[i], encoded[i + 1], encoded[i + 2] ];
-        if (!isFiniteNumber(dx) || !isFiniteNumber(dy) || !isFiniteNumber(dp)) return undefined;
-        current[0] += dx;
-        current[1] += dy;
-        current[2] += dp;
-        if (!current.every(Number.isFinite)) return undefined;
-        points.push(
-            current[0] / POSITION_SCALE,
-            current[1] / POSITION_SCALE,
-            current[2] / PRESSURE_SCALE
-        );
-    }
-    return points;
 }
 
 export function computeBounds(points: number[], size: number): Bounds {

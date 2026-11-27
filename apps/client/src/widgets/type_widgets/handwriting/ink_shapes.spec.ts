@@ -1,8 +1,9 @@
+import { lineToPoints, polygonToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
 import { describe, expect, it } from "vitest";
 
 import { buildStrokePoints, parseInkDocument } from "./ink_document";
 import {
-    type Arrow, arrowToPoints, type Ellipse, ellipseToPoints, lineToPoints, polygonToPoints, recognizeArrow,
+    type Arrow, arrowToPoints, type Ellipse, ellipseToPoints, recognizeArrow,
     recognizeEllipse, recognizeLine, recognizeRectangle, recognizeTriangle, shapeToPoints
 } from "./ink_shapes";
 

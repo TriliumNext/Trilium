@@ -1,3 +1,6 @@
+import {
+    encodePoints, lineToPoints, MAX_STROKE_SIZE, polygonToPoints, POSITION_SCALE, type SerializedStroke
+} from "@triliumnext/commons";
 import { gunzipSync } from "fflate";
 
 import { decodeUtf8 } from "../utils/binary.js";
@@ -50,26 +53,10 @@ export function convertRnote(file: Uint8Array): RnoteConversion | undefined {
     return { content: `{${document.join(",")}}`, skipped };
 }
 
-/** A stroke as `parseInkDocument()` of the client's `ink_document.ts` reads it. */
-interface SerializedStroke {
-    t?: "h";
-    c?: string;
-    w: number;
-    k?: number;
-    p: number[];
-}
-
 type JsonRecord = Record<string, unknown>;
-
-// These match the constants of the same names in the client's `ink_document.ts`.
-const POSITION_SCALE = 10;
-const PRESSURE_SCALE = 255;
-const MAX_STROKE_SIZE = 60;
 
 /** The pressure of a stroke whose width does not follow the pressure. */
 const EVEN_PRESSURE = 0.5;
-/** The distance from a corner of a shape to the first point after it, in world units. */
-const CORNER_STEP = 1;
 
 const GZIP_MAGIC = [ 0x1f, 0x8b ];
 
@@ -100,12 +87,12 @@ function convertBrushStroke(stroke: JsonRecord): SerializedStroke | undefined {
 
     // Each segment is a line or a curve to its `end`; a curve is followed through its ends.
     const elements = [ path.start, ...path.segments.map((segment) => firstValue(segment)?.end) ];
-    const positions: number[] = [];
+    const positions: number[][] = [];
     const widths: number[] = [];
     for (const element of elements) {
         const position = asPosition(asRecord(element)?.pos);
         if (!position) continue;
-        positions.push(...position);
+        positions.push(position);
         widths.push(getWidthShare(style.pressure_curve, asRecord(element)?.pressure));
     }
     if (!widths.length) return undefined;
@@ -115,12 +102,13 @@ function convertBrushStroke(stroke: JsonRecord): SerializedStroke | undefined {
     if (!look) return undefined;
 
     // The highlighter has one width, and so has a stroke drawn at one pressure.
-    const widest = Math.max(...widths);
     if (look.t || widths.every((share) => share === widths[0])) {
-        return buildStroke(look, width * widest, 0, positions, () => EVEN_PRESSURE);
+        const points = positions.flatMap(([ x, y ]) => [ x, y, EVEN_PRESSURE ]);
+        return buildStroke(look, width * Math.max(...widths), 0, points);
     }
     // At a sensitivity of 100, a stroke is as wide as twice its size times the pressure.
-    return buildStroke(look, width / 2, 100, positions, (index) => widths[index]);
+    const points = positions.flatMap(([ x, y ], index) => [ x, y, widths[index] ]);
+    return buildStroke(look, width / 2, 100, points);
 }
 
 function convertShapeStroke(stroke: JsonRecord): SerializedStroke | undefined {
@@ -129,20 +117,20 @@ function convertShapeStroke(stroke: JsonRecord): SerializedStroke | undefined {
     const look = convertColor(style?.stroke_color);
     if (!style || !shape || !look) return undefined;
 
-    const vertices = getShapeVertices(shape);
-    if (!vertices) return undefined;
-    const positions = pathToPositions(vertices);
+    const points = getShapePoints(shape);
+    if (!points) return undefined;
     const width = isFiniteNumber(style.stroke_width) ? style.stroke_width : 2;
-    return buildStroke(look, width, 0, positions, () => EVEN_PRESSURE);
+    return buildStroke(look, width, 0, points);
 }
 
-/** Returns the vertices of the path along a line or around a rectangle, or `undefined` for another shape. */
-function getShapeVertices(shape: JsonRecord): number[][] | undefined {
+/** Returns the points of a stroke along a line or around a rectangle, or `undefined` for another shape. */
+function getShapePoints(shape: JsonRecord): number[] | undefined {
     const line = asRecord(shape.line);
     if (line) {
         const start = asPosition(line.start);
         const end = asPosition(line.end);
-        return start && end ? [ start, end ] : undefined;
+        if (!start || !end) return undefined;
+        return lineToPoints({ fromX: start[0], fromY: start[1], toX: end[0], toY: end[1] }, EVEN_PRESSURE);
     }
 
     const rect = asRecord(shape.rect);
@@ -158,78 +146,33 @@ function getShapeVertices(shape: JsonRecord): number[][] | undefined {
         const y = signY * extents[1];
         return [ a * x + c * y + tx, b * x + d * y + ty ];
     });
-    // The path starts and ends in the middle of a side, where its two ends make no corner.
-    const [ first, second ] = corners;
-    const start = [ (first[0] + second[0]) / 2, (first[1] + second[1]) / 2 ];
-    return [ start, ...corners.slice(1), first, start ];
+    return polygonToPoints(corners, EVEN_PRESSURE);
 }
 
 /**
- * Returns flat `x, y` pairs along the straight segments between `vertices`. The client's
- * `StrokeBuilder` moves each point only part of the way to the next, which rounds a corner by
- * about the distance between the points around it, so the points lie `CORNER_STEP` from each
- * vertex and twice as far apart with each step away from it, as in the client's `pathToPoints()`.
- */
-function pathToPositions(vertices: number[][]) {
-    const positions = [ ...vertices[0] ];
-    for (let index = 0; index + 1 < vertices.length; index++) {
-        const [ fromX, fromY ] = vertices[index];
-        const [ toX, toY ] = vertices[index + 1];
-        const length = Math.hypot(toX - fromX, toY - fromY);
-        if (!length) continue;
-        const add = (distance: number) => positions.push(
-            fromX + (toX - fromX) * distance / length, fromY + (toY - fromY) * distance / length
-        );
-        const steps: number[] = [];
-        for (let step = CORNER_STEP; step < length / 2; step *= 2) {
-            steps.push(step);
-        }
-
-        if (index > 0) {
-            for (const step of steps) {
-                add(step);
-            }
-        }
-        add(length / 2);
-        if (index + 2 < vertices.length) {
-            for (const step of steps.reverse()) {
-                add(length - step);
-            }
-        }
-        add(length);
-    }
-    return positions;
-}
-
-/**
- * Builds a saved stroke from flat `x, y` pairs. Points are stored in tenths of a unit as the
- * difference from the previous one, and a point that falls on the previous one is left out.
+ * Builds a saved stroke from flat `x, y, pressure` triples. A point that falls on the previous one
+ * once rounded to the precision of a saved stroke is left out.
  */
 function buildStroke(
-    look: Pick<SerializedStroke, "t" | "c">, size: number, sensitivity: number, positions: number[],
-    getPressure: (index: number) => number
+    look: Pick<SerializedStroke, "t" | "c">, size: number, sensitivity: number, points: number[]
 ): SerializedStroke | undefined {
     if (!(size > 0)) return undefined;
-    const encoded: number[] = [];
+    const kept: number[] = [];
     let previous: number[] | undefined;
-    for (let i = 0; i + 1 < positions.length; i += 2) {
-        const current = [
-            Math.round(positions[i] * POSITION_SCALE),
-            Math.round(positions[i + 1] * POSITION_SCALE),
-            Math.round(getPressure(i / 2) * PRESSURE_SCALE)
-        ];
-        if (previous && current[0] === previous[0] && current[1] === previous[1]) continue;
-        encoded.push(...current.map((value, axis) => value - (previous?.[axis] ?? 0)));
-        previous = current;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        const rounded = [ Math.round(points[i] * POSITION_SCALE), Math.round(points[i + 1] * POSITION_SCALE) ];
+        if (previous && rounded[0] === previous[0] && rounded[1] === previous[1]) continue;
+        kept.push(points[i], points[i + 1], points[i + 2]);
+        previous = rounded;
     }
-    if (!encoded.length) return undefined;
+    if (!kept.length) return undefined;
 
     return {
         ...look,
         w: Math.min(MAX_STROKE_SIZE, Math.round(size * 100) / 100),
         // The highlighter ignores the sensitivity.
         ...(!look.t && { k: sensitivity }),
-        p: encoded
+        p: encodePoints(kept)
     };
 }
 
