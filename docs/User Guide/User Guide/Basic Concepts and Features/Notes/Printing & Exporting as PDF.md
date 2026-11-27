@@ -55,7 +55,7 @@ Browsers on iPhone and iPad can only print the whole page, so printing works dif
 The print page has two buttons at the top, which do not appear on paper:
 
 *   _Back to the note_ returns to the app.
-*   _Print_ opens the print sheet again.
+*   _Print_ opens the print sheet again, once the note has rendered.
 
 If the note cannot be printed, or a collection leaves some of its notes out, the reason shows under these buttons. If a note has not finished saving, Trilium stays on the note and asks you to wait. A protected note prints only while its protected session is open.
 

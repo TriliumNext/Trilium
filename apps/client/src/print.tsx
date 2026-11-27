@@ -54,6 +54,7 @@ export async function main() {
     // Only the page opened in place of the app shows text of its own, in its toolbar.
     const autoPrint = isAutoPrintPage();
     if (autoPrint) {
+        takeOpenedByAppMarker();
         await initLocale((window.glob?.currentLocale?.id ?? "en") as LOCALE_IDS);
     }
 
@@ -153,6 +154,7 @@ export function PrintPageToolbar({ notePath, report }: { notePath: string; repor
                 text={t("note_detail.print_page_print")}
                 icon="bx bx-printer"
                 kind="primary"
+                disabled={!report || report.type === "error"}
                 onClick={() => window.print()}
             />
             {message && <p className="print-page-report">{message}</p>}
@@ -369,6 +371,17 @@ function reportPrintError(error: unknown) {
     window.dispatchEvent(new CustomEvent("note-ready", { detail: { type: "error", message, stack } }));
 }
 
+/** What the page opened in place of the app keeps in its history entry. */
+interface PrintPageState {
+    /** The print sheet has opened for this entry. */
+    printed?: boolean;
+    /** `printInThisTab()` opened this entry, so the entry before it is the app. */
+    openedByApp?: boolean;
+}
+
+/** The parameter `printInThisTab()` adds to the address of the print page it opens. */
+const OPENED_BY_APP_PARAM = "fromApp";
+
 /** Whether this page stands in place of the app (`?print&autoprint`) rather than in a frame. */
 function isAutoPrintPage() {
     return window.top === window
@@ -376,9 +389,22 @@ function isAutoPrintPage() {
         && new URLSearchParams(window.location.search).has("autoprint");
 }
 
+/**
+ * Moves the `fromApp` parameter into the history entry, where Back reads it, so a bookmarked or
+ * copied address of the page leaves it out.
+ */
+function takeOpenedByAppMarker() {
+    if (!new URLSearchParams(window.location.search).has(OPENED_BY_APP_PARAM)) return;
+    const search = removeQueryParams(window.location.search, [ OPENED_BY_APP_PARAM ]);
+    const state = window.history.state as PrintPageState | null;
+    window.history.replaceState(
+        { ...state, openedByApp: true }, "", `?${search}${window.location.hash}`
+    );
+}
+
 /** Opens the print sheet, unless it already opened for this history entry. */
 function printOncePerVisit() {
-    const state = window.history.state as { printed?: boolean } | null;
+    const state = window.history.state as PrintPageState | null;
     if (state?.printed) return;
     window.history.replaceState({ ...state, printed: true }, "");
     window.print();
@@ -395,10 +421,23 @@ function getReportMessage(report: PrintReport | undefined) {
     return undefined;
 }
 
+/**
+ * Returns to the app through the history when the app opened this page. Otherwise, the entry before
+ * it can be another site, so this opens the note with the app's own parameters, such as `safeMode`.
+ */
 function leavePrintPage(notePath: string) {
-    if (window.history.length > 1) {
+    if ((window.history.state as PrintPageState | null)?.openedByApp) {
         window.history.back();
-    } else {
-        window.location.assign(`./#${notePath}`);
+        return;
     }
+    const search = removeQueryParams(window.location.search, [ "print", "autoprint" ]);
+    window.location.assign(`./${search ? `?${search}` : ""}#${notePath}`);
+}
+
+/** `search` without its `?` and the parameters in `names`, with the others kept as written. */
+function removeQueryParams(search: string, names: readonly string[]) {
+    return search.replace(/^\?/, "")
+        .split("&")
+        .filter((param) => param && !names.includes(param.split("=")[0]))
+        .join("&");
 }

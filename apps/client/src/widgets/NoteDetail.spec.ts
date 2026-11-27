@@ -111,9 +111,16 @@ describe("printInThisTab", () => {
             await printInThisTab("root/abc");
             expect(steps).toEqual([
                 'beforeNoteContextRemove {"ntxIds":["a","b"]}',
-                "assign ?print&autoprint#root/abc"
+                "assign ?print&autoprint&fromApp#root/abc"
             ]);
+
+            // The app's own parameters, such as standalone's safe mode, carry over to print.
+            window.history.replaceState(null, "", "/?safeMode");
+            steps.length = 0;
+            await printInThisTab("root/abc");
+            expect(steps.at(-1)).toBe("assign ?safeMode&print&autoprint&fromApp#root/abc");
         } finally {
+            window.history.replaceState(null, "", "/");
             trigger.mockRestore();
             assign.mockRestore();
             showMessage.mockRestore();

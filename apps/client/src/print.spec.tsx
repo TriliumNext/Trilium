@@ -39,7 +39,9 @@ vi.mock("./services/i18n", async (importOriginal) => ({
 }));
 
 import Component from "./components/component";
-import { App, Error404, loadCustomCss, main, PrintPageToolbar, SingleNoteRenderer } from "./print";
+import {
+    App, Error404, loadCustomCss, main, PrintPageToolbar, type PrintReport, SingleNoteRenderer
+} from "./print";
 import froca from "./services/froca";
 import { initLocale } from "./services/i18n";
 import { buildNote } from "./test/easy-froca";
@@ -420,7 +422,6 @@ describe("printing in place of the app", () => {
         const print = stubPrint();
         const back = vi.spyOn(window.history, "back").mockImplementation(() => {});
         const assign = vi.spyOn(window.location, "assign").mockImplementation(() => {});
-        const historyLength = vi.spyOn(window.history, "length", "get");
         try {
             const container = renderInto(<PrintPageToolbar
                 notePath="root/book"
@@ -432,13 +433,20 @@ describe("printing in place of the app", () => {
             printButton.click();
             expect(print).toHaveBeenCalledOnce();
 
-            // Back returns through the history the app left, or opens the note when there is none.
-            historyLength.mockReturnValue(2);
+            // Back returns through the history only when the app opened this entry.
+            window.history.replaceState({ openedByApp: true }, "", "/?print&autoprint#root/book");
             backButton.click();
             expect(back).toHaveBeenCalledOnce();
-            historyLength.mockReturnValue(1);
+            expect(assign).not.toHaveBeenCalled();
+
+            // A pasted or bookmarked address opens the note instead, keeping the app's parameters.
+            window.history.replaceState(null, "", "/?safeMode&print&autoprint#root/book");
             backButton.click();
-            expect(assign).toHaveBeenCalledWith("./#root/book");
+            expect(back).toHaveBeenCalledOnce();
+            expect(assign).toHaveBeenCalledWith("./?safeMode#root/book");
+            window.history.replaceState(null, "", "/?print&autoprint#root/book");
+            backButton.click();
+            expect(assign).toHaveBeenLastCalledWith("./#root/book");
 
             render(null, container);
             const quiet = renderInto(
@@ -448,7 +456,35 @@ describe("printing in place of the app", () => {
         } finally {
             back.mockRestore();
             assign.mockRestore();
-            historyLength.mockRestore();
+            delete (window as { print?: unknown }).print;
+        }
+    });
+
+    it("offers Print only once the note has rendered", () => {
+        const printButton = (report?: PrintReport) => {
+            const container = renderInto(<PrintPageToolbar notePath="root/x" report={report} />);
+            const button = container.querySelectorAll("button")[1];
+            expect(button).toBeTruthy();
+            return button;
+        };
+
+        expect(printButton(undefined).disabled).toBe(true);
+        expect(printButton({ type: "error", message: "boom" }).disabled).toBe(true);
+        expect(printButton({ type: "single-note" }).disabled).toBe(false);
+        expect(printButton({ type: "collection", ignoredNoteIds: [] }).disabled).toBe(false);
+    });
+
+    it("takes the app's marker out of the address into the history entry", async () => {
+        const print = stubPrint();
+        try {
+            buildNote({ id: "main-opened", title: "Opened", type: "text" });
+            window.history.replaceState(null, "", "/?safeMode&print&autoprint&fromApp#main-opened");
+            await main();
+            expect(window.location.search).toBe("?safeMode&print&autoprint");
+            expect(window.location.hash).toBe("#main-opened");
+            await vi.waitFor(() => expect(print).toHaveBeenCalledOnce());
+            expect(window.history.state).toEqual({ openedByApp: true, printed: true });
+        } finally {
             delete (window as { print?: unknown }).print;
         }
     });

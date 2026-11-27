@@ -105,7 +105,11 @@ export async function printInThisTab(notePath: string) {
         return;
     }
 
-    window.location.assign(`?print&autoprint#${notePath}`);
+    // The app's own parameters configure standalone's database worker (`safeMode`), which the
+    // print page starts again. `fromApp` tells the print page (`takeOpenedByAppMarker()` in
+    // `print.tsx`) that its Back button can return through the history.
+    const search = window.location.search.replace(/^\?/, "");
+    window.location.assign(`?${search ? `${search}&` : ""}print&autoprint&fromApp#${notePath}`);
 }
 
 /** Ends an Electron print, which reports its outcome through `onPrintDone`. */
