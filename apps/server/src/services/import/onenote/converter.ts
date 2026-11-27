@@ -212,7 +212,8 @@ export function convertPageLayout(rawHtml: string): PageLayout {
 
 /** Whether `html` shows something: text, or an element that needs none, such as an image. */
 function hasContent(html: string) {
-    return /<(img|hr|table|a)\b/i.test(html) || html.replace(/<[^>]*>|&nbsp;/g, "").trim().length > 0;
+    const root = parse(html);
+    return !!root.querySelector("img, hr, table, a") || root.text.trim().length > 0;
 }
 
 /** Returns a CSS font size in pixels, from points or pixels. */
