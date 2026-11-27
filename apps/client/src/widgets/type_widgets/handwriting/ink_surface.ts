@@ -1,12 +1,10 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getShortStrokeOutline,
-    getStrokeOutline, getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool,
-    type InkView, outlineStrokePoints, outlineToPath, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle,
-    serializeInkDocument, serializeStroke, type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
-    trimPrediction
+    AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getStrokePath, getVisiblePage,
+    HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH,
+    type PaperStyle, serializeInkDocument, serializeStroke, type Stroke, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
-import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
+import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
 import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
 
@@ -59,18 +57,6 @@ const TWO_FINGER_TAP_TIME = 300;
 const TWO_FINGER_TAP_SLOP = 10;
 /** How often a stroke or an erase in progress calls `onGesture()`, in ms. */
 const GESTURE_INTERVAL = 250;
-/** How long the pointer rests at the end of a stroke, and how far it can move, to make a shape of it. */
-const HOLD_TIME = 500;
-const HOLD_SLOP = 5;
-/** The shortest line and the shortest side of a shape that a hold makes, in CSS pixels. */
-const MIN_SHAPE_SIZE = 20;
-/** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
-const SETTLE_CHUNK = 48;
-/**
- * How many stroke points before the end of a settled run the outline drawn after it starts from.
- * The outline of a point depends on its neighbors, so the runs overlap where theirs differ.
- */
-const SETTLE_OVERLAP = 8;
 /** How many loaded strokes `warmSerialization()` encodes per task. */
 const WARM_BATCH = 2000;
 /** How long after the last zoom step the strokes are drawn again at the new scale, in ms. */
@@ -81,11 +67,9 @@ const FIT_MARGIN = 32;
 const MAX_FIT_WIDTH_ZOOM = 2;
 
 /**
- * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
- * more above it: `settledCanvas` holds the part of the stroke that further points no longer
- * change, and `liveCanvas` its end, drawn again on each animation frame. The cost of a frame
- * therefore does not grow with the length of the stroke. Panning moves the pixels of the first
- * canvas and draws only the strips that scroll into view.
+ * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on the
+ * canvases of a `LiveStroke` above it. Panning moves the pixels of the first canvas and draws only
+ * the strips that scroll into view.
  */
 export default class InkSurface {
 
@@ -99,12 +83,8 @@ export default class InkSurface {
     spacePanning = false;
 
     private baseCanvas: HTMLCanvasElement;
-    private liveLayer: HTMLDivElement;
-    private settledCanvas: HTMLCanvasElement;
-    private liveCanvas: HTMLCanvasElement;
     private base: CanvasRenderingContext2D;
-    private settled: CanvasRenderingContext2D;
-    private live: CanvasRenderingContext2D;
+    private liveStroke: LiveStroke;
     private resizeObserver: ResizeObserver;
     private abort = new AbortController();
 
@@ -156,22 +136,6 @@ export default class InkSurface {
     private twoFingerTapStart: number | undefined;
     /** Touches that were down when a pen took over, or came while it drew, until they are lifted. */
     private ignoredTouches = new Set<number>();
-    private liveStroke: Stroke | undefined;
-    private liveBuilder: StrokeBuilder | undefined;
-    /** The index of the stroke point up to which the stroke being drawn is on `settledCanvas`. */
-    private settledUpTo = 0;
-    /** Raw `x, y, pressure` triples of the input that the browser predicts after the last move. */
-    private predicted: number[] = [];
-    private liveFrame: number | undefined;
-    private holdTimer: ReturnType<typeof setTimeout> | undefined;
-    /** Where the pointer was when `holdTimer` started, in client coordinates. */
-    private holdX = 0;
-    private holdY = 0;
-    /**
-     * Set once a hold has made a shape of the stroke being drawn: the stroke as it was drawn and,
-     * for a straight line, its start and its pressure.
-     */
-    private snapped: { drawn: Stroke, line?: { fromX: number, fromY: number, pressure: number } } | undefined;
     private warmTimer: ReturnType<typeof setTimeout> | undefined;
     private gestureTimer: ReturnType<typeof setInterval> | undefined;
     private erased: Stroke[] = [];
@@ -186,15 +150,14 @@ export default class InkSurface {
     private pinchDistance = 0;
 
     constructor(private container: HTMLElement, private options: InkSurfaceOptions) {
-        this.baseCanvas = this.createCanvas(container);
-        this.liveLayer = document.createElement("div");
-        this.liveLayer.className = "handwriting-live-layer";
-        container.append(this.liveLayer);
-        this.settledCanvas = this.createCanvas(this.liveLayer);
-        this.liveCanvas = this.createCanvas(this.liveLayer);
+        this.baseCanvas = createCanvas(container);
         this.base = getContext(this.baseCanvas, { alpha: false });
-        this.settled = getContext(this.settledCanvas);
-        this.live = getContext(this.liveCanvas);
+        this.liveStroke = new LiveStroke(container, {
+            toWorld: (clientX, clientY) => this.toWorld(clientX, clientY),
+            getZoom: () => this.zoom,
+            applyWorldTransform: (ctx) => this.applyWorldTransform(ctx),
+            getAutoColor: () => this.autoColor
+        });
 
         const listener = { signal: this.abort.signal };
         container.addEventListener("pointerdown", (e) => this.onPointerDown(e), listener);
@@ -219,12 +182,11 @@ export default class InkSurface {
         this.abort.abort();
         this.resizeObserver.disconnect();
         this.cancelZoomPreview();
-        if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
+        this.liveStroke.destroy();
         if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
         clearTimeout(this.warmTimer);
         clearInterval(this.gestureTimer);
         this.baseCanvas.remove();
-        this.liveLayer.remove();
     }
 
     load(doc: InkDocument) {
@@ -320,7 +282,7 @@ export default class InkSurface {
         this.ty = Math.round(this.baseCanvas.height / 2 - target.y * scale);
         this.cancelZoomPreview();
         this.redrawAll();
-        this.redrawLiveStroke();
+        this.liveStroke.redraw();
         this.reportState();
     }
 
@@ -394,7 +356,7 @@ export default class InkSurface {
     refreshTheme() {
         this.cancelZoomPreview();
         this.redrawAll();
-        this.redrawLiveStroke();
+        this.liveStroke.redraw();
     }
 
     setPaper(paper: PaperStyle) {
@@ -525,21 +487,12 @@ export default class InkSurface {
 
         if (mode === "draw") {
             const tool = this.tool === "highlighter" ? "highlighter" : "pen";
-            this.liveStroke = createStroke({
+            this.liveStroke.start(e, {
                 tool,
                 color: this.color,
                 size: tool === "highlighter" ? this.size * HIGHLIGHTER_WIDTH_FACTOR : this.size,
-                simulatePressure: e.pointerType !== "pen",
-                points: [],
                 order: this.nextOrder
             });
-            this.liveBuilder = new StrokeBuilder(this.liveStroke);
-            this.settledUpTo = 0;
-            this.predicted = [];
-            this.liveLayer.style.opacity = tool === "highlighter" ? String(HIGHLIGHTER_ALPHA) : "";
-            this.addLivePoints([ e ]);
-            this.watchHold(e);
-            this.scheduleLiveFrame();
         } else if (mode === "erase") {
             this.erased = [];
             this.eraseAlong(e.clientX, e.clientY, e.clientX, e.clientY);
@@ -573,25 +526,8 @@ export default class InkSurface {
 
         if (e.pointerId !== this.activePointerId) return;
 
-        if (this.mode === "draw" && this.liveStroke) {
-            if (this.snapped?.line) {
-                const { fromX, fromY, pressure } = this.snapped.line;
-                const { x, y } = this.toWorld(e.clientX, e.clientY);
-                this.liveStroke.points = lineToPoints({ fromX, fromY, toX: x, toY: y }, pressure);
-            } else if (!this.snapped) {
-                const events = e.getCoalescedEvents?.() ?? [];
-                this.addLivePoints(events.length ? events : [ e ]);
-                const predicted: number[] = [];
-                for (const event of e.getPredictedEvents?.() ?? []) {
-                    const { x, y } = this.toWorld(event.clientX, event.clientY);
-                    predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
-                }
-                const from = this.toWorld(this.lastX, this.lastY);
-                const to = this.toWorld(e.clientX, e.clientY);
-                this.predicted = trimPrediction(from.x, from.y, to.x, to.y, predicted);
-                this.watchHold(e);
-            }
-            this.scheduleLiveFrame();
+        if (this.mode === "draw") {
+            this.liveStroke.move(e, this.lastX, this.lastY);
         } else if (this.mode === "erase") {
             this.eraseAlong(this.lastX, this.lastY, e.clientX, e.clientY);
         } else if (this.mode === "pan") {
@@ -621,7 +557,7 @@ export default class InkSurface {
         }
         if (e.pointerId !== this.activePointerId) return;
 
-        if (this.mode === "draw" && this.liveStroke) {
+        if (this.mode === "draw" && this.liveStroke.active) {
             if (e.type === "pointercancel") {
                 this.cancelGesture();
                 return;
@@ -660,7 +596,7 @@ export default class InkSurface {
     }
 
     private cancelGesture() {
-        this.endLiveStroke();
+        this.liveStroke.cancel();
         if (this.erased.length) {
             this.applyHistory(this.erased, []);
             this.erased = [];
@@ -680,131 +616,10 @@ export default class InkSurface {
 
     //#region Drawing and erasing
 
-    private addLivePoints(events: PointerEvent[]) {
-        const stroke = this.liveStroke;
-        if (!stroke) return;
-
-        const minDistance = 0.5 / this.zoom;
-        for (const event of events) {
-            const { x, y } = this.toWorld(event.clientX, event.clientY);
-            const length = stroke.points.length;
-            if (length >= 3
-                && Math.hypot(x - stroke.points[length - 3], y - stroke.points[length - 2]) < minDistance) {
-                continue;
-            }
-            const pressure = stroke.simulatePressure ? 0.5 : event.pressure;
-            stroke.points.push(x, y, pressure);
-            this.liveBuilder?.add(x, y, pressure);
-        }
-    }
-
-    /** Waits for a hold again once the pointer has left the place where the last wait started. */
-    private watchHold(e: PointerEvent) {
-        if (this.holdTimer !== undefined
-            && Math.hypot(e.clientX - this.holdX, e.clientY - this.holdY) <= HOLD_SLOP) {
-            return;
-        }
-        this.holdX = e.clientX;
-        this.holdY = e.clientY;
-        clearTimeout(this.holdTimer);
-        this.holdTimer = setTimeout(() => this.snapLiveStroke(), HOLD_TIME);
-    }
-
-    /**
-     * Makes a straight line or another shape of the stroke being drawn when it was drawn as one.
-     * The shape has one width, from the mean pressure of the stroke. The end of a line then
-     * follows the pointer.
-     */
-    private snapLiveStroke() {
-        const stroke = this.liveStroke;
-        if (!stroke || this.snapped) return;
-        const minSize = MIN_SHAPE_SIZE / this.zoom;
-        const line = recognizeLine(stroke.points, minSize);
-        const strokePoints = this.liveBuilder?.points ?? [];
-        let pressure = 0.5;
-        if (strokePoints.length) {
-            pressure = 0;
-            for (const point of strokePoints) {
-                pressure += point.pressure / strokePoints.length;
-            }
-        }
-        const points = line
-            ? lineToPoints(line, pressure)
-            : shapeToPoints(stroke.points, minSize, pressure);
-        if (!points) return;
-        this.snapped = { drawn: stroke, line: line && { fromX: line.fromX, fromY: line.fromY, pressure } };
-        this.liveStroke = { ...stroke, simulatePressure: false, points };
-        this.predicted = [];
-        this.redrawLiveStroke();
-    }
-
-    private scheduleLiveFrame() {
-        if (this.liveFrame !== undefined) return;
-        this.liveFrame = requestAnimationFrame(() => {
-            this.liveFrame = undefined;
-            this.drawLiveStroke();
-        });
-    }
-
-    /** Settles the stroke points that the next ones can no longer change and draws the rest. */
-    private drawLiveStroke() {
-        const stroke = this.liveStroke;
-        const builder = this.liveBuilder;
-        if (!stroke || !builder) return;
-
-        this.clearCanvas(this.live, this.liveCanvas);
-        this.applyWorldTransform(this.live);
-        if (this.snapped) {
-            this.fillOpaque(this.live, stroke, outlineToPath(getStrokeOutline(stroke)));
-            return;
-        }
-        if (stroke.points.length <= 6) {
-            this.fillOpaque(this.live, stroke, outlineToPath(getShortStrokeOutline(stroke)));
-            return;
-        }
-
-        const { points } = builder;
-        if (points.length - SETTLE_OVERLAP - this.settledUpTo >= SETTLE_CHUNK) {
-            this.applyWorldTransform(this.settled);
-            while (points.length - SETTLE_OVERLAP - this.settledUpTo >= SETTLE_CHUNK) {
-                const end = this.settledUpTo + SETTLE_CHUNK;
-                const run = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP), end + 1);
-                this.fillOpaque(this.settled, stroke, outlineToPath(outlineStrokePoints(stroke, run)));
-                this.settledUpTo = end;
-            }
-        }
-
-        const tail = points.slice(Math.max(0, this.settledUpTo - SETTLE_OVERLAP));
-        tail.push(...builder.preview(this.predicted));
-        this.fillOpaque(this.live, stroke, outlineToPath(outlineStrokePoints(stroke, tail)));
-    }
-
-    /** Draws the stroke being drawn again from its start, after the view moved under it. */
-    private redrawLiveStroke() {
-        if (!this.liveStroke) return;
-        this.clearCanvas(this.settled, this.settledCanvas);
-        this.settledUpTo = 0;
-        this.scheduleLiveFrame();
-    }
-
-    private endLiveStroke() {
-        if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
-        this.liveFrame = undefined;
-        clearTimeout(this.holdTimer);
-        this.holdTimer = undefined;
-        this.snapped = undefined;
-        this.liveStroke = undefined;
-        this.liveBuilder = undefined;
-        this.predicted = [];
-        this.clearCanvas(this.settled, this.settledCanvas);
-        this.clearCanvas(this.live, this.liveCanvas);
-    }
-
     private commitLiveStroke() {
-        const live = this.liveStroke;
-        const drawn = this.snapped?.drawn;
-        this.endLiveStroke();
-        if (!live || live.points.length < 3) return;
+        const finished = this.liveStroke.finish();
+        if (!finished) return;
+        const { stroke: live, drawn } = finished;
 
         // Undoing a stroke that a hold made a shape of first gives back the stroke as it was drawn.
         const original = drawn && createStroke(drawn);
@@ -901,7 +716,7 @@ export default class InkSurface {
         this.ty = Math.round(deviceY - (deviceY - this.ty) * applied);
         this.zoom = zoom;
         this.schedulePreviewFrame();
-        this.redrawLiveStroke();
+        this.liveStroke.redraw();
         this.reportState();
     }
 
@@ -937,7 +752,7 @@ export default class InkSurface {
 
         this.tx += wholeX;
         this.ty += wholeY;
-        this.redrawLiveStroke();
+        this.liveStroke.redraw();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
 
         const { width, height } = this.baseCanvas;
@@ -975,17 +790,16 @@ export default class InkSurface {
             this.ty += Math.round((height - this.baseCanvas.height) / 2);
         }
         this.sized = true;
-        for (const canvas of [ this.baseCanvas, this.settledCanvas, this.liveCanvas ]) {
-            canvas.width = width;
-            canvas.height = height;
-        }
+        this.baseCanvas.width = width;
+        this.baseCanvas.height = height;
+        this.liveStroke.resize(width, height);
         this.cancelZoomPreview();
         if (this.pendingView && width > 1 && height > 1) {
             this.showView(this.pendingView);
             return;
         }
         this.redrawAll();
-        this.redrawLiveStroke();
+        this.liveStroke.redraw();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
     }
 
@@ -1152,28 +966,9 @@ export default class InkSurface {
 
     private fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
         ctx.globalAlpha = stroke.tool === "highlighter" ? HIGHLIGHTER_ALPHA : 1;
-        this.fillOpaque(ctx, stroke, getStrokePath(stroke));
-        ctx.globalAlpha = 1;
-    }
-
-    /**
-     * Fills a part of the stroke being drawn. The parts overlap, so they are filled opaque and
-     * `liveLayer` takes the highlighter's transparency.
-     */
-    private fillOpaque(ctx: CanvasRenderingContext2D, stroke: Stroke, path: Path2D) {
         ctx.fillStyle = stroke.color === AUTO_COLOR ? this.autoColor : stroke.color;
-        ctx.fill(path);
-    }
-
-    private clearCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    private createCanvas(parent: HTMLElement) {
-        const canvas = document.createElement("canvas");
-        parent.append(canvas);
-        return canvas;
+        ctx.fill(getStrokePath(stroke));
+        ctx.globalAlpha = 1;
     }
 
     //#endregion
@@ -1186,10 +981,4 @@ function isPenErasing(e: PointerEvent) {
 
 function isWithinSlop(touch: { x: number, y: number, downX: number, downY: number }) {
     return Math.hypot(touch.x - touch.downX, touch.y - touch.downY) <= TWO_FINGER_TAP_SLOP;
-}
-
-function getContext(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext2DSettings) {
-    const ctx = canvas.getContext("2d", settings);
-    if (!ctx) throw new Error("The 2D canvas context is not available.");
-    return ctx;
 }
