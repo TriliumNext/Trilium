@@ -423,7 +423,7 @@ export function getShortStrokeOutline(stroke: OutlinedStroke): number[][] {
 function outlineOptions(stroke: Pick<Stroke, "tool" | "size" | "sensitivity">) {
     return {
         size: stroke.size,
-        thinning: stroke.tool === "highlighter" ? 0 : (stroke.sensitivity ?? DEFAULT_PRESSURE_SENSITIVITY) / 100,
+        thinning: getThinning(stroke),
         smoothing: 0.5
     };
 }
@@ -567,4 +567,148 @@ function* cellKeys(bounds: Bounds) {
             yield `${x},${y}`;
         }
     }
+}
+
+/** The shortest run of a stroke's centerline that the eraser cuts out, in world units. */
+const MIN_CUT = 1e-6;
+
+/**
+ * Returns the pieces of `stroke` left outside the eraser, the segment from `a` to `b` widened by
+ * `radius`, or `undefined` when the eraser misses its ink. Each piece ends where its round end
+ * meets the eraser. The pieces of a stroke whose width follows the speed save the pressure it
+ * simulated as their own, so that they keep the width they had in the stroke.
+ */
+export function splitStroke(
+    stroke: Stroke, ax: number, ay: number, bx: number, by: number, radius: number
+): Stroke[] | undefined {
+    const thinning = getThinning(stroke);
+    if (!strokeHitsSegment(stroke, ax, ay, bx, by, radius + stroke.size * thinning / 2)) return undefined;
+
+    const points = stroke.simulatePressure ? withSimulatedPressure(stroke) : stroke.points;
+    const reachAt = (pressure: number) => radius + stroke.size * (0.5 - thinning * (0.5 - pressure));
+    if (points.length < 6) {
+        const reach = reachAt(points[2]);
+        return pointToSegmentSquared(points[0], points[1], ax, ay, bx, by) <= reach * reach ? [] : undefined;
+    }
+
+    const pieces: number[][] = [];
+    let piece: number[] | undefined = points.slice(0, 3);
+    let hit = false;
+    for (let i = 0; i + 5 < points.length; i += 3) {
+        const covered = coveredInterval(
+            points[i], points[i + 1], points[i + 3], points[i + 4], ax, ay, bx, by,
+            reachAt(Math.max(points[i + 2], points[i + 5]))
+        );
+        if (!covered) {
+            piece ??= points.slice(i, i + 3);
+            piece.push(points[i + 3], points[i + 4], points[i + 5]);
+            continue;
+        }
+        hit = true;
+        if (piece) {
+            if (covered.from > 0) piece.push(...interpolatePoint(points, i, covered.from));
+            pieces.push(piece);
+            piece = undefined;
+        }
+        if (covered.to < 1) {
+            piece = [ ...interpolatePoint(points, i, covered.to), points[i + 3], points[i + 4], points[i + 5] ];
+        }
+    }
+    if (!hit) return undefined;
+    if (piece) pieces.push(piece);
+
+    const { tool, color, size, sensitivity, order } = stroke;
+    return pieces
+        .filter((piecePoints) => piecePoints.length >= 6)
+        .map((piecePoints) => createStroke({
+            tool, color, size, sensitivity, order, simulatePressure: false, points: piecePoints
+        }));
+}
+
+/** Returns the raw points of `stroke` with the pressure that `StrokeBuilder` simulates for each. */
+function withSimulatedPressure(stroke: Stroke) {
+    const builder = new StrokeBuilder(stroke);
+    const points = [ ...stroke.points ];
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        builder.add(points[i], points[i + 1], points[i + 2], i + 5 >= points.length);
+        points[i + 2] = builder.points[builder.points.length - 1].pressure;
+    }
+    return points;
+}
+
+/** Returns the point a fraction `t` of the way from raw point `i` of `points` to the next. */
+function interpolatePoint(points: number[], i: number, t: number) {
+    return [
+        points[i] + (points[i + 3] - points[i]) * t,
+        points[i + 1] + (points[i + 4] - points[i + 1]) * t,
+        points[i + 2] + (points[i + 5] - points[i + 2]) * t
+    ];
+}
+
+/**
+ * Returns the fractions of the segment from `p` to `q` between which it lies within `reach` of
+ * the segment from `a` to `b`, or `undefined` when it never does. The points within `reach` of a
+ * segment are the union of a band and two discs, and form a convex shape that the segment from
+ * `p` to `q` crosses at most once, so the run is the span of the runs through each of the three.
+ * A run shorter than `MIN_CUT` does not count, so a piece that ends on the eraser is not cut again.
+ */
+function coveredInterval(
+    px: number, py: number, qx: number, qy: number,
+    ax: number, ay: number, bx: number, by: number, reach: number
+) {
+    const dx = qx - px;
+    const dy = qy - py;
+    let from = Infinity;
+    let to = -Infinity;
+    const include = (start: number, end: number) => {
+        if (start > end) return;
+        from = Math.min(from, start);
+        to = Math.max(to, end);
+    };
+
+    const lengthSquared = dx * dx + dy * dy;
+    for (const [ cx, cy ] of [ [ ax, ay ], [ bx, by ] ]) {
+        const ox = px - cx;
+        const oy = py - cy;
+        const half = ox * dx + oy * dy;
+        const rest = ox * ox + oy * oy - reach * reach;
+        if (lengthSquared === 0) {
+            if (rest <= 0) include(0, 1);
+            continue;
+        }
+        const discriminant = half * half - lengthSquared * rest;
+        if (discriminant < 0) continue;
+        const root = Math.sqrt(discriminant);
+        include((-half - root) / lengthSquared, (-half + root) / lengthSquared);
+    }
+
+    const eraserLength = Math.hypot(bx - ax, by - ay);
+    if (eraserLength > 0) {
+        const ux = (bx - ax) / eraserLength;
+        const uy = (by - ay) / eraserLength;
+        let start = -Infinity;
+        let end = Infinity;
+        // Keeps the fractions at which `value + step * t` lies between `min` and `max`.
+        const clamp = (value: number, step: number, min: number, max: number) => {
+            if (step === 0) {
+                if (value < min || value > max) [ start, end ] = [ Infinity, -Infinity ];
+                return;
+            }
+            const [ first, second ] = [ (min - value) / step, (max - value) / step ];
+            start = Math.max(start, Math.min(first, second));
+            end = Math.min(end, Math.max(first, second));
+        };
+        clamp((px - ax) * ux + (py - ay) * uy, dx * ux + dy * uy, 0, eraserLength);
+        clamp((py - ay) * ux - (px - ax) * uy, dy * ux - dx * uy, -reach, reach);
+        include(start, end);
+    }
+
+    from = Math.max(0, from);
+    to = Math.min(1, to);
+    if (from > to || (lengthSquared > 0 && (to - from) * Math.sqrt(lengthSquared) < MIN_CUT)) return undefined;
+    return { from, to };
+}
+
+function getThinning(stroke: Pick<Stroke, "tool" | "sensitivity">) {
+    return stroke.tool === "highlighter" ? 0 : (stroke.sensitivity ?? DEFAULT_PRESSURE_SENSITIVITY) / 100;
 }

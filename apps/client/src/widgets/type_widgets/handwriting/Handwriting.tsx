@@ -14,7 +14,7 @@ import FormTextBox from "../../react/FormTextBox";
 import { useFullscreen } from "../../react/hooks/dom";
 import { type SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useTriliumEvent } from "../../react/hooks/events";
-import { useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks/options";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks/options";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
@@ -24,7 +24,9 @@ import {
     AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTool, type InkView,
     PAPER_STYLES, parseInkDocument
 } from "./ink_document";
-import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
+import InkSurface, {
+    ERASER_MODES, type EraserMode, HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool
+} from "./ink_surface";
 
 /** The tools of the toolbar, with the keys of drawing apps: H pans, and Shift+P is a second pen. */
 const TOOLS: ToolbarTool[] = [
@@ -124,6 +126,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
     const [ savedSensitivity, setSensitivity ] = useTriliumOptionInt("handwritingPressureSensitivity");
     const sensitivity = Number.isFinite(savedSensitivity) ? savedSensitivity : DEFAULT_PRESSURE_SENSITIVITY;
+    const [ savedEraserMode, setEraserMode ] = useTriliumOption("handwritingEraserMode");
+    const eraserMode: EraserMode = savedEraserMode === "partial" ? "partial" : "stroke";
     /** Whether the space bar is held over the surface, which makes a pen or a mouse pan. */
     const [ spaceHeld, setSpaceHeld ] = useState(false);
     /**
@@ -227,9 +231,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.size = size;
         surface.readOnly = isReadOnly;
         surface.sensitivity = sensitivity;
+        surface.eraserMode = eraserMode;
         surface.fingerDrawing = fingerDrawing;
         surface.spacePanning = spaceHeld;
-    }, [ tool, color, size, sensitivity, isReadOnly, fingerDrawing, spaceHeld ]);
+    }, [ tool, color, size, sensitivity, eraserMode, isReadOnly, fingerDrawing, spaceHeld ]);
 
     useTriliumEvent("themeChanged", () => surfaceRef.current?.refreshTheme());
 
@@ -369,6 +374,18 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                 ))}
                                 <FormDropdownDivider />
                                 <CustomPressureItem value={sensitivity} onChange={setSensitivity} />
+                            </FormDropdownSubmenu>
+                            <FormDropdownSubmenu icon="bx bx-eraser" title={t("handwriting.eraser")}>
+                                {ERASER_MODES.map((mode) => (
+                                    <FormListItem
+                                        key={mode}
+                                        checkable
+                                        checked={eraserMode === mode}
+                                        onClick={() => setEraserMode(mode)}
+                                    >
+                                        {t(`handwriting.eraser_${mode}`)}
+                                    </FormListItem>
+                                ))}
                             </FormDropdownSubmenu>
                             {HAS_TOUCH && (
                                 <FormListItem

@@ -462,6 +462,49 @@ describe("ink surface input", () => {
         expect(fills).not.toContain("rgb(240, 240, 240)");
     });
 
+    it("erases the parts of strokes the eraser covers, in one step to undo", () => {
+        const strokes = () => parseInkDocument(surface.serialize()).strokes;
+        const drag = (pointerId: number, fromX: number, toX: number) => {
+            pointer("pointerdown", "pen", pointerId, 100, fromX);
+            for (let x = fromX; x <= toX; x += 10) pointer("pointermove", "pen", pointerId, 100, x);
+            pointer("pointerup", "pen", pointerId, 100, toX);
+        };
+        drag(1, 0, 200);
+        const drawn = strokes()[0].points.length;
+
+        // A tap cuts the line in two.
+        surface.tool = "eraser";
+        surface.eraserMode = "partial";
+        drag(2, 100, 100);
+        expect(strokes()).toHaveLength(2);
+        expect(Math.max(...strokes()[0].points.filter((_, i) => i % 3 === 0))).toBeLessThan(100);
+        surface.undo();
+        expect(strokes().map((stroke) => stroke.points.length)).toEqual([ drawn ]);
+        surface.redo();
+        expect(strokes()).toHaveLength(2);
+        surface.undo();
+
+        // A drag erases the pieces it cuts as it goes, and undoing it gives back the line alone.
+        drag(3, 100, 220);
+        expect(strokes()).toHaveLength(1);
+        surface.undo();
+        expect(strokes().map((stroke) => stroke.points.length)).toEqual([ drawn ]);
+
+        // An erase with a finger that a second finger turns into a pinch leaves the line as it was.
+        surface.fingerDrawing = true;
+        pointer("pointerdown", "touch", 4, 100, 60);
+        for (let x = 70; x <= 140; x += 10) pointer("pointermove", "touch", 4, 100, x);
+        expect(strokes().length).toBeGreaterThan(1);
+        pointer("pointerdown", "touch", 5, 300, 300);
+        expect(strokes().map((stroke) => stroke.points.length)).toEqual([ drawn ]);
+        pointer("pointerup", "touch", 5, 300, 300);
+        pointer("pointerup", "touch", 4, 100, 140);
+
+        surface.eraserMode = "stroke";
+        drag(5, 100, 100);
+        expect(strokes()).toHaveLength(0);
+    });
+
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
         vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
         pointer("pointerdown", "pen", 1, 100);

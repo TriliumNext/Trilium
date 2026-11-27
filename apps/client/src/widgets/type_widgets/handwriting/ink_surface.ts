@@ -2,13 +2,17 @@ import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getPageCount as countPages, getPageTop,
     getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH,
-    type PaperStyle, serializeInkDocument, serializeStroke, type Stroke, strokeHitsSegment, StrokeIndex
+    type PaperStyle, serializeInkDocument, serializeStroke, splitStroke, type Stroke, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
 import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
 
 export type SurfaceTool = InkTool | "eraser" | "pan";
+
+/** Whether the eraser removes each stroke it touches whole, or only the parts of strokes it covers. */
+export const ERASER_MODES = [ "stroke", "partial" ] as const;
+export type EraserMode = (typeof ERASER_MODES)[number];
 
 export interface InkSurfaceState {
     zoom: number;
@@ -78,6 +82,7 @@ export default class InkSurface {
     size = 3;
     /** The pressure sensitivity of the pen strokes drawn from now on, from 0 to 100. */
     sensitivity = DEFAULT_PRESSURE_SENSITIVITY;
+    eraserMode: EraserMode = "stroke";
     readOnly = false;
     /** Whether one finger draws. Otherwise fingers only pan and zoom, and only a pen or a mouse draws. */
     fingerDrawing = false;
@@ -140,7 +145,9 @@ export default class InkSurface {
     private ignoredTouches = new Set<number>();
     private warmTimer: ReturnType<typeof setTimeout> | undefined;
     private gestureTimer: ReturnType<typeof setInterval> | undefined;
+    /** The strokes that the erase in progress removed, and the pieces of them it left. */
     private erased: Stroke[] = [];
+    private erasePieces = new Set<Stroke>();
     private lastX = 0;
     private lastY = 0;
     private panRemainderX = 0;
@@ -494,6 +501,7 @@ export default class InkSurface {
             });
         } else if (mode === "erase") {
             this.erased = [];
+            this.erasePieces.clear();
             this.eraseAlong(e.clientX, e.clientY, e.clientX, e.clientY);
         }
     }
@@ -563,8 +571,9 @@ export default class InkSurface {
             }
             this.commitLiveStroke();
         } else if (this.mode === "erase" && this.erased.length) {
-            this.pushHistory({ added: [], removed: this.erased });
+            this.pushHistory({ added: [ ...this.erasePieces ], removed: this.erased });
             this.erased = [];
+            this.erasePieces.clear();
             this.updatePageCount();
             this.options.onChange();
         }
@@ -597,8 +606,9 @@ export default class InkSurface {
     private cancelGesture() {
         this.liveStroke.cancel();
         if (this.erased.length) {
-            this.applyHistory(this.erased, []);
+            this.applyHistory(this.erased, [ ...this.erasePieces ]);
             this.erased = [];
+            this.erasePieces.clear();
         }
         this.endGesture();
     }
@@ -653,11 +663,21 @@ export default class InkSurface {
         });
 
         for (const stroke of candidates) {
-            if (!strokeHitsSegment(stroke, from.x, from.y, to.x, to.y, radius)) continue;
+            const pieces = this.eraserMode === "partial"
+                ? splitStroke(stroke, from.x, from.y, to.x, to.y, radius)
+                : strokeHitsSegment(stroke, from.x, from.y, to.x, to.y, radius) ? [] : undefined;
+            if (!pieces) continue;
             this.strokes.delete(stroke);
             this.index.remove(stroke);
             this.thumbnail.markChanged(stroke);
-            this.erased.push(stroke);
+            // A piece that this erase made and now removes was never in the note.
+            if (!this.erasePieces.delete(stroke)) this.erased.push(stroke);
+            for (const piece of pieces) {
+                this.strokes.add(piece);
+                this.index.add(piece);
+                this.thumbnail.markChanged(piece);
+                this.erasePieces.add(piece);
+            }
             this.redrawBounds(stroke.bounds);
         }
     }

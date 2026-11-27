@@ -344,6 +344,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteVimModeEnabled", value: "false", isSynced: false },
     { name: "handwritingFingerDrawing", value: "false", isSynced: false },
     { name: "handwritingPressureSensitivity", value: "60", isSynced: false },
+    { name: "handwritingEraserMode", value: "stroke", isSynced: false },
     { name: "textNoteVimModeNoticeShown", value: "false", isSynced: false },
     { name: "textNoteVimInsertKeysEnabled", value: "false", isSynced: true },
     { name: "textNoteVimStartupCommands", value: "", isSynced: true },

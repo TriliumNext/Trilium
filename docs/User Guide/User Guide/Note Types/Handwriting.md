@@ -14,7 +14,7 @@ Right click an existing note in the <a class="reference-link" href="../Basic%20
 
 *   To write, select the <span class="tn-icon bx bx-pen"></span> _Pen_ and draw on the page. A pen that senses pressure draws a thicker line the harder it is pressed. With a mouse or a finger, the thickness follows the speed of the stroke.
 *   To highlight, select the <span class="tn-icon bx bx-highlight"></span> _Highlighter_, which draws a wide, see-through line of even thickness.
-*   To erase, select the <span class="tn-icon bx bx-eraser"></span> _Eraser_ and drag across the ink. The eraser removes every stroke it touches as a whole. The eraser end of a pen (on pens that have one) erases whichever tool is selected, and so does holding the button on the barrel of the pen.
+*   To erase, select the <span class="tn-icon bx bx-eraser"></span> _Eraser_ and drag across the ink. By default, the eraser removes every stroke it touches as a whole. To erase only the ink under the eraser, open the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar and select _Parts of strokes_ under _Eraser_; a stroke cut that way becomes separate strokes on either side, which keep the thickness they had. The setting applies to the device it is changed on. The eraser end of a pen (on pens that have one) erases whichever tool is selected, in the same way, and so does holding the button on the barrel of the pen.
 *   To undo or redo, press the <span class="tn-icon bx bx-undo"></span> and <span class="tn-icon bx bx-redo"></span> buttons. On a touch screen, a short tap with two fingers also undoes.
 
 ### Color and thickness
@@ -121,7 +121,8 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 
 ## Limitations
 
-*   The eraser removes whole strokes. It is not possible to erase a part of a stroke, or to select, move or recolor ink that is already on the page.
+*   It is not possible to select, move or recolor ink that is already on the page.
+*   Where a highlighter stroke crosses itself, erasing a part of it can leave two pieces that overlap, which show darker where they do.
 *   A shape becomes ordinary ink once the pen is lifted, so it cannot be resized or moved afterwards.
 *   An arrow is recognized only when it is drawn in a single stroke, in the order described above.
 *   Handwriting is not converted to text, so [search](../Basic%20Concepts%20and%20Features/Navigation/Search.md) does not find what is written.

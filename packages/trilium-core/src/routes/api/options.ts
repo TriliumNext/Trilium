@@ -147,6 +147,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteVimModeEnabled",
     "handwritingFingerDrawing",
     "handwritingPressureSensitivity",
+    "handwritingEraserMode",
     "textNoteVimModeNoticeShown",
     "textNoteVimInsertKeysEnabled",
     "textNoteVimStartupCommands",

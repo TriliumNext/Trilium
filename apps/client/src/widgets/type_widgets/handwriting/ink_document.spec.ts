@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
     AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, getVisiblePage, outlineStrokePoints,
-    parseInkDocument, serializeInkDocument, serializeStroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
-    trimPrediction
+    parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
+    strokeHitsSegment, StrokeIndex, trimPrediction
 } from "./ink_document";
 
 function distanceToPolygon(x: number, y: number, polygon: number[][]) {
@@ -270,5 +270,94 @@ describe("getVisiblePage", () => {
         // Past either end of the pages, the nearest one.
         expect(getVisiblePage(-900, -100, 3)).toBe(0);
         expect(getVisiblePage(5000, 6000, 3)).toBe(2);
+    });
+});
+
+describe("splitStroke", () => {
+    /** A straight line along the x axis from 0 to `length`, with a raw point every `step`. */
+    function linePoints(length: number, step: number, pressure: (x: number) => number) {
+        const points: number[] = [];
+        for (let x = 0; x <= length; x += step) points.push(x, 0, pressure(x));
+        return points;
+    }
+    const xsOf = (stroke: Stroke) => stroke.points.filter((_, i) => i % 3 === 0);
+
+    it("cuts out the ink the eraser covers, and keeps the pieces on either side", () => {
+        // Without thinning, the ink reaches 2 from the centerline, so an eraser of 8 cuts 10 away.
+        const stroke = createStroke({
+            tool: "pen", color: "#e64d4d", size: 4, simulatePressure: false, sensitivity: 0, order: 7,
+            points: linePoints(100, 10, (x) => x / 100)
+        });
+
+        const tapped = splitStroke(stroke, 55, 0, 55, 0, 8);
+        expect(tapped?.map(xsOf)).toEqual([ [ 0, 10, 20, 30, 40, 45 ], [ 65, 70, 80, 90, 100 ] ]);
+        const [ before, after ] = tapped ?? [];
+        expect(before.points.at(-1)).toBeCloseTo(0.45);
+        expect(after.points[2]).toBeCloseTo(0.65);
+        expect(before.bounds.maxX).toBe(49);
+        expect(after).toMatchObject({
+            tool: "pen", color: "#e64d4d", size: 4, simulatePressure: false, sensitivity: 0, order: 7
+        });
+
+        // Across the stroke, and along it a little to one side.
+        expect(splitStroke(stroke, 55, -30, 55, 30, 8)?.map(xsOf))
+            .toEqual([ [ 0, 10, 20, 30, 40, 45 ], [ 65, 70, 80, 90, 100 ] ]);
+        const dragged = splitStroke(stroke, 20, 5, 50, 5, 8)?.map(xsOf) ?? [];
+        expect(dragged).toHaveLength(2);
+        expect(dragged[0].slice(0, 2)).toEqual([ 0, 10 ]);
+        expect(dragged[0][2]).toBeCloseTo(20 - Math.sqrt(75));
+        expect(dragged[1][0]).toBeCloseTo(50 + Math.sqrt(75));
+        expect(dragged[1].slice(1)).toEqual([ 60, 70, 80, 90, 100 ]);
+
+        // The same eraser leaves the pieces it cut alone, as it does when it rests or moves back.
+        expect(splitStroke(before, 55, 0, 55, 0, 8)).toBeUndefined();
+        expect(splitStroke(after, 55, 0, 55, 0, 8)).toBeUndefined();
+        for (const piece of splitStroke(stroke, 20, 5, 50, 5, 8) ?? []) {
+            expect(splitStroke(piece, 20, 5, 50, 5, 8)).toBeUndefined();
+        }
+
+        // At an end, only one piece is left; over the whole stroke, none.
+        expect(splitStroke(stroke, 0, 0, 0, 0, 8)?.map(xsOf)).toEqual([ [ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 ] ]);
+        expect(splitStroke(stroke, -20, 0, 120, 0, 8)).toEqual([]);
+
+        // Missing the ink leaves the stroke as it is.
+        expect(splitStroke(stroke, 55, 10.1, 55, 10.1, 8)).toBeUndefined();
+        expect(splitStroke(stroke, 55, 9.9, 55, 9.9, 8)).toHaveLength(2);
+
+        const dot = createStroke({ ...stroke, points: [ 5, 5, 0.5 ] });
+        expect(splitStroke(dot, 12, 5, 12, 5, 8)).toEqual([]);
+        expect(splitStroke(dot, 20, 5, 20, 5, 8)).toBeUndefined();
+    });
+
+    it("ends each piece where its round end meets the eraser, however hard the pen pressed", () => {
+        // At full pressure and sensitivity, the ink reaches 6 from the centerline, not 3.
+        const stroke = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 6, simulatePressure: false, sensitivity: 100, order: 0,
+            points: wavyPoints(80).map((value, i) => i % 3 === 2 ? 1 : value)
+        });
+        const [ eraserX, eraserY ] = [ stroke.points[120], stroke.points[121] ];
+        const pieces = splitStroke(stroke, eraserX, eraserY, eraserX, eraserY, 8) ?? [];
+        expect(pieces).toHaveLength(2);
+        for (const piece of pieces) {
+            const closest = Math.min(...getStrokeOutline(piece).map(([ x, y ]) => Math.hypot(x - eraserX, y - eraserY)));
+            expect(closest).toBeGreaterThan(7.9);
+            expect(closest).toBeLessThan(8.5);
+        }
+    });
+
+    it("keeps the width of a stroke that follows the speed", () => {
+        // A slow stroke grows from the starting pressure of 0.5 over its first hundred points.
+        const stroke = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: true, order: 0,
+            points: linePoints(150, 0.5, () => 0.5)
+        });
+        const pieces = splitStroke(stroke, 100, 0, 100, 0, 8) ?? [];
+        expect(pieces).toHaveLength(2);
+        expect(pieces[1].simulatePressure).toBe(false);
+
+        const original = getStrokeOutline(stroke);
+        for (const [ piece, x ] of [ [ pieces[0], 50 ], [ pieces[1], 125 ] ] as const) {
+            expect(distanceToPolygon(x, 0, getStrokeOutline(piece))).toBeCloseTo(distanceToPolygon(x, 0, original), 2);
+        }
     });
 });

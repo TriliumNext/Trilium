@@ -358,6 +358,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
      * this device, from 0 (not at all) to 100.
      */
     handwritingPressureSensitivity: number;
+    /**
+     * Whether the eraser of handwriting notes removes each stroke it touches whole, or only the
+     * parts of strokes it covers, on this device.
+     */
+    handwritingEraserMode: "stroke" | "partial";
     /** Whether the notice that explains Vim mode was shown when it was first turned on. */
     textNoteVimModeNoticeShown: boolean;
     /** Whether six more Ctrl keys of Insert mode, such as `Ctrl+V`, follow Vim. */
