@@ -1,7 +1,8 @@
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getStrokePath,
-    HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout, type InkTool, type InkView, PAGE_GAP,
+    HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout, type InkTextBox, type InkTool,
+    type InkView, PAGE_GAP,
     PageLayout, type PaperStyle, serializeInkDocument, serializeStroke, splitStroke, type Stroke,
     strokeHitsSegment, StrokeIndex
 } from "./ink_document";
@@ -45,6 +46,8 @@ interface InkSurfaceOptions {
     onStateChange(state: InkSurfaceState): void;
     /** Loads the picture of an image of the note. Without it, images show as empty rectangles. */
     loadImage?(url: string): Promise<Picture | undefined>;
+    /** Called after a pan, a zoom or a resize moves the paper in the container. */
+    onViewChange?(): void;
     /** Opens the PDF of the note. Without it, the sheets stay empty. */
     openPdf?(url: string): Promise<PdfPages | undefined>;
 }
@@ -120,6 +123,8 @@ export default class InkSurface {
     private thumbnail: InkThumbnail;
     private nextOrder = 0;
     private nextImageOrder = 0;
+    /** The text boxes, which `TextBoxLayer` shows and changes. The surface only saves them. */
+    private texts: InkTextBox[] = [];
     private penErasing = false;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
@@ -292,6 +297,7 @@ export default class InkSurface {
             this.index.add(stroke);
         }
         this.nextOrder = doc.strokes.length;
+        this.texts = doc.texts ?? [];
         const images = doc.images ?? [];
         this.images.load(images);
         this.nextImageOrder = images.length;
@@ -329,7 +335,7 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.pdf.url, this.pages.sizes);
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.pdf.url, this.pages.sizes, this.texts);
     }
 
     /**
@@ -440,6 +446,7 @@ export default class InkSurface {
         this.redrawAll();
         this.liveStroke.redraw();
         this.images.updateBox();
+        this.options.onViewChange?.();
         this.reportState();
     }
 
@@ -958,6 +965,7 @@ export default class InkSurface {
         this.schedulePreviewFrame();
         this.liveStroke.redraw();
         this.images.updateBox();
+        this.options.onViewChange?.();
         this.reportState();
     }
 
@@ -995,6 +1003,7 @@ export default class InkSurface {
         this.ty += wholeY;
         this.liveStroke.redraw();
         this.images.updateBox();
+        this.options.onViewChange?.();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
 
         const { width, height } = this.baseCanvas;
@@ -1043,6 +1052,7 @@ export default class InkSurface {
         this.redrawAll();
         this.liveStroke.redraw();
         this.images.updateBox();
+        this.options.onViewChange?.();
         if (this.getVisiblePage() !== this.reportedPage) this.reportState();
     }
 
@@ -1073,7 +1083,16 @@ export default class InkSurface {
         return { x: (clientX - rect.left) * this.dpr, y: (clientY - rect.top) * this.dpr };
     }
 
-    private toWorld(clientX: number, clientY: number) {
+    getTextBoxes() {
+        return this.texts;
+    }
+
+    setTextBoxes(texts: InkTextBox[]) {
+        this.texts = texts;
+        this.options.onChange();
+    }
+
+    toWorld(clientX: number, clientY: number) {
         const device = this.toDevice(clientX, clientY);
         const scale = this.zoom * this.dpr;
         return { x: (device.x - this.tx) / scale, y: (device.y - this.ty) / scale };

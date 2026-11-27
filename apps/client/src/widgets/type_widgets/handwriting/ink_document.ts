@@ -94,11 +94,21 @@ export const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#
  */
 export const PDF_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/open$/;
 
+/** A box of typed text on the paper: a text note, a child of the handwriting note. */
+export interface InkTextBox {
+    noteId: string;
+    /** The top left corner and the width, in world units. The text gives the height. */
+    x: number;
+    y: number;
+    width: number;
+}
+
 export interface InkDocument {
     paper: PaperStyle;
     layout: InkLayout;
     strokes: Stroke[];
     images?: InkImage[];
+    texts?: InkTextBox[];
     /** The PDF whose pages lie on the sheets, which matches {@link PDF_URL_PATTERN}. */
     pdf?: string;
     /** The sizes of the first sheets, as a PDF gave them. The sheets after them are A4. */
@@ -130,6 +140,7 @@ interface SerializedDocument {
     /** The `[width, height]` of each sheet with a size of its own. */
     sheets?: number[][];
     images?: SerializedImage[];
+    texts?: { noteId: string, x: number, y: number, w: number }[];
     strokes: SerializedStroke[];
     view?: InkView;
 }
@@ -162,7 +173,7 @@ export function createImage(props: Omit<InkImage, "bounds">): InkImage {
  */
 export function serializeInkDocument(
     paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
-    images: InkImage[] = [], pdf?: string, sheets: SheetSize[] = []
+    images: InkImage[] = [], pdf?: string, sheets: SheetSize[] = [], texts: InkTextBox[] = []
 ): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
@@ -178,7 +189,11 @@ export function serializeInkDocument(
     const savedImages = images.length
         ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedSheets}${savedImages},"strokes":[${parts.join(",")}]}`;
+    const savedTexts = texts.length
+        ? `,"texts":${JSON.stringify(texts.map(({ noteId, x, y, width }) =>
+            ({ noteId, x: round(x, 10), y: round(y, 10), w: round(width, 10) })))}`
+        : "";
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedSheets}${savedImages}${savedTexts},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -206,7 +221,7 @@ function serializeImage(image: InkImage): SerializedImage {
 }
 
 export function parseInkDocument(content: string | null | undefined): InkDocument {
-    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [], images: [] };
+    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [], images: [], texts: [] };
     if (!content) return empty;
 
     let raw: Partial<SerializedDocument>;
@@ -241,7 +256,8 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const pdf = typeof raw.pdf === "string" && PDF_URL_PATTERN.test(raw.pdf) ? raw.pdf : undefined;
     const sheets = parseSheets(raw.sheets);
     return {
-        paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view),
+        paper, layout, strokes, images: parseImages(raw.images), texts: parseTexts(raw.texts),
+        view: parseView(raw.view),
         ...(pdf && { pdf }), ...(sheets.length && { sheets })
     };
 }
@@ -260,6 +276,19 @@ function parseSheets(raw: unknown): SheetSize[] {
 
 function isSheetSide(value: unknown): value is number {
     return isFiniteNumber(value) && value >= MIN_SHEET_SIDE && value <= MAX_SHEET_SIDE;
+}
+
+function parseTexts(raw: unknown): InkTextBox[] {
+    const texts: InkTextBox[] = [];
+    if (!Array.isArray(raw)) return texts;
+    for (const serialized of raw as Partial<Record<"noteId" | "x" | "y" | "w", unknown>>[]) {
+        const { noteId, x, y, w } = serialized ?? {};
+        if (typeof noteId !== "string" || !/^[a-zA-Z0-9_]+$/.test(noteId)) continue;
+        if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) continue;
+        if (texts.some((text) => text.noteId === noteId)) continue;
+        texts.push({ noteId, x, y, width: w });
+    }
+    return texts;
 }
 
 function parseImages(raw: unknown): InkImage[] {

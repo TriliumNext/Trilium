@@ -133,9 +133,26 @@ describe("ink document", () => {
         }
     });
 
+    it("saves the text boxes, and reads back one box for each note", () => {
+        const box = { noteId: "abc_123", x: 10.04, y: 20, width: 320 };
+        expect(serializeInkDocument("ruled", [], undefined, "pages")).not.toContain("texts");
+        const saved = serializeInkDocument("ruled", [], undefined, "pages", [], undefined, [], [ box ]);
+        expect(JSON.parse(saved).texts).toEqual([ { noteId: "abc_123", x: 10, y: 20, w: 320 } ]);
+        expect(parseInkDocument(saved).texts).toEqual([ { ...box, x: 10 } ]);
+
+        const parsed = parseInkDocument(JSON.stringify({ version: 1, strokes: [], texts: [
+            { noteId: "a/b", x: 0, y: 0, w: 10 },
+            { noteId: "abc", x: 0, y: 0, w: 0 },
+            null,
+            { noteId: "abc", x: 1, y: 2, w: 10 },
+            { noteId: "abc", x: 5, y: 5, w: 10 }
+        ] }));
+        expect(parsed.texts).toEqual([ { noteId: "abc", x: 1, y: 2, width: 10 } ]);
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
-            expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [], images: [] });
+            expect(parseInkDocument(content)).toEqual({ paper: "ruled", layout: "pages", strokes: [], images: [], texts: [] });
         }
         expect(parseInkDocument(JSON.stringify({ paper: "plaid", strokes: [] })).paper).toBe("ruled");
     });

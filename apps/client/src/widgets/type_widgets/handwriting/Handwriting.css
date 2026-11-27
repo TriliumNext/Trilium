@@ -119,6 +119,111 @@
         outline: none;
     }
 
+    .handwriting-text-catcher {
+        position: absolute;
+        inset: 0;
+        cursor: text;
+    }
+
+    .handwriting-text-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        transform-origin: 0 0;
+        pointer-events: none;
+    }
+
+    .handwriting-text-box {
+        position: absolute;
+        box-sizing: border-box;
+        padding: 4px 8px;
+        color: var(--main-text-color);
+        pointer-events: none;
+
+        &.interactive {
+            outline: 1px dashed var(--main-border-color);
+            cursor: default;
+            pointer-events: auto;
+        }
+
+        &.selected {
+            outline: 2px solid var(--main-link-color, #4d99e6);
+        }
+
+        &.editing {
+            background-color: var(--main-background-color);
+            cursor: text;
+        }
+
+        .handwriting-text-preview {
+            user-select: none;
+
+            &.empty {
+                opacity: 0.5;
+            }
+
+            > .ck-content > :first-child {
+                margin-top: 0;
+            }
+
+            > .ck-content > :last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        .note-detail-editable-text-editor {
+            padding-top: 0;
+        }
+
+        .ck.ck-editor__editable_inline > :first-child {
+            margin-top: 0;
+        }
+
+        .ck.ck-editor__editable_inline > :last-child {
+            margin-bottom: 0;
+        }
+
+        .handwriting-text-missing {
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        .handwriting-text-box-bar {
+            position: absolute;
+            bottom: 100%;
+            left: -2px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px 4px 0 0;
+            color: white;
+            background-color: var(--main-link-color, #4d99e6);
+            cursor: move;
+            touch-action: none;
+
+            button {
+                padding: 0;
+                border: 0;
+                color: inherit;
+                background: none;
+                cursor: pointer;
+            }
+        }
+
+        .handwriting-text-box-resize {
+            position: absolute;
+            top: 0;
+            right: -6px;
+            bottom: 0;
+            width: 12px;
+            cursor: ew-resize;
+            touch-action: none;
+        }
+    }
+
     .handwriting-toolbar {
         --handwriting-toolbar-top: 12px;
 

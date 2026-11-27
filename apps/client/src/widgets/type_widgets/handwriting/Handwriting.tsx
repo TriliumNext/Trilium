@@ -21,9 +21,10 @@ import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
 import { TypeWidgetProps } from "../type_widget";
+import TextBoxLayer, { isInTextBox } from "./TextBoxLayer";
 import {
-    AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTool, type InkView,
-    PAPER_STYLES, parseInkDocument
+    AUTO_COLOR, DEFAULT_PRESSURE_SENSITIVITY, INK_LAYOUTS, type InkDocument, type InkTextBox, type InkTool,
+    type InkView, PAPER_STYLES, parseInkDocument
 } from "./ink_document";
 import { openPdf } from "./ink_pdf";
 import InkSurface, {
@@ -39,11 +40,15 @@ const TOOLS: ToolbarTool[] = [
     },
     { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser"), key: "e" },
     { tool: "select", icon: "bx-pointer", title: () => t("handwriting.select"), key: "v" },
+    { tool: "text", icon: "bx-text", title: () => t("handwriting.text"), key: "t" },
     { tool: "pan", icon: "bx-move", title: () => t("handwriting.pan"), key: "h" }
 ];
 
+/** A tool of the toolbar: one of the surface, or the text tool, which `TextBoxLayer` handles. */
+type NoteTool = SurfaceTool | "text";
+
 interface ToolbarTool {
-    tool: SurfaceTool;
+    tool: NoteTool;
     icon: string;
     title: () => string;
     /** The key that picks the tool, in lower case. */
@@ -117,7 +122,9 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     noteIdRef.current = note?.noteId;
     /** The note whose strokes the surface shows. */
     const shownNoteIdRef = useRef<string | undefined>(undefined);
-    const [ tool, setTool ] = useState<SurfaceTool>("pen");
+    const [ tool, setTool ] = useState<NoteTool>("pen");
+    const [ textBoxes, setTextBoxes ] = useState<InkTextBox[]>([]);
+    const textLayerRef = useRef<HTMLDivElement>(null);
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
     const inkTool: InkTool | undefined = tool === "pen" || tool === "highlighter" ? tool : undefined;
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +146,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
      * The tool the pen uses now: the pan tool while the space bar is held, and the eraser while a
      * button of the pen erases.
      */
-    let activeTool: SurfaceTool = tool;
+    let activeTool: NoteTool = tool;
     if (spaceHeld) activeTool = "pan";
     else if (state.penErasing && inkTool) activeTool = "eraser";
 
@@ -180,6 +187,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         const previous = shownNoteIdRef.current;
         if (previous && previous !== noteId) sessionViews.set(previous, surface.getCenterView());
         surface.load(doc);
+        setTextBoxes(doc.texts ?? []);
         if (!previous || previous !== noteId) {
             shownNoteIdRef.current = noteId;
             surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
@@ -215,7 +223,14 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             onGesture: () => spacedUpdate.resetUpdateTimer(),
             onStateChange: setState,
             loadImage: loadPicture,
-            openPdf
+            openPdf,
+            onViewChange: () => {
+                // The surface reports its first view from its constructor, before the ref holds it.
+                const { zoom, x, y } = surfaceRef.current?.getView() ?? { zoom: 1, x: 0, y: 0 };
+                if (textLayerRef.current) {
+                    textLayerRef.current.style.transform = `translate(${x}px, ${y}px) scale(${zoom})`;
+                }
+            }
         });
         surfaceRef.current = surface;
         if (pendingDocRef.current) {
@@ -233,7 +248,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     useEffect(() => {
         const surface = surfaceRef.current;
         if (!surface) return;
-        surface.tool = tool;
+        surface.tool = tool === "text" ? "pan" : tool;
         surface.color = color;
         surface.size = size;
         surface.readOnly = isReadOnly;
@@ -284,6 +299,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     }
 
     function onKeyDown(e: TargetedKeyboardEvent<HTMLDivElement>) {
+        if (isInTextBox(e.target)) return;
         // Only on the surface itself, so that the space bar still presses a focused toolbar button.
         if (e.key === " " && e.target === e.currentTarget && !e.ctrlKey && !e.metaKey && !e.altKey) {
             setSpaceHeld(true);
@@ -337,8 +353,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 if (e.key === " ") setSpaceHeld(false);
             }}
             onBlur={() => setSpaceHeld(false)}
-            onPointerDown={() => containerEl?.focus({ preventScroll: true })}
+            onPointerDown={(e) => {
+                if (!isInTextBox(e.target)) containerEl?.focus({ preventScroll: true });
+            }}
             onPaste={(e) => {
+                if (isInTextBox(e.target)) return;
                 const files = getImageFiles(e.clipboardData);
                 if (!files.length || isReadOnly) return;
                 e.preventDefault();
@@ -362,6 +381,20 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 className="handwriting-surface"
                 data-tool={isReadOnly ? "pan" : activeTool}
                 style={{ cursor: isReadOnly ? undefined : getInkCursor(activeTool, size, state.zoom) }}
+            />
+
+            <TextBoxLayer
+                noteId={note?.noteId}
+                layerRef={textLayerRef}
+                boxes={textBoxes}
+                isAdding={!isReadOnly && activeTool === "text"}
+                isInteractive={!isReadOnly && (activeTool === "text" || activeTool === "select")}
+                toWorld={(clientX, clientY) => surfaceRef.current?.toWorld(clientX, clientY) ?? { x: 0, y: 0 }}
+                getZoom={() => surfaceRef.current?.getView().zoom ?? 1}
+                onChange={(boxes) => {
+                    setTextBoxes(boxes);
+                    surfaceRef.current?.setTextBoxes(boxes);
+                }}
             />
 
             {!isReadOnly && (
@@ -715,7 +748,7 @@ const MIN_CURSOR_DIAMETER = 4;
  * draw at a pressure of one half, drawn black inside white to show on any background. Returns
  * `undefined` for the eraser, whose cursor is in the stylesheet.
  */
-function getInkCursor(tool: SurfaceTool, size: number, zoom: number) {
+function getInkCursor(tool: NoteTool, size: number, zoom: number) {
     if (tool !== "pen" && tool !== "highlighter") return undefined;
     const width = tool === "highlighter" ? size * HIGHLIGHTER_WIDTH_FACTOR : size;
     const diameter = Math.min(MAX_CURSOR_DIAMETER, Math.max(MIN_CURSOR_DIAMETER, width * zoom));
