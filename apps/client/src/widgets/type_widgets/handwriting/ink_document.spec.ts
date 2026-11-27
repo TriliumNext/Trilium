@@ -46,9 +46,9 @@ describe("ink document", () => {
         const content = serializeInkDocument({ paper: "grid", strokes: [ pen, highlighter ] });
         const raw = JSON.parse(content);
         expect(raw.version).toBe(2);
-        expect(raw.objects[0]).toEqual({ t: "h", c: "#ff0000", w: 15, s: 1, p: [ 0, 0, 128, 1000, 0, 0 ] });
-        expect(content).toContain(`{"t":"h","c":"#ff0000","w":15,"s":1,"p":[`);
-        expect(raw.objects[1]).toEqual({ w: 4, p: [ 100, 200, 128, 23, 57, 127, -155, -177, -255 ] });
+        expect(raw.objects[0]).toEqual({ id: highlighter.id, t: "h", c: "#ff0000", w: 15, s: 1, p: [ 0, 0, 128, 1000, 0, 0 ] });
+        expect(content).toContain(`{"id":"${highlighter.id}","t":"h","c":"#ff0000","w":15,"s":1,"p":[`);
+        expect(raw.objects[1]).toEqual({ id: pen.id, w: 4, p: [ 100, 200, 128, 23, 57, 127, -155, -177, -255 ] });
 
         const doc = parseInkDocument(content);
         expect(doc.paper).toBe("grid");
@@ -94,16 +94,16 @@ describe("ink document", () => {
 
     it("saves the images in drawing order, and reads back only those of the note's attachments", () => {
         const url = "api/attachments/abc_123/image/exercise%201.png";
-        const first = createImage({ url, x: 10.04, y: 20, width: 300.26, height: 150, order: 0 });
-        const second = createImage({ url, x: 0, y: 2000, width: 50, height: 50, order: 1 });
+        const first = createImage({ id: "first", url, x: 10.04, y: 20, width: 300.26, height: 150, order: 0 });
+        const second = createImage({ id: "second", at: 1700000000000, url, x: 0, y: 2000, width: 50, height: 50, order: 1 });
 
         const saved = serializeInkDocument({ paper: "ruled", strokes: [], images: [ second, first ] });
         expect(JSON.parse(saved).objects).toEqual([
-            { o: "image", url, x: 10, y: 20, w: 300.3, h: 150 },
-            { o: "image", url, x: 0, y: 2000, w: 50, h: 50 }
+            { o: "image", id: "first", url, x: 10, y: 20, w: 300.3, h: 150 },
+            { o: "image", id: "second", at: 1700000000000, url, x: 0, y: 2000, w: 50, h: 50 }
         ]);
         const images = parseInkDocument(saved).images ?? [];
-        expect(images.map((image) => image.order)).toEqual([ 0, 1 ]);
+        expect(images.map(({ id, at, order }) => [ id, at, order ])).toEqual([ [ "first", undefined, 0 ], [ "second", 1700000000000, 1 ] ]);
         expect(images[0].bounds).toEqual({ minX: 10, minY: 20, maxX: 310.3, maxY: 170 });
         // The second image is on the second page, which shows a third one after it.
         expect(new PageLayout().getPageCount(images)).toBe(3);
@@ -188,37 +188,41 @@ describe("ink document", () => {
             { id: "abc", x: 1, y: 2, w: 10, html: "<p>a</p>" },
             { id: "abc", x: 5, y: 5, w: 10, html: "<p>b</p>" }
         ] }));
-        expect(parsed.texts).toEqual([ { id: "abc", order: 4, x: 1, y: 2, width: 10, html: "<p>a</p>" } ]);
+        // The boxes of a note saved before `objects` lie over its strokes, and no two share an ID.
+        expect(parsed.texts).toEqual([
+            { id: "abc", order: 4, x: 1, y: 2, width: 10, html: "<p>a</p>" },
+            { id: "abc_", order: 5, x: 5, y: 5, width: 10, html: "<p>b</p>" }
+        ]);
     });
 
     it("lists the strokes, the images and the text boxes as one, in drawing order", () => {
         const url = "api/attachments/abc/image/a.png";
         const under = makeStroke([ 1, 2, 0.5 ], 0);
-        const image = createImage({ url, x: 0, y: 0, width: 10, height: 10, order: 1 });
-        const over = makeStroke([ 3, 4, 0.5 ], 2);
+        const image = createImage({ id: "picture", url, x: 0, y: 0, width: 10, height: 10, order: 1 });
+        const over = createStroke({ ...makeStroke([ 3, 4, 0.5 ], 2), id: "over", at: 1700000000000 });
         const box = { id: "box", order: 3, x: 0, y: 0, width: 100, html: "<p>a</p>" };
 
         const saved = serializeInkDocument({ paper: "ruled", strokes: [ over, under ], images: [ image ], texts: [ box ] });
-        expect(JSON.parse(saved)).toMatchObject({ version: 2 });
         expect(JSON.parse(saved)).not.toHaveProperty("strokes");
-        expect(JSON.parse(saved).objects.map(({ o, p }: Record<string, unknown>) => o ?? p)).toEqual([
-            [ 10, 20, 128 ], "image", [ 30, 40, 128 ], "text"
+        expect(JSON.parse(saved).objects.map(({ o, id, at }: Record<string, unknown>) => [ o, id, at ])).toEqual([
+            [ undefined, under.id, undefined ], [ "image", "picture", undefined ], [ undefined, "over", 1700000000000 ], [ "text", "box", undefined ]
         ]);
+        expect(under.id).toMatch(/^\w{10}$/);
 
-        // Reading the document gives each object its place back.
+        // Reading the document gives each object its place, its ID and its time back.
         const parsed = parseInkDocument(saved);
-        expect(parsed.version).toBe(2);
-        expect(parsed.strokes.map(({ order }) => order)).toEqual([ 0, 2 ]);
-        expect(parsed.images?.map(({ order }) => order)).toEqual([ 1 ]);
-        expect(parsed.texts?.map(({ order }) => order)).toEqual([ 3 ]);
+        expect(parsed.strokes.map(({ id, at, order }) => [ id, at, order ])).toEqual([ [ under.id, undefined, 0 ], [ "over", 1700000000000, 2 ] ]);
+        expect(parsed.images?.map(({ id, order }) => [ id, order ])).toEqual([ [ "picture", 1 ] ]);
+        expect(parsed.texts?.map(({ id, order }) => [ id, order ])).toEqual([ [ "box", 3 ] ]);
         expect(serializeInkDocument({ ...parsed, layout: "pages" })).toBe(saved);
 
-        // A note saved before `objects` has its images under its strokes, and says its version.
-        const older = parseInkDocument(JSON.stringify({
-            version: 1, paper: "ruled", images: [ { url, x: 0, y: 0, w: 10, h: 10 } ], strokes: [ { w: 4, p: [ 0, 0, 128 ] } ]
-        }));
-        expect(older.version).toBe(1);
-        expect([ ...older.images ?? [], ...older.strokes ].map(({ order }) => order)).toEqual([ 0, 1 ]);
+        // A note saved before `objects` has its images under its strokes, and its objects take
+        // IDs from their places, which are the same each time it is read.
+        const older = JSON.stringify({ version: 1, paper: "ruled", images: [ { url, x: 0, y: 0, w: 10, h: 10 } ], strokes: [ { w: 4, p: [ 0, 0, 128 ] } ] });
+        for (const read of [ parseInkDocument(older), parseInkDocument(older) ]) {
+            expect(read.version).toBe(1);
+            expect([ ...read.images ?? [], ...read.strokes ].map(({ id, order }) => [ id, order ])).toEqual([ [ "i1", 0 ], [ "s2", 1 ] ]);
+        }
         expect(parseInkDocument(JSON.stringify({ version: 3, paper: "ruled", objects: [] })).version).toBe(3);
         expect(parseInkDocument(JSON.stringify({ strokes: [] })).version).toBe(1);
     });
@@ -452,7 +456,7 @@ describe("splitStroke", () => {
         // Without thinning, the ink reaches 2 from the centerline, so an eraser of 8 cuts 10 away.
         const stroke = createStroke({
             tool: "pen", color: "#e64d4d", size: 4, simulatePressure: false, sensitivity: 0, order: 7,
-            points: linePoints(100, 10, (x) => x / 100)
+            at: 1700000000000, points: linePoints(100, 10, (x) => x / 100)
         });
 
         const tapped = splitStroke(stroke, 55, 0, 55, 0, 8);
@@ -462,8 +466,11 @@ describe("splitStroke", () => {
         expect(after.points[2]).toBeCloseTo(0.65);
         expect(before.bounds.maxX).toBe(49);
         expect(after).toMatchObject({
-            tool: "pen", color: "#e64d4d", size: 4, simulatePressure: false, sensitivity: 0, order: 7
+            tool: "pen", color: "#e64d4d", size: 4, simulatePressure: false, sensitivity: 0, order: 7,
+            at: 1700000000000
         });
+        // Each piece is a stroke of its own.
+        expect(new Set([ stroke.id, before.id, after.id ]).size).toBe(3);
 
         // Across the stroke, and along it a little to one side.
         expect(splitStroke(stroke, 55, -30, 55, 30, 8)?.map(xsOf))

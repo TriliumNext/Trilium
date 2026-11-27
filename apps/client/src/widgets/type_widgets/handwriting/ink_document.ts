@@ -4,6 +4,8 @@ import {
 } from "@triliumnext/commons/src/lib/handwriting.js";
 import { getStroke, getStrokeOutlinePoints, type StrokePoint } from "perfect-freehand";
 
+import { randomString } from "../../../services/utils";
+
 export const PAPER_STYLES = [ "ruled", "grid", "dots", "blank" ] as const;
 export type PaperStyle = (typeof PAPER_STYLES)[number];
 
@@ -65,12 +67,21 @@ export interface Bounds {
  * the objects of the note, which a saved document lists in drawing order.
  */
 export interface InkObject {
+    /** Tells the objects of a note apart, and stays the same for as long as the object exists. */
+    id: string;
+    /** When the object was made, in milliseconds since the Unix epoch, if the note says. */
+    at?: number;
     /**
      * The position of the object in the drawing order of the note, the lowest at the bottom. The
      * surface draws the images under the strokes and the text boxes over them whatever their
      * order, which a saved document keeps all the same.
      */
     order: number;
+}
+
+/** Returns an `id` for a new object. */
+export function createObjectId() {
+    return randomString(10);
 }
 
 export interface Stroke extends InkObject {
@@ -120,8 +131,6 @@ export const PDF_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/open$/;
 
 /** A box of typed text on the paper. */
 export interface InkTextBox extends InkObject {
-    /** Tells the boxes of a note apart. */
-    id: string;
     /** The text, as the HTML of a text editor. */
     html: string;
     /** The top left corner and the width, in world units. The text gives the height. */
@@ -196,20 +205,32 @@ interface SerializedDocument {
  */
 export const DEFAULT_PRESSURE_SENSITIVITY = 60;
 
+/** What makes an object: its own fields `K` and its place, with an `id` only to keep one. */
+type NewObject<T extends InkObject, K extends keyof T> =
+    Pick<T, K | "order"> & Partial<Pick<InkObject, "id" | "at">>;
+
+/** Returns a stroke with its bounds, and with a new `id` unless `props` has one. */
 export function createStroke(
-    props: Pick<Stroke, "tool" | "color" | "size" | "simulatePressure" | "points" | "order" | "sensitivity">
+    props: NewObject<Stroke, "tool" | "color" | "size" | "simulatePressure" | "points">
+        & Pick<Stroke, "sensitivity">
 ): Stroke {
-    const { sensitivity, ...rest } = props;
+    const { sensitivity, id, ...rest } = props;
     return {
         ...rest,
+        id: id ?? createObjectId(),
         ...(sensitivity !== undefined && sensitivity !== DEFAULT_PRESSURE_SENSITIVITY && { sensitivity }),
         bounds: computeBounds(props.points, props.size)
     };
 }
 
-export function createImage(props: Omit<InkImage, "bounds">): InkImage {
+/** Returns an image with its bounds, and with a new `id` unless `props` has one. */
+export function createImage(props: NewObject<InkImage, "url" | "x" | "y" | "width" | "height">): InkImage {
     const { x, y, width, height } = props;
-    return { ...props, bounds: { minX: x, minY: y, maxX: x + width, maxY: y + height } };
+    return {
+        ...props,
+        id: props.id ?? createObjectId(),
+        bounds: { minX: x, minY: y, maxX: x + width, maxY: y + height }
+    };
 }
 
 /** What `serializeInkDocument()` saves of a note. */
@@ -265,6 +286,8 @@ export function serializeInkDocument({
 export function serializeStroke(stroke: Stroke): string {
     if (stroke.json === undefined) {
         const serialized: SerializedStroke = {
+            id: stroke.id,
+            ...(stroke.at !== undefined && { at: stroke.at }),
             ...(stroke.tool === "highlighter" && { t: "h" as const }),
             ...(stroke.color !== AUTO_COLOR && { c: stroke.color }),
             w: stroke.size,
@@ -277,15 +300,17 @@ export function serializeStroke(stroke: Stroke): string {
     return stroke.json;
 }
 
-function serializeImage({ url, x, y, width, height }: InkImage) {
+function serializeImage({ id, at, url, x, y, width, height }: InkImage) {
     return JSON.stringify({
-        o: "image", url, x: round(x, 10), y: round(y, 10), w: round(width, 10), h: round(height, 10)
+        o: "image", id, ...(at !== undefined && { at }), url,
+        x: round(x, 10), y: round(y, 10), w: round(width, 10), h: round(height, 10)
     });
 }
 
-function serializeTextBox({ id, x, y, width, fontSize, html }: InkTextBox) {
+function serializeTextBox({ id, at, x, y, width, fontSize, html }: InkTextBox) {
     return JSON.stringify({
-        o: "text", id, x: round(x, 10), y: round(y, 10), w: round(width, 10),
+        o: "text", id, ...(at !== undefined && { at }),
+        x: round(x, 10), y: round(y, 10), w: round(width, 10),
         ...(fontSize !== undefined && { s: round(fontSize, 10) }), html
     });
 }
@@ -311,17 +336,26 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const strokes: Stroke[] = [];
     const images: InkImage[] = [];
     const texts: InkTextBox[] = [];
+    const ids = new Set<string>();
+    // An object without an `id` of its own takes one from its place, which every instance that
+    // reads the document gives alike.
+    const readObject = (entry: Record<string, unknown>, order: number, prefix: string) => {
+        let id = typeof entry.id === "string" && entry.id ? entry.id : `${prefix}${order + 1}`;
+        while (ids.has(id)) id += "_";
+        ids.add(id);
+        return { id, order, ...(isFiniteNumber(entry.at) && { at: entry.at }) };
+    };
     for (const [ order, entry ] of saved.entries()) {
         if (!isRecord(entry)) continue;
         const stroke = entry.o === undefined && parseStroke(entry);
         const image = entry.o === "image" && parseImage(entry);
         const text = entry.o === "text" && parseTextBox(entry);
         if (stroke) {
-            strokes.push(createStroke({ ...stroke, order }));
+            strokes.push(createStroke({ ...stroke, ...readObject(entry, order, "s") }));
         } else if (image) {
-            images.push(createImage({ ...image, order }));
-        } else if (text && !texts.some(({ id }) => id === text.id)) {
-            texts.push({ ...text, order });
+            images.push(createImage({ ...image, ...readObject(entry, order, "i") }));
+        } else if (text) {
+            texts.push({ ...text, ...readObject(entry, order, "t") });
         }
     }
 
@@ -406,11 +440,11 @@ function parseStroke({ t, c, w, s, k, p }: Record<string, unknown>) {
     };
 }
 
-function parseTextBox({ id, x, y, w, s, html }: Record<string, unknown>) {
-    if (typeof id !== "string" || typeof html !== "string") return undefined;
+function parseTextBox({ x, y, w, s, html }: Record<string, unknown>) {
+    if (typeof html !== "string") return undefined;
     if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) return undefined;
     const fontSize = isFiniteNumber(s) && s > 0 ? Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, s)) : undefined;
-    return { id, x, y, width: w, html, ...(fontSize !== undefined && { fontSize }) };
+    return { x, y, width: w, html, ...(fontSize !== undefined && { fontSize }) };
 }
 
 function parseImage({ url, x, y, w, h }: Record<string, unknown>) {
@@ -884,7 +918,8 @@ const MIN_CUT = 1e-6;
  * Returns the pieces of `stroke` left outside the eraser, the segment from `a` to `b` widened by
  * `radius`, or `undefined` when the eraser misses its ink. Each piece ends where its round end
  * meets the eraser. The pieces of a stroke whose width follows the speed save the pressure it
- * simulated as their own, so that they keep the width they had in the stroke.
+ * simulated as their own, so that they keep the width they had in the stroke. A piece is a
+ * stroke with an `id` of its own, made when `stroke` was.
  */
 export function splitStroke(
     stroke: Stroke, ax: number, ay: number, bx: number, by: number, radius: number
@@ -925,11 +960,11 @@ export function splitStroke(
     if (!hit) return undefined;
     if (piece) pieces.push(piece);
 
-    const { tool, color, size, sensitivity, order } = stroke;
+    const { tool, color, size, sensitivity, order, at } = stroke;
     return pieces
         .filter((piecePoints) => piecePoints.length >= 6)
         .map((piecePoints) => createStroke({
-            tool, color, size, sensitivity, order, simulatePressure: false, points: piecePoints
+            tool, color, size, sensitivity, order, at, simulatePressure: false, points: piecePoints
         }));
 }
 

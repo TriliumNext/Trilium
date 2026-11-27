@@ -733,11 +733,11 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         expect(sheet).toMatchObject({ version: 2, paper: "blank", layout: "infinite" });
         // The image lies under the ink, and the text boxes over it.
         expect(sheet.objects.map(({ o, id }) => [ o, id ])).toEqual([
-            [ "image", undefined ], [ undefined, undefined ], [ "text", "onenote1" ], [ "text", "onenote2" ]
+            [ "image", "i1" ], [ undefined, "s1" ], [ "text", "onenote1" ], [ "text", "onenote2" ]
         ]);
-        expect(sheet.strokes).toEqual([ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]);
+        expect(sheet.strokes).toEqual([ { id: "s1", w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]);
         // The image whose picture could not be downloaded is left out.
-        expect(sheet.images).toEqual([ { o: "image", url: expect.stringMatching(/^api\/attachments\/\w+\/image\/image\.png$/), x: 120, y: 835, w: 480, h: 270 } ]);
+        expect(sheet.images).toEqual([ { o: "image", id: "i1", url: expect.stringMatching(/^api\/attachments\/\w+\/image\/image\.png$/), x: 120, y: 835, w: 480, h: 270 } ]);
         // The text of a box starts where it did, inside the padding of the box, at 12pt.
         expect(sheet.texts.map(({ html, ...box }) => box)).toEqual([
             { o: "text", id: "onenote1", x: 40, y: 159, w: 736, s: 16 },
@@ -843,7 +843,7 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         expect(inkOnly?.isHandwriting()).toBe(true);
         expect(JSON.parse(String(inkOnly?.getContent()))).toEqual({
             version: 2, paper: "blank", layout: "infinite",
-            objects: [ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]
+            objects: [ { id: "s1", w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]
         });
     });
 

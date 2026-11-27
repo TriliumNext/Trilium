@@ -171,6 +171,6 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 
 ## Under the hood
 
-A handwriting note is stored as JSON that lists the strokes with their color, thickness, pressure sensitivity and points, and the images with their position, their size and the address of their attachment, as well as the sheets with their size and the page of a PDF that lies on each. To inspect it, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+A handwriting note is stored as JSON that lists the objects on the paper from the lowest to the topmost, as well as the sheets with their size and the page of a PDF that lies on each. An object is a stroke with its color, thickness, pressure sensitivity and points, an image with its position, its size and the address of its attachment, or a text box with its position, its width and its text. Each object has an identifier that it keeps for as long as it exists, and the time at which it was made. To inspect the JSON, select _Note source_ from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
 
 Internally, a handwriting note is a <a class="reference-link" href="Code.md">Code</a> note with the media type `application/vnd.triliumnotes.handwriting+json`. A version of Trilium older than handwriting notes that syncs with the same document therefore leaves these notes intact, and shows them as code notes holding that JSON. Do not edit them there.

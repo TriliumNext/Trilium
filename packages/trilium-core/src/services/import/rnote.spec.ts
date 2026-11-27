@@ -45,14 +45,17 @@ function convert(file: Uint8Array) {
     return { ...converted, document: readDocument(serializeRnote(converted, urls)) };
 }
 
-/** Reads a saved note, with its objects by kind. */
+/**
+ * Reads a saved note, with its objects by kind: the strokes and the images without their `id`,
+ * which their place in the note gives.
+ */
 function readDocument(content: string) {
     const document = JSON.parse(content);
     const objects: Record<string, unknown>[] = document.objects;
     return {
         ...document,
-        strokes: objects.filter(({ o }) => o === undefined),
-        images: objects.filter(({ o }) => o === "image").map(({ o, ...image }) => image),
+        strokes: objects.filter(({ o }) => o === undefined).map(({ id, ...stroke }) => stroke),
+        images: objects.filter(({ o }) => o === "image").map(({ o, id, ...image }) => image),
         texts: objects.filter(({ o }) => o === "text").map(({ o, ...text }) => text)
     };
 }
@@ -61,7 +64,7 @@ describe("convertRnote", () => {
     it("keeps the paper and the positions of the ink on a canvas without bounds, but not RNote's camera", () => {
         const { document } = convert(rnote([ brush([ [ 10, 20, 0.5 ], [ 10.52, 20, 1 ], [ 12, 23.04, 0.25 ] ]) ]));
         expect(document).toMatchObject({ version: 2, paper: "grid", layout: "infinite" });
-        expect(document.objects).toEqual([ { w: 3, k: 100, p: [ 100, 200, 128, 5, 0, 127, 15, 30, -191 ] } ]);
+        expect(document.objects).toEqual([ { id: "s1", w: 3, k: 100, p: [ 100, 200, 128, 5, 0, 127, 15, 30, -191 ] } ]);
         // The note opens fitting its ink, not where the RNote window was last scrolled and zoomed.
         expect(document).not.toHaveProperty("view");
         // Tenths of a unit and a pressure out of 255, each point as the difference from the last.
@@ -213,8 +216,8 @@ describe("convertRnote", () => {
             .toEqual([ { url: "api/attachments/b/image/b.png", x: -50, y: -200, w: 100, h: 400 } ]);
         expect(readDocument(serializeRnote(converted)).images).toEqual([]);
         // The images lie under the strokes, and the text boxes over them.
-        expect(converted.document.objects.map(({ o }: Record<string, unknown>) => o ?? "stroke"))
-            .toEqual([ "image", "image", "stroke", "text", "text", "text", "text", "text" ]);
+        expect(converted.document.objects.map(({ o, id }: Record<string, unknown>) => o ?? id))
+            .toEqual([ "image", "image", "s1", "text", "text", "text", "text", "text" ]);
 
         // Each PNG holds the pixels as they are, with their alpha no longer premultiplied.
         for (const { png } of converted.images) {

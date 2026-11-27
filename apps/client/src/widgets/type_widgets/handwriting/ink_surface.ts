@@ -461,7 +461,8 @@ export default class InkSurface {
             ...placeImage(naturalWidth, naturalHeight, visible, this.layout === "pages"
                 ? this.pages.getSheet(this.pages.indexAt(y))
                 : undefined),
-            order: this.takeImageOrder()
+            order: this.takeImageOrder(),
+            at: Date.now()
         });
         this.pushHistory({ added: [], removed: [], addedImages: [ image ] });
         this.applyHistory([], [], [ image ]);
@@ -761,7 +762,8 @@ export default class InkSurface {
                 color: this.color,
                 size: tool === "highlighter" ? this.size * HIGHLIGHTER_WIDTH_FACTOR : this.size,
                 order: this.nextOrder,
-                sensitivity: tool === "highlighter" ? undefined : this.sensitivity
+                sensitivity: tool === "highlighter" ? undefined : this.sensitivity,
+                at: Date.now()
             });
         } else if (mode === "erase") {
             this.erased = [];
@@ -906,12 +908,14 @@ export default class InkSurface {
         const { stroke: live, drawn } = finished;
 
         // Undoing a stroke that a hold made a shape of first gives back the stroke as it was drawn.
+        // The shape is another stroke, with an `id` of its own.
         const original = drawn && createStroke(drawn);
         if (original) {
             this.nextOrder++;
             this.pushHistory({ added: [ original ], removed: [] });
         }
-        const stroke = createStroke({ ...live, order: this.takeOrder() });
+        const id = original ? undefined : live.id;
+        const stroke = createStroke({ ...live, id, order: this.takeOrder() });
         this.strokes.add(stroke);
         this.index.add(stroke);
         this.thumbnail.add(stroke);

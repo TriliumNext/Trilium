@@ -108,7 +108,7 @@ export default class LiveStroke {
         this.placeLiveCanvas({ x: 0, y: 0, width: 0, height: 0 });
     }
 
-    start(e: PointerEvent, stroke: Pick<Stroke, "tool" | "color" | "size" | "order" | "sensitivity">) {
+    start(e: PointerEvent, stroke: Pick<Stroke, "tool" | "color" | "size" | "order" | "sensitivity" | "at">) {
         this.stroke = createStroke({ ...stroke, simulatePressure: e.pointerType !== "pen", points: [] });
         this.builder = new StrokeBuilder(this.stroke);
         this.settledUpTo = 0;

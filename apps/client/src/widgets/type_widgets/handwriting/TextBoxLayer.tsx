@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
-import { isHtmlEmpty, randomString } from "../../../services/utils";
+import { isHtmlEmpty } from "../../../services/utils";
 import { RawHtmlBlock } from "../../react/RawHtml";
-import type { InkTextBox } from "./ink_document";
+import { createObjectId, type InkTextBox } from "./ink_document";
 
 const loadTextBoxEditor = () => import("./TextBoxEditor");
 const TextBoxEditor = lazy(loadTextBoxEditor);
@@ -77,8 +77,11 @@ export default function TextBoxLayer({
 
     function addBox(clientX: number, clientY: number) {
         const { x, y } = toWorld(clientX, clientY);
-        const id = randomString(10);
-        setBoxes([ ...boxesRef.current, { id, order: takeOrder(), x, y, width: DEFAULT_WIDTH, html: "" } ]);
+        const id = createObjectId();
+        setBoxes([
+            ...boxesRef.current,
+            { id, at: Date.now(), order: takeOrder(), x, y, width: DEFAULT_WIDTH, html: "" }
+        ]);
         select(id);
         setEditedId(id);
     }

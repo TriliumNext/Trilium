@@ -14,9 +14,9 @@ describe("serializeImportedHandwriting", () => {
         expect(JSON.parse(content)).toEqual({
             version: HANDWRITING_FORMAT_VERSION, paper: "grid", layout: "infinite",
             objects: [
-                { o: "image", url, x: 10, y: 20, w: 300.3, h: 150 },
-                { w: 3, p: [ 1, 2, 128 ] },
-                { t: "h", w: 20, p: [ 3, 4, 128 ] },
+                { o: "image", id: "i1", url, x: 10, y: 20, w: 300.3, h: 150 },
+                { id: "s1", w: 3, p: [ 1, 2, 128 ] },
+                { id: "s2", t: "h", w: 20, p: [ 3, 4, 128 ] },
                 { o: "text", id: "box", x: 1, y: 2, w: 100, s: 12, html: "<p>a</p>" },
                 { o: "text", id: "plain", x: 0, y: 0, w: 50, html: "" }
             ]

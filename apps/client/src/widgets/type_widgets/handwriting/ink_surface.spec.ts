@@ -577,7 +577,8 @@ describe("ink surface input", () => {
         const picture = document.createElement("canvas");
         const loadImage = vi.fn();
         const objects = (): Record<string, unknown>[] => JSON.parse(surface.serialize()).objects;
-        const images = () => objects().filter(({ o }) => o === "image").map(({ o, ...image }) => image);
+        /** The saved images, without what tells one object from another. */
+        const images = () => objects().filter(({ o }) => o === "image").map(({ o, id, at, ...image }) => image);
         const box = () => container.querySelector<HTMLElement>(".handwriting-image-box");
         const hasSelection = () => onStateChange.mock.lastCall?.[0].hasSelection;
 
@@ -628,7 +629,8 @@ describe("ink surface input", () => {
             expect(loadImage).toHaveBeenCalledOnce();
         });
 
-        it("saves the objects in drawing order, a new image under the ink", () => {
+        it("saves each object with an ID and a time of its own, in drawing order", () => {
+            vi.spyOn(Date, "now").mockReturnValue(1700000000000);
             swipe("pen", 1, 100);
             surface.addImage(URL, 1000, 500);
             swipe("pen", 2, 200);
@@ -637,12 +639,25 @@ describe("ink surface input", () => {
             surface.setTextBoxes([ { id: "box", order: boxOrder, x: 0, y: 0, width: 100, html: "<p>a</p>" } ]);
 
             // A new image goes under the ink and the text, and over the images already there.
-            expect(objects().map(({ o, w }) => [ o, w ])).toEqual([
+            const saved = objects();
+            expect(saved.map(({ o, w }) => [ o, w ])).toEqual([
                 [ "image", 320 ], [ "image", 100 ], [ undefined, 3 ], [ undefined, 3 ], [ "text", 100 ]
             ]);
+            const ids = saved.map(({ id }) => id);
+            expect(new Set(ids).size).toBe(5);
+            expect(saved.slice(0, 4).map(({ at }) => at)).toEqual([ 1700000000000, 1700000000000, 1700000000000, 1700000000000 ]);
 
-            // A stroke drawn after the note was read again lies over all of them.
+            // Reading the note again, moving an image and undoing leave each object its ID.
             surface.load(parseInkDocument(surface.serialize()));
+            expect(objects().map(({ id }) => id)).toEqual(ids);
+            surface.tool = "select";
+            pointer("pointerdown", "pen", 1, 100, 100);
+            pointer("pointermove", "pen", 1, 130, 120);
+            pointer("pointerup", "pen", 1, 130, 120);
+            expect(objects().map(({ id }) => id)).toEqual(ids);
+
+            // A stroke drawn after the note was read lies over all of them.
+            surface.tool = "pen";
             swipe("pen", 3, 250);
             expect(objects().map(({ o }) => o)).toEqual([ "image", "image", undefined, undefined, "text", undefined ]);
         });

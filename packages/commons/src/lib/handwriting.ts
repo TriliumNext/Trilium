@@ -19,10 +19,22 @@ export function isHandwritingNote(type: string | null | undefined, mime: string 
 export const HANDWRITING_FORMAT_VERSION = 2;
 
 /**
- * A stroke in the saved content of a handwriting note, as the client's `serializeStroke()` writes
- * it and its `parseInkDocument()` reads it. A stroke is an object without `o`.
+ * What every object in the `objects` of a saved handwriting note holds. The objects are in
+ * drawing order, the first one at the bottom.
  */
-export interface SerializedStroke {
+export interface SerializedObject {
+    /** Tells the objects of a note apart, and stays the same for as long as the object exists. */
+    id: string;
+    /** When the object was made, in milliseconds since the Unix epoch. Left out when unknown. */
+    at?: number;
+}
+
+/**
+ * A stroke in the saved content of a handwriting note, as the client's `serializeStroke()` writes
+ * it and its `parseInkDocument()` reads it. A stroke is an object without `o`. An importer leaves
+ * out the `id`, which `serializeImportedHandwriting()` gives.
+ */
+export interface SerializedStroke extends Partial<SerializedObject> {
     /** `"h"` for the highlighter; the pen is left out. */
     t?: "h";
     /** The color, left out for ink in the text color of the theme. */
@@ -79,15 +91,15 @@ export interface ImportedHandwriting {
  * Returns the content of a handwriting note on a canvas without bounds, as the client's
  * `parseInkDocument()` reads it: the images at the bottom, then the strokes, then the text boxes,
  * which is how the client shows them. Positions and sizes are rounded to the precision of a saved
- * stroke.
+ * stroke. The images and the strokes are numbered for their `id`.
  */
 export function serializeImportedHandwriting({ paper, strokes, images = [], texts = [] }: ImportedHandwriting) {
     const round = (value: number) => Math.round(value * POSITION_SCALE) / POSITION_SCALE;
     const objects = [
-        ...images.map(({ url, x, y, w, h }) => JSON.stringify(
-            { o: "image", url, x: round(x), y: round(y), w: round(w), h: round(h) }
+        ...images.map(({ url, x, y, w, h }, index) => JSON.stringify(
+            { o: "image", id: `i${index + 1}`, url, x: round(x), y: round(y), w: round(w), h: round(h) }
         )),
-        ...strokes,
+        ...strokes.map((stroke, index) => `{"id":"s${index + 1}",${stroke.slice(1)}`),
         ...texts.map(({ id, x, y, w, s, html }) => JSON.stringify(
             { o: "text", id, x: round(x), y: round(y), w: round(w), ...(s !== undefined && { s: round(s) }), html }
         ))

@@ -320,7 +320,7 @@ describe("importSingleFile dispatch", () => {
         expect(JSON.parse(importedNote.getContent() as string)).toEqual({
             version: 2, paper: "blank", layout: "infinite",
             objects: [
-                { c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] },
+                { id: "s1", c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] },
                 { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
             ]
         });
@@ -341,7 +341,7 @@ describe("importSingleFile dispatch", () => {
         expect(JSON.parse(typed.importedNote.getContent() as string)).toEqual({
             version: 2, paper: "blank", layout: "infinite",
             objects: [
-                { o: "image", url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
+                { o: "image", id: "i1", url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
                 { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
             ]
         });
