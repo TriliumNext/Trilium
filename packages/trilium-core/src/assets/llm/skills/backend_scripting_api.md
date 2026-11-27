@@ -114,6 +114,12 @@ interface BackendApi {
     duplicateSubtree(origNoteId: string, newParentNoteId: string): NoteAndBranch;
     /** The notifications of the bell: raise, change and dismiss them, and show transient notifications of an operation, with the script's note as their source. */
     notifications: NotificationApi;
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: ChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: ChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note as its enabling reviewed them. */
+    channelSettings?: Record<string, string>;
 }
 
 /** A note as seen by backend scripts (subset of trilium-core's `BNote`). */
@@ -711,6 +717,27 @@ interface AppInfo {
     clipperProtocolVersion: string;
     /** The date and time, in UTC, that Trilium started, in ISO 8601 form. */
     utcDateTime: string;
+}
+
+/** What a notification channel script receives as `api.notification`. */
+interface ChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+interface ChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /** Aborts when the attempt times out, after 30 seconds. */
+    signal: AbortSignal;
 }
 
 /** Options accepted by the subtree traversal helpers on `BNote`. */

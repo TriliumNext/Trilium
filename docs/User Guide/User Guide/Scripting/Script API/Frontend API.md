@@ -100,6 +100,22 @@ The `api` global available inside **frontend** script notes (`application/javasc
             <td><pre><code class="language-application-typescript">createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise&lt;{ note: FNote | null; branch: FBranch | undefined }&gt;</code></pre><p>Creates a new note as a child of the given parent, entirely on the frontend — no backend scripting required (unlike <code>api.runOnBackend(() =&gt; api.createTextNote(...))</code>). By default the new note is activated in the current tab with its title focused for editing; pass <code>{ activate: false }</code> to create it silently.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>parentNotePath</code></td><td><code>string</code><br>note path (or noteId) of the parent under which to create the note</td></tr><tr><td><code>opts</code><br><em>optional</em></td><td><a href="#type-CreateNoteOpts"><code>CreateNoteOpts</code></a><br>creation options — e.g. <code>{ title, content, type, mime, activate }</code></td></tr></tbody></table></figure><p><strong>Returns</strong> <code>Promise&lt;{ note:</code> <a href="#type-FNote"><code>FNote</code></a> | <code>null; branch:</code> <a href="#type-FBranch"><code>FBranch</code></a> | <code>undefined }&gt;</code>: the created note and its branch, resolved from the frontend cache</p></td>
         </tr>
         <tr>
+            <td><code>setLabel</code></td>
+            <td><pre><code class="language-application-typescript">setLabel(noteId: string, name: string, value?: string): Promise&lt;void&gt;</code></pre><p>Sets the value of the first label of that name that the note owns, or adds a label that is not inheritable when the note owns none. Works on the frontend, without backend scripting, and resolves once the frontend cache holds the change.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>noteId</code></td><td><code>string</code><br>the note to change</td></tr><tr><td><code>name</code></td><td><code>string</code><br>the name of the label, without <code>#</code></td></tr><tr><td><code>value</code><br><em>optional</em></td><td><code>string</code><br>the value; an empty string when omitted</td></tr></tbody></table></figure></td>
+        </tr>
+        <tr>
+            <td><code>removeLabel</code></td>
+            <td><pre><code class="language-application-typescript">removeLabel(noteId: string, name: string, value?: string): Promise&lt;void&gt;</code></pre><p>Removes the labels of that name that the note owns. Inherited labels stay. Works like <code>setLabel()</code>.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>noteId</code></td><td><code>string</code><br>the note to change</td></tr><tr><td><code>name</code></td><td><code>string</code><br>the name of the label, without <code>#</code></td></tr><tr><td><code>value</code><br><em>optional</em></td><td><code>string</code><br>the value to match; when omitted, labels of any value are removed</td></tr></tbody></table></figure></td>
+        </tr>
+        <tr>
+            <td><code>setRelation</code></td>
+            <td><pre><code class="language-application-typescript">setRelation(noteId: string, name: string, targetNoteId: string): Promise&lt;void&gt;</code></pre><p>Sets the target of the first relation of that name that the note owns, or adds a relation that is not inheritable when the note owns none. Works like <code>setLabel()</code>.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>noteId</code></td><td><code>string</code><br>the note to change</td></tr><tr><td><code>name</code></td><td><code>string</code><br>the name of the relation, without <code>~</code></td></tr><tr><td><code>targetNoteId</code></td><td><code>string</code><br>the ID of the note that the relation points to</td></tr></tbody></table></figure></td>
+        </tr>
+        <tr>
+            <td><code>removeRelation</code></td>
+            <td><pre><code class="language-application-typescript">removeRelation(noteId: string, name: string, targetNoteId?: string): Promise&lt;void&gt;</code></pre><p>Removes the relations of that name that the note owns. Inherited relations stay. Works like <code>setLabel()</code>.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>noteId</code></td><td><code>string</code><br>the note to change</td></tr><tr><td><code>name</code></td><td><code>string</code><br>the name of the relation, without <code>~</code></td></tr><tr><td><code>targetNoteId</code><br><em>optional</em></td><td><code>string</code><br>the target to match; when omitted, relations to any note are removed</td></tr></tbody></table></figure></td>
+        </tr>
+        <tr>
             <td><code>getInstanceName</code></td>
             <td><pre><code class="language-application-typescript">getInstanceName(): string | null</code></pre><p>Instance name identifies particular Trilium instance. It can be useful for scripts if some action needs to happen on only one specific instance.</p></td>
         </tr>
@@ -290,6 +306,18 @@ The `api` global available inside **frontend** script notes (`application/javasc
         <tr>
             <td><code>notifications</code></td>
             <td><p><a href="#type-FrontendNotificationApi"><code>FrontendNotificationApi</code></a><br>The notifications of the bell: raise, change and dismiss them, show transient notifications of an operation, and register the handlers of their actions. A notification raised here stores what it says on every device that syncs.</p></td>
+        </tr>
+        <tr>
+            <td><code>notification</code><br><em>optional</em></td>
+            <td><p><a href="#type-ChannelPayload"><code>ChannelPayload</code></a><br>In a notification channel script, the notification that the attempt forwards. Absent in other scripts.</p></td>
+        </tr>
+        <tr>
+            <td><code>delivery</code><br><em>optional</em></td>
+            <td><p><a href="#type-ChannelDelivery"><code>ChannelDelivery</code></a><br>In a notification channel script, the attempt. Absent in other scripts.</p></td>
+        </tr>
+        <tr>
+            <td><code>channelSettings</code><br><em>optional</em></td>
+            <td><p><code>Record&lt;string, string&gt;</code><br>In a notification channel script, the owned labels of the channel note as its enabling reviewed them. Read a destination from here: <code>getLabelValue()</code> also answers with inherited labels, which no review covers.</p></td>
         </tr>
     </tbody>
 </table>
@@ -1297,6 +1325,30 @@ Options of `api.createLink()`.
 ### <a id="type-Preact"></a>`Preact`
 
 The Preact API that render notes import from `trilium:preact`: Preact's own functions and hooks, and Trilium's components and `defineWidget()`. In a JSX note, the script editor offers its full type.
+
+### <a id="type-ChannelPayload"></a>`ChannelPayload`
+
+What a notification channel script receives as `api.notification`. A sensitive notification comes with its public text and without `noteId`.
+
+| Property | Description |
+| --- | --- |
+| `key` | `string`  <br>The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. |
+| `title` | `string` |
+| `description`  <br>_optional_ | `string` |
+| `category` | `"general" \| "reminder" \| "softwareUpdate"` |
+| `attentionLevel` | `"low" \| "medium" \| "high"` |
+| `raisedAt` | `string` |
+| `noteId`  <br>_optional_ | `string` |
+
+### <a id="type-ChannelDelivery"></a>`ChannelDelivery`
+
+`api.delivery` of a notification channel script: one attempt.
+
+| Property | Description |
+| --- | --- |
+| `key` | `string` |
+| `attempt` | `number`  <br>1 for the first attempt. |
+| `signal` | `AbortSignal`  <br>Aborts when the attempt times out, after 30 seconds. Pass it to what the script waits for, such as `fetch(url, { signal })`: the channel takes no other attempt until the script's promise settles. |
 
 ### <a id="type-NotePathRecord"></a>`NotePathRecord`
 

@@ -239,6 +239,18 @@ The `api` global available inside **backend** script notes (`application/javascr
             <td><code>notifications</code></td>
             <td><p><a href="#type-NotificationApi"><code>NotificationApi</code></a><br>The notifications of the bell: raise, change and dismiss them, and show transient notifications of an operation, with the script's note as their source. Each call works at once, inside the script's transaction. A script raises at most 30 notifications a minute and 500 a day, updates included. The handlers of actions run in the frontend only. A custom request handler that raises notifications lets whoever can reach its URL put text into the bell and into the channels that forward notifications.</p></td>
         </tr>
+        <tr>
+            <td><code>notification</code><br><em>optional</em></td>
+            <td><p><a href="#type-ChannelPayload"><code>ChannelPayload</code></a><br>In a notification channel script, the notification that the attempt forwards. Absent in other scripts.</p></td>
+        </tr>
+        <tr>
+            <td><code>delivery</code><br><em>optional</em></td>
+            <td><p><a href="#type-ChannelDelivery"><code>ChannelDelivery</code></a><br>In a notification channel script, the attempt. Absent in other scripts.</p></td>
+        </tr>
+        <tr>
+            <td><code>channelSettings</code><br><em>optional</em></td>
+            <td><p><code>Record&lt;string, string&gt;</code><br>In a notification channel script, the owned labels of the channel note as its enabling reviewed them. Read a destination from here: <code>getLabelValue()</code> also answers with inherited labels, which no review covers.</p></td>
+        </tr>
     </tbody>
 </table>
 
@@ -1420,6 +1432,30 @@ Information about the running Trilium, as `api.getAppInfo()` returns it.
 | `dataDirectory`  <br>_optional_ | `string`  <br>The directory that holds the database and the other data; absent in the standalone and mobile apps. |
 | `clipperProtocolVersion` | `string`  <br>The version of the protocol the web clipper speaks with Trilium. |
 | `utcDateTime` | `string`  <br>The date and time, in UTC, that Trilium started, in ISO 8601 form. |
+
+### <a id="type-ChannelPayload"></a>`ChannelPayload`
+
+What a notification channel script receives as `api.notification`. A sensitive notification comes with its public text and without `noteId`.
+
+| Property | Description |
+| --- | --- |
+| `key` | `string`  <br>The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. |
+| `title` | `string` |
+| `description`  <br>_optional_ | `string` |
+| `category` | `"general" \| "reminder" \| "softwareUpdate"` |
+| `attentionLevel` | `"low" \| "medium" \| "high"` |
+| `raisedAt` | `string` |
+| `noteId`  <br>_optional_ | `string` |
+
+### <a id="type-ChannelDelivery"></a>`ChannelDelivery`
+
+`api.delivery` of a notification channel script: one attempt.
+
+| Property | Description |
+| --- | --- |
+| `key` | `string` |
+| `attempt` | `number`  <br>1 for the first attempt. |
+| `signal` | `AbortSignal`  <br>Aborts when the attempt times out, after 30 seconds. Pass it to what the script waits for, such as `fetch(url, { signal })`: the channel takes no other attempt until the script's promise settles. |
 
 ### <a id="type-SubtreeOpts"></a>`SubtreeOpts`
 

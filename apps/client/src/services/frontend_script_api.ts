@@ -18,6 +18,7 @@ import type FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
+import attributeService, { removeOwnedAttributesByNameOrType } from "./attributes.js";
 import { BackendScriptingDisabledError, showBackendScriptingDisabledToast } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
 import { dayjs } from "./dayjs.js";
@@ -132,6 +133,14 @@ export interface Api {
     reloadNotes(noteIds: string[]): Promise<void>;
 
     createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
 
     getInstanceName(): string | null;
 
@@ -384,6 +393,12 @@ function FrontendScriptApi(
     this.getNotes = async (noteIds, silentNotFoundError = false) => await froca.getNotes(noteIds, silentNotFoundError);
     this.reloadNotes = async (noteIds) => await froca.reloadNotes(noteIds);
     this.createNote = async (parentNotePath, opts = {}) => await noteCreateService.createNote(parentNotePath, opts);
+    this.setLabel = (noteId, name, value = "") => setOwnedAttribute(noteId, "label", name, value);
+    this.removeLabel = (noteId, name, value) => removeOwnedAttributes(noteId, "label", name, value);
+    this.setRelation = (noteId, name, targetNoteId) =>
+        setOwnedAttribute(noteId, "relation", name, targetNoteId);
+    this.removeRelation = (noteId, name, targetNoteId) =>
+        removeOwnedAttributes(noteId, "relation", name, targetNoteId);
     this.getInstanceName = () => window.glob.instanceName;
     this.formatDateISO = utils.formatDateISO;
     this.parseDate = utils.parseDate;
@@ -566,6 +581,40 @@ const scriptNotifications: FrontendNotificationApi = {
     },
     getActionHandler: (name) => notificationStore.getActionHandler(name)
 };
+
+/** Sets the owned attribute of a type and name, or adds one, and waits until froca holds it. */
+async function setOwnedAttribute(
+    noteId: string, type: "label" | "relation", name: string, value: string
+) {
+    await getNoteToChange(noteId, name);
+    const set = type === "label" ? attributeService.setLabel : attributeService.setRelation;
+    await set(noteId, name, value);
+    await ws.waitForMaxKnownEntityChangeId();
+}
+
+/**
+ * Removes the owned attributes of a type and name, of any value or of `value`, and waits until
+ * froca holds the change.
+ */
+async function removeOwnedAttributes(
+    noteId: string, type: "label" | "relation", name: string, value: string | undefined
+) {
+    const note = await getNoteToChange(noteId, name);
+    await removeOwnedAttributesByNameOrType(note, type, name, value);
+    await ws.waitForMaxKnownEntityChangeId();
+}
+
+/** The note whose attribute a script changes. Throws for a missing note or a prefixed name. */
+async function getNoteToChange(noteId: string, name: string) {
+    if (typeof name !== "string" || !name || name.startsWith("#") || name.startsWith("~")) {
+        throw new Error(`Invalid attribute name '${name}': give it without '#' or '~'.`);
+    }
+    const note = await froca.getNote(noteId, true);
+    if (!note) {
+        throw new Error(`Note '${noteId}' not found.`);
+    }
+    return note;
+}
 
 // --- Drift guards -----------------------------------------------------------
 // The public script API surface lives in @triliumnext/commons (self-contained so

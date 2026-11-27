@@ -51,6 +51,14 @@ interface FrontendApi {
     reloadNotes(noteIds: string[]): Promise<void>;
     /** Creates a new note as a child of the given parent, entirely on the frontend — no backend scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). */
     createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+    /** Sets the value of the first label of that name that the note owns, or adds a label that is not inheritable when the note owns none. */
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /** Removes the labels of that name that the note owns. */
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /** Sets the target of the first relation of that name that the note owns, or adds a relation that is not inheritable when the note owns none. */
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+    /** Removes the relations of that name that the note owns. */
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
     /** Instance name identifies particular Trilium instance. */
     getInstanceName(): string | null;
     /** Adds given text to the editor cursor */
@@ -134,6 +142,12 @@ interface FrontendApi {
     preact: Preact;
     /** The notifications of the bell: raise, change and dismiss them, show transient notifications of an operation, and register the handlers of their actions. */
     notifications: FrontendNotificationApi;
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: ChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: ChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note as its enabling reviewed them. */
+    channelSettings?: Record<string, string>;
 }
 
 /** A note as seen by frontend scripts (subset of the client's `FNote`). */
@@ -570,6 +584,27 @@ interface LinkOptions {
 
 /** The Preact API that render notes import from `trilium:preact`: Preact's own functions and hooks, and Trilium's components and `defineWidget()`. */
 interface Preact {}
+
+/** What a notification channel script receives as `api.notification`. */
+interface ChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+interface ChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /** Aborts when the attempt times out, after 30 seconds. */
+    signal: AbortSignal;
+}
 
 /** One resolved tree path to a note (subset of the client's `NotePathRecord`). */
 interface NotePathRecord {

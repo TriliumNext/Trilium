@@ -1419,6 +1419,43 @@ export interface FrontendApi {
      */
     createNote(parentNotePath: string, opts?: ScriptCreateNoteOpts): Promise<{ note: ScriptFNote | null; branch: ScriptFBranch | undefined }>;
     /**
+     * Sets the value of the first label of that name that the note owns, or adds a label that is
+     * not inheritable when the note owns none. Works on the frontend, without backend scripting,
+     * and resolves once the frontend cache holds the change.
+     *
+     * @param noteId the note to change
+     * @param name the name of the label, without `#`
+     * @param value the value; an empty string when omitted
+     */
+    setLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /**
+     * Removes the labels of that name that the note owns. Inherited labels stay. Works like
+     * `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the label, without `#`
+     * @param value the value to match; when omitted, labels of any value are removed
+     */
+    removeLabel(noteId: string, name: string, value?: string): Promise<void>;
+    /**
+     * Sets the target of the first relation of that name that the note owns, or adds a relation
+     * that is not inheritable when the note owns none. Works like `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the relation, without `~`
+     * @param targetNoteId the ID of the note that the relation points to
+     */
+    setRelation(noteId: string, name: string, targetNoteId: string): Promise<void>;
+    /**
+     * Removes the relations of that name that the note owns. Inherited relations stay. Works like
+     * `setLabel()`.
+     *
+     * @param noteId the note to change
+     * @param name the name of the relation, without `~`
+     * @param targetNoteId the target to match; when omitted, relations to any note are removed
+     */
+    removeRelation(noteId: string, name: string, targetNoteId?: string): Promise<void>;
+    /**
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
      */

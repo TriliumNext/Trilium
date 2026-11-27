@@ -471,6 +471,67 @@ describe("froca passthroughs", () => {
     });
 });
 
+describe("attributes", () => {
+    const waitForSync = vi.mocked(ws.waitForMaxKnownEntityChangeId);
+
+    it("sets an owned label or relation, and waits until froca holds the change", async () => {
+        const note = buildNote({ title: "Task", "#status": "To do" });
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined as never);
+        waitForSync.mockClear();
+        const api = makeApi();
+
+        await api.setLabel(note.noteId, "status", "Done");
+        await api.setLabel(note.noteId, "remind");
+        await api.setRelation(note.noteId, "template", "tpl1");
+
+        const url = `notes/${note.noteId}/set-attribute`;
+        expect(put).toHaveBeenNthCalledWith(1, url, expect.objectContaining(
+            { type: "label", name: "status", value: "Done", isInheritable: false }), undefined);
+        expect(put).toHaveBeenNthCalledWith(2, url, expect.objectContaining(
+            { type: "label", name: "remind", value: "" }), undefined);
+        expect(put).toHaveBeenNthCalledWith(3, url, expect.objectContaining(
+            { type: "relation", name: "template", value: "tpl1", isInheritable: false }));
+        expect(waitForSync).toHaveBeenCalledTimes(3);
+    });
+
+    it("removes owned attributes of a name, of any value or of the one given", async () => {
+        const note = buildNote({ title: "Task", "#tag": [ "a", "b" ], "~related": [ "n1", "n2" ] });
+        const remove = vi.spyOn(server, "remove").mockResolvedValue(undefined as never);
+        waitForSync.mockClear();
+        const api = makeApi();
+        const [ tagA, tagB ] = note.getOwnedLabels("tag").map((attr) => attr.attributeId);
+        const [ related1 ] = note.getOwnedRelations("related").map((attr) => attr.attributeId);
+        const urlOf = (attributeId: string | undefined) =>
+            [ `notes/${note.noteId}/attributes/${attributeId}` ];
+
+        await api.removeLabel(note.noteId, "tag", "b");
+        expect(remove.mock.calls).toEqual([ urlOf(tagB) ]);
+
+        remove.mockClear();
+        await api.removeLabel(note.noteId, "tag");
+        await api.removeRelation(note.noteId, "related", "n1");
+        expect(remove.mock.calls).toEqual([ urlOf(tagA), urlOf(tagB), urlOf(related1) ]);
+        expect(waitForSync).toHaveBeenCalledTimes(3);
+    });
+
+    it("refuses a prefixed name and a missing note before any request", async () => {
+        const note = buildNote({ title: "Task", "#status": "To do" });
+        const put = vi.spyOn(server, "put");
+        const remove = vi.spyOn(server, "remove");
+        const api = makeApi();
+        const prefixed = "without '#' or '~'";
+        const missing = "Note 'missing' not found.";
+
+        await expect(api.setLabel(note.noteId, "#status", "Done")).rejects.toThrow(prefixed);
+        await expect(api.removeRelation(note.noteId, "~template")).rejects.toThrow(prefixed);
+        vi.spyOn(froca, "getNote").mockResolvedValue(null);
+        await expect(api.setLabel("missing", "status")).rejects.toThrow(missing);
+        await expect(api.removeLabel("missing", "status")).rejects.toThrow(missing);
+        expect(put).not.toHaveBeenCalled();
+        expect(remove).not.toHaveBeenCalled();
+    });
+});
+
 describe("commands and events", () => {
     it("triggerCommand / triggerEvent / addTextToActiveContextEditor / refreshIncludedNote dispatch via appContext", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined as never);
