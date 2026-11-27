@@ -172,6 +172,18 @@
                 line-height: 1.25;
             }
 
+            :is(.ck-content, .ck.ck-editor__editable_inline) p {
+                margin-block: 0;
+            }
+
+            :root & .ck-content figure.table:not(.layout-table) {
+                margin-inline-start: calc(-0.4em - 1px);
+            }
+
+            .ck-content :is(td, th) {
+                vertical-align: top;
+            }
+
             .handwriting-box-bar {
                 font-size: var(--bs-body-font-size, 1rem);
             }

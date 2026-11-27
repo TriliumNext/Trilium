@@ -995,6 +995,36 @@ describe("convertPageLayout", () => {
         expect(flat.querySelectorAll("figure.table").map((figure) => figure.getAttribute("style"))).toEqual([ "width:100%" ]);
     });
 
+    it("keeps the empty lines of a page, which a text note drops", () => {
+        const page = `<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:48px;top:100px;width:624px">
+                <p style="margin-top:0pt;margin-bottom:0pt">Above</p>
+                <br />
+                <p style="margin-top:0pt;margin-bottom:0pt">Below<br />same paragraph</p>
+                <ul><li>item</li><br /></ul>
+                <table><tr><td><p>How are you</p><br /></td><td><br /></td></tr></table>
+            </div>
+            <div style="position:absolute;left:48px;top:900px;width:624px"><br /></div>
+        </body></html>`;
+        const { texts } = converter.convertPageLayout(page);
+        // A box of empty lines alone is still left out.
+        expect(texts).toHaveLength(1);
+        const box = parse(texts[0].html);
+        const lines = (parent: string) => box.querySelectorAll(`${parent} > p`).map((p) => p.innerHTML);
+
+        // OneNote writes an empty line as a `<br>` between blocks. The ink of the page lies next
+        // to the lines below it, so each stays, as an empty paragraph.
+        expect(box.childNodes.filter((node) => node.nodeType === 1).map((node) => node.rawTagName)).toEqual([ "p", "p", "p", "ul", "figure" ]);
+        expect(box.querySelectorAll("p").slice(0, 3).map((p) => p.innerHTML)).toEqual([ "Above", " ", "Below<br>same paragraph" ]);
+        // A list takes no paragraph between its items, and a cell keeps its lines, so its row its height.
+        expect(box.querySelector("ul")?.innerHTML).toBe("<li>item</li>");
+        expect(lines("td:first-child")).toEqual([ "How are you", " " ]);
+        expect(lines("td:last-child")).toEqual([ " " ]);
+
+        const flat = parse(converter.convertPageHtml(page));
+        expect(flat.querySelectorAll("p").map((p) => p.innerHTML)).toEqual([ "Above", "Below<br>same paragraph", "How are you" ]);
+    });
+
     it("returns a page without a font size or positions as one box", () => {
         const layout = converter.convertPageLayout(`<p>Only <b>text</b></p>`);
         expect(layout).toEqual({ texts: [ { x: 48, y: 115, width: 624, html: "<p>Only <b>text</b></p>" } ], images: [] });

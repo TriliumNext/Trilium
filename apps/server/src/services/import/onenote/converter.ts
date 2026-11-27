@@ -225,10 +225,11 @@ function parseFontSize(value: string | undefined) {
 
 /**
  * Converts the content under `scope` to the HTML of a text note, in place and before it is
- * sanitized. With `keepTableWidths`, a table with column widths is as wide as on the page,
- * where a text note stretches it to its own width.
+ * sanitized. With `keepLayout`, the content takes the room it has on the page, for a note that
+ * shows it next to the ink: an empty line stays, and a table with column widths is as wide as on
+ * the page, where a text note stretches it to its own width.
  */
-function convertContent(scope: HTMLElement, keepTableWidths = false) {
+function convertContent(scope: HTMLElement, keepLayout = false) {
     convertResourceReferences(scope);
     wrapFloatingImages(scope);
     convertTags(scope);
@@ -241,8 +242,8 @@ function convertContent(scope: HTMLElement, keepTableWidths = false) {
     normalizeTableBorders(scope);
     correctTableShadingColors(scope);
     removeEmptyListItems(scope);
-    removeBlockLevelBreaks(scope);
-    resizeTables(scope, keepTableWidths);
+    removeBlockLevelBreaks(scope, keepLayout);
+    resizeTables(scope, keepLayout);
 }
 
 /**
@@ -905,13 +906,23 @@ function removeEmptyListItems(scope: HTMLElement) {
     }
 }
 
-/** Removes <br> elements used as block-level spacing; soft breaks inside <p>/<span>/etc. are kept. */
-function removeBlockLevelBreaks(scope: HTMLElement) {
+/** The block containers that cannot hold a paragraph. */
+const LIST_CONTAINERS = new Set(["ol", "ul", "dl"]);
+
+/**
+ * Removes the `<br>` elements that OneNote writes between blocks, each for an empty line. Soft
+ * breaks inside `<p>`, `<span>` and the like are kept. With `keepEmptyLines`, an empty paragraph
+ * takes the place of each, except in a list.
+ */
+function removeBlockLevelBreaks(scope: HTMLElement, keepEmptyLines: boolean) {
     for (const br of scope.querySelectorAll("br")) {
         const parent = br.parentNode;
-        if (parent instanceof HTMLElement && BLOCK_CONTAINERS.has(parent.tagName?.toLowerCase() ?? "")) {
-            br.remove();
+        const container = parent instanceof HTMLElement ? parent.tagName?.toLowerCase() ?? "" : undefined;
+        if (container === undefined || !BLOCK_CONTAINERS.has(container)) continue;
+        if (keepEmptyLines && !LIST_CONTAINERS.has(container)) {
+            br.insertAdjacentHTML("beforebegin", "<p>&nbsp;</p>");
         }
+        br.remove();
     }
 }
 
