@@ -214,7 +214,8 @@ export default class InkSurface {
                 this.updatePageCount();
                 this.options.onChange();
             },
-            onSelectionChange: () => this.reportState()
+            onSelectionChange: () => this.reportState(),
+            onDelete: () => this.deleteSelection()
         });
         this.pdf = new PdfLayer({
             openPdf: async (url) => this.options.openPdf?.(url),

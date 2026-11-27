@@ -44,6 +44,11 @@
             &[hidden] {
                 display: none;
             }
+
+            .handwriting-box-bar {
+                left: 12px;
+                pointer-events: auto;
+            }
         }
 
         .handwriting-image-handle {
@@ -167,7 +172,7 @@
                 line-height: 1.25;
             }
 
-            .handwriting-text-box-bar {
+            .handwriting-box-bar {
                 font-size: var(--bs-body-font-size, 1rem);
             }
         }
@@ -209,29 +214,6 @@
             visibility: hidden;
         }
 
-        .handwriting-text-box-bar {
-            position: absolute;
-            bottom: 100%;
-            left: -2px;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            padding: 2px 6px;
-            border-radius: 4px 4px 0 0;
-            color: white;
-            background-color: var(--main-link-color, #4d99e6);
-            cursor: move;
-            touch-action: none;
-
-            button {
-                padding: 0;
-                border: 0;
-                color: inherit;
-                background: none;
-                cursor: pointer;
-            }
-        }
-
         .handwriting-text-box-resize {
             position: absolute;
             top: 0;
@@ -240,6 +222,29 @@
             width: 12px;
             cursor: ew-resize;
             touch-action: none;
+        }
+    }
+
+    .handwriting-box-bar {
+        position: absolute;
+        bottom: 100%;
+        left: -2px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 4px 4px 0 0;
+        color: white;
+        background-color: var(--main-link-color, #4d99e6);
+        cursor: move;
+        touch-action: none;
+
+        button {
+            padding: 0;
+            border: 0;
+            color: inherit;
+            background: none;
+            cursor: pointer;
         }
     }
 

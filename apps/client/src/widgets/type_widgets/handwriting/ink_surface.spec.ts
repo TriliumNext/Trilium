@@ -667,7 +667,21 @@ describe("ink surface input", () => {
             expect(images()).toEqual([ { url: URL, x: 20, y: 80, w: 200, h: 100 } ]);
             expect(box()?.style).toMatchObject({ left: "20px", top: "80px", width: "200px" });
 
-            surface.deleteSelection();
+            // The bar over the box moves the image, though the press lies outside it.
+            const bar = box()?.querySelector(".handwriting-box-bar");
+            expect(bar).not.toBeNull();
+            const press = { pointerType: "mouse", clientX: 0, clientY: 0, button: 0, buttons: 1, bubbles: true };
+            bar?.dispatchEvent(new PointerEvent("pointerdown", { ...press, pointerId: 10 }));
+            pointer("pointermove", "mouse", 10, 10, 30);
+            pointer("pointerup", "mouse", 10, 10, 30);
+            expect(images()).toEqual([ { url: URL, x: 50, y: 90, w: 200, h: 100 } ]);
+            expect(hasSelection()).toBe(true);
+
+            // Its button deletes the image, and a press on the button starts no drag.
+            const remove = bar?.querySelector("button");
+            expect(remove).not.toBeNull();
+            remove?.dispatchEvent(new PointerEvent("pointerdown", { ...press, pointerId: 11 }));
+            remove?.click();
             expect(images()).toBeUndefined();
             expect(hasSelection()).toBe(false);
             expect(box()?.hidden).toBe(true);

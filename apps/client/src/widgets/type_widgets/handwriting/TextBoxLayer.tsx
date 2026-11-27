@@ -28,6 +28,8 @@ interface TextBoxLayerProps {
     toWorld(clientX: number, clientY: number): { x: number, y: number };
     getZoom(): number;
     onChange(boxes: InkTextBox[]): void;
+    /** Called when a box is selected, for the surface to let go of the selected image. */
+    onSelect(): void;
 }
 
 /**
@@ -37,7 +39,7 @@ interface TextBoxLayerProps {
  * A prototype: the boxes have no undo, are not part of the thumbnail and lie over the ink.
  */
 export default function TextBoxLayer({
-    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, onChange
+    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, onChange, onSelect
 }: TextBoxLayerProps) {
     const [ selectedId, setSelectedId ] = useState<string>();
     const [ editedId, setEditedId ] = useState<string>();
@@ -75,8 +77,13 @@ export default function TextBoxLayer({
         const { x, y } = toWorld(clientX, clientY);
         const id = randomString(10);
         setBoxes([ ...boxesRef.current, { id, x, y, width: DEFAULT_WIDTH, html: "" } ]);
-        setSelectedId(id);
+        select(id);
         setEditedId(id);
+    }
+
+    function select(id: string) {
+        setSelectedId(id);
+        onSelect();
     }
 
     return (
@@ -93,7 +100,7 @@ export default function TextBoxLayer({
                         isSelected={selectedId === box.id}
                         isEditing={editedId === box.id}
                         getZoom={getZoom}
-                        onSelect={() => setSelectedId(box.id)}
+                        onSelect={() => select(box.id)}
                         onEdit={(isEditing) => setEditedId(isEditing ? box.id : undefined)}
                         onChange={(changes) => setBoxes(boxesRef.current.map((other) => (
                             other.id === box.id ? { ...other, ...changes } : other
@@ -175,7 +182,7 @@ function TextBox({
             }}
         >
             {isSelected && (
-                <div className="handwriting-text-box-bar" onPointerDown={(e) => startMove(e, box)}>
+                <div className="handwriting-box-bar" onPointerDown={(e) => startMove(e, box)}>
                     <span className="bx bx-move" />
                     <button
                         type="button"

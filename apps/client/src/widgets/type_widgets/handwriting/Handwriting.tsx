@@ -418,6 +418,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                     setTextBoxes(boxes);
                     surfaceRef.current?.setTextBoxes(boxes);
                 }}
+                onSelect={() => surfaceRef.current?.clearSelection()}
             />
 
             {!isReadOnly && (
@@ -463,14 +464,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                             icon="bxs-file-pdf"
                             onClick={() => pdfInputRef.current?.click()}
                         />
-                        {state.hasSelection && (
-                            <OverlayControlButton
-                                title={t("handwriting.delete_image")}
-                                icon="bx-trash"
-                                shortcut="Delete"
-                                onClick={() => surfaceRef.current?.deleteSelection()}
-                            />
-                        )}
                     </OverlayControlGroup>
 
                     <OverlayControlGroup titlePosition="bottom">

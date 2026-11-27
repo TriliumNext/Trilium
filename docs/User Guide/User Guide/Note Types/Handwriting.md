@@ -81,8 +81,8 @@ A picture, such as a photo of an exercise or a screenshot of a slide, can be pla
 *   Alternatively, paste an image from the clipboard with <kbd>Ctrl</kbd>+<kbd>V</kbd>, or drag an image file onto the note.
 *   A new image appears in the middle of the view, at its own size or smaller: on pages it fits inside the page, and on an infinite canvas inside the view. It is selected, and the _Select_ tool is picked, ready for the image to be moved into place.
 *   To select an image later, pick the <span class="tn-icon bx bx-pointer"></span> _Select_ tool and press the image. With this tool, a drag that starts outside the images moves the page.
-*   To move the selected image, drag it. To resize it, drag one of the handles at its corners; the image keeps its proportions.
-*   To delete the selected image, press <kbd>Delete</kbd> or the <span class="tn-icon bx bx-trash"></span> button of the toolbar.
+*   To move the selected image, drag it, or drag the <span class="tn-icon bx bx-move"></span> bar above it. To resize it, drag one of the handles at its corners; the image keeps its proportions.
+*   To delete the selected image, press <kbd>Delete</kbd> or the <span class="tn-icon bx bx-trash"></span> button of the bar above it.
 *   Adding, moving, resizing and deleting an image are undone and redone like ink.
 *   The pen, the highlighter and the eraser leave images as they are, so ink on an image can be erased without removing the image.
 

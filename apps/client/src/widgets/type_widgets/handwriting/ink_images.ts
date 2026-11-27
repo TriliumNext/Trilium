@@ -1,3 +1,4 @@
+import { t } from "../../../services/i18n";
 import { type Bounds, boundsIntersect, createImage, type InkImage, type Sheet } from "./ink_document";
 
 /** The corner of the selected image that a resize drags. */
@@ -27,7 +28,12 @@ export interface ImageLayerHost {
     /** Called when a move or a resize ends, with the image as it was and as it is now. */
     onChange(before: InkImage, after: InkImage): void;
     onSelectionChange(): void;
+    /** Called when the button of the box asks for the selected image to be deleted. */
+    onDelete(): void;
 }
+
+/** The bar over the box of the selected image, which `TextBoxLayer` gives a text box too. */
+const BAR_CLASS = "handwriting-box-bar";
 
 interface Drag {
     /** The corner that resizes the image, or `undefined` for a move. */
@@ -42,8 +48,9 @@ interface Drag {
 
 /**
  * The images of a handwriting note, which `InkSurface` draws under the ink, and the selected one:
- * a box over the surface with a handle at each corner. A drag inside the box moves the image and a
- * drag of a handle resizes it, keeping its proportions.
+ * a box over the surface with a bar above it and a handle at each corner. A drag inside the box or
+ * of the bar moves the image, a drag of a handle resizes it, keeping its proportions, and the
+ * button of the bar deletes it.
  */
 export default class ImageLayer {
 
@@ -64,6 +71,7 @@ export default class ImageLayer {
         this.box = document.createElement("div");
         this.box.className = "handwriting-image-box";
         this.box.hidden = true;
+        this.box.append(this.createBar());
         for (const handle of HANDLES) {
             const element = document.createElement("div");
             element.className = "handwriting-image-handle";
@@ -168,14 +176,15 @@ export default class ImageLayer {
 
     /**
      * Starts a drag for the pointer of `e`: a resize on a handle of the selected image, and a move
-     * on an image, which it selects. Returns `false` for a pointer on no image, which clears the
-     * selection.
+     * on its bar or on an image, which it selects. Returns `false` for a pointer on no image, which
+     * clears the selection.
      */
     begin(e: PointerEvent) {
         const target = e.target instanceof HTMLElement ? e.target : undefined;
         const handle = HANDLES.find((name) => name === target?.dataset.handle);
+        const isOnBox = !!handle || !!target?.closest(`.${BAR_CLASS}`);
         const point = this.host.toWorld(e.clientX, e.clientY);
-        const image = handle && this.selected ? this.selected : this.hit(point.x, point.y);
+        const image = isOnBox && this.selected ? this.selected : this.hit(point.x, point.y);
         this.select(image);
         if (!image) return false;
         this.drag = { handle, original: image, current: image, startX: point.x, startY: point.y };
@@ -219,6 +228,22 @@ export default class ImageLayer {
         this.box.style.top = `${image.y * zoom + y}px`;
         this.box.style.width = `${image.width * zoom}px`;
         this.box.style.height = `${image.height * zoom}px`;
+    }
+
+    private createBar() {
+        const bar = document.createElement("div");
+        bar.className = BAR_CLASS;
+        const grip = document.createElement("span");
+        grip.className = "bx bx-move";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "bx bx-trash";
+        remove.title = t("handwriting.delete_image");
+        // A press on the button is not the start of a drag of the bar.
+        remove.addEventListener("pointerdown", (e) => e.stopPropagation());
+        remove.addEventListener("click", () => this.host.onDelete());
+        bar.append(grip, remove);
+        return bar;
     }
 
     /** The topmost image at a point, in world units. */
