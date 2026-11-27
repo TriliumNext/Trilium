@@ -56,6 +56,9 @@ function isChannelPart(note: BNote) {
     for (const label of becca.findAttributes("label", NOTIFICATION_CHANNEL_LABEL)) {
         roots.add(label.noteId);
     }
+    if (roots.size === 0) {
+        return false;
+    }
     for (const relation of becca.findAttributes("relation", NOTIFICATION_CHANNEL_WIDGET_RELATION)) {
         if (roots.has(relation.noteId)) {
             roots.add(relation.value);

@@ -6,9 +6,6 @@ import { getSql } from "./index.js";
 import { SqlService, type SqlServiceParams } from "./sql.js";
 import type { DatabaseProvider, Statement } from "./types.js";
 
-// Standalone runs core in a Web Worker, whose scope has `self`; the Node server suite has none.
-const isBrowserRuntime = typeof self !== "undefined";
-
 let tableCounter = 0;
 
 /**
@@ -448,16 +445,8 @@ describe("SqlService (real DB)", () => {
     });
 
     describe("serialize", () => {
-        it("either throws (provider unsupported) or returns the serialized bytes", () => {
-            // Capability-aware: the server's better-sqlite3 provider has no
-            // serialize() and throws, while the WASM (sql.js) provider supports
-            // it and returns the database as a Uint8Array.
-            if (isBrowserRuntime) {
-                const bytes = getSql().serialize();
-                expect(bytes).toBeInstanceOf(Uint8Array);
-            } else {
-                expect(() => getSql().serialize()).toThrow("does not support serialization");
-            }
+        it("returns the database as bytes", () => {
+            expect(getSql().serialize()).toBeInstanceOf(Uint8Array);
         });
     });
 

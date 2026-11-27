@@ -12,13 +12,12 @@ const getRevisionMock = vi.hoisted(() => vi.fn());
 // import/export services keep their real implementations.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: {
-        ...actual.default,
+    return { default: Object.assign(Object.create(actual.default), {
         getBlob: getBlobMock,
         getNote: getNoteMock,
         getAttachment: getAttachmentMock,
         getRevision: getRevisionMock
-    } };
+    }) };
 });
 
 import blobService from "../../blob.js";

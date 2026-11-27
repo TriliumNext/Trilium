@@ -906,7 +906,9 @@
     "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
     "meeting_recording": "Marks a note created by the \"Transcribe meeting\" button in the launch bar, which holds the transcript of a meeting.",
     "template_title_template": "Set on a template note: default title of notes created from the template, used instead of the parent's <code>#titleTemplate</code>. Evaluated like <code>#titleTemplate</code>, with the injected <code>now</code> and <code>parentNote</code> variables, e.g. <code>Meeting ${now.format('YYYY-MM-DD')}</code>.",
-    "calendar_hide_routine_events": "Hides timed events that repeat on {{days}} or more days a week from the Month, Year and List views. Applies whatever its value."
+    "calendar_hide_routine_events": "Hides timed events that repeat on {{days}} or more days a week from the Month, Year and List views. Applies whatever its value.",
+    "notification_channel": "Makes this JavaScript note a notification channel, which forwards important notifications outside Trilium. The script runs only after you enable it in the <i>Channels</i> card of the <i>Notifications</i> options.",
+    "config_widget": "A frontend note whose component shows the settings of this notification channel. The dialog that enables the channel runs it only when you ask, after you review the channel."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",

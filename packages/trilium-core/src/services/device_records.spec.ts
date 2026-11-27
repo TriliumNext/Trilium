@@ -89,4 +89,13 @@ describe("isTimeAheadForADay", () => {
         expect(judge(NOW + 400 * DAY, NOW)).toBe(false);
         expect(marks()).toEqual({ lastDailyBackupDate: "2026-11-26 12:00:00.000Z" });
     });
+
+    it("takes a time that cannot be read as not ahead, and clears its mark", () => {
+        expect([ judge(Number.NaN, NOW), optionService.getOption("clockAheadMarks") ])
+            .toEqual([ false, "" ]);
+
+        setRaw("clockAheadMarks",
+            JSON.stringify({ lastDailyBackupDate: "2026-11-25 12:00:00.000Z" }));
+        expect([ judge(Number.NaN, NOW), marks() ]).toEqual([ false, {} ]);
+    });
 });

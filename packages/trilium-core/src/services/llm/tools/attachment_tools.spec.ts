@@ -9,7 +9,11 @@ const { getAttachmentMock, getBlobMock, getNoteMock } = vi.hoisted(() => ({
 // Partial-mock core so `getAttachment`, `getBlob` and the owner lookup `getNote` return stubs while the rest of core is untouched.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, getAttachment: getAttachmentMock, getBlob: getBlobMock, getNote: getNoteMock } };
+    return { default: Object.assign(Object.create(actual.default), {
+        getAttachment: getAttachmentMock,
+        getBlob: getBlobMock,
+        getNote: getNoteMock
+    }) };
 });
 
 import blobService from "../../blob.js";

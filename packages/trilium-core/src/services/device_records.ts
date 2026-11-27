@@ -61,7 +61,7 @@ export function addDeviceRecordEntries(option: DeviceRecordOption, names: string
 /**
  * Checks a stored time that a clock running ahead can have written. The first reader that finds it
  * later than now marks the time of that finding, and a reader that finds it no longer ahead clears
- * the mark. A mark later than now counts as now.
+ * the mark. A mark later than now counts as now, and a time that is not a number is not ahead.
  *
  * @returns `true` once the time has stayed ahead for a day by this clock, when the caller resets
  *          and records it.
@@ -70,7 +70,7 @@ export function isTimeAheadForADay(name: string, storedTime: number, now = Date.
     const marks = readClockAheadMarks();
     const mark = marks[name];
 
-    if (storedTime <= now) {
+    if (!Number.isFinite(storedTime) || storedTime <= now) {
         if (mark !== undefined) {
             delete marks[name];
             writeClockAheadMarks(marks);
