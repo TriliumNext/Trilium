@@ -234,5 +234,9 @@ describe("an editor raised on TEXT_BOX_PLUGINS", () => {
         keeps(`<p>See <a class="reference-link" href="#root/abc123">Linked</a> and <a href="https://example.com">a site</a></p>`,
             `href="#root/abc123"`, "reference-link", `href="https://example.com"`);
         keeps(`<ol style="list-style-type:lower-latin;"><li>first</li></ol>`, "lower-latin", "first");
+        // The tags of a OneNote page, as icons.
+        keeps(`<p><span class="tn-icon bx bx-star"></span> Important</p>`, `<span class="tn-icon bx bx-star">`, "Important");
+        // A color is saved with the variable that adapts it to the theme.
+        keeps(`<p><span style="color:#ff0000;">red</span></p>`, "--tn-color:#ff0000");
     });
 });
