@@ -1025,13 +1025,19 @@ export default class InkSurface {
         return Math.max(this.pages.getPageCount(this.getItems()), this.pages.sizes.length);
     }
 
-    /** The strokes and the images, for what needs only their bounds. */
+    /**
+     * The strokes, the images and the text boxes, for what needs only their bounds. A text box
+     * counts by its top edge, as the surface does not know how tall its text is.
+     */
     private *getItems(): Iterable<{ bounds: Bounds }> {
         yield* this.strokes;
         yield* this.images.getAll();
+        for (const { x, y, width } of this.texts) {
+            yield { bounds: { minX: x, minY: y, maxX: x + width, maxY: y } };
+        }
     }
 
-    /** Adds an empty page after the last one holding ink or an image, or drops the pages after it. */
+    /** Adds an empty page after the last one holding an object, or drops the pages after it. */
     private updatePageCount() {
         const count = this.countPages();
         if (count === this.pageCount) return;
@@ -1197,6 +1203,7 @@ export default class InkSurface {
             });
         }
         this.texts = texts;
+        this.updatePageCount();
         this.options.onChange();
     }
 

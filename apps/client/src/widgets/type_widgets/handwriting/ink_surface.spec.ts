@@ -244,6 +244,16 @@ describe("ink surface input", () => {
         surface.redo();
         expect(surface.getPageCount()).toBe(2);
 
+        // A text box counts as well, on the page where it starts, as loaded or as typed.
+        const typed = { id: "t1", order: 1, html: "<p>Typed</p>", x: 100, y: 1500, width: 200 };
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [], texts: [ typed ] });
+        expect(surface.getPageCount()).toBe(3);
+        surface.setTextBoxes([]);
+        expect(surface.getPageCount()).toBe(1);
+        surface.setTextBoxes([ typed ]);
+        expect(surface.getPageCount()).toBe(3);
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
+
         // The paper's sheet is filled where the view puts the page, and nothing below the last one.
         fillRects.length = 0;
         surface.showView({ x: 397, y: 0, zoom: 0.25 });
