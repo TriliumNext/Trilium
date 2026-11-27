@@ -436,8 +436,9 @@ interface CustomPressureItemProps {
 
 /**
  * The last row of the pressure sensitivity submenu, for a value between the presets: a number from 0
- * to 100 typed into the row, checked while the value is none of the presets. The typed value is held
- * as a draft and saved once the box commits: on leaving it, on Enter or on a spinner step.
+ * to 100 typed into the row, or stepped with Up and Down, which the box keeps from the menu. It is
+ * checked while the value is none of the presets. The typed value is held as a draft and saved once
+ * the box commits: on leaving it, on Enter or on a step.
  */
 function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
     const [ draft, setDraft ] = useState(String(value));
@@ -464,6 +465,7 @@ function CustomPressureItem({ value, onChange }: CustomPressureItemProps) {
             <FormTextBox
                 className="handwriting-pressure-input"
                 type="number"
+                data-menu-keys="ArrowUp ArrowDown"
                 min={0} max={100} step={5}
                 currentValue={draft} onChange={setDraft} onBlur={commit}
             />

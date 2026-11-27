@@ -138,7 +138,20 @@
     }
 }
 
-.handwriting-pressure-input {
-    width: 72px;
-    margin-inline-start: 12px;
+.handwriting-pressure-input.form-control {
+    flex: none;
+    width: 4.5em;
+    margin-inline-start: auto;
+    margin-inline-end: -6px;
+    padding: 0 6px;
+    font-size: inherit;
+    line-height: inherit;
+    text-align: end;
+    appearance: textfield;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+    }
 }

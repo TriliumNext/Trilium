@@ -30,7 +30,7 @@ While the pen or the highlighter is selected, a rail on the side of the note set
 How much pressing harder thickens the pen's line is set in the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu of the toolbar, under _Pressure sensitivity_. The sensitivity goes from 0, where every line keeps the same thickness however hard the pen is pressed, to 100, where a light touch draws a hairline and a firm one a line several times as thick. With a mouse or a finger, the setting changes how much the speed of the stroke changes the thickness instead.
 
 *   To pick a sensitivity, select one of the presets: _Off_ (0), _Low_ (30), _Normal_ (60, the default), _High_ (80) or _Maximum_ (100).
-*   To use a value between them, type it into the box of the _Custom_ row and press <kbd>Enter</kbd>, or step it by 5 with the arrows of the box.
+*   To use a value between them, type it into the box of the _Custom_ row and press <kbd>Enter</kbd>, or step it by 5 with <kbd>Up</kbd> and <kbd>Down</kbd>.
 *   The setting applies to the device it is changed on, like _Finger drawing_, as how a pen responds depends on the pen.
 *   Each stroke keeps the sensitivity it was drawn with, so changing it only affects new strokes and never reshapes the ink already on the page.
 *   The highlighter is not affected: it always draws a line of even thickness.
