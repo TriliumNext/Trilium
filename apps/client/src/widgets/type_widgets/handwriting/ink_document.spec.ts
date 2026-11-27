@@ -2,8 +2,8 @@ import { getStroke } from "perfect-freehand";
 import { describe, expect, it } from "vitest";
 
 import {
-    AUTO_COLOR, buildStrokePoints, createImage, createStroke, getPageCount, getStrokeOutline, getVisiblePage,
-    outlineStrokePoints, parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
+    AUTO_COLOR, buildStrokePoints, createImage, createStroke, getStrokeOutline, outlineStrokePoints, PageLayout,
+    parseInkDocument, serializeInkDocument, serializeStroke, splitStroke, type Stroke, StrokeBuilder,
     strokeHitsSegment, StrokeIndex, trimPrediction
 } from "./ink_document";
 
@@ -106,7 +106,7 @@ describe("ink document", () => {
         expect(images.map((image) => image.order)).toEqual([ 0, 1 ]);
         expect(images[0].bounds).toEqual({ minX: 10, minY: 20, maxX: 310.3, maxY: 170 });
         // The second image is on the second page, which shows a third one after it.
-        expect(getPageCount(images)).toBe(3);
+        expect(new PageLayout().getPageCount(images)).toBe(3);
 
         const rect = { x: 0, y: 0, w: 10, h: 10 };
         const parsed = parseInkDocument(JSON.stringify({ version: 1, paper: "ruled", strokes: [], images: [
@@ -301,8 +301,44 @@ describe("trimPrediction", () => {
     });
 });
 
-describe("getVisiblePage", () => {
+describe("PageLayout", () => {
+    it("lays out the sheets of a PDF at their sizes, around the middle of an A4 sheet, then A4 sheets", () => {
+        const slide = { width: 1280, height: 720 };
+        const layout = new PageLayout([ slide, { width: 400, height: 300 } ]);
+        expect(layout.getSheet(0)).toEqual({ x: -243, y: 0, ...slide });
+        expect(layout.getSheet(1)).toEqual({ x: 197, y: 744, width: 400, height: 300 });
+        expect(layout.getSheet(2)).toEqual({ x: 0, y: 1068, width: 794, height: 1123 });
+        expect(layout.getSheet(4).y).toBe(1068 + 2 * 1147);
+        // The gap under a sheet counts as the sheet, and what is above the first as the first.
+        expect([ -50, 0, 743, 744, 1067, 1068, 2214, 2215, 1068 + 2 * 1147 ].map((y) => layout.indexAt(y)))
+            .toEqual([ 0, 0, 0, 1, 1, 2, 2, 3, 4 ]);
+        expect(layout.getVisiblePage(600, 900, 5)).toBe(1);
+        expect(layout.getVisiblePage(600, 5000, 5)).toBe(2);
+
+        const at = (maxY: number) => [ { bounds: { minX: 0, minY: maxY - 10, maxX: 10, maxY } } ];
+        expect([ -5, 100, 800, 1100 ].map((maxY) => layout.getPageCount(at(maxY)))).toEqual([ 1, 2, 3, 4 ]);
+        expect(layout.hasSizes([ slide, { width: 400, height: 300 } ])).toBe(true);
+        expect(layout.hasSizes([ slide ])).toBe(false);
+        expect(new PageLayout().getSheet(1)).toEqual({ x: 0, y: 1147, width: 794, height: 1123 });
+    });
+
+    it("saves the sizes of the sheets rounded, and reads them back up to the first that is broken", () => {
+        const saved = serializeInkDocument("ruled", [], undefined, "pages", [], undefined, [
+            { width: 1280.04, height: 720 }, { width: 400, height: 300.26 }
+        ]);
+        expect(JSON.parse(saved).sheets).toEqual([ [ 1280, 720 ], [ 400, 300.3 ] ]);
+        expect(parseInkDocument(saved).sheets).toEqual([ { width: 1280, height: 720 }, { width: 400, height: 300.3 } ]);
+        expect(serializeInkDocument("ruled", [])).not.toContain("sheets");
+
+        const parse = (sheets: unknown) => parseInkDocument(JSON.stringify({ version: 1, strokes: [], sheets })).sheets;
+        expect(parse([ [ 500, 500 ], [ 0, 500 ], [ 600, 600 ] ])).toEqual([ { width: 500, height: 500 } ]);
+        expect(parse([ [ 500, 1e9 ] ])).toBeUndefined();
+        expect(parse("A4")).toBeUndefined();
+    });
+
     it("picks the page that fills most of the view, the first of those that tie", () => {
+        const getVisiblePage = (top: number, bottom: number, pageCount: number) =>
+            new PageLayout().getVisiblePage(top, bottom, pageCount);
         // Pages span 0-1123, 1147-2270 and 2294-3417.
         expect(getVisiblePage(-32, 500, 3)).toBe(0);
         expect(getVisiblePage(1000, 1600, 3)).toBe(1);

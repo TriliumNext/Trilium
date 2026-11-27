@@ -1,9 +1,11 @@
-import { getPageTop, type InkLayout, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle } from "./ink_document";
+import { type InkLayout, type PageLayout, PAGE_WIDTH, type PaperStyle, type SheetSize } from "./ink_document";
 
 /** What the paper is drawn from: the note's paper and layout, the view and the theme's colors. */
 export interface PaperScene {
     paper: PaperStyle;
     layout: InkLayout;
+    /** The sheets of a note laid out in pages. */
+    pages: PageLayout;
     pageCount: number;
     /** The device position of the world origin. */
     tx: number;
@@ -55,7 +57,7 @@ export function drawPaper(
     ctx.fillStyle = scene.backgroundColor;
     ctx.fillRect(x, y, width, height);
     if (scene.layout === "infinite") {
-        drawPattern(ctx, x, y, width, height, tx, ty, false, scene);
+        drawPattern(ctx, x, y, width, height, tx, ty, undefined, scene);
         return;
     }
 
@@ -65,16 +67,14 @@ export function drawPaper(
     ctx.globalAlpha = 1;
 
     const edge = Math.max(1, Math.round(scene.dpr));
-    const left = Math.round(tx);
-    const right = Math.round(tx + PAGE_WIDTH * scale);
-    if (right + edge <= x || left - edge >= x + width) return;
-
-    const first = Math.max(0, Math.floor((y - ty) / scale / (PAGE_HEIGHT + PAGE_GAP)));
-    for (let page = first; page < scene.pageCount; page++) {
-        const top = Math.round(ty + getPageTop(page) * scale);
-        const bottom = Math.round(ty + (getPageTop(page) + PAGE_HEIGHT) * scale);
+    for (let page = scene.pages.indexAt((y - ty) / scale); page < scene.pageCount; page++) {
+        const sheet = scene.pages.getSheet(page);
+        const left = Math.round(tx + sheet.x * scale);
+        const right = Math.round(tx + (sheet.x + sheet.width) * scale);
+        const top = Math.round(ty + sheet.y * scale);
+        const bottom = Math.round(ty + (sheet.y + sheet.height) * scale);
         if (top - edge >= y + height) break;
-        if (bottom + edge <= y) continue;
+        if (bottom + edge <= y || right + edge <= x || left - edge >= x + width) continue;
 
         ctx.save();
         ctx.beginPath();
@@ -95,7 +95,7 @@ export function drawPaper(
             ctx.beginPath();
             ctx.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
             ctx.clip();
-            drawPattern(ctx, clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop, left, top, true, scene);
+            drawPattern(ctx, clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop, left, top, sheet, scene);
         }
         ctx.restore();
     }
@@ -105,12 +105,12 @@ export function drawPaper(
  * Draws the paper's lines over a rectangle of `ctx`, in device pixels, from the device position
  * of the world point they start at. Each line is placed from the view's transform and rounded to
  * a whole device pixel on its own, so the lines stay sharp and in line with the strokes at any
- * zoom. On a `page`, the lines start from its top left corner and stay off its edges, and the
- * rules leave a header and a footer.
+ * zoom. On a `page`, a sheet of that size, the lines start from its top left corner and stay off
+ * its edges, and the rules leave a header and a footer.
  */
 function drawPattern(
     ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number,
-    originX: number, originY: number, page: boolean, scene: PaperScene
+    originX: number, originY: number, page: SheetSize | undefined, scene: PaperScene
 ) {
     if (scene.paper === "blank") return;
     const { scale } = scene;
@@ -140,7 +140,7 @@ function drawPattern(
     ctx.globalAlpha = PAPER_LINE_ALPHA;
     if (scene.paper === "ruled") {
         const rules = page
-            ? lines(originY, y, height, RULED_HEADER, RULED_STEP, RULED_HEADER, PAGE_HEIGHT - RULED_FOOTER)
+            ? lines(originY, y, height, RULED_HEADER, RULED_STEP, RULED_HEADER, page.height - RULED_FOOTER)
             : lines(originY, y, height, 0, RULED_STEP, -Infinity, Infinity);
         for (const py of rules) {
             ctx.fillRect(x, py, width, thickness);
@@ -148,16 +148,16 @@ function drawPattern(
     } else if (scene.paper === "grid") {
         ctx.fillStyle = GRID_COLOR;
         ctx.globalAlpha = GRID_ALPHA;
-        for (const py of gridLines(originY, y, height, PAGE_HEIGHT, GRID_STEP)) {
+        for (const py of gridLines(originY, y, height, page?.height ?? 0, GRID_STEP)) {
             ctx.fillRect(x, py, width, thickness);
         }
-        for (const px of gridLines(originX, x, width, PAGE_WIDTH, GRID_STEP)) {
+        for (const px of gridLines(originX, x, width, page?.width ?? 0, GRID_STEP)) {
             ctx.fillRect(px, y, thickness, height);
         }
     } else {
         const dot = thickness * 2;
-        const rows = gridLines(originY, y, height, PAGE_HEIGHT, DOT_STEP);
-        for (const px of gridLines(originX, x, width, PAGE_WIDTH, DOT_STEP)) {
+        const rows = gridLines(originY, y, height, page?.height ?? 0, DOT_STEP);
+        for (const px of gridLines(originX, x, width, page?.width ?? 0, DOT_STEP)) {
             for (const py of rows) {
                 ctx.fillRect(px, py, dot, dot);
             }

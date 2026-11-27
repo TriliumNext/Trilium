@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getPageTop, PAGE_HEIGHT } from "./ink_document";
-import PdfLayer, { fitPage, MAX_PAGE_PIXELS, type PdfPages } from "./ink_pdf";
+import { PAGE_HEIGHT, PageLayout } from "./ink_document";
+import PdfLayer, { fitPage, MAX_PAGE_PIXELS, type PdfPages, toSheetSize } from "./ink_pdf";
 
 describe("PDF layer", () => {
     const URL = "api/attachments/abc/open";
@@ -12,8 +12,11 @@ describe("PDF layer", () => {
     let drawn: number[];
     let busy: boolean;
     let scale: number;
+    let layout: PageLayout;
+    const getPageTop = (index: number) => layout.getPageTop(index);
     const pages: PdfPages = {
         pageCount: 12,
+        sizes: Array.from({ length: 12 }, () => ({ width: 1280, height: 720 })),
         render: async (index, pixels) => {
             renders.push([ index, pixels ]);
             return { picture, width: 960, height: 540 };
@@ -41,17 +44,26 @@ describe("PDF layer", () => {
         renders = [];
         busy = false;
         scale = 1;
+        layout = new PageLayout();
         vi.mocked(pages.destroy).mockClear();
         openPdf.mockReset().mockResolvedValue(pages);
         redrawBounds.mockReset();
         onOpen.mockReset();
-        layer = new PdfLayer({ openPdf, redrawBounds, getScale: () => scale, isBusy: () => busy, onOpen });
+        layer = new PdfLayer({
+            openPdf, redrawBounds, getLayout: () => layout, getScale: () => scale, isBusy: () => busy, onOpen
+        });
     });
 
-    it("fits a page to the top of its sheet, across its width or down its height", () => {
-        // A slide leaves the lower part of the sheet free, and a narrow page its sides.
-        expect(fitPage(960, 540, 0)).toEqual({ x: 0, y: 0, width: 794, height: 446.625 });
-        expect(fitPage(400, 1123, 2)).toEqual({ x: 197, y: getPageTop(2), width: 400, height: 1123 });
+    it("gives a sheet the size of its page as printed, which the page then fills", () => {
+        // A slide of 960 by 540 points, and A4 to a tenth of a unit.
+        expect(toSheetSize({ width: 960, height: 540 })).toEqual({ width: 1280, height: 720 });
+        expect(toSheetSize({ width: 595.28, height: 841.89 })).toEqual({ width: 793.7, height: 1122.5 });
+        const slides = new PageLayout([ { width: 1280, height: 720 } ]);
+        expect(fitPage(960, 540, slides.getSheet(0))).toEqual({ x: -243, y: 0, width: 1280, height: 720 });
+
+        // On a sheet of another shape, a slide leaves the lower part free, and a narrow page its sides.
+        expect(fitPage(960, 540, layout.getSheet(0))).toEqual({ x: 0, y: 0, width: 794, height: 446.625 });
+        expect(fitPage(400, 1123, layout.getSheet(2))).toEqual({ x: 197, y: getPageTop(2), width: 400, height: 1123 });
     });
 
     it("opens the PDF and draws its first page at once, then each page when it comes into view", async () => {
@@ -60,11 +72,16 @@ describe("PDF layer", () => {
         layer.set(URL);
         await layer.whenReady();
         expect(openPdf).toHaveBeenCalledExactlyOnceWith(URL);
-        expect(onOpen).toHaveBeenCalledOnce();
+        expect(onOpen).toHaveBeenCalledExactlyOnceWith(pages);
         expect(layer.pageCount).toBe(12);
         expect(renders).toEqual([ [ 0, PAGE_HEIGHT ] ]);
         expect(redrawBounds).toHaveBeenLastCalledWith({ minX: 0, minY: 0, maxX: 794, maxY: 446.625 });
-        expect(layer.getFirstPage()?.rect).toEqual(fitPage(960, 540, 0));
+        expect(layer.getFirstPage()?.rect).toEqual(fitPage(960, 540, layout.getSheet(0)));
+
+        // Once the sheets take the sizes of the pages, each page fills its sheet.
+        layout = new PageLayout(pages.sizes);
+        expect(layer.getFirstPage()?.rect).toEqual({ x: -243, y: 0, width: 1280, height: 720 });
+        layout = new PageLayout();
 
         // The second page shows once its picture is there, and the picture is kept.
         expect(drawPages(0, 1)).toEqual([ 0 ]);

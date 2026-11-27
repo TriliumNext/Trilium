@@ -1,4 +1,4 @@
-import { type Bounds, getPageTop, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH } from "./ink_document";
+import { type Bounds, type PageLayout, type Sheet, type SheetSize } from "./ink_document";
 import { darkenPicture, type Picture } from "./ink_images";
 
 /** The longest side of the picture of a page, in pixels, however far the view is zoomed in. */
@@ -7,6 +7,8 @@ export const MAX_PAGE_PIXELS = 2400;
 const MAX_CACHED_PAGES = 5;
 /** A picture is drawn again once the view asks for one this many times larger. */
 const SHARPEN_FACTOR = 1.3;
+/** World units, which are pixels at 96 DPI, per PDF point. */
+const UNITS_PER_POINT = 96 / 72;
 
 /** The picture of a page of a PDF, and the size of the page in PDF points. */
 export interface RenderedPage {
@@ -18,6 +20,8 @@ export interface RenderedPage {
 /** An open PDF document, as `openPdf()` returns it. */
 export interface PdfPages {
     pageCount: number;
+    /** The size of each page, in world units. */
+    sizes: SheetSize[];
     /** Returns the picture of page `index`, counted from zero, `pixels` long on its longer side. */
     render(index: number, pixels: number): Promise<RenderedPage>;
     destroy(): void;
@@ -26,16 +30,18 @@ export interface PdfPages {
 export interface PdfLayerHost {
     /** Opens the PDF at `url`, or returns `undefined` when it cannot be read. */
     openPdf(url: string): Promise<PdfPages | undefined>;
+    /** The sheets of the note, which the pages lie on. */
+    getLayout(): PageLayout;
     redrawBounds(bounds: Bounds): void;
     /** Device pixels per world unit. */
     getScale(): number;
     /** Whether a stroke or another gesture is in progress, during which no page is drawn. */
     isBusy(): boolean;
-    /** Called once the PDF is open and its number of pages is known. */
-    onOpen(): void;
+    /** Called once the PDF is open, before its first page is drawn. */
+    onOpen(pages: PdfPages): void;
 }
 
-/** Where a page lies on its sheet, in world units. */
+/** Where a page lies, in world units. */
 export interface PageRect {
     x: number;
     y: number;
@@ -44,7 +50,6 @@ export interface PageRect {
 }
 
 interface CachedPage extends RenderedPage {
-    rect: PageRect;
     /** The length in pixels the picture was asked for. */
     pixels: number;
     /** The copy that a dark theme shows, made when first drawn. */
@@ -96,9 +101,10 @@ export default class PdfLayer {
         return this.ready;
     }
 
-    /** The first page and where it lies, for the thumbnail of the note. */
+    /** The picture of the first page and where it lies, for the thumbnail of the note. */
     getFirstPage() {
-        return this.cache.get(0);
+        const page = this.cache.get(0);
+        return page && { picture: page.picture, rect: this.getRect(page, 0) };
     }
 
     /**
@@ -107,18 +113,17 @@ export default class PdfLayer {
      */
     draw(ctx: CanvasRenderingContext2D, bounds: Bounds, dark: boolean) {
         if (!this.pages) return;
-        const stride = PAGE_HEIGHT + PAGE_GAP;
-        const first = Math.max(0, Math.floor(bounds.minY / stride));
-        const last = Math.min(this.pages.pageCount - 1, Math.floor(bounds.maxY / stride));
-        const pixels = this.getPixels();
+        const layout = this.host.getLayout();
+        const first = layout.indexAt(bounds.minY);
+        const last = Math.min(this.pages.pageCount - 1, layout.indexAt(bounds.maxY));
         for (let index = first; index <= last; index++) {
             const page = this.cache.get(index);
-            if (!page || page.pixels * SHARPEN_FACTOR < pixels) this.request(index);
+            if (!page || page.pixels * SHARPEN_FACTOR < this.getPixels(index)) this.request(index);
             if (!page) continue;
-            const { rect } = page;
+            const rect = this.getRect(page, index);
             if (dark) page.dark ??= darkenPicture(page.picture);
-            ctx.imageSmoothingQuality = "high";
             const picture = dark && page.dark ? page.dark : page.picture;
+            ctx.imageSmoothingQuality = "high";
             ctx.drawImage(picture, rect.x, rect.y, rect.width, rect.height);
         }
     }
@@ -136,13 +141,18 @@ export default class PdfLayer {
         }
         this.pages = pages;
         if (!pages) return;
-        this.host.onOpen();
+        this.host.onOpen(pages);
         await this.render(0);
     }
 
-    /** How long the picture of a page has to be for the current view, in pixels. */
-    private getPixels() {
-        return Math.min(MAX_PAGE_PIXELS, Math.ceil(PAGE_HEIGHT * this.host.getScale()));
+    private getRect(page: RenderedPage, index: number) {
+        return fitPage(page.width, page.height, this.host.getLayout().getSheet(index));
+    }
+
+    /** How long the picture of page `index` has to be for the current view, in pixels. */
+    private getPixels(index: number) {
+        const { width, height } = this.host.getLayout().getSheet(index);
+        return Math.min(MAX_PAGE_PIXELS, Math.ceil(Math.max(width, height) * this.host.getScale()));
     }
 
     private request(index: number) {
@@ -164,14 +174,12 @@ export default class PdfLayer {
     private async render(index: number) {
         const { pages, currentUrl: url } = this;
         if (!pages) return;
-        const pixels = this.getPixels();
+        const pixels = this.getPixels(index);
         const rendered = await pages.render(index, pixels).catch(() => undefined);
         if (!rendered || this.currentUrl !== url) return;
-        const rect = fitPage(rendered.width, rendered.height, index);
-        const page: CachedPage = { ...rendered, pixels, rect };
-        this.cache.set(index, page);
+        this.cache.set(index, { ...rendered, pixels });
         this.evict(index);
-        const { x, y, width, height } = page.rect;
+        const { x, y, width, height } = this.getRect(rendered, index);
         this.host.redrawBounds({ minX: x, minY: y, maxX: x + width, maxY: y + height });
     }
 
@@ -187,15 +195,14 @@ export default class PdfLayer {
 }
 
 /**
- * Returns where a page of `width` by `height`, in any unit, lies on sheet `index`: as large as
- * fits the sheet, at its top and centered across it. A slide then leaves the rest of the sheet
- * free for notes.
+ * Returns where a page of `width` by `height`, in any unit, lies on `sheet`: as large as fits the
+ * sheet, at its top and centered across it. A page fills a sheet of its own size.
  */
-export function fitPage(width: number, height: number, index: number): PageRect {
-    const scale = Math.min(PAGE_WIDTH / width, PAGE_HEIGHT / height);
+export function fitPage(width: number, height: number, sheet: Sheet): PageRect {
+    const scale = Math.min(sheet.width / width, sheet.height / height);
     return {
-        x: (PAGE_WIDTH - width * scale) / 2,
-        y: getPageTop(index),
+        x: sheet.x + (sheet.width - width * scale) / 2,
+        y: sheet.y,
         width: width * scale,
         height: height * scale
     };
@@ -254,8 +261,14 @@ export async function openPdf(url: string): Promise<PdfPages | undefined> {
             wasmUrl: `${base}web/wasm/`
         });
         const document_ = await task.promise;
+        const sizes: SheetSize[] = [];
+        for (let pageNumber = 1; pageNumber <= document_.numPages; pageNumber++) {
+            const page = await document_.getPage(pageNumber);
+            sizes.push(toSheetSize(page.getViewport({ scale: 1 })));
+        }
         return {
             pageCount: document_.numPages,
+            sizes,
             async render(index, pixels) {
                 const page = await document_.getPage(index + 1);
                 const { width, height } = page.getViewport({ scale: 1 });
@@ -273,4 +286,15 @@ export async function openPdf(url: string): Promise<PdfPages | undefined> {
         console.error(`Could not open the PDF at '${url}'`, e);
         return undefined;
     }
+}
+
+/**
+ * Returns the size of the sheet for a page of `width` by `height` PDF points: the size of the
+ * page as printed, to a tenth of a world unit, as a saved document holds it.
+ */
+export function toSheetSize({ width, height }: { width: number, height: number }): SheetSize {
+    return {
+        width: Math.round(width * UNITS_PER_POINT * 10) / 10,
+        height: Math.round(height * UNITS_PER_POINT * 10) / 10
+    };
 }

@@ -14,6 +14,23 @@ export const PAGE_WIDTH = 794;
 export const PAGE_HEIGHT = 1123;
 export const PAGE_GAP = 24;
 
+/** The shortest and the longest side of a sheet with a size of its own, and how many a note holds. */
+const MIN_SHEET_SIDE = 16;
+const MAX_SHEET_SIDE = 20000;
+const MAX_SHEETS = 10000;
+
+/** The size of a sheet, in world units. */
+export interface SheetSize {
+    width: number;
+    height: number;
+}
+
+/** A sheet of a note laid out in pages: its top left corner and its size, in world units. */
+export interface Sheet extends SheetSize {
+    x: number;
+    y: number;
+}
+
 export type InkTool = "pen" | "highlighter";
 
 /** The color of a stroke that follows the theme's text color. */
@@ -84,6 +101,8 @@ export interface InkDocument {
     images?: InkImage[];
     /** The PDF whose pages lie on the sheets, which matches {@link PDF_URL_PATTERN}. */
     pdf?: string;
+    /** The sizes of the first sheets, as a PDF gave them. The sheets after them are A4. */
+    sheets?: SheetSize[];
     /** The view the note was last saved at. */
     view?: InkView;
 }
@@ -108,6 +127,8 @@ interface SerializedDocument {
     paper: PaperStyle;
     layout?: InkLayout;
     pdf?: string;
+    /** The `[width, height]` of each sheet with a size of its own. */
+    sheets?: number[][];
     images?: SerializedImage[];
     strokes: SerializedStroke[];
     view?: InkView;
@@ -141,7 +162,7 @@ export function createImage(props: Omit<InkImage, "bounds">): InkImage {
  */
 export function serializeInkDocument(
     paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
-    images: InkImage[] = [], pdf?: string
+    images: InkImage[] = [], pdf?: string, sheets: SheetSize[] = []
 ): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
@@ -151,10 +172,13 @@ export function serializeInkDocument(
     const savedView = view
         ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
         : "";
+    const savedSheets = sheets.length
+        ? `,"sheets":${JSON.stringify(sheets.map(({ width, height }) => [ round(width, 10), round(height, 10) ]))}`
+        : "";
     const savedImages = images.length
         ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
         : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedImages},"strokes":[${parts.join(",")}]}`;
+    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${pdf ? `,"pdf":${JSON.stringify(pdf)}` : ""}${savedSheets}${savedImages},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -215,7 +239,27 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
         ? raw.layout as InkLayout
         : strokes.length ? "infinite" : "pages";
     const pdf = typeof raw.pdf === "string" && PDF_URL_PATTERN.test(raw.pdf) ? raw.pdf : undefined;
-    return { paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view), ...(pdf && { pdf }) };
+    const sheets = parseSheets(raw.sheets);
+    return {
+        paper, layout, strokes, images: parseImages(raw.images), view: parseView(raw.view),
+        ...(pdf && { pdf }), ...(sheets.length && { sheets })
+    };
+}
+
+function parseSheets(raw: unknown): SheetSize[] {
+    const sheets: SheetSize[] = [];
+    if (!Array.isArray(raw)) return sheets;
+    for (const size of raw.slice(0, MAX_SHEETS)) {
+        const [ width, height ] = Array.isArray(size) ? size : [];
+        // A sheet that cannot be read ends the list: the sheets after it would be out of place.
+        if (!isSheetSide(width) || !isSheetSide(height)) break;
+        sheets.push({ width, height });
+    }
+    return sheets;
+}
+
+function isSheetSide(value: unknown): value is number {
+    return isFiniteNumber(value) && value >= MIN_SHEET_SIDE && value <= MAX_SHEET_SIDE;
 }
 
 function parseImages(raw: unknown): InkImage[] {
@@ -238,43 +282,94 @@ function parseView(view: unknown): InkView | undefined {
     return { x, y, zoom };
 }
 
-/** The top of page `index`, counted from zero, in world units. */
-export function getPageTop(index: number) {
-    return index * (PAGE_HEIGHT + PAGE_GAP);
-}
-
 /**
- * The index of the page that fills most of the view from `top` to `bottom`, in world units: the
- * first of those that fill it alike, and the nearest page when the view shows none.
+ * The sheets of a note laid out in pages: a column of sheets `PAGE_GAP` apart, each centered on
+ * the middle of an A4 sheet. The first sheets have the `sizes` given, as the pages of a PDF, and
+ * every sheet after them is A4, so a note without `sizes` is a column of A4 sheets from the
+ * origin.
  */
-export function getVisiblePage(top: number, bottom: number, pageCount: number) {
-    const stride = PAGE_HEIGHT + PAGE_GAP;
-    const last = Math.max(0, pageCount - 1);
-    const from = Math.min(last, Math.max(0, Math.floor(top / stride)));
-    const to = Math.min(last, Math.max(0, Math.floor(bottom / stride)));
-    let visible = from;
-    let visibleHeight = -Infinity;
-    for (let page = from; page <= to; page++) {
-        const pageTop = getPageTop(page);
-        const height = Math.min(bottom, pageTop + PAGE_HEIGHT) - Math.max(top, pageTop);
-        if (height > visibleHeight) {
-            visible = page;
-            visibleHeight = height;
+export class PageLayout {
+
+    /** The top of each sheet of `sizes`, then of the first sheet after them. */
+    private tops: number[] = [ 0 ];
+
+    constructor(readonly sizes: SheetSize[] = []) {
+        for (const { height } of sizes) {
+            this.tops.push(this.tops[this.tops.length - 1] + height + PAGE_GAP);
         }
     }
-    return visible;
-}
 
-/**
- * How many pages a note shows: those up to the last one holding one of `items`, its strokes and
- * images, and an empty one after it.
- */
-export function getPageCount(items: Iterable<{ bounds: Bounds }>) {
-    let lastUsed = -1;
-    for (const { bounds } of items) {
-        lastUsed = Math.max(lastUsed, Math.floor(bounds.maxY / (PAGE_HEIGHT + PAGE_GAP)));
+    /** Whether the first sheets have exactly the `sizes` given. */
+    hasSizes(sizes: SheetSize[]) {
+        return sizes.length === this.sizes.length && sizes.every(({ width, height }, index) =>
+            width === this.sizes[index].width && height === this.sizes[index].height);
     }
-    return lastUsed + 2;
+
+    /** The top of sheet `index`, counted from zero, in world units. */
+    getPageTop(index: number) {
+        const count = this.sizes.length;
+        if (index <= count) return this.tops[Math.max(0, index)];
+        return this.tops[count] + (index - count) * (PAGE_HEIGHT + PAGE_GAP);
+    }
+
+    /** Where sheet `index`, counted from zero, lies. */
+    getSheet(index: number): Sheet {
+        const { width, height } = this.sizes[index] ?? { width: PAGE_WIDTH, height: PAGE_HEIGHT };
+        return { x: (PAGE_WIDTH - width) / 2, y: this.getPageTop(index), width, height };
+    }
+
+    /**
+     * The index of the sheet at `y`, in world units, the gap under a sheet counting as the sheet.
+     * Above the first sheet, it is the first.
+     */
+    indexAt(y: number) {
+        const count = this.sizes.length;
+        if (y >= this.tops[count]) {
+            return count + Math.floor((y - this.tops[count]) / (PAGE_HEIGHT + PAGE_GAP));
+        }
+        let low = 0;
+        let high = count - 1;
+        while (low < high) {
+            const middle = Math.ceil((low + high) / 2);
+            if (this.tops[middle] <= y) low = middle;
+            else high = middle - 1;
+        }
+        return low;
+    }
+
+    /**
+     * The index of the page that fills most of the view from `top` to `bottom`, in world units:
+     * the first of those that fill it alike, and the nearest page when the view shows none.
+     */
+    getVisiblePage(top: number, bottom: number, pageCount: number) {
+        const last = Math.max(0, pageCount - 1);
+        const from = Math.min(last, this.indexAt(top));
+        const to = Math.min(last, this.indexAt(bottom));
+        let visible = from;
+        let visibleHeight = -Infinity;
+        for (let page = from; page <= to; page++) {
+            const sheet = this.getSheet(page);
+            const height = Math.min(bottom, sheet.y + sheet.height) - Math.max(top, sheet.y);
+            if (height > visibleHeight) {
+                visible = page;
+                visibleHeight = height;
+            }
+        }
+        return visible;
+    }
+
+    /**
+     * How many pages a note shows: those up to the last one holding one of `items`, its strokes
+     * and images, and an empty one after it.
+     */
+    getPageCount(items: Iterable<{ bounds: Bounds }>) {
+        let lastUsed = -1;
+        for (const { bounds } of items) {
+            if (bounds.maxY >= 0) lastUsed = Math.max(lastUsed, this.indexAt(bounds.maxY));
+        }
+        return lastUsed + 2;
+    }
+
 }
 
 function isFiniteNumber(value: unknown): value is number {

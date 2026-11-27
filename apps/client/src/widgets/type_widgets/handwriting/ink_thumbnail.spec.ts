@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTO_COLOR, createImage, createStroke, getPageTop, type InkImage, type Stroke, StrokeIndex } from "./ink_document";
+import {
+    AUTO_COLOR, createImage, createStroke, type InkImage, PageLayout, type Stroke, StrokeIndex
+} from "./ink_document";
+
+const getPageTop = (index: number) => new PageLayout().getPageTop(index);
 import InkThumbnail from "./ink_thumbnail";
 
 describe("ink thumbnail", () => {
@@ -10,6 +14,7 @@ describe("ink thumbnail", () => {
     let drawn: string[];
     let strokes: Set<Stroke>;
     let images: InkImage[];
+    let firstSheet = { minX: 0, minY: 0, maxX: 794, maxY: 1123 };
     const picture = document.createElement("canvas");
     let background: { picture: HTMLCanvasElement, rect: { x: number, y: number, width: number, height: number } } | undefined;
     let index: StrokeIndex;
@@ -39,6 +44,7 @@ describe("ink thumbnail", () => {
         thumbnail = new InkThumbnail({
             getAll: () => strokes,
             query: (bounds) => index.query(bounds),
+            getFirstSheet: () => firstSheet,
             getImages: () => images,
             getPicture: (image) => (image.url.includes("loaded") ? picture : undefined),
             whenImagesLoaded: async () => {},
@@ -136,6 +142,12 @@ describe("ink thumbnail", () => {
         await thumbnail.export();
         expect(drawn).toEqual([ "picture", "picture", "#ff0000" ]);
         background = undefined;
+
+        // A first sheet of another size, as that of a slide, is shown whole.
+        firstSheet = { minX: -243, minY: 0, maxX: 1037, maxY: 720 };
+        thumbnail.invalidate();
+        expect((await thumbnail.export())?.svg).toMatch(/^<svg [^>]*width="600" height="338"/);
+        firstSheet = { minX: 0, minY: 0, maxX: 794, maxY: 1123 };
 
         // On a canvas without bounds, the thumbnail fits the images as well as the ink, which
         // starts 3 units before the image, with 16 units around them.

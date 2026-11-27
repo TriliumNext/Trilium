@@ -726,8 +726,10 @@ describe("ink surface input", () => {
     it("puts the pages of a PDF on the sheets, under the ink, and shows a sheet for each", async () => {
         const PDF = "api/attachments/abc/open";
         const picture = document.createElement("canvas");
+        const slide = { width: 1280, height: 720 };
         const pages = {
             pageCount: 3,
+            sizes: [ slide, slide, slide ],
             render: vi.fn(async () => ({ picture, width: 960, height: 540 })),
             destroy: vi.fn()
         };
@@ -745,7 +747,22 @@ describe("ink surface input", () => {
         await settle();
         expect(openPdf).toHaveBeenCalledExactlyOnceWith(PDF);
         expect(surface.getPageCount()).toBe(3);
-        expect(drawImages).toContainEqual([ picture, 0, 0, 794, 446.625 ]);
+        // The sheets take the size of the slides, each around the middle of an A4 sheet, and the
+        // view fits the width of the first one.
+        expect(drawImages).toContainEqual([ picture, -243, 0, 1280, 720 ]);
+        expect(JSON.parse(surface.serialize()).sheets).toEqual([ [ 1280, 720 ], [ 1280, 720 ], [ 1280, 720 ] ]);
+        expect(onChange).toHaveBeenCalledTimes(2);
+        expect(surface.getCenterView().zoom).toBe(336 / 1280);
+        // The view is placed on a whole pixel, which is close to four units at this zoom.
+        expect(Math.abs(surface.getCenterView().x - 397)).toBeLessThan(2);
+        surface.goToPage(2);
+        expect(surface.getView().y).toBe(Math.round(32 - 1488 * 336 / 1280));
+        surface.goToPage(0);
+        // An image fits inside the sheet in view.
+        surface.addImage("api/attachments/abc/image/a.png", 4000, 1000);
+        expect(JSON.parse(surface.serialize()).images).toEqual([ expect.objectContaining({ x: -243, w: 1280, h: 320 }) ]);
+        surface.undo();
+        onChange.mockClear();
 
         // Ink goes over the page, and a note reloaded with the same PDF does not open it again.
         swipe("pen", 1, 100);
@@ -755,8 +772,9 @@ describe("ink surface input", () => {
         expect(openPdf).toHaveBeenCalledOnce();
         expect(surface.getPageCount()).toBe(3);
 
-        // Without the PDF, the note keeps its ink and the pages that hold it.
+        // Without the PDF, the note keeps its ink, the pages that hold it and the sizes of its sheets.
         surface.setPdf(undefined);
+        expect(JSON.parse(surface.serialize()).sheets).toHaveLength(3);
         expect(pages.destroy).toHaveBeenCalledOnce();
         expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ hasPdf: false, pageCount: 2 }));
         expect(JSON.parse(surface.serialize())).not.toHaveProperty("pdf");

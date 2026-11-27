@@ -19,13 +19,14 @@ const DARK_FILTER = "invert(93%) hue-rotate(180deg)";
  */
 const PICTURE_TYPE = "image/webp";
 const PICTURE_QUALITY = 0.85;
-const FIRST_PAGE: Bounds = { minX: 0, minY: 0, maxX: PAGE_WIDTH, maxY: PAGE_HEIGHT };
 
 /** The strokes and the images of the note that a thumbnail draws. */
 export interface ThumbnailContent {
     getAll(): Iterable<Stroke>;
     /** Returns the strokes whose bounds intersect `bounds`, in drawing order. */
     query(bounds: Bounds): Stroke[];
+    /** Returns the bounds of the first sheet, which is what the thumbnail of pages shows. */
+    getFirstSheet(): Bounds;
     /** Returns the images in drawing order. */
     getImages(): InkImage[];
     /** Returns the picture of `image`, or `undefined` for one that is not loaded. */
@@ -135,14 +136,14 @@ export default class InkThumbnail {
     }
 
     private shows(bounds: Bounds) {
-        return this.layout === "infinite" || intersects(FIRST_PAGE, bounds);
+        return this.layout === "infinite" || intersects(this.content.getFirstSheet(), bounds);
     }
 
     private redraw() {
         this.isStale = false;
         const images = this.content.getImages();
         const area = this.layout === "pages"
-            ? FIRST_PAGE
+            ? this.content.getFirstSheet()
             : getContentArea([ ...this.content.getAll(), ...images ]);
         this.area = area;
         if (!area) {

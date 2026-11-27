@@ -1,9 +1,9 @@
 import { isIOS } from "../../../services/utils";
 import {
-    AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getPageCount as countPages,
-    getPageTop, getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout,
-    type InkTool, type InkView, PAGE_GAP, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
-    splitStroke, type Stroke, strokeHitsSegment, StrokeIndex
+    AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getStrokePath,
+    HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout, type InkTool, type InkView, PAGE_GAP,
+    PageLayout, type PaperStyle, serializeInkDocument, serializeStroke, splitStroke, type Stroke,
+    strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 import ImageLayer, { type Picture, placeImage } from "./ink_images";
 import PdfLayer, { type PdfPages } from "./ink_pdf";
@@ -123,6 +123,9 @@ export default class InkSurface {
     private penErasing = false;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
+    private pages = new PageLayout();
+    /** Whether the sheets take the sizes of the pages of the PDF once it is open. */
+    private adoptsPdfSizes = false;
     private pageCount = 1;
     /** The page last passed to `onStateChange()`, so that a pan reports only a new one. */
     private reportedPage = 0;
@@ -208,14 +211,19 @@ export default class InkSurface {
         });
         this.pdf = new PdfLayer({
             openPdf: async (url) => this.options.openPdf?.(url),
+            getLayout: () => this.pages,
             redrawBounds: (bounds) => this.redrawBounds(bounds),
             getScale: () => this.zoom * this.dpr,
             isBusy: () => this.mode !== "idle",
-            onOpen: () => this.updatePageCount()
+            onOpen: (pdf) => this.onPdfOpen(pdf)
         });
         this.thumbnail = new InkThumbnail({
             getAll: () => this.strokes,
             query: (bounds) => this.index.query(bounds),
+            getFirstSheet: () => {
+                const { x, y, width, height } = this.pages.getSheet(0);
+                return { minX: x, minY: y, maxX: x + width, maxY: y + height };
+            },
             getImages: () => this.images.getAll(),
             getPicture: (image) => this.images.getPicture(image),
             whenImagesLoaded: async () => {
@@ -287,6 +295,8 @@ export default class InkSurface {
         const images = doc.images ?? [];
         this.images.load(images);
         this.nextImageOrder = images.length;
+        this.pages = new PageLayout(doc.sheets);
+        this.adoptsPdfSizes = !!doc.pdf && !doc.sheets?.length;
         this.pdf.set(doc.pdf);
         this.paper = doc.paper;
         this.layout = doc.layout;
@@ -319,15 +329,17 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.pdf.url);
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.pdf.url, this.pages.sizes);
     }
 
     /**
      * Puts the pages of the PDF at `url` on the sheets of the note, which is then laid out in
-     * pages, or with `undefined`, takes the PDF away. The ink and the images stay where they are.
+     * pages and whose sheets take the sizes of the pages. With `undefined`, takes the PDF away and
+     * leaves the sheets as they are. The ink and the images stay where they are.
      */
     setPdf(url: string | undefined) {
         if (url === this.pdf.url) return;
+        this.adoptsPdfSizes = !!url;
         this.pdf.set(url);
         if (url) this.layout = "pages";
         this.thumbnail.setLayout(this.layout);
@@ -351,7 +363,9 @@ export default class InkSurface {
         };
         const image = createImage({
             url,
-            ...placeImage(naturalWidth, naturalHeight, visible, this.layout),
+            ...placeImage(naturalWidth, naturalHeight, visible, this.layout === "pages"
+                ? this.pages.getSheet(this.pages.indexAt(y))
+                : undefined),
             order: this.nextImageOrder++
         });
         this.pushHistory({ added: [], removed: [], addedImages: [ image ] });
@@ -430,15 +444,16 @@ export default class InkSurface {
     }
 
     /**
-     * The view that fits the width of the content: of a page on pages, and of all the strokes on
+     * The view that fits the width of the content: of the page in view on pages, and of all the strokes on
      * a canvas without bounds. It starts at the top of the content for a note just opened, and
      * keeps the part of it on screen otherwise.
      */
     private getContentView(): InkView {
         const width = this.baseCanvas.width / this.dpr;
         const height = this.baseCanvas.height / this.dpr;
+        const sheet = this.pages.getSheet(this.viewShown ? this.getVisiblePage() : 0);
         const bounds = this.layout === "pages"
-            ? { minX: 0, minY: 0, maxX: PAGE_WIDTH }
+            ? { minX: sheet.x, minY: 0, maxX: sheet.x + sheet.width }
             : { minX: Infinity, minY: Infinity, maxX: -Infinity };
         if (this.layout === "infinite") {
             if (!this.strokes.size && !this.images.size) return { x: width / 2, y: height / 2, zoom: 1 };
@@ -472,7 +487,7 @@ export default class InkSurface {
         const height = this.baseCanvas.height / this.dpr;
         this.showView({
             x: this.getCenterView().x,
-            y: getPageTop(index) + (height / 2 - FIT_MARGIN) / this.zoom,
+            y: this.pages.getPageTop(index) + (height / 2 - FIT_MARGIN) / this.zoom,
             zoom: this.zoom
         });
     }
@@ -883,7 +898,25 @@ export default class InkSurface {
 
     /** How many pages the note shows: those of its PDF at least. */
     private countPages() {
-        return Math.max(countPages(this.getItems()), this.pdf.pageCount);
+        return Math.max(this.pages.getPageCount(this.getItems()), this.pdf.pageCount);
+    }
+
+    /**
+     * Shows a sheet for each page of `pdf`, just opened. The sheets of a note that was given the
+     * PDF, or that was saved with a PDF and no sheets, take the sizes of its pages.
+     */
+    private onPdfOpen(pdf: PdfPages) {
+        const adopts = this.adoptsPdfSizes && !this.pages.hasSizes(pdf.sizes);
+        this.adoptsPdfSizes = false;
+        if (!adopts) {
+            this.updatePageCount();
+            return;
+        }
+        this.pages = new PageLayout(pdf.sizes);
+        this.pageCount = this.countPages();
+        this.thumbnail.invalidate();
+        this.showView("content");
+        if (!this.readOnly) this.options.onChange();
     }
 
     /** The strokes and the images, for what needs only their bounds. */
@@ -902,8 +935,8 @@ export default class InkSurface {
         this.reportState();
         if (this.layout === "pages") {
             this.redrawBounds({
-                minX: -PAGE_GAP, minY: getPageTop(from) - PAGE_GAP,
-                maxX: PAGE_WIDTH + PAGE_GAP, maxY: getPageTop(to)
+                minX: -Infinity, minY: this.pages.getPageTop(from) - PAGE_GAP,
+                maxX: Infinity, maxY: this.pages.getPageTop(to)
             });
         }
     }
@@ -1032,7 +1065,7 @@ export default class InkSurface {
     private getVisiblePage() {
         const scale = this.zoom * this.dpr;
         const top = -this.ty / scale;
-        return getVisiblePage(top, top + this.baseCanvas.height / scale, this.pageCount);
+        return this.pages.getVisiblePage(top, top + this.baseCanvas.height / scale, this.pageCount);
     }
 
     private toDevice(clientX: number, clientY: number) {
@@ -1163,6 +1196,7 @@ export default class InkSurface {
         return {
             paper: this.paper,
             layout: this.layout,
+            pages: this.pages,
             pageCount: this.pageCount,
             tx: this.tx,
             ty: this.ty,

@@ -1,7 +1,4 @@
-import {
-    type Bounds, boundsIntersect, createImage, getPageTop, type InkImage, type InkLayout, PAGE_GAP, PAGE_HEIGHT,
-    PAGE_WIDTH
-} from "./ink_document";
+import { type Bounds, boundsIntersect, createImage, type InkImage, type Sheet } from "./ink_document";
 
 /** The corner of the selected image that a resize drags. */
 export type ImageHandle = "nw" | "ne" | "sw" | "se";
@@ -347,22 +344,20 @@ export interface VisibleArea {
 
 /**
  * Returns where a new picture of `naturalWidth` by `naturalHeight` pixels goes: around the middle
- * of the view, at its own size or smaller. On pages, it fits inside the page at the middle of the
- * view, and on a canvas without bounds, in most of the view.
+ * of the view, at its own size or smaller. On pages, it fits inside `sheet`, the one at the middle
+ * of the view, and on a canvas without bounds, in most of the view.
  */
-export function placeImage(naturalWidth: number, naturalHeight: number, visible: VisibleArea, layout: InkLayout) {
-    const maxWidth = layout === "pages" ? PAGE_WIDTH : visible.width * VIEW_FILL;
-    const maxHeight = layout === "pages" ? PAGE_HEIGHT : visible.height * VIEW_FILL;
+export function placeImage(naturalWidth: number, naturalHeight: number, visible: VisibleArea, sheet?: Sheet) {
+    const maxWidth = sheet ? sheet.width : visible.width * VIEW_FILL;
+    const maxHeight = sheet ? sheet.height : visible.height * VIEW_FILL;
     const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
     const width = naturalWidth * scale;
     const height = naturalHeight * scale;
     let x = visible.x - width / 2;
     let y = visible.y - height / 2;
-    if (layout === "pages") {
-        const page = Math.max(0, Math.floor(visible.y / (PAGE_HEIGHT + PAGE_GAP)));
-        const top = getPageTop(page);
-        x = Math.min(PAGE_WIDTH - width, Math.max(0, x));
-        y = Math.min(top + PAGE_HEIGHT - height, Math.max(top, y));
+    if (sheet) {
+        x = Math.min(sheet.x + sheet.width - width, Math.max(sheet.x, x));
+        y = Math.min(sheet.y + sheet.height - height, Math.max(sheet.y, y));
     }
     return { x, y, width, height };
 }
