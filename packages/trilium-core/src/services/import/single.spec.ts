@@ -35,6 +35,7 @@ async function testImport(fileName: string, mimetype: string, bufferOverride?: B
         textImportedAsText: true,
         codeImportedAsCode: true,
         spreadsheetImportedAsSpreadsheet: true,
+        drawingImportedAsHandwriting: true,
         ...extraOptions
     });
 
@@ -350,6 +351,8 @@ describe("importSingleFile dispatch", () => {
         expect(empty.importedNote).toMatchObject({ type: "file", title: "Empty.rnote" });
         const broken = await testImport("Broken.rnote", "application/octet-stream", Buffer.from("not an RNote file"));
         expect(broken.importedNote).toMatchObject({ type: "file", title: "Broken.rnote" });
+        const off = await testImport("Off.rnote", "application/octet-stream", rnote([ line ]), { drawingImportedAsHandwriting: false });
+        expect(off.importedNote).toMatchObject({ type: "file", title: "Off.rnote" });
     });
 
     it("strips the extension and underscores from a PDF's title", async () => {

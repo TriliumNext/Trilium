@@ -728,6 +728,7 @@ Import flags forwarded to the native importer (mirrors the HTTP route's options;
 | `textImportedAsText` | `boolean` |
 | `codeImportedAsCode` | `boolean` |
 | `spreadsheetImportedAsSpreadsheet` | `boolean` |
+| `drawingImportedAsHandwriting` | `boolean` |
 | `explodeArchives` | `boolean` |
 | `replaceUnderscoresWithSpaces` | `boolean` |
 

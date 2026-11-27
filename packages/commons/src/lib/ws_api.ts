@@ -42,6 +42,7 @@ type TaskDataDefinitions = {
         textImportedAsText?: boolean;
         codeImportedAsCode?: boolean;
         spreadsheetImportedAsSpreadsheet?: boolean;
+        drawingImportedAsHandwriting?: boolean;
         replaceUnderscoresWithSpaces?: boolean;
         shrinkImages?: boolean;
         safeImport?: boolean;

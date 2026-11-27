@@ -9,7 +9,7 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import { convertRnote, serializeRnote } from "./rnote.js";
+import { convertRnote, isRnoteFile, RNOTE_EXTENSION, saveRnoteImages, serializeRnote } from "./rnote.js";
 import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
@@ -20,7 +20,6 @@ import { getLog } from "../log.js";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 // MIME of a `.csv` upload, as resolved by `mime-types`.
 const CSV_MIME = "text/csv";
-const RNOTE_EXTENSION = ".rnote";
 
 /**
  * Imports one uploaded file as a note, then puts it through the same post-processing every other
@@ -79,7 +78,7 @@ async function importSingleFileAs(taskContext: TaskContext<"importNotes">, file:
         return importCustomType(taskContext, file, parentNote, "spreadsheet", mime);
     }
 
-    if (file.originalname.toLowerCase().endsWith(RNOTE_EXTENSION)) {
+    if (taskContext?.data?.drawingImportedAsHandwriting && isRnoteFile(file.originalname)) {
         const note = importRnote(taskContext, file, parentNote);
         if (note) return note;
     }
@@ -189,14 +188,7 @@ function importRnote(taskContext: TaskContext<"importNotes">, file: File, parent
     note.addLabel("originalFileName", file.originalname);
 
     if (converted.images.length) {
-        // The images are saved first, as the content refers to them by the IDs of their attachments.
-        const urls = converted.images.map(({ png }, index) => {
-            const { attachmentId, title } = imageService.saveImageToAttachment(
-                note.noteId, png, `image${index + 1}.png`, !!taskContext.data?.shrinkImages
-            );
-            return attachmentId && `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`;
-        });
-        note.setContent(serializeRnote(converted, urls));
+        note.setContent(saveRnoteImages(note, converted, !!taskContext.data?.shrinkImages));
     }
 
     const skipped = Object.entries(converted.skipped).map(([ kind, count ]) => `${count} ${kind}`);

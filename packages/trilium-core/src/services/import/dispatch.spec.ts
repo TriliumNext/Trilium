@@ -38,6 +38,7 @@ function makeOptions(overrides: Partial<ImportOptions> = {}): ImportOptions {
         textImportedAsText: true,
         codeImportedAsCode: true,
         spreadsheetImportedAsSpreadsheet: true,
+        drawingImportedAsHandwriting: true,
         explodeArchives: true,
         replaceUnderscoresWithSpaces: false,
         ...overrides

@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
-import { strToU8, zipSync } from "fflate";
+import { gzipSync, strToU8, zipSync } from "fflate";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { PassThrough } from "stream";
 import zip, { removeTriliumTags } from "./zip.js";
+import imageService from "../image.js";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import noteService from "../notes.js";
@@ -671,6 +672,48 @@ describe("processNoteContent", () => {
         });
 
         expect(orderedTitles).toEqual(["a.txt", "b.txt", "c.txt"]);
+    });
+
+    it("imports an RNote entry as a handwriting note with its images, or as a file when the option is off", async () => {
+        const rnote = (strokes: object[]) => Buffer.from(gzipSync(strToU8(JSON.stringify({
+            data: { engine_snapshot: { stroke_components: strokes.map((value) => ({ value })) } }
+        }))));
+        const style = { smooth: { stroke_width: 2, stroke_color: { r: 1, g: 0, b: 0, a: 1 } } };
+        const line = { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 10, 0 ] } }, style } };
+        // One opaque white pixel, shown 20 by 10 around (10, 50).
+        const image = {
+            bitmapimage: {
+                image: { data: btoa("\xff\xff\xff\xff"), pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                rectangle: { cuboid: { half_extents: [ 0.5, 0.5 ] }, transform: { affine: [ 20, 0, 0, 0, 10, 0, 10, 50, 1 ] } }
+            }
+        };
+        const zipBuffer = await createZipBuffer({
+            "Lectures/Week_1.rnote": rnote([ line, image ]),
+            "Lectures/Broken.rnote": Buffer.from("not an RNote file")
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-rnote", { drawingImportedAsHandwriting: true, replaceUnderscoresWithSpaces: true });
+        await imageService.awaitPendingImageWrites();
+        const folder = rootNote.getChildNotes().find((n) => n.title === "Lectures");
+        const drawing = folder?.getChildNotes().find((n) => n.title === "Week 1");
+        expect(drawing).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json" });
+        expect(drawing?.getOwnedLabelValue("originalFileName")).toBe("Week_1.rnote");
+        const [ attachment ] = drawing?.getAttachments() ?? [];
+        expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image1.png" });
+        expect(JSON.parse(String(drawing?.getContent()))).toEqual({
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { o: "image", id: "i1", url: `api/attachments/${attachment?.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
+                { id: "s1", c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] }
+            ]
+        });
+        // A file that is not an RNote document is kept as a file.
+        expect(folder?.getChildNotes().find((n) => n.title === "Broken.rnote")).toMatchObject({ type: "file" });
+
+        const off = await testImportBuffer(await createZipBuffer({ "Off.rnote": rnote([ line ]) }), "import-rnote-off", { drawingImportedAsHandwriting: false });
+        const file = off.rootNote.getChildNotes().find((n) => n.title === "Off.rnote");
+        expect(file).toMatchObject({ type: "file" });
+        expect(file?.getOwnedLabelValue("originalFileName")).toBe("Off.rnote");
     });
 
     it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {

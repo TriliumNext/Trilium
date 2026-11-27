@@ -1,6 +1,6 @@
 import {
     CANVAS_ATTACHMENT_MIME, getAttachmentEmbedHref, getDrawingPictureTitle,
-    getImageAttachmentTitle, isHandwritingNote, isMarkdownMime, isNoteType, type NoteType
+    getImageAttachmentTitle, HANDWRITING_MIME, isHandwritingNote, isMarkdownMime, isNoteType, type NoteType
 } from "@triliumnext/commons";
 import {
     renderToHtml as renderMarkdownToHtml
@@ -27,6 +27,7 @@ import type TaskContext from "../task_context.js";
 import treeService from "../tree.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
+import { convertRnote, isRnoteFile, RNOTE_EXTENSION, saveRnoteImages, serializeRnote } from "./rnote.js";
 import { importedAttributeName } from "./utils.js";
 import { AttachmentMeta, AttributeMeta, NoteMeta } from "../../meta.js";
 import { getArchivedLinkSuffix, getLinkTargetParameters } from "../export/rewrite_links.js";
@@ -724,7 +725,16 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             return;
         }
 
-        let { mime, type: detectedType } = noteMeta ? noteMeta : detectFileTypeAndMime(taskContext, filePath);
+        // An RNote document in a plain archive becomes a handwriting note, as it does on its own,
+        // and a file that `convertRnote()` cannot read stays a file.
+        const rnote = !noteMeta && taskContext.data?.drawingImportedAsHandwriting && isRnoteFile(filePath) && typeof content !== "string"
+            ? convertRnote(content)
+            : undefined;
+        if (rnote) content = serializeRnote(rnote);
+
+        let { mime, type: detectedType } = rnote
+            ? { mime: HANDWRITING_MIME, type: "code" as NoteType }
+            : noteMeta ? noteMeta : detectFileTypeAndMime(taskContext, filePath);
         const type = resolveNoteType(detectedType);
         if (mime == null) {
             throw new Error("Unable to resolve mime type.");
@@ -745,7 +755,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         // A plain archive carries no metadata, so the detected mime stands in for it: getNoteTitle
         // reads the mime to drop the extension of the types that record their format in the note's
         // own mime (video, audio, fonts), which single-file import already does.
-        const noteTitle = getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta ?? { mime });
+        const noteTitle = getNoteTitle(
+            rnote ? filePath.slice(0, -RNOTE_EXTENSION.length) : filePath,
+            taskContext.data?.replaceUnderscoresWithSpaces || false,
+            noteMeta ?? { mime }
+        );
 
         // Generic Markdown (not a Trilium export, which carries its attributes in !!!meta.json) may begin
         // with a YAML front matter block; lift it into labels and strip it before the body is rendered.
@@ -836,7 +850,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             trackFirstNote(note);
         }
 
-        if (!noteMeta && (type === "file" || type === "image")) {
+        if (rnote?.images.length) {
+            note.setContent(saveRnoteImages(note, rnote, !!taskContext.data?.shrinkImages));
+        }
+
+        if (!noteMeta && (type === "file" || type === "image" || rnote)) {
             attributes.push({
                 noteId,
                 type: "label",

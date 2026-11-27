@@ -4,6 +4,8 @@ import {
 } from "@triliumnext/commons";
 import { gunzipSync, zlibSync } from "fflate";
 
+import type BNote from "../../becca/entities/bnote.js";
+import imageService from "../image.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import { escapeHtml } from "../utils/index.js";
 
@@ -105,6 +107,26 @@ export function serializeRnote(
         if (url) savedImages.push({ url, x, y, w: width, h: height });
     }
     return serializeImportedHandwriting({ paper, strokes, images: savedImages, texts });
+}
+
+/** The extension of an RNote document. */
+export const RNOTE_EXTENSION = ".rnote";
+
+/** Whether the file at `path` is an RNote document by its name. */
+export function isRnoteFile(path: string) {
+    return path.toLowerCase().endsWith(RNOTE_EXTENSION);
+}
+
+/**
+ * Saves the images of `conversion` as image attachments of `note` and returns the content of the
+ * note, whose images refer to the attachments.
+ */
+export function saveRnoteImages(note: BNote, conversion: RnoteConversion, shrinkImages: boolean) {
+    const urls = conversion.images.map(({ png }, index) => {
+        const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, png, `image${index + 1}.png`, shrinkImages);
+        return attachmentId && `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`;
+    });
+    return serializeRnote(conversion, urls);
 }
 
 type JsonRecord = Record<string, unknown>;

@@ -148,7 +148,9 @@ A handwriting note that was saved by a newer version of Trilium is also shown wi
 
 ## Importing from RNote
 
-A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as a handwriting note. Drag the file into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, or select _Import into note_ (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>).
+A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as a handwriting note. Drag the file into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, or select _Import into note_ (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>). The `.rnote` files inside a ZIP archive are imported the same way.
+
+To keep an RNote document as it is, as a <a class="reference-link" href="File.md">File</a> note, turn off _Import RNote drawings as handwriting notes rather than files_ in the _Options_ of the import dialog.
 
 *   Pen strokes keep their position, color, thickness and pressure. Black ink becomes ink in the _Text color_, so it stays readable in a dark theme, and translucent ink becomes highlighter ink.
 *   Lines and rectangles drawn with the shape tool become ordinary ink.

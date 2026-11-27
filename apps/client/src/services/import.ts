@@ -20,6 +20,7 @@ export interface UploadFilesOptions {
     textImportedAsText?: BooleanLike;
     codeImportedAsCode?: BooleanLike;
     spreadsheetImportedAsSpreadsheet?: BooleanLike;
+    drawingImportedAsHandwriting?: BooleanLike;
     explodeArchives?: BooleanLike;
     replaceUnderscoresWithSpaces?: BooleanLike;
 }

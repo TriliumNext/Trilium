@@ -299,6 +299,7 @@
     "textImportedAsText": "Import HTML, Markdown and TXT as text notes if it's unclear from metadata",
     "codeImportedAsCode": "Import recognized code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata",
     "spreadsheetImportedAsSpreadsheet": "Import CSV and Excel files as editable spreadsheets rather than files",
+    "drawingImportedAsHandwriting": "Import RNote drawings as handwriting notes rather than files",
     "replaceUnderscoresWithSpaces": "Replace underscores with spaces in imported note names",
     "import": "Import",
     "failed": "Import failed: {{message}}.",
