@@ -318,9 +318,11 @@ describe("importSingleFile dispatch", () => {
         expect(importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Lecture_notes" });
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
         expect(JSON.parse(importedNote.getContent() as string)).toEqual({
-            version: 1, paper: "blank", layout: "infinite",
-            texts: [ { id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" } ],
-            strokes: [ { c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] } ]
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] },
+                { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
+            ]
         });
 
         // One opaque white pixel, shown 20 by 10 around (10, 50).
@@ -337,10 +339,11 @@ describe("importSingleFile dispatch", () => {
         const [ attachment ] = typed.importedNote.getAttachments();
         expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image1.png" });
         expect(JSON.parse(typed.importedNote.getContent() as string)).toEqual({
-            version: 1, paper: "blank", layout: "infinite",
-            images: [ { url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 } ],
-            texts: [ { id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" } ],
-            strokes: []
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { o: "image", url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
+                { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
+            ]
         });
 
         const empty = await testImport("Empty.rnote", "application/octet-stream", rnote([ { vectorimage: {} } ]));

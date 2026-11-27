@@ -683,9 +683,12 @@ describe("notes service (real DB)", () => {
         it("relates a handwriting note to the notes its text boxes link to, and lets go of the ones dropped", () => {
             const target = createNote("root", { title: "spec-ink-target" });
             const sheet = (html: string) => JSON.stringify({
-                version: 1, paper: "blank", layout: "infinite",
-                texts: [ { id: "a", x: 0, y: 0, w: 100, html: "<p>plain</p>" }, { id: "b", x: 0, y: 50, w: 100, html } ],
-                strokes: []
+                version: 2, paper: "blank", layout: "infinite",
+                objects: [
+                    { id: "s", w: 3, p: [ 0, 0, 128 ] },
+                    { o: "text", id: "a", x: 0, y: 0, w: 100, html: "<p>plain</p>" },
+                    { o: "text", id: "b", x: 0, y: 50, w: 100, html }
+                ]
             });
             const ink = createNote("root", { title: "spec-ink", type: "code", mime: HANDWRITING_MIME, content: sheet("") });
             const links = () => ink.note.getRelations().filter((r) => r.name === "internalLink" && !r.isDeleted).map((r) => r.value);
@@ -696,6 +699,10 @@ describe("notes service (real DB)", () => {
 
             getContext().init(() => saveLinks(ink.note, sheet("<p>no link</p>")));
             expect(links()).toEqual([]);
+            // A note saved before `objects` lists its text boxes apart.
+            const older = JSON.stringify({ version: 1, texts: [ { id: "a", x: 0, y: 0, w: 100, html } ], strokes: [] });
+            getContext().init(() => saveLinks(ink.note, older));
+            expect(links()).toEqual([ target.note.noteId ]);
             // Content that is not a document relates the note to nothing.
             getContext().init(() => saveLinks(ink.note, "{"));
             expect(links()).toEqual([]);

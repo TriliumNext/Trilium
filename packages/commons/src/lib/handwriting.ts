@@ -12,8 +12,15 @@ export function isHandwritingNote(type: string | null | undefined, mime: string 
 }
 
 /**
+ * The version of the saved content that this build writes, which lists the strokes, the images
+ * and the text boxes of a note as its `objects`. `parseInkDocument()` of the client reads any
+ * version up to it.
+ */
+export const HANDWRITING_FORMAT_VERSION = 2;
+
+/**
  * A stroke in the saved content of a handwriting note, as the client's `serializeStroke()` writes
- * it and its `parseInkDocument()` reads it.
+ * it and its `parseInkDocument()` reads it. A stroke is an object without `o`.
  */
 export interface SerializedStroke {
     /** `"h"` for the highlighter; the pen is left out. */
@@ -32,7 +39,7 @@ export interface SerializedStroke {
     p: number[];
 }
 
-/** An image in the saved content of a handwriting note. */
+/** An image of a handwriting note, which is saved as an object whose `o` is `"image"`. */
 export interface SerializedImage {
     /** Where the attachment holding the picture is served from: `api/attachments/{id}/image/{title}`. */
     url: string;
@@ -42,7 +49,7 @@ export interface SerializedImage {
     h: number;
 }
 
-/** A text box in the saved content of a handwriting note. */
+/** A text box of a handwriting note, which is saved as an object whose `o` is `"text"`. */
 export interface SerializedTextBox {
     id: string;
     x: number;
@@ -70,22 +77,23 @@ export interface ImportedHandwriting {
 
 /**
  * Returns the content of a handwriting note on a canvas without bounds, as the client's
- * `parseInkDocument()` reads it. Positions and sizes are rounded to the precision of a saved stroke.
+ * `parseInkDocument()` reads it: the images at the bottom, then the strokes, then the text boxes,
+ * which is how the client shows them. Positions and sizes are rounded to the precision of a saved
+ * stroke.
  */
 export function serializeImportedHandwriting({ paper, strokes, images = [], texts = [] }: ImportedHandwriting) {
     const round = (value: number) => Math.round(value * POSITION_SCALE) / POSITION_SCALE;
-    const savedImages = images.map(({ url, x, y, w, h }) => ({ url, x: round(x), y: round(y), w: round(w), h: round(h) }));
-    const savedTexts = texts.map(({ id, x, y, w, s, html }) =>
-        ({ id, x: round(x), y: round(y), w: round(w), ...(s !== undefined && { s: round(s) }), html }));
-    const parts = [
-        `"version":1`,
-        `"paper":${JSON.stringify(paper)}`,
-        `"layout":"infinite"`,
-        ...(savedImages.length ? [ `"images":${JSON.stringify(savedImages)}` ] : []),
-        ...(savedTexts.length ? [ `"texts":${JSON.stringify(savedTexts)}` ] : []),
-        `"strokes":[${strokes.join(",")}]`
+    const objects = [
+        ...images.map(({ url, x, y, w, h }) => JSON.stringify(
+            { o: "image", url, x: round(x), y: round(y), w: round(w), h: round(h) }
+        )),
+        ...strokes,
+        ...texts.map(({ id, x, y, w, s, html }) => JSON.stringify(
+            { o: "text", id, x: round(x), y: round(y), w: round(w), ...(s !== undefined && { s: round(s) }), html }
+        ))
     ];
-    return `{${parts.join(",")}}`;
+    return `{"version":${HANDWRITING_FORMAT_VERSION},"paper":${JSON.stringify(paper)},"layout":"infinite",`
+        + `"objects":[${objects.join(",")}]}`;
 }
 
 /** How many steps a world unit is divided into in a saved stroke. */

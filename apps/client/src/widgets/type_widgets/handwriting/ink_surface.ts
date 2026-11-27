@@ -121,8 +121,8 @@ export default class InkSurface {
     private images: ImageLayer;
     private pdf: PdfLayer;
     private thumbnail: InkThumbnail;
+    /** The `order` of the next object, over every object of the note. */
     private nextOrder = 0;
-    private nextImageOrder = 0;
     /** The text boxes, which `TextBoxLayer` shows and changes. The surface only saves them. */
     private texts: InkTextBox[] = [];
     private penErasing = false;
@@ -298,11 +298,13 @@ export default class InkSurface {
         for (const stroke of doc.strokes) {
             this.index.add(stroke);
         }
-        this.nextOrder = doc.strokes.length;
         this.texts = doc.texts ?? [];
         const images = doc.images ?? [];
         this.images.load(images);
-        this.nextImageOrder = images.length;
+        this.nextOrder = 0;
+        for (const { order } of [ ...doc.strokes, ...images, ...this.texts ]) {
+            this.nextOrder = Math.max(this.nextOrder, Math.floor(order) + 1);
+        }
         this.generation++;
         this.pages = new PageLayout(doc.sheets);
         this.legacyPdf = doc.legacyPdf;
@@ -339,7 +341,38 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes, this.getCenterView(), this.layout, this.images.getAll(), this.legacyPdf, this.pages.sizes, this.texts);
+        return serializeInkDocument({
+            paper: this.paper,
+            layout: this.layout,
+            view: this.getCenterView(),
+            strokes: this.strokes,
+            images: this.images.getAll(),
+            texts: this.texts,
+            sheets: this.pages.sizes,
+            legacyPdf: this.legacyPdf
+        });
+    }
+
+    /** Returns the `order` of a new object, over every object of the note. */
+    takeOrder() {
+        return this.nextOrder++;
+    }
+
+    /**
+     * Returns the `order` of a new image: under the strokes and the text boxes, as the surface
+     * draws it, and over the images that are under them all.
+     */
+    private takeImageOrder() {
+        let above = Infinity;
+        for (const { order } of [ ...this.strokes, ...this.texts ]) {
+            above = Math.min(above, order);
+        }
+        if (above === Infinity) return this.takeOrder();
+        let below = above - 1;
+        for (const { order } of this.images.getAll()) {
+            if (order < above) below = Math.max(below, order);
+        }
+        return (below + above) / 2;
     }
 
     /** The URLs of the PDFs whose pages lie on the sheets of the note. */
@@ -428,7 +461,7 @@ export default class InkSurface {
             ...placeImage(naturalWidth, naturalHeight, visible, this.layout === "pages"
                 ? this.pages.getSheet(this.pages.indexAt(y))
                 : undefined),
-            order: this.nextImageOrder++
+            order: this.takeImageOrder()
         });
         this.pushHistory({ added: [], removed: [], addedImages: [ image ] });
         this.applyHistory([], [], [ image ]);
@@ -878,8 +911,7 @@ export default class InkSurface {
             this.nextOrder++;
             this.pushHistory({ added: [ original ], removed: [] });
         }
-        const stroke = createStroke({ ...live, order: this.nextOrder });
-        this.nextOrder++;
+        const stroke = createStroke({ ...live, order: this.takeOrder() });
         this.strokes.add(stroke);
         this.index.add(stroke);
         this.thumbnail.add(stroke);

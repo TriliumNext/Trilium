@@ -84,7 +84,7 @@ describe("ink surface input", () => {
         const sensitivities = () => parseInkDocument(surface.serialize()).strokes.map((stroke) => stroke.sensitivity);
         surface.sensitivity = 0;
         swipe("pen", 1, 100);
-        const first = JSON.parse(surface.serialize()).strokes[0];
+        const first = JSON.parse(surface.serialize()).objects[0];
 
         // A new value reaches only the strokes drawn after it, and the default is saved as none.
         surface.sensitivity = 90;
@@ -92,7 +92,7 @@ describe("ink surface input", () => {
         surface.sensitivity = 60;
         swipe("pen", 3, 300);
         expect(sensitivities()).toEqual([ 0, 90, undefined ]);
-        expect(JSON.parse(surface.serialize()).strokes[0]).toEqual(first);
+        expect(JSON.parse(surface.serialize()).objects[0]).toEqual(first);
     });
 
     it("pans with a pen or a mouse while space is held or the pan tool is picked", async () => {
@@ -152,7 +152,7 @@ describe("ink surface input", () => {
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
         fillRects.length = 0;
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [] });
         expect(lines(fillRects)).toEqual([ 0, 32, 64, 96, 128, 160, 192, 224, 256, 288 ]);
 
         // Zooming to 70% around the middle puts the origin at (60, 45) and the lines 22.4 px apart.
@@ -170,7 +170,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [] });
 
         surface.showView({ x: 10, y: 20, zoom: 2 });
         expect(surface.getView()).toEqual({ zoom: 2, x: 180, y: 110 });
@@ -186,7 +186,7 @@ describe("ink surface input", () => {
             tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: false,
             points: [ 1000, 1000, 0.5, 2000, 1500, 0.5 ], order: 0
         });
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [ stroke ] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [ stroke ] });
         surface.showView("content");
         // The origin lies on a whole pixel, which is 3 world units at this zoom.
         const view = surface.getCenterView();
@@ -200,14 +200,14 @@ describe("ink surface input", () => {
         expect(Math.abs(surface.getCenterView().y - 1700)).toBeLessThanOrEqual(1.5);
 
         // A small drawing is enlarged to at most 200%, from the top of its ink at -4.
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
         surface.showView("content");
         expect(surface.getView()).toMatchObject({ zoom: 2, y: 40 });
 
         // A note of text boxes alone fits them: 1000 to 2008 across, from the top of the first.
         surface.load({
-            paper: "ruled", layout: "infinite", strokes: [],
-            texts: [ { id: "a", html: "<p>a</p>", x: 1000, y: 996, width: 300 }, { id: "b", html: "<p>b</p>", x: 1500, y: 1500, width: 508 } ]
+            version: 2, paper: "ruled", layout: "infinite", strokes: [],
+            texts: [ { id: "a", order: 0, html: "<p>a</p>", x: 1000, y: 996, width: 300 }, { id: "b", order: 1, html: "<p>b</p>", x: 1500, y: 1500, width: 508 } ]
         });
         surface.showView("content");
         expect(Math.abs(surface.getCenterView().x - 1504)).toBeLessThanOrEqual(1.5);
@@ -219,7 +219,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
-        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
         expect(surface.getPageCount()).toBe(1);
 
         // A new note shows the top of its first page across the width, with room on each side.
@@ -232,11 +232,11 @@ describe("ink surface input", () => {
             tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
             points: [ 100, 1500, 0.5, 200, 1520, 0.5 ], order: 0
         });
-        surface.load({ paper: "blank", layout: "pages", strokes: [ onPageTwo ] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [ onPageTwo ] });
         expect(surface.getPageCount()).toBe(3);
 
         // Writing on the first page of an empty note adds a second, and undoing it takes it away.
-        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
         swipe("pen", 2, 100);
         expect(surface.getPageCount()).toBe(2);
         surface.undo();
@@ -258,7 +258,7 @@ describe("ink surface input", () => {
         container.style.backgroundColor = "rgb(255, 255, 255)";
         container.style.setProperty("--note-list-view-content-background", "rgba(0, 0, 0, 0.2)");
         surface = new InkSurface(container, { onChange, onGesture, onStateChange });
-        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
         // The fills across the whole view, over the page's own background.
         const desk = () => fillRects
             .map(([ x, y, width, height, alpha ], index) => ({ x, y, width, height, alpha, style: fillRectStyles[index] }))
@@ -287,7 +287,7 @@ describe("ink surface input", () => {
             tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
             points: [ 100, 2500, 0.5, 200, 2520, 0.5 ], order: 0
         });
-        surface.load({ paper: "blank", layout: "pages", strokes: [ onPageThree ] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [ onPageThree ] });
         surface.showView({ x: 397, y: 150, zoom: 1 });
         expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, pageCount: 4 }));
 
@@ -453,7 +453,7 @@ describe("ink surface input", () => {
             tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
             points: [ 10, 10, 0.5, 60, 10, 0.5 ], order: 0
         });
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [ stroke ] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [ stroke ] });
         expect(fills).toContain("rgb(0, 0, 0)");
 
         container.style.color = "rgb(240, 240, 240)";
@@ -465,7 +465,7 @@ describe("ink surface input", () => {
         expect(fillRects[0]).toEqual([ 0, 0, 400, 300, 1 ]);
 
         // The stroke being drawn takes the new color as well.
-        surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [] });
         pointer("pointerdown", "pen", 1, 100);
         pointer("pointermove", "pen", 1, 140);
         await nextFrame();
@@ -546,7 +546,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 2000, 1500));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
-        surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "infinite", strokes: [] });
         // Far down the canvas, where the screen shows world y 2000 to 3500.
         surface.showView({ x: 1000, y: 2750, zoom: 1 });
         const live = container.querySelector<HTMLCanvasElement>(".handwriting-live-layer canvas:last-child");
@@ -576,7 +576,8 @@ describe("ink surface input", () => {
         const URL = "api/attachments/abc/image/exercise.png";
         const picture = document.createElement("canvas");
         const loadImage = vi.fn();
-        const images = () => JSON.parse(surface.serialize()).images;
+        const objects = (): Record<string, unknown>[] => JSON.parse(surface.serialize()).objects;
+        const images = () => objects().filter(({ o }) => o === "image").map(({ o, ...image }) => image);
         const box = () => container.querySelector<HTMLElement>(".handwriting-image-box");
         const hasSelection = () => onStateChange.mock.lastCall?.[0].hasSelection;
 
@@ -585,7 +586,7 @@ describe("ink surface input", () => {
             surface.destroy();
             vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
             surface = new InkSurface(container, { onChange, onGesture, onStateChange, loadImage });
-            surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+            surface.load({ version: 2, paper: "blank", layout: "infinite", strokes: [] });
         });
 
         function dragHandle(handle: string, toX: number, toY: number) {
@@ -625,6 +626,25 @@ describe("ink surface input", () => {
             surface.load(parseInkDocument(surface.serialize()));
             expect(hasSelection()).toBe(false);
             expect(loadImage).toHaveBeenCalledOnce();
+        });
+
+        it("saves the objects in drawing order, a new image under the ink", () => {
+            swipe("pen", 1, 100);
+            surface.addImage(URL, 1000, 500);
+            swipe("pen", 2, 200);
+            surface.addImage(URL, 100, 50);
+            const boxOrder = surface.takeOrder();
+            surface.setTextBoxes([ { id: "box", order: boxOrder, x: 0, y: 0, width: 100, html: "<p>a</p>" } ]);
+
+            // A new image goes under the ink and the text, and over the images already there.
+            expect(objects().map(({ o, w }) => [ o, w ])).toEqual([
+                [ "image", 320 ], [ "image", 100 ], [ undefined, 3 ], [ undefined, 3 ], [ "text", 100 ]
+            ]);
+
+            // A stroke drawn after the note was read again lies over all of them.
+            surface.load(parseInkDocument(surface.serialize()));
+            swipe("pen", 3, 250);
+            expect(objects().map(({ o }) => o)).toEqual([ "image", "image", undefined, undefined, "text", undefined ]);
         });
 
         it("moves, resizes and deletes the selected image with the select tool, each in one step to undo", () => {
@@ -682,7 +702,7 @@ describe("ink surface input", () => {
             expect(remove).not.toBeNull();
             remove?.dispatchEvent(new PointerEvent("pointerdown", { ...press, pointerId: 11 }));
             remove?.click();
-            expect(images()).toBeUndefined();
+            expect(images()).toEqual([]);
             expect(hasSelection()).toBe(false);
             expect(box()?.hidden).toBe(true);
             surface.undo();
@@ -720,7 +740,7 @@ describe("ink surface input", () => {
         });
 
         it("keeps a new image inside the page in view, and shows a page after the last image", () => {
-            surface.load({ paper: "blank", layout: "pages", strokes: [] });
+            surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
             surface.showView({ x: 700, y: 1200, zoom: 1 });
             // The middle of the view is on the second page, which spans 1147 to 2270.
             surface.addImage(URL, 2000, 1000);
@@ -763,7 +783,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange, openPdf });
-        surface.load({ paper: "blank", layout: "infinite", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "infinite", strokes: [] });
 
         expect(await surface.addPdf(PDF)).toBe(true);
         expect(onChange).toHaveBeenCalledOnce();
@@ -785,7 +805,7 @@ describe("ink surface input", () => {
         surface.goToPage(0);
         // An image fits inside the sheet in view.
         surface.addImage("api/attachments/abc/image/a.png", 4000, 1000);
-        expect(JSON.parse(surface.serialize()).images).toEqual([ expect.objectContaining({ x: -243, w: 1280, h: 320 }) ]);
+        expect(JSON.parse(surface.serialize()).objects).toEqual([ expect.objectContaining({ o: "image", x: -243, w: 1280, h: 320 }) ]);
         surface.undo();
         onChange.mockClear();
 
@@ -842,7 +862,7 @@ describe("ink surface input", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         surface = new InkSurface(container, { onChange, onGesture, onStateChange, openPdf });
-        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
 
         // The ink is on the first A4 sheet, which stays, and the slides follow it.
         swipe("pen", 1, 100);
@@ -852,7 +872,7 @@ describe("ink surface input", () => {
 
         // A PDF that opens after another note was loaded is not added to that note.
         const adding = surface.addPdf("api/attachments/def/open");
-        surface.load({ paper: "blank", layout: "pages", strokes: [], legacyPdf: PDF });
+        surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [], legacyPdf: PDF });
         // Until the PDF is open, the note names it as it was saved.
         expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ pdfs: [ PDF ] }));
         expect(JSON.parse(surface.serialize())).toMatchObject({ pdf: PDF });

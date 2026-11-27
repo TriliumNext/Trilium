@@ -729,15 +729,19 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         // A page with ink is a handwriting note: its strokes, and each text box and image at its place.
         const inkPage = section?.getChildNotes().find((note) => note.title === "Ink Page");
         expect(inkPage).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json" });
-        const sheet = JSON.parse(String(inkPage?.getContent()));
-        expect(sheet).toMatchObject({ version: 1, paper: "blank", layout: "infinite" });
+        const sheet = readSheet(inkPage);
+        expect(sheet).toMatchObject({ version: 2, paper: "blank", layout: "infinite" });
+        // The image lies under the ink, and the text boxes over it.
+        expect(sheet.objects.map(({ o, id }) => [ o, id ])).toEqual([
+            [ "image", undefined ], [ undefined, undefined ], [ "text", "onenote1" ], [ "text", "onenote2" ]
+        ]);
         expect(sheet.strokes).toEqual([ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]);
         // The image whose picture could not be downloaded is left out.
-        expect(sheet.images).toEqual([ { url: expect.stringMatching(/^api\/attachments\/\w+\/image\/image\.png$/), x: 120, y: 835, w: 480, h: 270 } ]);
+        expect(sheet.images).toEqual([ { o: "image", url: expect.stringMatching(/^api\/attachments\/\w+\/image\/image\.png$/), x: 120, y: 835, w: 480, h: 270 } ]);
         // The text of a box starts where it did, inside the padding of the box, at 12pt.
-        expect(sheet.texts.map(({ html, ...box }: { html: string }) => box)).toEqual([
-            { id: "onenote1", x: 40, y: 159, w: 736, s: 16 },
-            { id: "onenote2", x: 436, y: 231, w: 640, s: 16 }
+        expect(sheet.texts.map(({ html, ...box }) => box)).toEqual([
+            { o: "text", id: "onenote1", x: 40, y: 159, w: 736, s: 16 },
+            { o: "text", id: "onenote2", x: 436, y: 231, w: 640, s: 16 }
         ]);
         const firstBox = parse(sheet.texts[0].html);
         const [ inkFile ] = inkPage?.getAttachments().filter((attachment) => attachment.role === "file") ?? [];
@@ -828,8 +832,8 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         // In a handwriting note, the image inside a text box keeps its source, and the image that
         // lies on the page is left out, as the note cannot load it.
         const inkPage = Object.values(becca.notes).find((note) => note.title === "No Attachment Ink Page");
-        const sheet = JSON.parse(String(inkPage?.getContent()));
-        expect(sheet).not.toHaveProperty("images");
+        const sheet = readSheet(inkPage);
+        expect(sheet.images).toEqual([]);
         expect(sheet.strokes).toHaveLength(1);
         expect(sheet.texts).toHaveLength(1);
         expect(parse(sheet.texts[0].html).querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img4/$value`);
@@ -838,7 +842,8 @@ describe("importSelection resources, ink, links and failures (real DB)", () => {
         const inkOnly = Object.values(becca.notes).find((note) => note.title === "Ink Only Page");
         expect(inkOnly?.isHandwriting()).toBe(true);
         expect(JSON.parse(String(inkOnly?.getContent()))).toEqual({
-            version: 1, paper: "blank", layout: "infinite", strokes: [ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [ { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 19, 0, 37, -19, 0 ] } ]
         });
     });
 
@@ -884,6 +889,18 @@ const PNG = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
 const INKML = `<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML">
     <inkml:trace>100 100, 200 150, 300 100</inkml:trace>
 </inkml:ink>`;
+
+/** Reads the saved content of a handwriting note, with its objects by kind. */
+function readSheet(note: { getContent(): unknown } | undefined) {
+    type SavedObject = Record<string, unknown> & { html: string };
+    const sheet: { objects: SavedObject[] } = JSON.parse(String(note?.getContent()));
+    return {
+        ...sheet,
+        strokes: sheet.objects.filter(({ o }) => o === undefined),
+        images: sheet.objects.filter(({ o }) => o === "image"),
+        texts: sheet.objects.filter(({ o }) => o === "text")
+    };
+}
 
 function createParent(title: string) {
     return cls.init(() => noteService.createNewNote({ parentNoteId: "root", title, content: "", type: "text", mime: "text/html" }).note);

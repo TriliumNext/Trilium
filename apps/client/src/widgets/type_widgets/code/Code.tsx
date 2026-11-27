@@ -130,8 +130,9 @@ export function formatViewSource(note: FNote, content: string) {
 }
 
 /**
- * Formats the JSON of a handwriting note with one stroke per line, as the general indentation
- * gives each coordinate a line of its own. Content that is not such a document stays as it is.
+ * Formats the JSON of a handwriting note with one object per line, as the general indentation
+ * gives each coordinate of a stroke a line of its own. A note saved before `objects` lists its
+ * `strokes`. Content that is not such a document stays as it is.
  */
 function formatHandwritingSource(content: string) {
     let doc: unknown;
@@ -140,14 +141,18 @@ function formatHandwritingSource(content: string) {
     } catch {
         return content;
     }
-    if (!doc || typeof doc !== "object" || !Array.isArray((doc as { strokes?: unknown }).strokes)) {
+    const saved = (doc ?? {}) as Record<string, unknown>;
+    const listed = Array.isArray(saved.objects) ? "objects" : "strokes";
+    const objects = saved[listed];
+    if (!doc || typeof doc !== "object" || !Array.isArray(objects)) {
         return content;
     }
 
-    const { strokes, ...fields } = doc as { strokes: unknown[] };
-    const lines = Object.entries(fields).map(([ key, value ]) => `    ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
-    const strokeLines = strokes.map((stroke) => `        ${JSON.stringify(stroke)}`);
-    return [ "{", ...lines, `    "strokes": [`, strokeLines.join(",\n"), "    ]", "}" ]
+    const lines = Object.entries(saved)
+        .filter(([ key ]) => key !== listed)
+        .map(([ key, value ]) => `    ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
+    const objectLines = objects.map((object) => `        ${JSON.stringify(object)}`);
+    return [ "{", ...lines, `    ${JSON.stringify(listed)}: [`, objectLines.join(",\n"), "    ]", "}" ]
         .filter((line) => line !== "")
         .join("\n");
 }

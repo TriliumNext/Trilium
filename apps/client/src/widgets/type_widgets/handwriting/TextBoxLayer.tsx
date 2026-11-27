@@ -27,6 +27,8 @@ interface TextBoxLayerProps {
     /** Returns the point of the paper under a point of the window, in world units. */
     toWorld(clientX: number, clientY: number): { x: number, y: number };
     getZoom(): number;
+    /** Returns the place of a new box in the drawing order of the note. */
+    takeOrder(): number;
     onChange(boxes: InkTextBox[]): void;
     /** Called when a box is selected, for the surface to let go of the selected image. */
     onSelect(): void;
@@ -39,7 +41,7 @@ interface TextBoxLayerProps {
  * A prototype: the boxes have no undo, are not part of the thumbnail and lie over the ink.
  */
 export default function TextBoxLayer({
-    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, onChange, onSelect
+    layerRef, boxes, isAdding, isInteractive, toWorld, getZoom, takeOrder, onChange, onSelect
 }: TextBoxLayerProps) {
     const [ selectedId, setSelectedId ] = useState<string>();
     const [ editedId, setEditedId ] = useState<string>();
@@ -76,7 +78,7 @@ export default function TextBoxLayer({
     function addBox(clientX: number, clientY: number) {
         const { x, y } = toWorld(clientX, clientY);
         const id = randomString(10);
-        setBoxes([ ...boxesRef.current, { id, x, y, width: DEFAULT_WIDTH, html: "" } ]);
+        setBoxes([ ...boxesRef.current, { id, order: takeOrder(), x, y, width: DEFAULT_WIDTH, html: "" } ]);
         select(id);
         setEditedId(id);
     }

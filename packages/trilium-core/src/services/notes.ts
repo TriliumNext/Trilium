@@ -1098,20 +1098,6 @@ function findRelationMapLinks(content: string, foundLinks: FoundLink[]) {
  * is walked rather than only its nodes, so that a link stays found wherever Mind Elixir comes to
  * keep one.
  */
-/** Finds the notes that the text boxes of a handwriting note link to, from the HTML of each box. */
-function findHandwritingLinks(content: string, foundLinks: FoundLink[]) {
-    let texts: unknown;
-    try {
-        ({ texts } = JSON.parse(content) ?? {});
-    } catch {
-        return;
-    }
-    if (!Array.isArray(texts)) return;
-    for (const text of texts) {
-        if (typeof text?.html === "string") findInternalLinks(text.html, foundLinks);
-    }
-}
-
 export function findMindMapLinks(content: string, foundLinks: FoundLink[]) {
     try {
         collectMindMapLinks(JSON.parse(content), foundLinks);
@@ -1143,6 +1129,28 @@ function collectMindMapLinks(value: unknown, foundLinks: FoundLink[]) {
 
     for (const key of Object.keys(record)) {
         collectMindMapLinks(record[key], foundLinks);
+    }
+}
+
+/**
+ * Finds the notes that the text boxes of a handwriting note link to, from the HTML of each box.
+ * The boxes are the `objects` whose `o` is `"text"`, or the `texts` of a note saved before
+ * `objects`.
+ */
+function findHandwritingLinks(content: string, foundLinks: FoundLink[]) {
+    type SavedObject = { o?: unknown, html?: unknown } | null;
+    let saved: { objects?: unknown, texts?: unknown };
+    try {
+        saved = JSON.parse(content) ?? {};
+    } catch {
+        return;
+    }
+    const objects: SavedObject[] = Array.isArray(saved.objects) ? saved.objects : [];
+    const texts: SavedObject[] = Array.isArray(saved.texts)
+        ? saved.texts
+        : objects.filter((object) => object?.o === "text");
+    for (const text of texts) {
+        if (typeof text?.html === "string") findInternalLinks(text.html, foundLinks);
     }
 }
 

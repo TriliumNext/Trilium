@@ -1,5 +1,7 @@
 import type { SerializedStroke } from "@triliumnext/commons";
-import { decodePoints, encodePoints, MAX_STROKE_SIZE } from "@triliumnext/commons/src/lib/handwriting.js";
+import {
+    decodePoints, encodePoints, HANDWRITING_FORMAT_VERSION, MAX_STROKE_SIZE
+} from "@triliumnext/commons/src/lib/handwriting.js";
 import { getStroke, getStrokeOutlinePoints, type StrokePoint } from "perfect-freehand";
 
 export const PAPER_STYLES = [ "ruled", "grid", "dots", "blank" ] as const;
@@ -58,7 +60,20 @@ export interface Bounds {
     maxY: number;
 }
 
-export interface Stroke {
+/**
+ * What the strokes, the images and the text boxes of a note have in common. Together they are
+ * the objects of the note, which a saved document lists in drawing order.
+ */
+export interface InkObject {
+    /**
+     * The position of the object in the drawing order of the note, the lowest at the bottom. The
+     * surface draws the images under the strokes and the text boxes over them whatever their
+     * order, which a saved document keeps all the same.
+     */
+    order: number;
+}
+
+export interface Stroke extends InkObject {
     tool: InkTool;
     /** A CSS color, or {@link AUTO_COLOR}. */
     color: string;
@@ -73,15 +88,13 @@ export interface Stroke {
      */
     sensitivity?: number;
     bounds: Bounds;
-    /** The position of the stroke in the drawing order. */
-    order: number;
     path?: Path2D;
     /** The JSON of the stroke in the saved document, kept as a stroke does not change once drawn. */
     json?: string;
 }
 
 /** A picture on the paper, under the ink. An image does not change: moving it makes a new one. */
-export interface InkImage {
+export interface InkImage extends InkObject {
     /** Where the attachment holding the picture is served from, which matches {@link IMAGE_URL_PATTERN}. */
     url: string;
     /** The top left corner and the size, in world units. */
@@ -90,8 +103,6 @@ export interface InkImage {
     width: number;
     height: number;
     bounds: Bounds;
-    /** The position of the image in the drawing order of the images. */
-    order: number;
 }
 
 /**
@@ -108,7 +119,7 @@ export const IMAGE_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/image\/[^/?#
 export const PDF_URL_PATTERN = /^api\/attachments\/[a-zA-Z0-9_]+\/open$/;
 
 /** A box of typed text on the paper. */
-export interface InkTextBox {
+export interface InkTextBox extends InkObject {
     /** Tells the boxes of a note apart. */
     id: string;
     /** The text, as the HTML of a text editor. */
@@ -126,6 +137,8 @@ const MIN_FONT_SIZE = 4;
 const MAX_FONT_SIZE = 400;
 
 export interface InkDocument {
+    /** The version of the saved document, which a later build can have saved. */
+    version: number;
     paper: PaperStyle;
     layout: InkLayout;
     strokes: Stroke[];
@@ -152,16 +165,8 @@ export interface InkView {
     zoom: number;
 }
 
-interface SerializedImage {
-    url: string;
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-}
-
 interface SerializedDocument {
-    version: 1;
+    version: number;
     paper: PaperStyle;
     layout?: InkLayout;
     /** The PDF of a note saved before `pdfs`, whose page `n` lies on sheet `n`. */
@@ -173,11 +178,16 @@ interface SerializedDocument {
      * of a PDF and its page, counted from zero, for a sheet that a page lies on.
      */
     sheets?: number[][];
-    images?: SerializedImage[];
-    /** `s` is the font size, left out for the font size of text notes. */
-    texts?: { id: string, x: number, y: number, w: number, s?: number, html: string }[];
-    strokes: SerializedStroke[];
+    /**
+     * The strokes, the images and the text boxes in drawing order, the first one at the bottom. A
+     * stroke is a `SerializedStroke`, and the `o` of another object names its kind.
+     */
+    objects: unknown[];
     view?: InkView;
+    /** The strokes, the images and the text boxes of a note saved before `objects`. */
+    strokes?: unknown[];
+    images?: unknown[];
+    texts?: unknown[];
 }
 
 /**
@@ -202,39 +212,53 @@ export function createImage(props: Omit<InkImage, "bounds">): InkImage {
     return { ...props, bounds: { minX: x, minY: y, maxX: x + width, maxY: y + height } };
 }
 
+/** What `serializeInkDocument()` saves of a note. */
+export interface SavedInkDocument {
+    paper: PaperStyle;
+    layout?: InkLayout;
+    view?: InkView;
+    strokes: Iterable<Stroke>;
+    images?: Iterable<InkImage>;
+    texts?: Iterable<InkTextBox>;
+    sheets?: SheetSpec[];
+    legacyPdf?: string;
+}
+
 /**
- * Returns the saved document. It joins the JSON of each stroke, which `serializeStroke()` computes
- * once per stroke, so saving a large document does not encode every point again.
+ * Returns the saved document, with the objects of the note in drawing order. It joins the JSON of
+ * each stroke, which `serializeStroke()` computes once per stroke, so saving a large document does
+ * not encode every point again.
  */
-export function serializeInkDocument(
-    paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView, layout: InkLayout = "pages",
-    images: InkImage[] = [], legacyPdf?: string, sheets: SheetSpec[] = [], texts: InkTextBox[] = []
-): string {
-    const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
-    const parts: string[] = [];
-    for (const stroke of sorted) {
-        parts.push(serializeStroke(stroke));
+export function serializeInkDocument({
+    paper, layout = "pages", view, strokes, images = [], texts = [], sheets = [], legacyPdf
+}: SavedInkDocument): string {
+    const objects: { order: number, json: string }[] = [];
+    for (const stroke of strokes) {
+        objects.push({ order: stroke.order, json: serializeStroke(stroke) });
     }
-    const savedView = view
-        ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
-        : "";
+    for (const image of images) {
+        objects.push({ order: image.order, json: serializeImage(image) });
+    }
+    for (const text of texts) {
+        objects.push({ order: text.order, json: serializeTextBox(text) });
+    }
+    objects.sort((a, b) => a.order - b.order);
+
     const pdfs = getPdfUrls(sheets);
-    const savedPdfs = pdfs.length ? `,"pdfs":${JSON.stringify(pdfs)}` : "";
-    const savedSheets = sheets.length
-        ? `,"sheets":${JSON.stringify(sheets.map(({ width, height, source }) => [
-            round(width, 10), round(height, 10), ...(source ? [ pdfs.indexOf(source.url), source.page ] : [])
-        ]))}`
-        : "";
-    const savedImages = images.length
-        ? `,"images":${JSON.stringify([ ...images ].sort((a, b) => a.order - b.order).map(serializeImage))}`
-        : "";
-    const savedTexts = texts.length
-        ? `,"texts":${JSON.stringify(texts.map(({ id, x, y, width, fontSize, html }) => ({
-            id, x: round(x, 10), y: round(y, 10), w: round(width, 10),
-            ...(fontSize !== undefined && { s: round(fontSize, 10) }), html
-        })))}`
-        : "";
-    return `{"version":1,"paper":${JSON.stringify(paper)},"layout":${JSON.stringify(layout)}${savedView}${legacyPdf ? `,"pdf":${JSON.stringify(legacyPdf)}` : ""}${savedPdfs}${savedSheets}${savedImages}${savedTexts},"strokes":[${parts.join(",")}]}`;
+    const fields: Record<string, unknown> = {
+        version: HANDWRITING_FORMAT_VERSION,
+        paper,
+        layout,
+        ...(view && { view: { x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) } }),
+        ...(legacyPdf && { pdf: legacyPdf }),
+        ...(pdfs.length && { pdfs }),
+        ...(sheets.length && {
+            sheets: sheets.map(({ width, height, source }) => [
+                round(width, 10), round(height, 10), ...(source ? [ pdfs.indexOf(source.url), source.page ] : [])
+            ])
+        })
+    };
+    return `${JSON.stringify(fields).slice(0, -1)},"objects":[${objects.map(({ json }) => json).join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -253,16 +277,24 @@ export function serializeStroke(stroke: Stroke): string {
     return stroke.json;
 }
 
-function serializeImage(image: InkImage): SerializedImage {
-    return {
-        url: image.url,
-        x: round(image.x, 10), y: round(image.y, 10),
-        w: round(image.width, 10), h: round(image.height, 10)
-    };
+function serializeImage({ url, x, y, width, height }: InkImage) {
+    return JSON.stringify({
+        o: "image", url, x: round(x, 10), y: round(y, 10), w: round(width, 10), h: round(height, 10)
+    });
+}
+
+function serializeTextBox({ id, x, y, width, fontSize, html }: InkTextBox) {
+    return JSON.stringify({
+        o: "text", id, x: round(x, 10), y: round(y, 10), w: round(width, 10),
+        ...(fontSize !== undefined && { s: round(fontSize, 10) }), html
+    });
 }
 
 export function parseInkDocument(content: string | null | undefined): InkDocument {
-    const empty: InkDocument = { paper: "ruled", layout: "pages", strokes: [], images: [], texts: [] };
+    const empty: InkDocument = {
+        version: HANDWRITING_FORMAT_VERSION, paper: "ruled", layout: "pages",
+        strokes: [], images: [], texts: []
+    };
     if (!content) return empty;
 
     let raw: Partial<SerializedDocument>;
@@ -271,22 +303,26 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     } catch {
         return empty;
     }
-    if (!raw || !Array.isArray(raw.strokes)) return empty;
+    if (!isRecord(raw)) return empty;
+    const version = isFiniteNumber(raw.version) ? raw.version : 1;
+    const saved = Array.isArray(raw.objects) ? raw.objects : getLegacyObjects(raw);
+    if (!saved) return { ...empty, version };
 
     const strokes: Stroke[] = [];
-    for (const serialized of raw.strokes) {
-        if (!Array.isArray(serialized?.p) || serialized.p.length < 3) continue;
-        const points = decodePoints(serialized.p);
-        if (!points) continue;
-        strokes.push(createStroke({
-            tool: serialized.t === "h" ? "highlighter" : "pen",
-            color: typeof serialized.c === "string" ? serialized.c : AUTO_COLOR,
-            size: isFiniteNumber(serialized.w) && serialized.w > 0 ? Math.min(MAX_STROKE_SIZE, serialized.w) : 3,
-            simulatePressure: serialized.s === 1,
-            points,
-            order: strokes.length,
-            sensitivity: isFiniteNumber(serialized.k) ? Math.round(Math.min(100, Math.max(0, serialized.k))) : undefined
-        }));
+    const images: InkImage[] = [];
+    const texts: InkTextBox[] = [];
+    for (const [ order, entry ] of saved.entries()) {
+        if (!isRecord(entry)) continue;
+        const stroke = entry.o === undefined && parseStroke(entry);
+        const image = entry.o === "image" && parseImage(entry);
+        const text = entry.o === "text" && parseTextBox(entry);
+        if (stroke) {
+            strokes.push(createStroke({ ...stroke, order }));
+        } else if (image) {
+            images.push(createImage({ ...image, order }));
+        } else if (text && !texts.some(({ id }) => id === text.id)) {
+            texts.push({ ...text, order });
+        }
     }
 
     const paper = PAPER_STYLES.includes(raw.paper as PaperStyle) ? raw.paper as PaperStyle : "ruled";
@@ -307,10 +343,26 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     }
     const legacyPdf = sheets.length ? undefined : single;
     return {
-        paper, layout, strokes, images: parseImages(raw.images), texts: parseTexts(raw.texts),
+        version, paper, layout, strokes, images, texts,
         view: parseView(raw.view),
         ...(sheets.length && { sheets }), ...(legacyPdf && { legacyPdf })
     };
+}
+
+/**
+ * Returns the objects of a document saved before `objects`, in the order in which the surface
+ * draws them: the images, then the strokes, then the text boxes. Returns `undefined` for a
+ * document without strokes, which is not such a document.
+ */
+function getLegacyObjects(raw: Partial<SerializedDocument>) {
+    if (!Array.isArray(raw.strokes)) return undefined;
+    const withKind = (objects: unknown, o: string) => (Array.isArray(objects) ? objects : [])
+        .map((object) => (isRecord(object) ? { ...object, o } : object));
+    return [ ...withKind(raw.images, "image"), ...raw.strokes, ...withKind(raw.texts, "text") ];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function parseSheets(raw: unknown, pdfs: (string | undefined)[] = []): SheetSpec[] {
@@ -340,31 +392,32 @@ function isSheetSide(value: unknown): value is number {
     return isFiniteNumber(value) && value >= MIN_SHEET_SIDE && value <= MAX_SHEET_SIDE;
 }
 
-function parseTexts(raw: unknown): InkTextBox[] {
-    const texts: InkTextBox[] = [];
-    if (!Array.isArray(raw)) return texts;
-    for (const serialized of raw as Partial<Record<"id" | "x" | "y" | "w" | "s" | "html", unknown>>[]) {
-        const { id, x, y, w, s, html } = serialized ?? {};
-        if (typeof id !== "string" || typeof html !== "string") continue;
-        if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) continue;
-        if (texts.some((text) => text.id === id)) continue;
-        const fontSize = isFiniteNumber(s) && s > 0 ? Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, s)) : undefined;
-        texts.push({ id, x, y, width: w, html, ...(fontSize !== undefined && { fontSize }) });
-    }
-    return texts;
+function parseStroke({ t, c, w, s, k, p }: Record<string, unknown>) {
+    if (!Array.isArray(p) || p.length < 3) return undefined;
+    const points = decodePoints(p);
+    if (!points) return undefined;
+    return {
+        tool: t === "h" ? "highlighter" as const : "pen" as const,
+        color: typeof c === "string" ? c : AUTO_COLOR,
+        size: isFiniteNumber(w) && w > 0 ? Math.min(MAX_STROKE_SIZE, w) : 3,
+        simulatePressure: s === 1,
+        points,
+        sensitivity: isFiniteNumber(k) ? Math.round(Math.min(100, Math.max(0, k))) : undefined
+    };
 }
 
-function parseImages(raw: unknown): InkImage[] {
-    const images: InkImage[] = [];
-    if (!Array.isArray(raw)) return images;
-    for (const serialized of raw as Partial<SerializedImage>[]) {
-        const { url, x, y, w, h } = serialized ?? {};
-        if (typeof url !== "string" || !IMAGE_URL_PATTERN.test(url)) continue;
-        if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || !isFiniteNumber(h)) continue;
-        if (w <= 0 || h <= 0) continue;
-        images.push(createImage({ url, x, y, width: w, height: h, order: images.length }));
-    }
-    return images;
+function parseTextBox({ id, x, y, w, s, html }: Record<string, unknown>) {
+    if (typeof id !== "string" || typeof html !== "string") return undefined;
+    if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || w <= 0) return undefined;
+    const fontSize = isFiniteNumber(s) && s > 0 ? Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, s)) : undefined;
+    return { id, x, y, width: w, html, ...(fontSize !== undefined && { fontSize }) };
+}
+
+function parseImage({ url, x, y, w, h }: Record<string, unknown>) {
+    if (typeof url !== "string" || !IMAGE_URL_PATTERN.test(url)) return undefined;
+    if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(w) || !isFiniteNumber(h)) return undefined;
+    if (w <= 0 || h <= 0) return undefined;
+    return { url, x, y, width: w, height: h };
 }
 
 function parseView(view: unknown): InkView | undefined {

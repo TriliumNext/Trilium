@@ -201,6 +201,18 @@ describe("note source", () => {
         ].join("\n"));
         expect(JSON.parse(source)).toEqual(JSON.parse(content));
         expect(formatViewSource(note, "{ not json")).toBe("{ not json");
+
+        // A note saved since lists its objects, of which the strokes are most.
+        const objects = JSON.stringify({ version: 2, objects: [ { id: "a", w: 3, p: [ 5, 6, 7 ] }, { o: "text", id: "b", html: "" } ] });
+        expect(formatViewSource(note, objects)).toBe([
+            "{",
+            "    \"version\": 2,",
+            "    \"objects\": [",
+            "        {\"id\":\"a\",\"w\":3,\"p\":[5,6,7]},",
+            "        {\"o\":\"text\",\"id\":\"b\",\"html\":\"\"}",
+            "    ]",
+            "}"
+        ].join("\n"));
     });
 });
 
