@@ -15,5 +15,19 @@
     "create-note-into-inbox": "Skapa en anteckning i inboxen (om angiven) eller som daganteckning",
     "scroll-to-active-note": "Bläddra i anteckningshierarkin till aktiv anteckning",
     "edit-note-title": "Hoppa från träd till anteckning och redigera titel"
+  },
+  "login": {
+    "password": "Lösenord",
+    "remember-me": "Kom ihåg mig",
+    "incorrect-password": "Fel lösenord. Försök igen.",
+    "sso-wrong-account": "Det valda kontot är inte kopplat till den här Trilium-instansen. Logga in med det kopplade kontot.",
+    "sso-not-enrolled": "Enkel inloggning har inte ställts in ännu. Logga först in med ditt lösenord och koppla sedan ditt konto i inställningarna."
+  },
+  "set_password": {
+    "heading": "Ange lösenord",
+    "description": "Välj ett lösenord för att använda Trilium i webbläsaren. Sedan loggar du in med det lösenordet.",
+    "password": "Lösenord",
+    "password-confirmation": "Bekräfta lösenordet",
+    "button": "Ange lösenord"
   }
 }
