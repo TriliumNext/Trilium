@@ -145,6 +145,8 @@ function inOrder<T>(items: Ordered<T>[]) {
 const EVEN_PRESSURE = 0.5;
 /** The only pixel format of an image that `convertImage()` reads. */
 const PREMULTIPLIED_RGBA = "R8g8b8a8Premultiplied";
+/** Standard base64, padded. */
+const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 /** The font size of a text box that holds none, as in RNote. */
 const DEFAULT_FONT_SIZE = 32;
 /** The width of a character of a text box without a width, as a share of its font size. */
@@ -343,12 +345,9 @@ function convertImage(image: JsonRecord): RnoteImage | undefined {
     const affine = asRecord(rectangle?.transform)?.affine;
     if (!extents || !Array.isArray(affine) || !affine.every(isFiniteNumber)) return undefined;
 
-    let data: Uint8Array;
-    try {
-        data = decodeBase64(pixels.data);
-    } catch {
-        return undefined;
-    }
+    // Node decodes malformed base64 where `atob()` throws, so the data is checked first.
+    if (!BASE64.test(pixels.data)) return undefined;
+    const data = decodeBase64(pixels.data);
     if (data.length !== width * height * 4) return undefined;
 
     // The 3x3 matrix is stored a column at a time.

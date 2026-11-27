@@ -8,6 +8,7 @@ import { dirname } from "path";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import imageService from "../image.js";
+import { getLog } from "../log.js";
 import noteService from "../notes.js";
 import protectedSessionService from "../protected_session.js";
 import TaskContext from "../task_context.js";
@@ -315,8 +316,12 @@ describe("importSingleFile dispatch", () => {
         const line = { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 10, 0 ] } }, style } };
         const text = { textstroke: { text: "Typed", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } };
 
-        const { importedNote } = await testImport("Lecture_notes.RNOTE", "application/octet-stream", rnote([ line, text ]));
+        const info = vi.spyOn(getLog(), "info");
+        const { importedNote } = await testImport("Lecture_notes.RNOTE", "application/octet-stream", rnote([ line, { vectorimage: {} }, text ]));
         expect(importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Lecture_notes" });
+        // What the note cannot hold is left out, and the log names it.
+        expect(info).toHaveBeenCalledWith("Imported 'Lecture_notes.RNOTE' without: 1 vectorimage");
+        info.mockRestore();
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
         expect(JSON.parse(importedNote.getContent() as string)).toEqual({
             version: 2, paper: "blank", layout: "infinite",

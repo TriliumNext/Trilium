@@ -86,10 +86,13 @@ describe("convertRnote", () => {
             brush([ [ 0, 0, 0.2 ], [ 5, 0, 0.9 ] ], smooth({ pressure_curve: "const", stroke_width: 2 })),
             // A curve of the pressure, on a stroke of twice the size at full pressure.
             brush([ [ 0, 0, 0.25 ], [ 5, 0, 1 ] ], smooth({ pressure_curve: "sqrt" })),
-            brush([ [ 0, 0, 0 ], [ 5, 0, 0 ] ])
+            brush([ [ 0, 0, 0 ], [ 5, 0, 0 ] ]),
+            brush([ [ 0, 0, 0.125 ], [ 5, 0, 0.125 ] ], smooth({ pressure_curve: "cbrt" })),
+            brush([ [ 0, 0, 0.5 ], [ 5, 0, 0.5 ] ], smooth({ pressure_curve: "pow2" })),
+            brush([ [ 0, 0, 0.5 ], [ 5, 0, 0.5 ] ], smooth({ pressure_curve: "pow3", stroke_width: 8 }))
         ]));
         expect(document.strokes.map(({ w, k }: { w: number, k: number }) => [ w, k ]))
-            .toEqual([ [ 5.2, 0 ], [ 3, 0 ], [ 2, 0 ], [ 3, 100 ] ]);
+            .toEqual([ [ 5.2, 0 ], [ 3, 0 ], [ 2, 0 ], [ 3, 100 ], [ 3, 0 ], [ 1.5, 0 ], [ 1, 0 ] ]);
         expect(document.strokes[3].p).toEqual([ 0, 0, 128, 50, 0, 127 ]);
 
         // A stroke of more points than a function takes arguments.
@@ -137,9 +140,14 @@ describe("convertRnote", () => {
             shape({ ellipse: { radii: [ 5, 5 ] } }),
             { textstroke: { text: "Title" } },
             { textstroke: { text: "Title" } },
-            { bitmapimage: { image: { data: "" } } }
+            { bitmapimage: { image: { data: "" } } },
+            // Pixels that are not base64, which Node would decode where a browser throws.
+            { bitmapimage: {
+                image: { data: "AAAAAA!=", pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                rectangle: { cuboid: { half_extents: [ 1, 1 ] }, transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } }
+            } }
         ]));
-        expect(skipped).toEqual({ shapestroke: 2, textstroke: 2, bitmapimage: 1 });
+        expect(skipped).toEqual({ shapestroke: 2, textstroke: 2, bitmapimage: 2 });
 
         const [ line, box ] = document.strokes;
         expect(line).toEqual({ c: "#26a169", w: 2, k: 0, p: [ 0, 100, 128, 500, 100, 0, 500, 100, 0 ] });
