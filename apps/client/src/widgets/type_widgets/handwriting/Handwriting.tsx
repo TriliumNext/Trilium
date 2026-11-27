@@ -29,6 +29,7 @@ import {
     type InkView, PAPER_STYLES, parseInkDocument
 } from "./ink_document";
 import { openPdf } from "./ink_pdf";
+import TextBoxMeasurer from "./ink_text";
 import InkSurface, {
     ERASER_MODES, type EraserMode, HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool
 } from "./ink_surface";
@@ -127,6 +128,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ tool, setTool ] = useState<NoteTool>("pen");
     const [ textBoxes, setTextBoxes ] = useState<InkTextBox[]>([]);
     const textLayerRef = useRef<HTMLDivElement>(null);
+    const textMeasurerRef = useRef(new TextBoxMeasurer(() => textLayerRef.current));
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
     const inkTool: InkTool | undefined = tool === "pen" || tool === "highlighter" ? tool : undefined;
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -201,7 +203,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         if (!previous || previous !== noteId) {
             shownNoteIdRef.current = noteId;
             surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
-            if (note?.noteId === noteId && doc.strokes.length) void saveMissingThumbnail(surface, note);
+            const hasContent = doc.strokes.length > 0 || !!doc.texts?.length;
+            if (note?.noteId === noteId && hasContent) void saveMissingThumbnail(surface, note);
         }
     }
 
@@ -234,6 +237,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             onStateChange: setState,
             loadImage: loadPicture,
             openPdf,
+            measureTexts: (boxes) => textMeasurerRef.current.measure(boxes),
             onViewChange: () => {
                 // The surface reports its first view from its constructor, before the ref holds it.
                 const { zoom, x, y } = surfaceRef.current?.getView() ?? { zoom: 1, x: 0, y: 0 };

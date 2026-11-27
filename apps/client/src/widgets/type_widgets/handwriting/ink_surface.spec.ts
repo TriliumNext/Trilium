@@ -707,6 +707,29 @@ describe("ink surface input", () => {
             expect(again.objects).toHaveLength(3);
         });
 
+        it("asks for the text of the text boxes that can reach the first page, once one changes", async () => {
+            const measureTexts = vi.fn().mockReturnValue([]);
+            surface.destroy();
+            surface = new InkSurface(container, { onChange, onGesture, onStateChange, loadImage, measureTexts });
+            surface.load({ version: 2, paper: "blank", layout: "pages", strokes: [] });
+            expect(await surface.exportThumbnail()).toBeUndefined();
+
+            const box = (id: string, x: number, y: number) => ({ id, order: surface.takeOrder(), x, y, width: 100, html: "<p>a</p>" });
+            const [ onPage, above, below, beside ] = [ box("a", 10, 10), box("b", 10, -500), box("c", 10, 5000), box("d", 2000, 10) ];
+            // A box on another page leaves the picture as it is.
+            surface.setTextBoxes([ below ]);
+            expect(await surface.exportThumbnail()).toBeUndefined();
+
+            surface.setTextBoxes([ below, onPage, above, beside ]);
+            expect(await surface.exportThumbnail()).toBeDefined();
+            expect(measureTexts).toHaveBeenLastCalledWith([ onPage, above ]);
+
+            // On a canvas without bounds, every box is part of the picture.
+            surface.setLayout("infinite");
+            await surface.exportThumbnail();
+            expect(measureTexts).toHaveBeenLastCalledWith([ below, onPage, above, beside ]);
+        });
+
         it("moves, resizes and deletes the selected image with the select tool, each in one step to undo", () => {
             surface.addImage(URL, 1000, 500);
             surface.tool = "select";

@@ -169,6 +169,7 @@ function TextBox({
                 isEditing && isEditorReady && "editing",
                 box.fontSize !== undefined && "sized"
             )}
+            data-box-id={box.id}
             style={{
                 left: `${box.x}px`, top: `${box.y}px`, width: `${box.width}px`,
                 ...(box.fontSize !== undefined && { fontSize: `${box.fontSize}px` })

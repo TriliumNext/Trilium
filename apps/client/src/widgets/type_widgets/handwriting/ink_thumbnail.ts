@@ -3,6 +3,7 @@ import {
     PAGE_WIDTH, type Stroke
 } from "./ink_document";
 import type { Picture } from "./ink_images";
+import { drawTextBox, type MeasuredTextBox } from "./ink_text";
 
 /** The largest size of a thumbnail, in pixels: a page fits it exactly. */
 const MAX_WIDTH = 600;
@@ -20,7 +21,7 @@ const DARK_FILTER = "invert(93%) hue-rotate(180deg)";
 const PICTURE_TYPE = "image/webp";
 const PICTURE_QUALITY = 0.85;
 
-/** The strokes and the images of the note that a thumbnail draws. */
+/** The strokes, the images and the text of the note that a thumbnail draws. */
 export interface ThumbnailContent {
     getAll(): Iterable<Stroke>;
     /** Returns the strokes whose bounds intersect `bounds`, in drawing order. */
@@ -35,6 +36,11 @@ export interface ThumbnailContent {
     whenImagesLoaded(): Promise<void>;
     /** Returns the picture under the images, such as the first page of a PDF, and where it lies. */
     getBackground?(): { picture: Picture, rect: { x: number, y: number, width: number, height: number } } | undefined;
+    /**
+     * Returns the text of the text boxes, as it is laid out now. With `within`, only the boxes
+     * that can reach into it are asked for.
+     */
+    getTexts?(within?: Bounds): MeasuredTextBox[];
 }
 
 /** A picture of a thumbnail, and the version of the thumbnail that it shows. */
@@ -45,9 +51,9 @@ export interface ThumbnailExport {
 
 /**
  * The picture of a handwriting note that previews and image embeds show: the first page, or all
- * the strokes and the images of a canvas without bounds. A finished stroke is drawn onto it at once,
- * and a removed stroke, a stroke outside the area it shows or a change to an image makes it draw
- * everything again at the next export.
+ * the strokes, the images and the text boxes of a canvas without bounds. A finished stroke is
+ * drawn onto it at once, and a removed stroke, a stroke outside the area it shows or under a text
+ * box, or a change to an image or a text box makes it draw everything again at the next export.
  */
 export default class InkThumbnail {
 
@@ -57,6 +63,8 @@ export default class InkThumbnail {
     /** The part of the world that the canvas shows, or `undefined` while there are no strokes. */
     private area: Bounds | undefined;
     private isStale = true;
+    /** The text boxes on the canvas, which lie over the ink. */
+    private texts: MeasuredTextBox[] = [];
     /** Counts the changes to the picture; it is saved while `savedVersion` matches. */
     private version = 0;
     private savedVersion = 0;
@@ -96,14 +104,16 @@ export default class InkThumbnail {
             this.isStale = true;
         } else if (this.layout === "infinite" && !contains(this.area, stroke.bounds)) {
             this.isStale = true;
+        } else if (this.texts.some((text) => intersects(text.bounds, stroke.bounds))) {
+            this.isStale = true;
         } else {
             fillStroke(this.ctx, stroke);
         }
     }
 
     /**
-     * Draws everything again at the next export, for `item`, a stroke or an image, removed, added
-     * under the ink or put back in its place.
+     * Draws everything again at the next export, for `item`, a stroke, an image or a text box,
+     * removed, added under the ink, changed or put back in its place.
      */
     markChanged(item: { bounds: Bounds }) {
         if (this.shows(item.bounds)) this.invalidate();
@@ -142,10 +152,11 @@ export default class InkThumbnail {
     private redraw() {
         this.isStale = false;
         const images = this.content.getImages();
-        const area = this.layout === "pages"
-            ? this.content.getFirstSheet()
-            : getContentArea([ ...this.content.getAll(), ...images ]);
+        const firstSheet = this.layout === "pages" ? this.content.getFirstSheet() : undefined;
+        const texts = this.content.getTexts?.(firstSheet) ?? [];
+        const area = firstSheet ?? getContentArea([ ...this.content.getAll(), ...images, ...texts ]);
         this.area = area;
+        this.texts = [];
         if (!area) {
             if (this.canvas) this.canvas.width = this.canvas.height = 0;
             return;
@@ -178,6 +189,10 @@ export default class InkThumbnail {
         }
         for (const stroke of this.content.query(area)) {
             fillStroke(ctx, stroke);
+        }
+        this.texts = texts.filter((text) => intersects(area, text.bounds));
+        for (const text of this.texts) {
+            drawTextBox(ctx, text, THUMBNAIL_AUTO_COLOR);
         }
     }
 }

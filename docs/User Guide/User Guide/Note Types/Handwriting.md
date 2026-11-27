@@ -120,7 +120,7 @@ The paper is _Ruled_, _Grid_, _Dots_ or _Blank_. The rules and the dots follow t
 
 ## Previews
 
-Wherever a handwriting note appears outside its own editor, it is shown as a picture: in the previews of <a class="reference-link" href="../Collections.md">Collections</a>, and when it is inserted as an image into a <a class="reference-link" href="Text.md">Text</a> note (including a shared one). The picture shows the first page, or all the ink and the images of an infinite canvas, and is updated each time the note is saved. Ink in the _Text color_ turns light when the picture is viewed in a dark theme, and images are inverted as in the note.
+Wherever a handwriting note appears outside its own editor, it is shown as a picture: in the previews of <a class="reference-link" href="../Collections.md">Collections</a>, and when it is inserted as an image into a <a class="reference-link" href="Text.md">Text</a> note (including a shared one). The picture shows the first page, or all the ink, the images and the text boxes of an infinite canvas, and is updated each time the note is saved. The text of a text box is shown line by line as in the note, in its fonts and colors; the bullets and the numbers of lists, the borders of tables and the images inside a text box are left out. Ink in the _Text color_ turns light when the picture is viewed in a dark theme, and images are inverted as in the note.
 
 ## Read-only mode
 

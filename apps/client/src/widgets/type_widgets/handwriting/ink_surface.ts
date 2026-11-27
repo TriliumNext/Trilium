@@ -11,6 +11,7 @@ import {
 import ImageLayer, { type Picture, placeImage } from "./ink_images";
 import PdfLayer, { type PdfPages } from "./ink_pdf";
 import LiveStroke, { createCanvas, getContext } from "./ink_live_stroke";
+import type { MeasuredTextBox } from "./ink_text";
 import { drawPaper, type PaperScene } from "./ink_paper";
 import InkThumbnail from "./ink_thumbnail";
 
@@ -52,6 +53,8 @@ interface InkSurfaceOptions {
     onViewChange?(): void;
     /** Opens a PDF of the note. Without it, the sheets stay empty. */
     openPdf?(url: string): Promise<PdfPages | undefined>;
+    /** Returns the text of `boxes` as it is laid out, for the thumbnail. Without it, the thumbnail shows none. */
+    measureTexts?(boxes: InkTextBox[]): MeasuredTextBox[];
 }
 
 interface HistoryEntry {
@@ -243,7 +246,11 @@ export default class InkSurface {
             whenImagesLoaded: async () => {
                 await Promise.all([ this.images.whenLoaded(), this.pdf.prepareFirstPage() ]);
             },
-            getBackground: () => this.pdf.getFirstPage()
+            getBackground: () => this.pdf.getFirstPage(),
+            // The height of a box is not known before it is measured, so one above `within` counts.
+            getTexts: (within) => this.options.measureTexts?.(within
+                ? this.texts.filter(({ x, y, width }) => y <= within.maxY && x <= within.maxX && x + width >= within.minX)
+                : this.texts) ?? []
         });
 
         const listener = { signal: this.abort.signal };
@@ -1180,6 +1187,15 @@ export default class InkSurface {
     }
 
     setTextBoxes(texts: InkTextBox[]) {
+        const before = new Set(this.texts);
+        const after = new Set(texts);
+        for (const box of [ ...this.texts, ...texts ]) {
+            if (before.has(box) && after.has(box)) continue;
+            // A box is as tall as its text, which the surface does not know.
+            this.thumbnail.markChanged({
+                bounds: { minX: box.x, minY: box.y, maxX: box.x + box.width, maxY: Infinity }
+            });
+        }
         this.texts = texts;
         this.options.onChange();
     }

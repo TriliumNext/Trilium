@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-    AUTO_COLOR, createImage, createStroke, type InkImage, PageLayout, type Stroke, StrokeIndex
+    AUTO_COLOR, type Bounds, createImage, createStroke, type InkImage, PageLayout, type Stroke, StrokeIndex
 } from "./ink_document";
+import type { MeasuredTextBox } from "./ink_text";
 
 const getPageTop = (index: number) => new PageLayout().getPageTop(index);
 import InkThumbnail from "./ink_thumbnail";
@@ -10,8 +11,11 @@ import InkThumbnail from "./ink_thumbnail";
 describe("ink thumbnail", () => {
     /** The color of each stroke filled on the thumbnail. */
     let fills: string[];
-    /** What each call drew, in order: `"picture"` for an image and the color for a stroke. */
+    /** What each call drew, in order: `"picture"` for an image, the color for a stroke and the text of a text box. */
     let drawn: string[];
+    let texts: MeasuredTextBox[];
+    /** The area that the thumbnail last asked the text boxes of. */
+    let askedWithin: Bounds | undefined;
     let strokes: Set<Stroke>;
     let images: InkImage[];
     let firstSheet = { minX: 0, minY: 0, maxX: 794, maxY: 1123 };
@@ -24,9 +28,11 @@ describe("ink thumbnail", () => {
         fills = [];
         drawn = [];
         images = [];
+        texts = [];
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
             const ctx = {
-                fillStyle: "", globalAlpha: 1, setTransform() {},
+                fillStyle: "", globalAlpha: 1, font: "", textBaseline: "", setTransform() {},
+                fillText: (text: string) => drawn.push(`${text} in ${ctx.fillStyle}`),
                 fill: () => {
                     fills.push(ctx.fillStyle);
                     drawn.push(ctx.fillStyle);
@@ -48,7 +54,11 @@ describe("ink thumbnail", () => {
             getImages: () => images,
             getPicture: (image) => (image.url.includes("loaded") ? picture : undefined),
             whenImagesLoaded: async () => {},
-            getBackground: () => background
+            getBackground: () => background,
+            getTexts: (within) => {
+                askedWithin = within;
+                return texts;
+            }
         });
         thumbnail.reset("pages");
     });
@@ -92,6 +102,42 @@ describe("ink thumbnail", () => {
         thumbnail.markSaved(first?.version ?? -1);
         expect(await thumbnail.export()).toBeUndefined();
         expect(fills).toHaveLength(2);
+    });
+
+    it("draws the text of the text boxes over the ink of the first page", async () => {
+        const textBox = (text: string, y: number, color?: string): MeasuredTextBox => ({
+            bounds: { minX: 100, minY: y, maxX: 400, maxY: y + 40 },
+            runs: [ { text, x: 108, y: y + 12, font: "16px serif", ...(color && { color }) } ]
+        });
+        draw(100, 500, "#ff0000");
+        texts = [ textBox("on the page", 100), textBox("colored", 200, "rgb(0, 0, 255)"), textBox("on the next page", getPageTop(1) + 10) ];
+        thumbnail.markChanged(texts[0]);
+        await thumbnail.export();
+        expect(askedWithin).toEqual(firstSheet);
+        expect(drawn).toEqual([ "#ff0000", "on the page in #000", "colored in rgb(0, 0, 255)" ]);
+
+        // A stroke clear of the text is drawn onto the picture, and one under a text box has the
+        // picture drawn again, so that the text stays over the ink.
+        drawn = [];
+        draw(500, 800, "#00ff00");
+        expect(drawn).toEqual([ "#00ff00" ]);
+        drawn = [];
+        draw(150, 110, "#0000ff");
+        expect(drawn).toEqual([]);
+        await thumbnail.export();
+        expect(drawn.slice(-2)).toEqual([ "on the page in #000", "colored in rgb(0, 0, 255)" ]);
+        expect(drawn).toHaveLength(5);
+    });
+
+    it("fits the text boxes of a canvas without bounds, with or without ink", async () => {
+        thumbnail.reset("infinite");
+        texts = [ { bounds: { minX: 1000, minY: 2000, maxX: 1200, maxY: 2100 }, runs: [ { text: "typed", x: 1008, y: 2012, font: "16px serif" } ] } ];
+        thumbnail.markChanged(texts[0]);
+        const exported = await thumbnail.export();
+        expect(askedWithin).toBeUndefined();
+        // The box of 200 by 100 with a margin of 16 on each side.
+        expect(exported?.svg).toMatch(/^<svg [^>]*width="232" height="132"/);
+        expect(drawn).toEqual([ "typed in #000" ]);
     });
 
     it("draws all the strokes again once one is removed", async () => {
