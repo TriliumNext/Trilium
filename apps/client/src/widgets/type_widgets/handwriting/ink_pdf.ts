@@ -1,4 +1,6 @@
-import { type Bounds, type PageLayout, type Sheet, type SheetSize, type SheetSource } from "./ink_document";
+import {
+    type Bounds, MAX_SHEET_SIDE, MIN_SHEET_SIDE, type PageLayout, type Sheet, type SheetSize, type SheetSource
+} from "./ink_document";
 import { darkenPicture, type Picture } from "./ink_images";
 
 /** The longest side of the picture of a page, in pixels, however far the view is zoomed in. */
@@ -331,11 +333,12 @@ export async function openPdf(url: string): Promise<PdfPages | undefined> {
 
 /**
  * Returns the size of the sheet for a page of `width` by `height` PDF points: the size of the
- * page as printed, to a tenth of a world unit, as a saved document holds it.
+ * page as printed, to a tenth of a world unit, as a saved document holds it. A page larger than
+ * `MAX_SHEET_SIDE` shrinks to fit in its shape, and a side below `MIN_SHEET_SIDE` grows to it, so
+ * `parseInkDocument()` reads the sheet back.
  */
 export function toSheetSize({ width, height }: { width: number, height: number }): SheetSize {
-    return {
-        width: Math.round(width * UNITS_PER_POINT * 10) / 10,
-        height: Math.round(height * UNITS_PER_POINT * 10) / 10
-    };
+    const scale = UNITS_PER_POINT * Math.min(1, MAX_SHEET_SIDE / (Math.max(width, height) * UNITS_PER_POINT));
+    const fit = (side: number) => Math.min(MAX_SHEET_SIDE, Math.max(MIN_SHEET_SIDE, Math.round(side * scale * 10) / 10));
+    return { width: fit(width), height: fit(height) };
 }

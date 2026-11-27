@@ -4,7 +4,7 @@ import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getStrokePath,
     HIGHLIGHTER_ALPHA, type InkDocument, type InkImage, type InkLayout, type InkTextBox, type InkTool,
-    type InkView, type OpaqueObject, PAGE_GAP,
+    type InkView, MAX_SHEETS, type OpaqueObject, PAGE_GAP,
     getPdfUrls, PAGE_HEIGHT, PAGE_WIDTH, PageLayout, type PaperStyle, type SheetSpec, serializeInkDocument, serializeStroke, splitStroke, type Stroke,
     strokeHitsSegment, StrokeIndex
 } from "./ink_document";
@@ -418,7 +418,8 @@ export default class InkSurface {
         while (sheets.length < first) {
             sheets.push({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
         }
-        this.setSheets([ ...sheets, ...pdf.sizes.map((size, page) => ({ ...size, source: { url, page } })) ]);
+        const pages = pdf.sizes.slice(0, MAX_SHEETS - first);
+        this.setSheets([ ...sheets, ...pages.map((size, page) => ({ ...size, source: { url, page } })) ]);
         this.goToPage(first);
         this.options.onChange();
         return true;

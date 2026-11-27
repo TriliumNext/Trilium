@@ -60,6 +60,9 @@ describe("PDF layer", () => {
         // A slide of 960 by 540 points, and A4 to a tenth of a unit.
         expect(toSheetSize({ width: 960, height: 540 })).toEqual({ width: 1280, height: 720 });
         expect(toSheetSize({ width: 595.28, height: 841.89 })).toEqual({ width: 793.7, height: 1122.5 });
+        // A page larger than a saved sheet can be shrinks to fit, in its shape; a sliver widens.
+        expect(toSheetSize({ width: 30000, height: 15000 })).toEqual({ width: 20000, height: 10000 });
+        expect(toSheetSize({ width: 1, height: 600 })).toEqual({ width: 16, height: 800 });
         const slides = new PageLayout([ { width: 1280, height: 720 } ]);
         expect(fitPage(960, 540, slides.getSheet(0))).toEqual({ x: -243, y: 0, width: 1280, height: 720 });
 

@@ -19,9 +19,9 @@ export const PAGE_HEIGHT = 1123;
 export const PAGE_GAP = 24;
 
 /** The shortest and the longest side of a sheet with a size of its own, and how many a note holds. */
-const MIN_SHEET_SIDE = 16;
-const MAX_SHEET_SIDE = 20000;
-const MAX_SHEETS = 10000;
+export const MIN_SHEET_SIDE = 16;
+export const MAX_SHEET_SIDE = 20000;
+export const MAX_SHEETS = 10000;
 
 /** The size of a sheet, in world units. */
 export interface SheetSize {
