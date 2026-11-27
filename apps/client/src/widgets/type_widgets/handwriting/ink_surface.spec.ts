@@ -188,6 +188,30 @@ describe("ink surface input", () => {
         expect(sheets.map(([ x, y, , height ]) => [ x, y, height ])).toEqual([ [ 101, 150, 281 ] ]);
     });
 
+    it("moves between pages at the current zoom and reports the page in view", () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
+        const onPageThree = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
+            points: [ 100, 2500, 0.5, 200, 2520, 0.5 ], order: 0
+        });
+        surface.load({ paper: "blank", layout: "pages", strokes: [ onPageThree ] });
+        surface.showView({ x: 397, y: 150, zoom: 1 });
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, pageCount: 4 }));
+
+        // The top of the next page goes 32 px below the top of the view, at the same zoom.
+        surface.goToPage(1);
+        expect(surface.getView()).toEqual({ zoom: 1, x: 200 - 397, y: 32 - 1147 });
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 }));
+
+        // Pages outside the note are out of reach.
+        surface.goToPage(-1);
+        expect(surface.getView().y).toBe(32 - 1147);
+        surface.goToPage(4);
+        expect(surface.getView().y).toBe(32 - 1147);
+    });
+
     it("undoes on a short tap with two fingers, but not after a pinch", () => {
         swipe("pen", 1, 100);
         swipe("pen", 2, 200);

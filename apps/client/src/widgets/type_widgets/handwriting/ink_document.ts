@@ -172,6 +172,28 @@ export function getPageTop(index: number) {
     return index * (PAGE_HEIGHT + PAGE_GAP);
 }
 
+/**
+ * The index of the page that fills most of the view from `top` to `bottom`, in world units: the
+ * first of those that fill it alike, and the nearest page when the view shows none.
+ */
+export function getVisiblePage(top: number, bottom: number, pageCount: number) {
+    const stride = PAGE_HEIGHT + PAGE_GAP;
+    const last = Math.max(0, pageCount - 1);
+    const from = Math.min(last, Math.max(0, Math.floor(top / stride)));
+    const to = Math.min(last, Math.max(0, Math.floor(bottom / stride)));
+    let visible = from;
+    let visibleHeight = -Infinity;
+    for (let page = from; page <= to; page++) {
+        const pageTop = getPageTop(page);
+        const height = Math.min(bottom, pageTop + PAGE_HEIGHT) - Math.max(top, pageTop);
+        if (height > visibleHeight) {
+            visible = page;
+            visibleHeight = height;
+        }
+    }
+    return visible;
+}
+
 /** How many pages a note shows: those up to the last one holding ink, and an empty one after it. */
 export function getPageCount(strokes: Iterable<Stroke>) {
     let lastInked = -1;

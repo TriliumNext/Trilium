@@ -4395,7 +4395,8 @@
     "color_pink": "Pink",
     "color_cyan": "Cyan",
     "color_orange": "Orange",
-    "color_custom": "Custom color..."
+    "color_custom": "Custom color...",
+    "page_counter": "{{current}} / {{total}}"
   },
   "mind-map": {
     "addChild": "Add child",

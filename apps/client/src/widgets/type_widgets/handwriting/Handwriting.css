@@ -112,8 +112,17 @@
         pointer-events: none;
     }
 
-    .handwriting-zoom {
+    .handwriting-zoom,
+    .handwriting-pages {
         --overlay-group-inset: 12px;
+    }
+
+    .handwriting-page-counter {
+        justify-content: center;
+        min-width: 4em;
+        padding-inline: 0.5em;
+        font-size: var(--overlay-button-text-size, 14px);
+        font-variant-numeric: tabular-nums;
     }
 
     &:fullscreen,
@@ -122,7 +131,8 @@
             --handwriting-toolbar-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
         }
 
-        .handwriting-zoom {
+        .handwriting-zoom,
+        .handwriting-pages {
             --overlay-group-inset-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
         }
     }

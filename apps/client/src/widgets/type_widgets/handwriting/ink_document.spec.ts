@@ -2,7 +2,7 @@ import { getStroke } from "perfect-freehand";
 import { describe, expect, it } from "vitest";
 
 import {
-    AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, outlineStrokePoints,
+    AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, getVisiblePage, outlineStrokePoints,
     parseInkDocument, serializeInkDocument, serializeStroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
     trimPrediction
 } from "./ink_document";
@@ -219,5 +219,19 @@ describe("trimPrediction", () => {
 
         // A pointer that has stopped predicts nothing.
         expect(trimPrediction(10, 0, 10, 0, [ 14, 0, 0.5 ])).toEqual([]);
+    });
+});
+
+describe("getVisiblePage", () => {
+    it("picks the page that fills most of the view, the first of those that tie", () => {
+        // Pages span 0-1123, 1147-2270 and 2294-3417.
+        expect(getVisiblePage(-32, 500, 3)).toBe(0);
+        expect(getVisiblePage(1000, 1600, 3)).toBe(1);
+        expect(getVisiblePage(1100, 1300, 3)).toBe(1);
+        // Zoomed out, the first page shown whole wins over the whole one below it.
+        expect(getVisiblePage(1100, 4000, 3)).toBe(1);
+        // Past either end of the pages, the nearest one.
+        expect(getVisiblePage(-900, -100, 3)).toBe(0);
+        expect(getVisiblePage(5000, 6000, 3)).toBe(2);
     });
 });

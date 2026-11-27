@@ -92,7 +92,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
-        zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false
+        zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false,
+        page: 0, pageCount: 1
     });
     /** The tool the pen uses now, the eraser while a button of the pen erases. */
     const activeTool: SurfaceTool = state.penErasing ? "eraser" : tool;
@@ -202,6 +203,13 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     }
 
     function onKeyDown(e: TargetedKeyboardEvent<HTMLDivElement>) {
+        const pageStep = { PageUp: -1, PageDown: 1 }[e.key];
+        if (pageStep && state.layout === "pages" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+            surfaceRef.current?.goToPage(state.page + pageStep);
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         if (isReadOnly) return;
         const key = e.key.toLowerCase();
         const modifier = e.ctrlKey || e.metaKey;
@@ -317,6 +325,28 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
 
             {!isReadOnly && inkTool && (
                 <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
+            )}
+
+            {state.layout === "pages" && (
+                <OverlayControlGroup placement="bottom-start" className="handwriting-pages">
+                    <OverlayControlButton
+                        title={t("pagination.prev_page")}
+                        icon="bx-chevron-up"
+                        shortcut="PageUp"
+                        disabled={state.page <= 0}
+                        onClick={() => surfaceRef.current?.goToPage(state.page - 1)}
+                    />
+                    <span className="handwriting-page-counter">
+                        {t("handwriting.page_counter", { current: state.page + 1, total: state.pageCount })}
+                    </span>
+                    <OverlayControlButton
+                        title={t("pagination.next_page")}
+                        icon="bx-chevron-down"
+                        shortcut="PageDown"
+                        disabled={state.page >= state.pageCount - 1}
+                        onClick={() => surfaceRef.current?.goToPage(state.page + 1)}
+                    />
+                </OverlayControlGroup>
             )}
 
             <OverlayControlGroup placement="bottom-end" className="handwriting-zoom">

@@ -1,7 +1,7 @@
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getShortStrokeOutline,
-    getStrokeOutline, getStrokePath, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool,
+    getStrokeOutline, getStrokePath, getVisiblePage, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool,
     type InkView, outlineStrokePoints, outlineToPath, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle,
     serializeInkDocument, serializeStroke, type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
     trimPrediction
@@ -19,6 +19,9 @@ export interface InkSurfaceState {
     canRedo: boolean;
     /** Whether a button of the pen makes it erase, whatever the tool. */
     penErasing: boolean;
+    /** The index of the page that fills most of the view, counted from zero. */
+    page: number;
+    pageCount: number;
 }
 
 interface InkSurfaceOptions {
@@ -121,6 +124,8 @@ export default class InkSurface {
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
     private pageCount = 1;
+    /** The page last passed to `onStateChange()`, so that a pan reports only a new one. */
+    private reportedPage = 0;
     private undoStack: HistoryEntry[] = [];
     private redoStack: HistoryEntry[] = [];
 
@@ -361,6 +366,17 @@ export default class InkSurface {
     /** How many pages the note shows, which is one more than the last page holding ink. */
     getPageCount() {
         return this.pageCount;
+    }
+
+    /** Shows the top of page `index`, counted from zero, at the current zoom. */
+    goToPage(index: number) {
+        if (index < 0 || index >= this.pageCount) return;
+        const height = this.baseCanvas.height / this.dpr;
+        this.showView({
+            x: this.getCenterView().x,
+            y: getPageTop(index) + (height / 2 - FIT_MARGIN) / this.zoom,
+            zoom: this.zoom
+        });
     }
 
     setLayout(layout: InkLayout) {
@@ -859,6 +875,7 @@ export default class InkSurface {
         const from = Math.min(count, this.pageCount);
         const to = Math.max(count, this.pageCount);
         this.pageCount = count;
+        this.reportState();
         if (this.layout === "pages") {
             this.redrawBounds({
                 minX: -PAGE_GAP, minY: getPageTop(from) - PAGE_GAP,
@@ -919,6 +936,7 @@ export default class InkSurface {
         this.tx += wholeX;
         this.ty += wholeY;
         this.redrawLiveStroke();
+        if (this.getVisiblePage() !== this.reportedPage) this.reportState();
 
         const { width, height } = this.baseCanvas;
         if (this.zoomPreview) {
@@ -966,17 +984,27 @@ export default class InkSurface {
         }
         this.redrawAll();
         this.redrawLiveStroke();
+        if (this.getVisiblePage() !== this.reportedPage) this.reportState();
     }
 
     private reportState() {
+        this.reportedPage = this.getVisiblePage();
         this.options.onStateChange({
             zoom: this.zoom,
             paper: this.paper,
             layout: this.layout,
             canUndo: this.undoStack.length > 0,
             canRedo: this.redoStack.length > 0,
-            penErasing: this.penErasing
+            penErasing: this.penErasing,
+            page: this.reportedPage,
+            pageCount: this.pageCount
         });
+    }
+
+    private getVisiblePage() {
+        const scale = this.zoom * this.dpr;
+        const top = -this.ty / scale;
+        return getVisiblePage(top, top + this.baseCanvas.height / scale, this.pageCount);
     }
 
     private toDevice(clientX: number, clientY: number) {
