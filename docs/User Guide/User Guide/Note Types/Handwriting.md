@@ -42,7 +42,7 @@ The cursor is a ring as wide as the line that the tool draws.
 *   To move the page with a pen or a mouse, select the <span class="tn-icon bx bx-move"></span> _Pan_ tool and drag, or hold <kbd>Space</kbd> and drag with any tool. This also works with a drawing tablet whose pen has no button mapped to the middle button.
 *   With the _Pages_ layout, the buttons in the bottom-left corner show which page is on screen and the number of pages. The <span class="tn-icon bx bx-chevron-up"></span> and <span class="tn-icon bx bx-chevron-down"></span> buttons, or <kbd>Page Up</kbd> and <kbd>Page Down</kbd>, go to the top of the previous or next page without changing the zoom.
 *   The buttons in the bottom-right corner zoom in and out, between 25% and 800%. Pressing the percentage goes back to 100%.
-*   To see the whole width of the page, press the <span class="tn-icon bx bx-target-lock"></span> _Zoom to fit_ button. On an infinite canvas, it shows all the ink instead.
+*   To see the whole width of the page, press the <span class="tn-icon bx bx-target-lock"></span> _Zoom to fit_ button. On an infinite canvas, it fits the width of the ink instead. Either way, the part of the note on screen stays in view.
 *   To give the note the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> button. Press it again or <kbd>Esc</kbd> to go back.
 
 A note opens at the place and zoom at which it was last left.
@@ -113,7 +113,7 @@ A document of [RNote](https://rnote.flxzt.net/) (a `.rnote` file) is imported as
 
 *   Pen strokes keep their position, color, thickness and pressure. Black ink becomes ink in the _Text color_, so it stays readable in a dark theme, and translucent ink becomes highlighter ink.
 *   Lines and rectangles drawn with the shape tool become ordinary ink.
-*   The note uses the infinite canvas, with the paper nearest to the background pattern of the document, and opens where the document was last viewed.
+*   The note uses the infinite canvas, with the paper nearest to the background pattern of the document, and opens at the top of its ink, fitting its width.
 *   Typed text, images and the other shapes are left out, as a handwriting note cannot hold them. A document with no ink at all is imported as a <a class="reference-link" href="File.md">File</a> note instead.
 
 ## Limitations

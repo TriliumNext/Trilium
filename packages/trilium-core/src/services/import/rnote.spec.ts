@@ -45,11 +45,11 @@ function convert(file: Uint8Array) {
 }
 
 describe("convertRnote", () => {
-    it("keeps the paper, the view and the positions of the ink on a canvas without bounds", () => {
+    it("keeps the paper and the positions of the ink on a canvas without bounds, but not RNote's camera", () => {
         const { document } = convert(rnote([ brush([ [ 10, 20, 0.5 ], [ 10.52, 20, 1 ], [ 12, 23.04, 0.25 ] ]) ]));
-        expect(document).toMatchObject({
-            version: 1, paper: "grid", layout: "infinite", view: { x: 432, y: 400, zoom: 2 }
-        });
+        expect(document).toMatchObject({ version: 1, paper: "grid", layout: "infinite" });
+        // The note opens fitting its ink, not where the RNote window was last scrolled and zoomed.
+        expect(document).not.toHaveProperty("view");
         // Tenths of a unit and a pressure out of 255, each point as the difference from the last.
         expect(document.strokes).toEqual([ { w: 3, k: 100, p: [ 100, 200, 128, 5, 0, 127, 15, 30, -191 ] } ]);
 

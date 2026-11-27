@@ -47,8 +47,6 @@ export function convertRnote(file: Uint8Array): RnoteConversion | undefined {
         `"paper":${JSON.stringify(convertPaper(asRecord(config?.background)?.pattern))}`,
         `"layout":"infinite"`
     ];
-    const view = convertCamera(asRecord(snapshot.camera));
-    if (view) document.push(`"view":${JSON.stringify(view)}`);
     document.push(`"strokes":[${strokes.map((stroke) => stroke.json).join(",")}]`);
     return { content: `{${document.join(",")}}`, skipped };
 }
@@ -214,19 +212,6 @@ function convertPaper(pattern: unknown) {
     if (pattern.includes("dots")) return "dots";
     if (pattern.includes("lines")) return "ruled";
     return "blank";
-}
-
-/** Returns the view of the note from RNote's camera, whose `offset` is the corner of the window in screen pixels. */
-function convertCamera(camera: JsonRecord | undefined) {
-    const offset = asPosition(camera?.offset);
-    const size = asPosition(camera?.size);
-    const zoom = camera?.zoom;
-    if (!offset || !size || !isFiniteNumber(zoom) || zoom <= 0) return undefined;
-    return {
-        x: Math.round((offset[0] + size[0] / 2) / zoom * 10) / 10,
-        y: Math.round((offset[1] + size[1] / 2) / zoom * 10) / 10,
-        zoom: Math.round(zoom * 1000) / 1000
-    };
 }
 
 function isFiniteNumber(value: unknown): value is number {

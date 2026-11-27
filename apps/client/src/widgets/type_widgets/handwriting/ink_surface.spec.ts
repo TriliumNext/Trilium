@@ -175,8 +175,8 @@ describe("ink surface input", () => {
         surface.showView("content");
         expect(surface.getView()).toEqual({ zoom: 1, x: 0, y: 0 });
 
-        // The stroke and its width of 4 on each side span 1008 by 508, which fit at 1/3 with
-        // 32 px to spare on each side of the width.
+        // The stroke and its width of 4 on each side span 996 to 2004 across, which fits at 1/3
+        // with 32 px to spare on each side, and the top of the ink at 996 lies 32 px down.
         const stroke = createStroke({
             tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: false,
             points: [ 1000, 1000, 0.5, 2000, 1500, 0.5 ], order: 0
@@ -186,13 +186,18 @@ describe("ink surface input", () => {
         // The origin lies on a whole pixel, which is 3 world units at this zoom.
         const view = surface.getCenterView();
         expect(Math.abs(view.x - 1500)).toBeLessThanOrEqual(1.5);
-        expect(Math.abs(view.y - 1250)).toBeLessThanOrEqual(1.5);
+        expect(Math.abs(view.y - 1350)).toBeLessThanOrEqual(1.5);
         expect(view.zoom).toBeCloseTo(336 / 1008);
 
-        // A small drawing is not enlarged.
+        // Fitting again keeps the part of the ink on screen, as on pages.
+        surface.showView({ x: 1500, y: 1400, zoom: 1 });
+        surface.showView("content");
+        expect(Math.abs(surface.getCenterView().y - 1700)).toBeLessThanOrEqual(1.5);
+
+        // A small drawing is enlarged to at most 200%, from the top of its ink at -4.
         surface.load({ paper: "ruled", layout: "infinite", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
         surface.showView("content");
-        expect(surface.getView().zoom).toBe(1);
+        expect(surface.getView()).toMatchObject({ zoom: 2, y: 40 });
     });
 
     it("shows pages up to an empty one after the last ink, and fits their width", () => {

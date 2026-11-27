@@ -63,7 +63,7 @@ const WARM_BATCH = 2000;
 const ZOOM_SETTLE_DELAY = 150;
 /** The room left around the content when the view fits it, in CSS pixels. */
 const FIT_MARGIN = 32;
-/** The largest zoom at which the view fits the width of a page. */
+/** The largest zoom at which the view fits the width of the content. */
 const MAX_FIT_WIDTH_ZOOM = 2;
 
 /**
@@ -289,34 +289,30 @@ export default class InkSurface {
     }
 
     /**
-     * The view that fits the content: on pages, the width of a page, at the top of the first page
-     * for a note just opened and at the part of the column on screen otherwise; on a canvas without
-     * bounds, all the strokes at 100% or less.
+     * The view that fits the width of the content: of a page on pages, and of all the strokes on
+     * a canvas without bounds. It starts at the top of the content for a note just opened, and
+     * keeps the part of it on screen otherwise.
      */
     private getContentView(): InkView {
         const width = this.baseCanvas.width / this.dpr;
         const height = this.baseCanvas.height / this.dpr;
-        if (this.layout === "pages") {
-            const zoom = Math.max(MIN_ZOOM, Math.min(MAX_FIT_WIDTH_ZOOM, (width - 2 * FIT_MARGIN) / PAGE_WIDTH));
-            const firstTop = -FIT_MARGIN / zoom;
-            const top = this.viewShown ? Math.max(firstTop, -this.ty / (this.zoom * this.dpr)) : firstTop;
-            return { x: PAGE_WIDTH / 2, y: top + height / 2 / zoom, zoom };
+        const bounds = this.layout === "pages"
+            ? { minX: 0, minY: 0, maxX: PAGE_WIDTH }
+            : { minX: Infinity, minY: Infinity, maxX: -Infinity };
+        if (this.layout === "infinite") {
+            if (!this.strokes.size) return { x: width / 2, y: height / 2, zoom: 1 };
+            for (const stroke of this.strokes) {
+                bounds.minX = Math.min(bounds.minX, stroke.bounds.minX);
+                bounds.minY = Math.min(bounds.minY, stroke.bounds.minY);
+                bounds.maxX = Math.max(bounds.maxX, stroke.bounds.maxX);
+            }
         }
-        const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-        for (const stroke of this.strokes) {
-            bounds.minX = Math.min(bounds.minX, stroke.bounds.minX);
-            bounds.minY = Math.min(bounds.minY, stroke.bounds.minY);
-            bounds.maxX = Math.max(bounds.maxX, stroke.bounds.maxX);
-            bounds.maxY = Math.max(bounds.maxY, stroke.bounds.maxY);
-        }
-        if (!this.strokes.size) return { x: width / 2, y: height / 2, zoom: 1 };
 
-        const zoom = Math.min(
-            1,
-            Math.max(1, width - 2 * FIT_MARGIN) / (bounds.maxX - bounds.minX),
-            Math.max(1, height - 2 * FIT_MARGIN) / (bounds.maxY - bounds.minY)
-        );
-        return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2, zoom };
+        const fitWidth = Math.max(1, width - 2 * FIT_MARGIN) / (bounds.maxX - bounds.minX);
+        const zoom = Math.max(MIN_ZOOM, Math.min(MAX_FIT_WIDTH_ZOOM, fitWidth));
+        const firstTop = bounds.minY - FIT_MARGIN / zoom;
+        const top = this.viewShown ? Math.max(firstTop, -this.ty / (this.zoom * this.dpr)) : firstTop;
+        return { x: (bounds.minX + bounds.maxX) / 2, y: top + height / 2 / zoom, zoom };
     }
 
     /** The zoom, and the position of the world origin in the container, in CSS pixels. */
