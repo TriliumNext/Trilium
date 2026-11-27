@@ -217,7 +217,8 @@
             overflow: visible;
         }
 
-        .ck.ck-editor__editable_inline > :first-child {
+        .ck.ck-editor__editable_inline > :first-child,
+        :root & .ck.ck-editor__editable_inline > .ck-widget.ck-widget_with-selection-handle:first-child {
             margin-top: 0;
         }
 
