@@ -21,10 +21,10 @@
  * No fetch option recovers it; the only indentation Graph keeps is list nesting (ol/ul/li).
  */
 
+import { reflectLightness } from "@triliumnext/commons";
 import { sanitize, utils } from "@triliumnext/core";
+import Color, { type ColorInstance } from "color";
 import { HTMLElement, NodeType, parse } from "node-html-parser";
-
-import { parseColor, reflectLightness } from "./color.js";
 
 /**
  * The marker class the importer keys on to find OneNote file attachments (see importer.ts). The href
@@ -890,7 +890,8 @@ function correctTableShadingColors(scope: HTMLElement) {
         if (!background || background.lightness() >= 50) {
             continue;
         }
-        style.set("background-color", reflectLightness(background));
+        const hex = background.hex();
+        style.set("background-color", reflectLightness(hex) ?? hex);
         cell.setAttribute("style", serializeStyle(style));
     }
 }
@@ -923,6 +924,15 @@ function removeBlockLevelBreaks(scope: HTMLElement, keepEmptyLines: boolean) {
             br.insertAdjacentHTML("beforebegin", "<p>&nbsp;</p>");
         }
         br.remove();
+    }
+}
+
+/** Parses any CSS color (`#rgb`, `#rrggbb`, a name, `rgb()` and the like), or returns `null` for a value that is not one. */
+export function parseColor(value: string): ColorInstance | null {
+    try {
+        return Color(value);
+    } catch {
+        return null;
     }
 }
 

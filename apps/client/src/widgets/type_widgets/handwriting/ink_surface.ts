@@ -1,3 +1,5 @@
+import { adaptInkColor } from "@triliumnext/commons/src/lib/handwriting.js";
+
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createImage, createStroke, DEFAULT_PRESSURE_SENSITIVITY, getStrokePath,
@@ -165,6 +167,8 @@ export default class InkSurface {
     private backgroundColor = "#fff";
     /** Whether the theme's background is dark, in which images are shown dark too. */
     private isDark = false;
+    /** The color that each ink color is drawn in, in the theme of `isDark`. */
+    private inkColors = new Map<string, string>();
     /** The theme's `--note-list-view-content-background` around the pages, if it has one. */
     private deskColor: string | undefined;
 
@@ -199,7 +203,7 @@ export default class InkSurface {
             getZoom: () => this.zoom,
             applyWorldTransform: (ctx) => this.applyWorldTransform(ctx),
             getWorldTransform: () => ({ scale: this.zoom * this.dpr, x: this.tx, y: this.ty }),
-            getAutoColor: () => this.autoColor
+            getInkColor: (color) => this.getInkColor(color)
         });
         this.eraserRing = document.createElement("div");
         this.eraserRing.className = "handwriting-eraser-ring";
@@ -1252,7 +1256,9 @@ export default class InkSurface {
         const style = getComputedStyle(this.container);
         this.autoColor = style.color;
         this.backgroundColor = style.backgroundColor;
-        this.isDark = isDarkColor(style.backgroundColor);
+        const isDark = isDarkColor(style.backgroundColor);
+        if (isDark !== this.isDark) this.inkColors.clear();
+        this.isDark = isDark;
         this.deskColor = style.getPropertyValue("--note-list-view-content-background").trim() || undefined;
         this.redrawRegion(0, 0, this.baseCanvas.width, this.baseCanvas.height);
     }
@@ -1322,9 +1328,23 @@ export default class InkSurface {
 
     private fillStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
         ctx.globalAlpha = stroke.tool === "highlighter" ? HIGHLIGHTER_ALPHA : 1;
-        ctx.fillStyle = stroke.color === AUTO_COLOR ? this.autoColor : stroke.color;
+        ctx.fillStyle = this.getInkColor(stroke.color);
         ctx.fill(getStrokePath(stroke));
         ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Returns the color that ink of `color` is drawn in: the text color for `AUTO_COLOR`, and
+     * otherwise the color as `adaptInkColor()` adapts it to the theme. The saved color is kept.
+     */
+    private getInkColor(color: string) {
+        if (color === AUTO_COLOR) return this.autoColor;
+        let drawn = this.inkColors.get(color);
+        if (drawn === undefined) {
+            drawn = adaptInkColor(color, this.isDark);
+            this.inkColors.set(color, drawn);
+        }
+        return drawn;
     }
 
     //#endregion

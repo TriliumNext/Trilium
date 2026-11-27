@@ -29,6 +29,7 @@ The following features are preserved by Trilium during the import process:
 *   Handwriting and drawings. A page that contains ink is imported as a <a class="reference-link" href="../../../Note%20Types/Handwriting.md">Handwriting</a> note instead of a text note (see _Pages with handwriting or drawings_ below).
     *   The strokes keep their position, color and thickness, as well as the pressure of the pen where OneNote recorded it. Highlighter ink stays translucent.
     *   OneNote's default ink color (black, or white on a dark canvas) becomes ink in the _Text color_, so it stays readable in both light and dark themes.
+    *   Other dark ink, such as a dark blue, is shown lighter in a dark theme, as OneNote does on its dark canvas.
 *   Links between other imported pages are converted to <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> if the text of the link matches the name of the page, or plain links otherwise. If the pages are not part of the import, the original `onenote:` link is kept.
 *   Tags (apart from to-do lists) are preserved by converting them to [inline icons](../../../Note%20Types/Text/Insert%20buttons/Icons.md), which are searchable by the icon's name and can be recolored like any other icon. Some icons are turned into emojis instead.
 

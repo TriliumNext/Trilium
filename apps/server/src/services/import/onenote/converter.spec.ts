@@ -3,7 +3,7 @@ import { cls, options as optionService } from "@triliumnext/core";
 import { parse } from "node-html-parser";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import converter from "./converter.js";
+import converter, { parseColor } from "./converter.js";
 
 beforeAll(() => {
     // The shared fixture DB predates `<u>` being allowlisted; align the sanitizer's allowed tags with
@@ -1030,6 +1030,16 @@ describe("convertPageLayout", () => {
         expect(layout).toEqual({ texts: [ { x: 48, y: 115, width: 624, html: "<p>Only <b>text</b></p>" } ], images: [] });
         expect(converter.convertPageLayout(`<body style="font-size:16px"></body>`)).toEqual({ fontSize: 16, texts: [], images: [] });
         expect(converter.convertPageLayout(`<body style="font-size:large"></body>`)).toEqual({ texts: [], images: [] });
+    });
+});
+
+describe("parseColor", () => {
+    it("parses the color forms OneNote emits, and nothing else", () => {
+        expect([ "#1353BA", "#333", "black", "rgb(54, 86, 35)" ].map((value) => parseColor(value)?.hex()))
+            .toEqual([ "#1353BA", "#333333", "#000000", "#365623" ]);
+        for (const value of [ "", "not-a-color", "#33", "#33g333", "url(x)" ]) {
+            expect(parseColor(value)).toBeNull();
+        }
     });
 });
 

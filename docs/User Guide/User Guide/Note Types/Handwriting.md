@@ -24,6 +24,7 @@ While the pen or the highlighter is selected, a rail on the side of the note set
 *   To change the thickness, select one of the three presets (_Fine_, _Medium_ or _Bold_), or adjust it in small steps with the <span class="tn-icon bx bx-plus"></span> and <span class="tn-icon bx bx-minus"></span> buttons. The button between them shows the current thickness and resets it when pressed.
 *   To change the color, select one of the five colors of the tool, or the last swatch (_Custom color..._) to pick any other.
 *   The first color of the pen, _Text color_, follows the theme: such ink is dark on a light theme and light on a dark one, so it stays readable when the theme changes.
+*   Any other color that would be hard to see is shown lighter in a dark theme (a dark blue becomes a light blue, keeping its hue), and darker in a light theme if it is nearly white. The note keeps the color as it was chosen.
 
 ### Pressure sensitivity
 

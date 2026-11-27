@@ -12,7 +12,7 @@
 import { dropRepeatedPoints, encodePoints, MAX_STROKE_SIZE, type SerializedStroke } from "@triliumnext/commons";
 import { HTMLElement, parse } from "node-html-parser";
 
-import { parseColor } from "./color.js";
+import { parseColor } from "./converter.js";
 
 /** How many pixels at 96 dpi each unit of an InkML channel is. */
 const PIXELS_PER_UNIT: Record<string, number> = {

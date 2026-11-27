@@ -243,6 +243,47 @@ export function pathToPoints(vertices: number[][], pressure: number): number[] {
     return points;
 }
 
+/**
+ * The HSL lightness, from 0 to 1, under which ink is too dark for a dark theme, and from which it
+ * is too light for a light one.
+ */
+const DARK_INK_MAX_LIGHTNESS = 0.5;
+const LIGHT_INK_MIN_LIGHTNESS = 0.9;
+
+/**
+ * Returns the color that ink of `color` is drawn in: the color itself, or, when it would not show
+ * up in the theme, its lightness mirrored by `reflectLightness()`. A dark theme mirrors dark ink,
+ * and a light theme mirrors near-white ink. A color not written as `#rgb` or `#rrggbb` is
+ * returned as it is.
+ */
+export function adaptInkColor(color: string, isDarkTheme: boolean) {
+    const rgb = parseHexColor(color);
+    if (!rgb) return color;
+    const lightness = (Math.max(...rgb) + Math.min(...rgb)) / 2 / 255;
+    const isHidden = isDarkTheme ? lightness < DARK_INK_MAX_LIGHTNESS : lightness >= LIGHT_INK_MIN_LIGHTNESS;
+    return isHidden ? reflectLightness(color) ?? color : color;
+}
+
+/**
+ * Returns `color` with its HSL lightness mirrored (L becomes 1 - L) and its hue and saturation
+ * kept, as `#rrggbb`, or `undefined` for a color not written as `#rgb` or `#rrggbb`. Mirroring L
+ * with H and S kept keeps the chroma, so each channel moves by the same `1 - max - min`.
+ */
+export function reflectLightness(color: string) {
+    const rgb = parseHexColor(color);
+    if (!rgb) return undefined;
+    const shift = 255 - Math.max(...rgb) - Math.min(...rgb);
+    return `#${rgb.map((channel) => (channel + shift).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Returns the red, green and blue of `#rgb` or `#rrggbb`, from 0 to 255. */
+function parseHexColor(color: string) {
+    const hex = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(color.trim())?.[1];
+    if (!hex) return undefined;
+    const full = hex.length === 3 ? [ ...hex ].map((digit) => digit + digit).join("") : hex;
+    return [ 0, 2, 4 ].map((start) => Number.parseInt(full.slice(start, start + 2), 16));
+}
+
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === "number" && Number.isFinite(value);
 }

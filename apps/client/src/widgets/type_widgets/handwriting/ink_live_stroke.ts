@@ -1,7 +1,7 @@
 import { lineToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
 
 import {
-    AUTO_COLOR, createStroke, getShortStrokeOutline, getStrokeOutline, HIGHLIGHTER_ALPHA, outlineStrokePoints,
+    createStroke, getShortStrokeOutline, getStrokeOutline, HIGHLIGHTER_ALPHA, outlineStrokePoints,
     outlineToPath, type Stroke, StrokeBuilder, trimPrediction
 } from "./ink_document";
 import { recognizeLine, shapeToPoints } from "./ink_shapes";
@@ -15,8 +15,8 @@ export interface LiveStrokeHost {
     applyWorldTransform(ctx: CanvasRenderingContext2D): void;
     /** The device pixels per world unit, and the device position of the world origin. */
     getWorldTransform(): { scale: number, x: number, y: number };
-    /** The color of a stroke of `AUTO_COLOR`. */
-    getAutoColor(): string;
+    /** The color that ink of `color` is drawn in, which follows the theme. */
+    getInkColor(color: string): string;
 }
 
 /** A stroke that `LiveStroke.finish()` ends, and the stroke as it was drawn if a hold made a shape of it. */
@@ -311,7 +311,7 @@ export default class LiveStroke {
      * the highlighter's transparency.
      */
     private fill(ctx: CanvasRenderingContext2D, stroke: Stroke, outline: number[][]) {
-        ctx.fillStyle = stroke.color === AUTO_COLOR ? this.host.getAutoColor() : stroke.color;
+        ctx.fillStyle = this.host.getInkColor(stroke.color);
         ctx.fill(outlineToPath(outline));
     }
 }

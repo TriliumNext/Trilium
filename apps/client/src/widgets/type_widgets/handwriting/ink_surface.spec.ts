@@ -477,6 +477,38 @@ describe("ink surface input", () => {
         expect(fills).not.toContain("rgb(240, 240, 240)");
     });
 
+    it("lightens dark ink in a dark theme, and keeps the color it was saved in", async () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        container.style.color = "rgb(0, 0, 0)";
+        container.style.backgroundColor = "rgb(255, 255, 255)";
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
+        const stroke = (color: string, order: number) => createStroke({
+            tool: "pen", color, size: 3, simulatePressure: false, points: [ 10, 10 + order * 20, 0.5, 60, 10 + order * 20, 0.5 ], order
+        });
+        // Dark blue, and a red that reads on both.
+        fills.length = 0;
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [ stroke("#004f8b", 0), stroke("#e64d4d", 1) ] });
+        expect(fills).toEqual([ "#004f8b", "#e64d4d" ]);
+
+        container.style.color = "rgb(240, 240, 240)";
+        container.style.backgroundColor = "rgb(20, 20, 20)";
+        fills.length = 0;
+        surface.refreshTheme();
+        expect(fills).toEqual([ "#74c3ff", "#e64d4d" ]);
+        expect(JSON.parse(surface.serialize()).objects.map(({ c }: { c?: string }) => c)).toEqual([ "#004f8b", "#e64d4d" ]);
+
+        // The stroke being drawn takes the same color as the finished one.
+        surface.load({ version: 2, paper: "ruled", layout: "infinite", strokes: [] });
+        surface.color = "#004f8b";
+        fills.length = 0;
+        pointer("pointerdown", "pen", 1, 100);
+        pointer("pointermove", "pen", 1, 140);
+        await nextFrame();
+        expect(fills).toContain("#74c3ff");
+        expect(fills).not.toContain("#004f8b");
+    });
+
     it("erases the parts of strokes the eraser covers, in one step to undo", () => {
         const strokes = () => parseInkDocument(surface.serialize()).strokes;
         const drag = (pointerId: number, fromX: number, toX: number) => {
