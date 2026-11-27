@@ -282,6 +282,33 @@ export const MEMO_PLUGINS: typeof Plugin[] = [
 ];
 
 /**
+ * `MEMO_PLUGINS` and the formatting of a page: headings, tables, to-do lists, images, and the size
+ * and the colors of the text. For the text boxes of a handwriting note, whose text can come from
+ * an imported page. Added to an `AttributeEditor` through `extraPlugins`, as the memo's set is.
+ */
+export const TEXT_BOX_PLUGINS: typeof Plugin[] = [
+    ...MEMO_PLUGINS,
+    Underline,
+    Subscript,
+    Superscript,
+    Heading,
+    HorizontalLine,
+    Alignment,
+    Font,
+    ListProperties,
+    TodoList,
+    Table,
+    TableToolbar,
+    TableProperties,
+    TableCellProperties,
+    TableColumnResize,
+    Image,
+    ImageCaption,
+    ImageStyle,
+    ImageResize
+];
+
+/**
  * The set of plugins that are required for the editor to work. This is used in normal text editors (floating or fixed toolbar) but not in the attribute editor.
  */
 export const COMMON_PLUGINS: typeof Plugin[] = [

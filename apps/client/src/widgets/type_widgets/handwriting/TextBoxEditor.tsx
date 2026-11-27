@@ -1,4 +1,4 @@
-import { AttributeEditor, type EditorConfig, MEMO_PLUGINS } from "@triliumnext/ckeditor5";
+import { AttributeEditor, type EditorConfig, TEXT_BOX_PLUGINS } from "@triliumnext/ckeditor5";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { useRef } from "preact/hooks";
 
@@ -6,12 +6,13 @@ import link from "../../../services/link";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor";
 import { useTriliumOption } from "../../react/hooks/options";
 
-/** What the toolbar over a selection offers, which `MEMO_PLUGINS` provides. */
+/** What the toolbar over a selection offers, which `TEXT_BOX_PLUGINS` provides. */
 const TOOLBAR_ITEMS = [
-    "bold", "italic", "strikethrough", "code",
+    "bold", "italic", "underline", "strikethrough", "code",
+    "|", "fontSize", "fontColor", "fontBackgroundColor",
     "|", "link",
-    "|", "bulletedList", "numberedList",
-    "|", "blockQuote", "codeBlock"
+    "|", "bulletedList", "numberedList", "todoList",
+    "|", "insertTable", "blockQuote", "codeBlock"
 ];
 
 interface TextBoxEditorProps {
@@ -23,8 +24,8 @@ interface TextBoxEditorProps {
 }
 
 /**
- * The text editor of a text box: the editor of a mind map's memos, with a toolbar over the
- * selection. `TextBoxLayer` loads this module, and the text editor with it, when a box can first
+ * The text editor of a text box: an `AttributeEditor` with `TEXT_BOX_PLUGINS`, which keep the
+ * formatting of an imported page, and a toolbar over the selection. `TextBoxLayer` loads this module, and the text editor with it, when a box can first
  * be edited.
  */
 export default function TextBoxEditor({ html, onReady, onChange }: TextBoxEditorProps) {
@@ -53,8 +54,9 @@ export default function TextBoxEditor({ html, onReady, onChange }: TextBoxEditor
 
 function buildConfig(): EditorConfig {
     return {
-        extraPlugins: MEMO_PLUGINS,
+        extraPlugins: TEXT_BOX_PLUGINS,
         toolbar: { items: TOOLBAR_ITEMS },
+        table: { contentToolbar: [ "tableColumn", "tableRow", "mergeTableCells" ] },
         referenceLink: {
             getTitle: link.getReferenceLinkTitle,
             getTitleSync: link.getReferenceLinkTitleSync

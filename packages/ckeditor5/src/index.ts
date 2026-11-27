@@ -5,7 +5,7 @@ import type { PasteTarget } from "./plugins/cuttonote.js";
 import { CLASSIC_EDITOR_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 export { onTextEditorError } from "./editor_errors.js";
-export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
+export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS, TEXT_BOX_PLUGINS } from "./plugins.js";
 export type { CKEditorError, EditorConfig, FindResultType, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, TextTransformationConfig, TextTypingTransformationDescription } from "ckeditor5";
 export type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 export type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
