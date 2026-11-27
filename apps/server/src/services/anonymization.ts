@@ -38,9 +38,13 @@ DELETE FROM sessions;
 
 /**
  * Deletes every notification with what belongs to it, and the entity changes of the four tables
- * that sync: the change of an erased notification keeps its time and the hash of its ID.
+ * that sync: the change of an erased notification keeps its time and the hash of its ID. Blanks
+ * the owned labels of channel notes, where a channel keeps its settings.
  */
 const NOTIFICATIONS_SCRIPT = /*sql*/`
+UPDATE attributes SET value = '' WHERE type = 'label' AND noteId IN
+                    (SELECT noteId FROM attributes WHERE type = 'label'
+                    AND name IN ('notificationChannel', 'disabled:notificationChannel'));
 DELETE FROM notifications;
 DELETE FROM notification_marks;
 DELETE FROM notification_private_texts;

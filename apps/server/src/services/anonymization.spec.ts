@@ -56,7 +56,10 @@ const MARKERS = {
     privateText: "MARKER-PRIVATE-TEXT",
     channelRecord: "MARKER-CHANNEL-RECORD",
     delivery: "MARKER-DELIVERY",
-    erasedNotification: "MARKERERASEDNOTIFICATION"
+    erasedNotification: "MARKERERASEDNOTIFICATION",
+    channelSetting: "MARKER-CHANNEL-SETTING",
+    channelBuiltInLabel: "MARKER-CHANNEL-ICON",
+    disabledChannelSetting: "MARKER-DISABLED-CHANNEL-SETTING"
 };
 
 /** The tables of notifications, and the entity name of each that syncs. */
@@ -127,6 +130,16 @@ function insertNotificationRows(db: Database.Database) {
         activationId, revision, graceTime, dueAt, status, utcDateCreated)
         VALUES (?, 'n1', 'c1', 'a1', 'v1', 0, ?, 'pending', ?)`)
         .run(MARKERS.delivery, date, date);
+
+    // The owned labels of channel notes, where a channel keeps its settings.
+    const insertLabel = db.prepare(/*sql*/`INSERT INTO attributes (attributeId, noteId, type, name,
+        value, utcDateModified, isDeleted) VALUES (?, ?, 'label', ?, ?, ?, 0)`);
+    insertLabel.run("channelLabel", "channelNote", "notificationChannel", "", date);
+    insertLabel.run("channelSetting", "channelNote", "endpoint", MARKERS.channelSetting, date);
+    insertLabel.run("channelIcon", "channelNote", "iconClass", MARKERS.channelBuiltInLabel, date);
+    insertLabel.run("disabledLabel", "disabledNote", "disabled:notificationChannel", "", date);
+    insertLabel.run("disabledSetting", "disabledNote", "token", MARKERS.disabledChannelSetting,
+        date);
 
     const insertChange = db.prepare(/*sql*/`INSERT INTO entity_changes (entityName, entityId, hash,
         isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)

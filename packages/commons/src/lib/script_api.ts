@@ -1190,6 +1190,34 @@ export type ScriptNotificationActionHandler = (
     context: ScriptNotificationActionContext
 ) => ScriptNotificationActionResult | Promise<ScriptNotificationActionResult>;
 
+/**
+ * What a notification channel script receives as `api.notification`. A sensitive notification
+ * comes with its public text and without `noteId`.
+ */
+export interface ScriptChannelPayload {
+    /** The delivery key, the same for every attempt of a delivery: a receiver drops a repeat. */
+    key: string;
+    title: string;
+    description?: string;
+    category: "general" | "reminder" | "softwareUpdate";
+    attentionLevel: "low" | "medium" | "high";
+    raisedAt: string;
+    noteId?: string;
+}
+
+/** `api.delivery` of a notification channel script: one attempt. */
+export interface ScriptChannelDelivery {
+    key: string;
+    /** 1 for the first attempt. */
+    attempt: number;
+    /**
+     * Aborts when the attempt times out, after 30 seconds. Pass it to what the script waits for,
+     * such as `fetch(url, { signal })`: the channel takes no other attempt until the script's
+     * promise settles.
+     */
+    signal: AbortSignal;
+}
+
 /** `api.notifications`: raises and changes the notifications that the bell shows. */
 export interface ScriptNotificationApi {
     /**
@@ -1670,6 +1698,20 @@ export interface FrontendApi {
      * stores what it says on every device that syncs.
      */
     notifications: ScriptFrontendNotificationApi;
+
+    /**
+     * In a notification channel script, the notification that the attempt forwards. Absent in
+     * other scripts.
+     */
+    notification?: ScriptChannelPayload;
+    /** In a notification channel script, the attempt. Absent in other scripts. */
+    delivery?: ScriptChannelDelivery;
+    /**
+     * In a notification channel script, the owned labels of the channel note as its enabling
+     * reviewed them. Read a destination from here: `getLabelValue()` also answers with inherited
+     * labels, which no review covers.
+     */
+    channelSettings?: Record<string, string>;
 }
 
 /** A branch (note→parent placement) as seen by backend scripts (subset of `BBranch`). */
@@ -3353,4 +3395,18 @@ export interface BackendApi {
      * into the bell and into the channels that forward notifications.
      */
     notifications: ScriptNotificationApi;
+
+    /**
+     * In a notification channel script, the notification that the attempt forwards. Absent in
+     * other scripts.
+     */
+    notification?: ScriptChannelPayload;
+    /** In a notification channel script, the attempt. Absent in other scripts. */
+    delivery?: ScriptChannelDelivery;
+    /**
+     * In a notification channel script, the owned labels of the channel note as its enabling
+     * reviewed them. Read a destination from here: `getLabelValue()` also answers with inherited
+     * labels, which no review covers.
+     */
+    channelSettings?: Record<string, string>;
 }

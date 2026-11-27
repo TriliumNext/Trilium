@@ -1,4 +1,7 @@
-import type { FrontendNotificationApi, ToMarkdownResponse } from "@triliumnext/commons";
+import type {
+    FrontendNotificationApi, NotificationChannelDelivery, NotificationChannelPayload,
+    ToMarkdownResponse
+} from "@triliumnext/commons";
 import { BUILT_IN_NOTIFICATION_PREFIX } from "@triliumnext/commons/src/lib/notifications.js";
 import type {
     FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote,
@@ -222,13 +225,30 @@ export interface Api {
     preact: typeof preactAPI;
 
     notifications: FrontendNotificationApi;
+
+    /** In a frontend notification channel: the notification that it forwards. */
+    notification?: NotificationChannelPayload;
+
+    /** In a frontend notification channel: this attempt, whose signal aborts after 30 seconds. */
+    delivery?: NotificationChannelDelivery;
+
+    /**
+     * In a frontend notification channel: the owned labels of its note, as its enabling has them.
+     */
+    channelSettings?: Record<string, string>;
 }
+
+/** What a run of a frontend notification channel adds to the API of the channel's note. */
+export type ScriptApiParams = Required<Pick<Api, "notification" | "delivery" | "channelSettings">>;
 
 /**
  * <p>This is the main frontend API interface for scripts. All the properties and methods are published in the "api" object
  * available in the JS frontend notes. You can use e.g. <code>api.showMessage(api.startNote.title);</code></p>
  */
-function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, originEntity: Entity | null = null, $container: JQuery<HTMLElement> | null = null) {
+function FrontendScriptApi(
+    this: Api, startNote: FNote, currentNote: FNote, originEntity: Entity | null = null,
+    $container: JQuery<HTMLElement> | null = null, params?: ScriptApiParams
+) {
     this.$container = $container;
     this.startNote = startNote;
     this.currentNote = currentNote;
@@ -506,10 +526,19 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
 
     this.preact = preactAPI;
     this.notifications = scriptNotifications;
+
+    if (params) {
+        this.notification = params.notification;
+        this.delivery = params.delivery;
+        this.channelSettings = params.channelSettings;
+    }
 }
 
 export default FrontendScriptApi as any as {
-    new(startNote: FNote, currentNote: FNote, originEntity: Entity | null, $container: JQuery<HTMLElement> | null): Api;
+    new(
+        startNote: FNote, currentNote: FNote, originEntity: Entity | null,
+        $container: JQuery<HTMLElement> | null, params?: ScriptApiParams
+    ): Api;
 };
 
 /** The names that a notification can give as its handler. */

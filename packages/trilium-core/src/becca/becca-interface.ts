@@ -254,6 +254,12 @@ export default class Becca {
             : null;
     }
 
+    getNotificationChannelRecord(recordId: string): BNotificationChannelRecord | null {
+        return Object.hasOwn(this.notificationChannelRecords, recordId)
+            ? this.notificationChannelRecords[recordId]
+            : null;
+    }
+
     /** Drops an erased notification from the cache, with its marks and its private text. */
     removeNotification(notificationId: string) {
         delete this.notifications[notificationId];

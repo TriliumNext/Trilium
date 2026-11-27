@@ -10,13 +10,20 @@ import {
     NOTIFICATION_ATTENTION_LEVELS,
     NOTIFICATION_CATEGORIES,
     NOTIFICATION_CHANNEL_RECORD_KINDS,
+    NOTIFICATION_DELIVERY_ERROR_CODES,
+    NOTIFICATION_GRACE_TIME_MAX_SECONDS,
     NOTIFICATION_MARK_KINDS,
     NOTIFICATION_MAX_REFS,
+    NOTIFICATION_PROTECTED_NOTES_SETTINGS,
     NOTIFICATION_TYPES,
     TRANSIENT_NOTIFICATION_MAX_BYTES,
     type NotificationAction,
     type NotificationAttentionLevel,
     type NotificationCategory,
+    type NotificationChannelConfig,
+    type NotificationChannelRecordKind,
+    type NotificationChannelSettings,
+    type NotificationChannelStatus,
     type NotificationContent,
     type NotificationErrorCode,
     type NotificationMarkKind,
@@ -40,6 +47,13 @@ export const PLAIN_PRIVATE_TEXT_MAX_BYTES = 8 * 1024;
 export const PRIVATE_CONTENT_MAX_BYTES = 11 * 1024;
 export const CHANNEL_RECORD_MAX_BYTES = 32 * 1024;
 export const MAX_ACTIONS = 5;
+const CHANNEL_TITLE_MAX_LENGTH = 200;
+/** The settings records that one change of the settings can name as read. */
+const SETTINGS_MAX_READS = 100;
+const MAX_SNAPSHOT_ATTRIBUTES = 200;
+const STATUS_DATE_FIELDS = [
+    "lastInvokedAt", "lastCompletedAt", "runningSince", "addressChangedAt"
+] as const;
 
 const ID_HASH_LENGTH = 12;
 const TIME_KEY_LENGTH = 9;
@@ -753,6 +767,10 @@ export function checkPrivateTextRow(row: unknown): NotificationErrorCode | null 
     return parsePrivateContent(content) ? null : "invalid-content";
 }
 
+/**
+ * Checks a row of `notification_channel_records`: its content by its kind, and a key that the
+ * kind derives from its channel or its activation.
+ */
 export function checkChannelRecordRow(row: unknown): NotificationErrorCode | null {
     if (!isRowOf(row, CHANNEL_RECORD_COLUMNS)) {
         return "invalid-row";
@@ -764,7 +782,306 @@ export function checkChannelRecordRow(row: unknown): NotificationErrorCode | nul
         || !isDates(utcDateCreated, utcDateModified)) {
         return "invalid-row";
     }
-    return parseJsonObject(content, CHANNEL_RECORD_MAX_BYTES) ? null : "invalid-content";
+
+    const parsed = parseChannelRecord(kind, content);
+    if (!parsed) {
+        return "invalid-content";
+    }
+    const expectedId = getExpectedRecordId(kind, channelId, parsed);
+    return expectedId === null || expectedId === recordId ? null : "invalid-key";
+}
+
+/** The definition of a built-in channel, in its `channel` record. */
+export interface ChannelDefinition {
+    v: 1;
+    type: string;
+    title: string;
+    config: NotificationChannelConfig;
+    /** The configuration ID of a webhook's address, which the forwarding instance writes. */
+    configurationId?: string;
+    isDeleted?: boolean;
+}
+
+/** An owned attribute of a channel note, as an enabling reviewed it. */
+export interface AttributeSnapshot {
+    type: "label" | "relation";
+    name: string;
+    value: string;
+    isInheritable: boolean;
+}
+
+/** The `activation` record of a channel: the enabled activation, or none after a disabling. */
+export interface ActivationRecord {
+    v: 1;
+    activationId: string | null;
+    /** One above the highest that the writing instance knew, a whole number below 2^53. */
+    sequence: number;
+    revision: string | null;
+    /** For a script: the revision of the record without the channel note's own attributes. */
+    restRevision?: string;
+    /** For a script: the label that makes its note a channel. */
+    label?: { attributeId: string; utcDateModified: string };
+    /** For a script: the owned attributes of the channel note. */
+    ownedAttributes?: AttributeSnapshot[];
+    /** The settings that the enabling confirmed. */
+    settings: NotificationChannelSettings;
+}
+
+/** A disabling, which no write replaces. */
+export interface RevocationRecord {
+    v: 1;
+    activationId: string;
+    revokedAt: string;
+}
+
+/** A change of the settings of an activation, which names the settings records that it read. */
+export interface SettingsRecord {
+    v: 1;
+    activationId: string;
+    settings: NotificationChannelSettings;
+    reads: string[];
+}
+
+export interface StatusRecord {
+    v: 1;
+    status: NotificationChannelStatus;
+}
+
+export type ChannelRecordContent =
+    ChannelDefinition | ActivationRecord | RevocationRecord | SettingsRecord | StatusRecord;
+
+/** The content of each kind of record. */
+export interface ChannelRecordContents {
+    channel: ChannelDefinition;
+    activation: ActivationRecord;
+    revocation: RevocationRecord;
+    settings: SettingsRecord;
+    status: StatusRecord;
+}
+
+/** The key of the `activation` record of a channel, the same on every instance. */
+export function getActivationRecordId(channelId: string) {
+    return hashedBlobId(`activation|${channelId}`);
+}
+
+export function getStatusRecordId(channelId: string) {
+    return hashedBlobId(`status|${channelId}`);
+}
+
+export function getRevocationRecordId(activationId: string) {
+    return hashedBlobId(`revocation|${activationId}`);
+}
+
+function getExpectedRecordId(
+    kind: NotificationChannelRecordKind,
+    channelId: string,
+    content: ChannelRecordContent
+) {
+    switch (kind) {
+        case "channel":
+            return channelId;
+        case "activation":
+            return getActivationRecordId(channelId);
+        case "status":
+            return getStatusRecordId(channelId);
+        case "revocation":
+            return getRevocationRecordId((content as RevocationRecord).activationId);
+        case "settings":
+            return null;
+    }
+}
+
+/** Reads the content of a channel record of a kind, or `null` where it fails a check. */
+export function parseChannelRecord<K extends NotificationChannelRecordKind>(
+    kind: K,
+    content: string
+): ChannelRecordContents[K] | null {
+    const value = parseJsonObject(content, CHANNEL_RECORD_MAX_BYTES);
+    if (!value || value.v !== 1) {
+        return null;
+    }
+
+    switch (kind) {
+        case "channel":
+            return parseDefinition(value) as ChannelRecordContents[K] | null;
+        case "activation":
+            return parseActivation(value) as ChannelRecordContents[K] | null;
+        case "revocation":
+            return (isToken(value.activationId) && parseUtcDateTime(value.revokedAt) !== null
+                ? { v: 1, activationId: value.activationId, revokedAt: value.revokedAt }
+                : null) as ChannelRecordContents[K] | null;
+        case "settings":
+            return parseSettingsRecord(value) as ChannelRecordContents[K] | null;
+        case "status":
+            return { v: 1, status: parseStatus(value.status) } as ChannelRecordContents[K];
+    }
+    return null;
+}
+
+function parseDefinition(value: Record<string, unknown>): ChannelDefinition | null {
+    const { type, title, config, configurationId, isDeleted } = value;
+    if (!isToken(type) || !isLineText(title) || title.length > CHANNEL_TITLE_MAX_LENGTH
+        || !isPlainObject(config) || !isOptional(config.template, isString)
+        || !isOptional(configurationId, isToken) || !isOptional(isDeleted, isBoolean)) {
+        return null;
+    }
+
+    const definition: ChannelDefinition = { v: 1, type, title, config: {} };
+    if (config.template !== undefined) {
+        definition.config.template = config.template;
+    }
+    if (configurationId !== undefined) {
+        definition.configurationId = configurationId;
+    }
+    if (isDeleted) {
+        definition.isDeleted = true;
+    }
+    return definition;
+}
+
+function parseActivation(value: Record<string, unknown>): ActivationRecord | null {
+    const { activationId, sequence, revision, restRevision, label, ownedAttributes } = value;
+    const settings = parseSettings(value.settings);
+    if (!isNullOr(activationId, isToken) || !isSequence(sequence) || !isNullOr(revision, isToken)
+        || !isOptional(restRevision, isToken) || !settings
+        || !isOptional(label, isLabelReference)
+        || !isOptional(ownedAttributes, isAttributeList)) {
+        return null;
+    }
+
+    const activation: ActivationRecord = { v: 1, activationId, sequence, revision, settings };
+    if (restRevision !== undefined) {
+        activation.restRevision = restRevision;
+    }
+    if (label !== undefined) {
+        const { attributeId, utcDateModified } = label;
+        activation.label = { attributeId, utcDateModified };
+    }
+    if (ownedAttributes !== undefined) {
+        activation.ownedAttributes = ownedAttributes.map(
+            ({ type, name, value: attributeValue, isInheritable }) =>
+                ({ type, name, value: attributeValue, isInheritable }));
+    }
+    return activation;
+}
+
+function parseSettingsRecord(value: Record<string, unknown>): SettingsRecord | null {
+    const { activationId, reads } = value;
+    const settings = parseSettings(value.settings);
+    if (!isToken(activationId) || !settings || !Array.isArray(reads)
+        || reads.length > SETTINGS_MAX_READS || !reads.every(isNoteId)) {
+        return null;
+    }
+    return { v: 1, activationId, settings, reads: [ ...reads ] };
+}
+
+/** Reads the settings of a channel, or `null` where they fail a check. */
+export function parseSettings(value: unknown): NotificationChannelSettings | null {
+    if (!isPlainObject(value)) {
+        return null;
+    }
+
+    const { graceTime, protectedNotes } = value;
+    if (!isGraceTime(graceTime)
+        || !isOneOf(NOTIFICATION_PROTECTED_NOTES_SETTINGS, protectedNotes)) {
+        return null;
+    }
+    return { graceTime, protectedNotes };
+}
+
+/** Whether a value is a grace time: whole seconds from zero to 12 hours. */
+export function isGraceTime(value: unknown): value is number {
+    return Number.isInteger(value) && (value as number) >= 0
+        && (value as number) <= NOTIFICATION_GRACE_TIME_MAX_SECONDS;
+}
+
+/**
+ * Reads a status that a peer can have written: a field that fails a check is left out, and a
+ * count that fails one is zero.
+ */
+function parseStatus(value: unknown): NotificationChannelStatus {
+    const status = isPlainObject(value) ? value : {};
+    const counts = isPlainObject(status.counts) ? status.counts : {};
+    const parsed: NotificationChannelStatus = {
+        counts: {
+            sent: toCount(counts.sent),
+            sentPublic: toCount(counts.sentPublic),
+            skipped: toCount(counts.skipped),
+            failed: toCount(counts.failed),
+            expired: toCount(counts.expired),
+            waitingForBudget: toCount(counts.waitingForBudget)
+        },
+        runsBackendScripts: status.runsBackendScripts === true,
+        recordHoldsActivation: status.recordHoldsActivation === true,
+        recordSequence: isSequence(status.recordSequence) ? status.recordSequence : 0
+    };
+    for (const field of STATUS_DATE_FIELDS) {
+        const date = status[field];
+        if (parseUtcDateTime(date) !== null) {
+            parsed[field] = date as string;
+        }
+    }
+    if (toCount(status.durationMs) > 0) {
+        parsed.durationMs = toCount(status.durationMs);
+    }
+    if (isOneOf(NOTIFICATION_DELIVERY_ERROR_CODES, status.lastErrorCode)) {
+        parsed.lastErrorCode = status.lastErrorCode;
+    }
+    if (Number.isInteger(status.lastHttpStatus)) {
+        parsed.lastHttpStatus = status.lastHttpStatus as number;
+    }
+    return parsed;
+}
+
+/** Whether a value is a sequence of a channel switching: a whole number from zero below 2^53. */
+export function isSequence(value: unknown): value is number {
+    return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+/**
+ * The settings that hold for an activation: those of the settings records that no other record
+ * of the activation read, and of two or more the stricter value of each, the longer grace time
+ * and `none` before `public`. Without such a record, those that the enabling confirmed.
+ */
+export function resolveSettings(
+    activation: Pick<ActivationRecord, "activationId" | "settings">,
+    records: { recordId: string; content: SettingsRecord }[]
+): { settings: NotificationChannelSettings; currentRecordIds: string[] } {
+    const ofActivation = records.filter(({ content }) =>
+        content.activationId === activation.activationId);
+    const read = new Set(ofActivation.flatMap(({ content }) => content.reads));
+    const current = ofActivation.filter(({ recordId }) => !read.has(recordId));
+    if (current.length === 0) {
+        return { settings: activation.settings, currentRecordIds: [] };
+    }
+
+    return {
+        settings: {
+            graceTime: Math.max(...current.map(({ content }) => content.settings.graceTime)),
+            protectedNotes: current.some(({ content }) =>
+                content.settings.protectedNotes === "none") ? "none" : "public"
+        },
+        currentRecordIds: current.map(({ recordId }) => recordId).sort()
+    };
+}
+
+function isLabelReference(
+    value: unknown
+): value is { attributeId: string; utcDateModified: string } {
+    return isPlainObject(value) && isNoteId(value.attributeId)
+        && parseUtcDateTime(value.utcDateModified) !== null;
+}
+
+function isAttributeList(value: unknown): value is AttributeSnapshot[] {
+    return Array.isArray(value) && value.length <= MAX_SNAPSHOT_ATTRIBUTES
+        && value.every((attribute) => isPlainObject(attribute)
+            && (attribute.type === "label" || attribute.type === "relation")
+            && isString(attribute.name) && isString(attribute.value)
+            && isBoolean(attribute.isInheritable));
+}
+
+function toCount(value: unknown) {
+    return Number.isSafeInteger(value) && (value as number) >= 0 ? value as number : 0;
 }
 
 const SYNCED_ROW_CHECKS = new Map([

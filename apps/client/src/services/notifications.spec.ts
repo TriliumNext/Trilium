@@ -13,6 +13,9 @@ const ws = vi.hoisted(() => ({
     logError: vi.fn()
 }));
 const alerts = vi.hoisted(() => ({ showAlert: vi.fn(async (_notificationId: string) => {}) }));
+const channels = vi.hoisted(() => ({
+    runForwardedDelivery: vi.fn(async (_message: unknown) => {})
+}));
 
 vi.mock("./ws.js", () => {
     const subscribeToMessages = (handler: (message: WebSocketMessage) => void) => {
@@ -29,6 +32,7 @@ vi.mock("./ws.js", () => {
     };
 });
 vi.mock("./notification_alerts.js", () => alerts);
+vi.mock("./notification_channels.js", () => channels);
 
 import {
     NotificationRequestError, NotificationStore, NotificationView
@@ -531,6 +535,22 @@ describe("NotificationStore", () => {
         ws.messageHandlers[0]({ type: "notification-alert", notificationId: "b" });
         await vi.waitFor(() => expect(alerts.showAlert).toHaveBeenCalledOnce());
         expect(alerts.showAlert).toHaveBeenCalledWith("b");
+    });
+
+    it("hands an announced delivery to the channel runner, and nothing else", async () => {
+        channels.runForwardedDelivery.mockClear();
+        servePages([], 1);
+        const store = new NotificationStore();
+        store.start();
+        ws.messageHandlers[0]({ type: "notification-alert", notificationId: "a" });
+        ws.messageHandlers[0]({ type: "notifications-due" });
+        const forward = {
+            type: "notification-forward", deliveryKey: "k1", channelId: "c1"
+        } as const;
+        ws.messageHandlers[0](forward);
+
+        await vi.waitFor(() => expect(channels.runForwardedDelivery).toHaveBeenCalledOnce());
+        expect(channels.runForwardedDelivery).toHaveBeenCalledWith(forward);
     });
 
     it("waits for a notification to reach it, or gives up", async () => {

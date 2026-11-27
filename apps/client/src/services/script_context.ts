@@ -1,8 +1,14 @@
-import type { Entity } from "./frontend_script_api.js";
+import type { Entity, ScriptApiParams } from "./frontend_script_api.js";
 import utils from "./utils.js";
 import froca from "./froca.js";
 
-async function ScriptContext(startNoteId: string, allNoteIds: string[], originEntity: Entity | null = null, $container: JQuery<HTMLElement> | null = null) {
+/**
+ * @param params what a run of a frontend notification channel adds to the API of the start note.
+ */
+async function ScriptContext(
+    startNoteId: string, allNoteIds: string[], originEntity: Entity | null = null,
+    $container: JQuery<HTMLElement> | null = null, params?: ScriptApiParams
+) {
     const modules: Record<string, { exports: unknown }> = {};
 
     await froca.initializedPromise;
@@ -19,7 +25,10 @@ async function ScriptContext(startNoteId: string, allNoteIds: string[], originEn
     return {
         modules: modules,
         notes: utils.toObject(allNotes, (note) => [note.noteId, note]),
-        apis: utils.toObject(allNotes, (note) => [note.noteId, new FrontendScriptApi(startNote, note, originEntity, $container)]),
+        apis: utils.toObject(allNotes, (note) => [note.noteId, new FrontendScriptApi(
+            startNote, note, originEntity, $container,
+            note.noteId === startNoteId ? params : undefined
+        )]),
         require: (moduleNoteIds: string) => {
             return (moduleName: string) => {
                 const candidates = allNotes.filter((note) => moduleNoteIds.includes(note.noteId));

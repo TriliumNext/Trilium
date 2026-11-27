@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
     writeCpuProfile: vi.fn(),
     registerOcrHandlers: vi.fn(),
     registerServerLlmExtensions: vi.fn(),
+    registerWebhookChannelType: vi.fn(),
     registerPdfTocGenerator: vi.fn(),
     listListeningUrls: vi.fn(),
     installProcessErrorHandlers: vi.fn(),
@@ -82,6 +83,9 @@ vi.mock("./services/handlers.js", () => ({ registerOcrHandlers: mocks.registerOc
 vi.mock("./services/host.js", () => ({ get default() { return state.host; } }));
 vi.mock("./services/port.js", () => ({ get default() { return state.port; } }));
 vi.mock("./services/llm/index.js", () => ({ registerServerLlmExtensions: mocks.registerServerLlmExtensions }));
+vi.mock("./services/notifications/notification_secrets.js", () => ({
+    registerWebhookChannelType: mocks.registerWebhookChannelType
+}));
 vi.mock("./services/toc/pdf.js", () => ({ registerPdfTocGenerator: mocks.registerPdfTocGenerator }));
 vi.mock("./services/network_addresses.js", () => ({ listListeningUrls: mocks.listListeningUrls }));
 vi.mock("./services/process_errors.js", () => ({
@@ -208,6 +212,8 @@ describe("startTriliumServer", () => {
         expect(state.messaging.attachToHttpServer)
             .toHaveBeenCalledWith(server, mocks.sessionParser, mocks.isValidCsrfToken);
         expect(mocks.installProcessErrorHandlers.mock.invocationCallOrder[0])
+            .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
+        expect(mocks.registerWebhookChannelType.mock.invocationCallOrder[0])
             .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
         expect(mocks.removeLeftoverStagingFiles).toHaveBeenCalledOnce();
         const steps = [

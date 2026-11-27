@@ -271,6 +271,23 @@ export const NOTIFICATION_ERROR_CODES = [
     "missing-row",
     /** An erasure of a mark or a private text, which are deleted with their notification. */
     "erasure-refused",
+    /**
+     * An instance took ten enablings or ten changes of the settings of the channel in the last
+     * hour, or five test sends in the last minute.
+     */
+    "rate-limit",
+    /** The address of a webhook is entered on the forwarding instance only. */
+    "not-forwarding",
+    /** The route asks for the password, and none is set. */
+    "password-not-set",
+    /** The type of channel does not run on this runtime. */
+    "type-unavailable",
+    /** The server runs in safe mode, which runs no code of a channel. */
+    "safe-mode",
+    /** A note of the channel's bundle has content that is not available. */
+    "not-runnable",
+    /** A body template that is not JSON, or with a placeholder outside a string. */
+    "invalid-template",
     /** An error that is not one of the above, such as a failed write. */
     "internal"
 ] as const;

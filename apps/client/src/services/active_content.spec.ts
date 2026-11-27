@@ -124,6 +124,7 @@ describe("CONTENT_CATEGORIES", () => {
             "renderNotes",
             "eventHandlers",
             "endpoints",
+            "notificationChannels",
             "backendScripts"
         ]);
     });

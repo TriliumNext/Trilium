@@ -424,8 +424,10 @@ async function initialize(): Promise<void> {
             coreModule.sync.startSyncTimer();
             coreModule.scheduler.startScheduler();
             const { becca_loader, notifications } = coreModule;
+            const { default: SlotRecordPort } = await import("./lightweight/delivery_record_slots.js");
+            notifications.initDeliveryRecordPort(new SlotRecordPort());
             void becca_loader.beccaLoaded
-                .then(() => notifications.getNotificationService().start());
+                .then(() => notifications.startNotifications());
 
             logService.info("[Worker] Initialization complete");
             // Past this point an escaped error is one background task's problem

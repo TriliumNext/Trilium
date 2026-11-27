@@ -1,13 +1,15 @@
 import {
-    type AttributeRow, dayjs, formatLogMessage, type NotificationApi, type NotificationInput,
+    type AttributeRow, dayjs, formatLogMessage, type NotificationApi,
+    type NotificationChannelDelivery, type NotificationChannelPayload, type NotificationInput,
     type NotificationPatch, type TransientNotification, type TransientNotificationInput,
     type TriliumNotification
 } from "@triliumnext/commons";
 import type {
     BackendApi as PublicBackendApi, ScriptAppInfo, ScriptBAttachment, ScriptBEtapiToken,
-    ScriptBNote as PublicScriptBNote, ScriptBOption, ScriptNotification, ScriptNotificationApi,
-    ScriptNotificationInput, ScriptNotificationPatch, ScriptRequest, ScriptResponse,
-    ScriptSearchParams, ScriptSql, ScriptTransientNotification, ScriptTransientNotificationInput
+    ScriptBNote as PublicScriptBNote, ScriptBOption, ScriptChannelDelivery, ScriptChannelPayload,
+    ScriptNotification, ScriptNotificationApi, ScriptNotificationInput, ScriptNotificationPatch,
+    ScriptRequest, ScriptResponse, ScriptSearchParams, ScriptSql, ScriptTransientNotification,
+    ScriptTransientNotificationInput
 } from "@triliumnext/commons/src/lib/script_api.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import Becca from "../becca/becca-interface";
@@ -244,6 +246,13 @@ export interface Api {
     duplicateSubtree(origNoteId: string, newParentNoteId: string): { note: BNote; branch: BBranch; }
 
     notifications: NotificationApi;
+
+    /** In a notification channel script, the notification that the attempt forwards. */
+    notification?: NotificationChannelPayload;
+    /** In a notification channel script, the attempt. */
+    delivery?: NotificationChannelDelivery;
+    /** In a notification channel script, the owned labels of the channel note, as enabled. */
+    channelSettings?: Record<string, string>;
 
     /**
      * This object contains "at your risk" and "no BC guarantees" objects for advanced use cases.
@@ -610,7 +619,9 @@ type _NotificationDrift =
     | _Mismatch<ScriptNotification, TriliumNotification>
     | _Mismatch<ScriptNotificationPatch, NotificationPatch>
     | _Mismatch<ScriptTransientNotificationInput, TransientNotificationInput>
-    | _Mismatch<ScriptTransientNotification, TransientNotification>;
+    | _Mismatch<ScriptTransientNotification, TransientNotification>
+    | _Mismatch<ScriptChannelPayload, NotificationChannelPayload>
+    | _Mismatch<ScriptChannelDelivery, NotificationChannelDelivery>;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _notificationDriftGuard: [_NotificationDrift] extends [never]
     ? true

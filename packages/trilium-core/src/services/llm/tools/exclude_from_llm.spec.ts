@@ -131,3 +131,42 @@ describe("excludeFromLlm", () => {
             .toEqual({ error: "Note contains notes excluded from the assistant and cannot be deleted" });
     });
 });
+
+describe("the notes of a notification channel", () => {
+    beforeEach(() => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            children: [
+                {
+                    id: "channel", title: "Channel", content: "return 1;",
+                    "#notificationChannel": "", "~configWidget": "widget",
+                    children: [ { id: "module", title: "Module", content: "body" } ]
+                },
+                {
+                    id: "widget", title: "Widget", content: "body",
+                    children: [ { id: "widgetPart", title: "Widget part", content: "body" } ]
+                },
+                { id: "plain", title: "Plain", content: "body", "~configWidget": "notAWidget" },
+                { id: "notAWidget", title: "Not a widget of a channel", content: "body" }
+            ]
+        });
+    });
+
+    it("hides the channel note, the notes below it, and its widget note with its subtree", () => {
+        for (const noteId of [ "channel", "module", "widget", "widgetPart" ]) {
+            expect(isExcludedFromLlm(becca.getNoteOrThrow(noteId)), noteId).toBe(true);
+            expect(run("get_note", { noteId })).toEqual(NOT_FOUND);
+        }
+        for (const noteId of [ "plain", "notAWidget" ]) {
+            expect(isExcludedFromLlm(becca.getNoteOrThrow(noteId)), noteId).toBe(false);
+        }
+
+        findResultsMock.mockReturnValue([
+            { noteId: "channel" }, { noteId: "widgetPart" }, { noteId: "plain" },
+            { noteId: "module" }
+        ]);
+        expect(run("search_notes", { query: "x" }).results.map((r: { noteId: string }) => r.noteId))
+            .toEqual([ "plain" ]);
+    });
+});

@@ -6,6 +6,7 @@ import consistencyChecksService from "../../services/consistency_checks.js";
 import contentHashService from "../../services/content_hash.js";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
+import { getNotificationForwarder } from "../../services/notifications/index.js";
 import optionService from "../../services/options.js";
 import { getSql } from "../../services/sql/index.js";
 import sqlInit from "../../services/sql_init.js";
@@ -210,7 +211,7 @@ const partialRequests: Record<
     }
 > = {};
 
-function update(req: Request) {
+async function update(req: Request) {
     let { body } = req;
 
     const pageCount = parseInt(req.get("pageCount") as string);
@@ -252,7 +253,10 @@ function update(req: Request) {
         throw new ValidationError("A push must name the instance ID of its sender.");
     }
 
-    getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
+    // The delivery record of the channels takes the batch before it is applied.
+    const nowMs = Date.now();
+    await getNotificationForwarder().takeSyncBatch(entities, nowMs, () => getSql().transactional(
+        () => syncUpdateService.updateEntities(entities, instanceId, nowMs)));
 }
 
 /** Drops paged pushes that received no page for 20 minutes, which their client has abandoned. */

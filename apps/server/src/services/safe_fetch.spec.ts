@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 interface MockAgent {
     options: { connect?: { lookup?: unknown } };
     closed: boolean;
+    destroyed: boolean;
     close(): void;
+    destroy(): Promise<void>;
 }
 
 const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
@@ -14,6 +16,7 @@ const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
     class MockAgent {
         options: { connect?: { lookup?: unknown } };
         closed = false;
+        destroyed = false;
 
         constructor(options: { connect?: { lookup?: unknown } } = {}) {
             this.options = options;
@@ -22,6 +25,11 @@ const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
 
         close() {
             this.closed = true;
+        }
+
+        destroy() {
+            this.destroyed = true;
+            return Promise.resolve();
         }
     }
 
@@ -38,7 +46,11 @@ vi.mock("undici", () => ({
     fetch: undiciFetch
 }));
 
-import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
+import { ValidationError } from "@triliumnext/core";
+
+import {
+    type LocalRanges, safeFetch, SafeFetchRefusal, validateHostResolution, validateUrl
+} from "./safe_fetch.js";
 
 describe("validateUrl", () => {
     it("accepts http URLs", () => {
@@ -382,10 +394,25 @@ describe("safeFetch", () => {
             makeResponse(null, { status: 302, headers: { location: "https://8.8.4.4/collect" } })
         );
 
-        await expect(safeFetch("https://8.8.8.8/v1/chat", {}, { maxRedirects: 0 }))
-            .rejects.toThrow("Refusing to follow a redirect");
+        const refusal = await safeFetch("https://8.8.8.8/v1/chat", {}, { maxRedirects: 0 })
+            .then(() => null, (e: unknown) => e);
+        expect(refusal).toBeInstanceOf(SafeFetchRefusal);
+        expect(refusal).toBeInstanceOf(ValidationError);
+        expect(refusal).toMatchObject({
+            reason: "redirect", message: expect.stringContaining("Refusing to follow a redirect")
+        });
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(agentInstances[0].closed).toBe(true);
+        // The body of the redirect is never read, so its connection is closed at once.
+        expect(agentInstances[0].destroyed).toBe(true);
+    });
+
+    it("closes the connection of a request that fails or is aborted, and throws on", async () => {
+        const abort = new DOMException("This operation was aborted", "AbortError");
+        fetchMock.mockRejectedValueOnce(abort);
+
+        await expect(safeFetch("https://8.8.8.8/hook", { signal: AbortSignal.abort() }))
+            .rejects.toBe(abort);
+        expect(agentInstances[0].destroyed).toBe(true);
     });
 
     it("imposes no deadline of its own on a caller that asked for none", async () => {
@@ -414,6 +441,101 @@ describe("safeFetch", () => {
         await safeFetch("http://8.8.8.8/signal", { signal: controller.signal });
         const fetchOptions = fetchMock.mock.calls[0][1] as { signal: unknown };
         expect(fetchOptions.signal).toBe(controller.signal);
+    });
+
+    describe("for a destination that the user configured, each local range on its own", () => {
+        const PUBLIC_ONLY: LocalRanges = { allowPrivate: false, allowLoopback: false };
+        const PRIVATE: LocalRanges = { allowPrivate: true, allowLoopback: false };
+        const LOOPBACK: LocalRanges = { allowPrivate: false, allowLoopback: true };
+
+        beforeEach(() => fetchMock.mockResolvedValue(makeResponse(null, { status: 204 })));
+
+        async function refusalOf(url: string, localRanges: LocalRanges) {
+            return await safeFetch(url, {}, { localRanges, isPlainHttpLocalOnly: true })
+                .then(() => null, (e: unknown) => e);
+        }
+
+        it("allows private networks and loopback apart, never a metadata endpoint", async () => {
+            const privateUrls = [
+                "https://10.0.0.1/", "https://100.64.0.1/", "https://[fd12::1]/"
+            ];
+            for (const url of privateUrls) {
+                await expect(safeFetch(url, {}, { localRanges: PRIVATE }), url)
+                    .resolves.toBeDefined();
+                expect(await refusalOf(url, LOOPBACK), url).toMatchObject({
+                    name: "SafeFetchRefusal", reason: "destination",
+                    message: expect.stringContaining("private/internal")
+                });
+            }
+            for (const url of [ "https://127.0.0.1:8443/", "https://[::1]/" ]) {
+                await expect(safeFetch(url, {}, { localRanges: LOOPBACK }), url)
+                    .resolves.toBeDefined();
+                expect(await refusalOf(url, PRIVATE), url).toMatchObject({ reason: "destination" });
+            }
+            for (const url of [ "https://10.0.0.1/", "https://127.0.0.1/" ]) {
+                expect(await refusalOf(url, PUBLIC_ONLY), url).toBeInstanceOf(SafeFetchRefusal);
+            }
+            const both = { allowPrivate: true, allowLoopback: true };
+            expect(await refusalOf("https://100.100.100.200/", both)).toMatchObject({
+                reason: "destination", message: expect.stringContaining("metadata endpoint")
+            });
+            expect(await refusalOf("https://169.254.169.254/", both))
+                .toBeInstanceOf(ValidationError);
+            await expect(safeFetch("https://8.8.8.8/", {}, { localRanges: PUBLIC_ONLY }))
+                .resolves.toBeDefined();
+        });
+
+        it("sends plain HTTP only when every pinned address is local", async () => {
+            await expect(safeFetch("http://10.0.0.1/hook", {}, {
+                localRanges: PRIVATE, isPlainHttpLocalOnly: true
+            })).resolves.toBeDefined();
+            await expect(safeFetch("https://8.8.8.8/hook", {}, {
+                localRanges: PRIVATE, isPlainHttpLocalOnly: true
+            })).resolves.toBeDefined();
+            // Without the rule, plain HTTP reaches a public address as before.
+            await expect(safeFetch("http://8.8.8.8/hook", {}, { localRanges: PRIVATE }))
+                .resolves.toBeDefined();
+            expect(fetchMock).toHaveBeenCalledTimes(3);
+
+            fetchMock.mockClear();
+            vi.spyOn(dns.promises, "lookup")
+                .mockResolvedValueOnce(addresses("10.0.0.5", "93.184.216.34"));
+            const publicUrls = [
+                "http://8.8.8.8/hook", "http://[::ffff:8.8.8.8]/hook", "http://mixed.example/"
+            ];
+            for (const url of publicUrls) {
+                expect(await refusalOf(url, PRIVATE), url).toMatchObject({
+                    name: "SafeFetchRefusal", reason: "destination",
+                    message: expect.stringContaining("Plain HTTP")
+                });
+            }
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it("pins a name that resolves private and then public to the private address", async () => {
+            // The request goes to the address of the first lookup, the one that was checked.
+            const lookup = vi.spyOn(dns.promises, "lookup")
+                .mockResolvedValueOnce(addresses("10.0.0.5"))
+                .mockResolvedValue(addresses("93.184.216.34"));
+
+            await safeFetch("http://rebinding.example/hook", {}, {
+                localRanges: PRIVATE, isPlainHttpLocalOnly: true
+            });
+
+            expect(lookup).toHaveBeenCalledOnce();
+            const pinnedLookup = agentInstances[0].options.connect?.lookup as (
+                hostname: string, options: object, callback: (...args: unknown[]) => void) => void;
+            const answer = vi.fn();
+            pinnedLookup("rebinding.example", { all: true }, answer);
+            expect(answer).toHaveBeenCalledWith(null, [ { address: "10.0.0.5", family: 4 } ]);
+
+            // In the other order, the first answer is public, and nothing is sent.
+            lookup.mockReset().mockResolvedValueOnce(addresses("93.184.216.34"));
+            fetchMock.mockClear();
+            expect(await refusalOf("http://rebinding.example/hook", PRIVATE))
+                .toMatchObject({ reason: "destination" });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
     });
 
     describe("pinned DNS lookup", () => {
@@ -477,6 +599,11 @@ describe("safeFetch", () => {
 
 function nextTask() {
     return new Promise((resolve) => setTimeout(resolve));
+}
+
+/** What `dns.promises.lookup()` answers with `all` for these IPv4 addresses. */
+function addresses(...ips: string[]) {
+    return ips.map((address) => ({ address, family: 4 })) as unknown as dns.LookupAddress;
 }
 
 describe("safeFetch with an undici module that carries no default export", () => {

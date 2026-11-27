@@ -19,6 +19,9 @@ vi.mock("../../../services/toast", () => ({
 vi.mock("./components/OptionsPageHeader", () => ({
     default: () => <div className="header-stub" />
 }));
+vi.mock("./notification_channels/ChannelsCard", () => ({
+    default: () => <div className="channels-card-stub" />
+}));
 
 import { NotificationRequestError } from "../../../services/notifications";
 import options from "../../../services/options";
@@ -202,6 +205,13 @@ describe("the alerts card", () => {
             expect(mocks.showError.mock.calls, name)
                 .toEqual(isReported ? [ [ "notification_settings.sound_play_failed" ] ] : []);
         }
+    });
+});
+
+describe("the channels card", () => {
+    it("loads below the other cards", async () => {
+        const page = await open();
+        expect(page.lastElementChild?.querySelector(".channels-card-stub")).not.toBeNull();
     });
 });
 

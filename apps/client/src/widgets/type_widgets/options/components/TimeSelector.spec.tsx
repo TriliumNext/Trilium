@@ -23,7 +23,7 @@ vi.mock("../../../react/hooks/options", async (importOriginal) => ({
     ]
 }));
 
-import TimeSelector from "./TimeSelector";
+import TimeSelector, { ControlledTimeSelector } from "./TimeSelector";
 
 /**
  * The option holds seconds; the box shows them in whatever scale is chosen beside it. Both are
@@ -120,5 +120,36 @@ describe("TimeSelector", () => {
         }
 
         expect(mocks.saved).toContainEqual([ "theScale", "60" ]);
+    });
+});
+
+describe("ControlledTimeSelector", () => {
+    it("offers the scales it is given, and holds a figure above the ceiling down to it", () => {
+        mocks.showError.mockClear();
+        const changes: number[] = [];
+        let container: HTMLElement | undefined;
+        act(() => {
+            container = renderInto(
+                <ControlledTimeSelector
+                    name="grace-time"
+                    seconds={300}
+                    scale="60"
+                    onChange={(seconds) => changes.push(seconds)}
+                    onScaleChange={() => {}}
+                    includedTimeScales={new Set([ "minutes", "hours" ])}
+                    maximumSeconds={3600}
+                />
+            );
+        });
+        const box = container?.querySelector<HTMLInputElement>("input[type='number']") ?? null;
+        const options = [ ...container?.querySelector("select")?.options ?? [] ];
+
+        expect(box?.value).toBe("5");
+        expect(options.map((option) => option.value)).toEqual([ "60", "3600" ]);
+        // 90 minutes is past the ceiling of an hour.
+        enter(box, "90");
+        expect(mocks.showError).toHaveBeenCalledOnce();
+        enter(box, "30");
+        expect(changes).toEqual([ 3600, 1800 ]);
     });
 });

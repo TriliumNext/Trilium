@@ -5,7 +5,7 @@ import FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
 import { BackendScriptingDisabledError } from "./backend_scripting.js";
-import type { Entity } from "./frontend_script_api.js";
+import type { Entity, ScriptApiParams } from "./frontend_script_api.js";
 import { WidgetDefinitionWithType } from "./frontend_script_api_preact.js";
 import { t } from "./i18n.js";
 import ScriptContext from "./script_context.js";
@@ -43,8 +43,15 @@ async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = 
 
 export type ParentName = WidgetDefinitionWithType["parent"];
 
-export async function executeBundleWithoutErrorHandling(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
-    const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
+/**
+ * @param params what a run of a frontend notification channel adds to the API of its note.
+ */
+export async function executeBundleWithoutErrorHandling(
+    bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>,
+    params?: ScriptApiParams
+) {
+    const apiContext = await ScriptContext(
+        bundle.noteId, bundle.allNoteIds, originEntity, $container, params);
     return await function () {
         return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
     }.call(apiContext);

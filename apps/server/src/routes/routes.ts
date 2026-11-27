@@ -27,6 +27,7 @@ import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
 import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
+import notificationSecretsRoute from "./api/notification_secrets.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
 import recoveryCodes from './api/recovery_codes.js';
@@ -109,6 +110,22 @@ function register(app: express.Application) {
 
     route(PST, '/api/database/download-token', withCredentials,
         downloadTokenRoute.issueDownloadToken, apiResultHandler);
+
+    // The secrets of a webhook channel. A change is refused before the password is checked on an
+    // instance that does not forward or that has no password.
+    const withChannelSecretCredentials = [
+        auth.checkApiAuth,
+        csrfMiddleware,
+        loginRateLimiter,
+        notificationSecretsRoute.checkSecretChange,
+        auth.checkCredentials
+    ];
+    asyncApiRoute(GET, "/api/notification-channels/:channelId/secret",
+        notificationSecretsRoute.getSecret);
+    asyncRoute(PUT, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.putSecret, apiResultHandler);
+    asyncRoute(DEL, "/api/notification-channels/:channelId/secret", withChannelSecretCredentials,
+        notificationSecretsRoute.deleteSecret, apiResultHandler);
 
     routes.buildSharedApiRoutes({
         route,

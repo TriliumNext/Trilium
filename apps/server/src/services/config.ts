@@ -157,6 +157,13 @@ export interface TriliumConfig {
          */
         retentionDays: number;
     };
+    /** The channels that forward notifications */
+    Notifications: {
+        /** Whether no channel runs, for a copy of a database without a sync server (default: false) */
+        channelsDisabled: boolean;
+        /** Whether a webhook can be allowed to reach the local network (default: true) */
+        allowLocalNetworkWebhooks: boolean;
+    };
     /** Security and code execution configuration */
     Security: {
         /** Whether backend script execution is enabled (default: false for server, true for desktop) */
@@ -547,6 +554,22 @@ const configMapping = {
             transformer: (value: unknown) => utils.stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
         }
     },
+    Notifications: {
+        channelsDisabled: {
+            standardEnvVar: 'TRILIUM_NOTIFICATIONS_CHANNELS_DISABLED',
+            aliasEnvVars: ['TRILIUM_NOTIFICATIONS_CHANNELSDISABLED'],
+            iniGetter: () => getIniSection("Notifications")?.channelsDisabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        },
+        allowLocalNetworkWebhooks: {
+            standardEnvVar: 'TRILIUM_NOTIFICATIONS_ALLOW_LOCAL_NETWORK_WEBHOOKS',
+            aliasEnvVars: ['TRILIUM_NOTIFICATIONS_ALLOWLOCALNETWORKWEBHOOKS'],
+            iniGetter: () => getIniSection("Notifications")?.allowLocalNetworkWebhooks,
+            defaultValue: true,
+            transformer: transformBoolean
+        }
+    },
     Security: {
         backendScriptingEnabled: {
             standardEnvVar: 'TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED',
@@ -626,6 +649,10 @@ const config: TriliumConfig = {
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
+    },
+    Notifications: {
+        channelsDisabled: getConfigValue(configMapping.Notifications.channelsDisabled),
+        allowLocalNetworkWebhooks: getConfigValue(configMapping.Notifications.allowLocalNetworkWebhooks)
     },
     Security: {
         backendScriptingEnabled: getConfigValue(configMapping.Security.backendScriptingEnabled),

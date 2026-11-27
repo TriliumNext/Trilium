@@ -17,6 +17,7 @@ import { FormFileUploadButton } from "../../react/FormFileUpload";
 import FormToggle from "../../react/FormToggle";
 import { useChildNotes, useNoteBlob } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import LazyComponent from "../../react/LazyComponent";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 
 /** What the file picker offers: the three formats that a custom sound can have. */
@@ -28,6 +29,7 @@ export default function NotificationSettings() {
             <OptionsPageHeader />
             <AlertSettings />
             <CategorySettings />
+            <LazyComponent loader={() => import("./notification_channels/ChannelsCard")} />
         </>
     );
 }

@@ -15,6 +15,7 @@ import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
 import { registerServerLlmExtensions } from "./services/llm/index.js";
 import { listListeningUrls } from "./services/network_addresses.js";
+import { registerWebhookChannelType } from "./services/notifications/notification_secrets.js";
 import port from "./services/port.js";
 import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
@@ -69,6 +70,8 @@ export default async function startTriliumServer(): Promise<Express> {
         process.exit(1);
     }
 
+    // Before the app starts the notification channels, which load the registered types once.
+    registerWebhookChannelType();
     const app = await buildApp();
     anonymizationService.removeLeftoverStagingFiles();
     const httpServer = startHttpServer(app);

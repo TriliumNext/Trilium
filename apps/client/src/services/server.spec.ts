@@ -374,6 +374,28 @@ describe("CSRF token handling", () => {
         expect(headers).not.toHaveProperty("trilium-totp");
     });
 
+    it("sends a guarded DELETE with its body, and no toast for a silenced refusal", async () => {
+        let sent: AjaxOptions | undefined;
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            sent = opts;
+            opts.error({ status: 409, responseText: JSON.stringify({ code: "stale-revision" }) });
+        };
+
+        await expect(server.withCredentials(
+            "DELETE",
+            "notification-channels/c1/secret",
+            { expected: 3 },
+            { password: "p", code: "" },
+            { silentConflict: true }
+        )).rejects.toBe(JSON.stringify({ code: "stale-revision" }));
+
+        expect(sent?.type).toBe("DELETE");
+        expect(sent?.data).toBe(JSON.stringify({ expected: 3 }));
+        expect((sent?.headers as Record<string, string>)["trilium-cred"]).toBe(btoa("user:p"));
+        expect(toastMock.showError).not.toHaveBeenCalled();
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
+    });
+
     it("does not retry when the 403 is not a csrf error (bad json / wrong message)", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             // unparseable body -> isCsrfError catch -> false

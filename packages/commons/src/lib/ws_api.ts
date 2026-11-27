@@ -247,4 +247,9 @@ export type WebSocketMessage = AllTaskDefinitions | {
     seq: number;
     changed: TransientNotification[];
     removed: string[];
+} | {
+    /** A delivery of a frontend channel is due, and a tab can claim it. */
+    type: "notification-forward";
+    deliveryKey: string;
+    channelId: string;
 }

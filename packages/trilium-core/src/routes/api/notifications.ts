@@ -27,7 +27,13 @@ const STATUS_OF_CODE: Partial<Record<NotificationErrorCode, number>> = {
     "category-off": 409,
     "not-initialized": 409,
     "transient-limit": 409,
-    "not-owner": 409
+    "not-owner": 409,
+    "rate-limit": 409,
+    "not-forwarding": 409,
+    "password-not-set": 409,
+    "type-unavailable": 409,
+    "safe-mode": 409,
+    "not-runnable": 409
 };
 
 /** `?after=<notificationId>`: one page of the view. */
@@ -131,7 +137,7 @@ function getClientProducer(req: Request): NotificationProducer {
  * Runs a route on an opened database. Another error than a refusal is logged by its stack frames
  * and thrown again without its message, so that the transaction of the route rolls back.
  */
-function answer<T>(run: () => T): T | [ number, NotificationErrorBody ] {
+export function answer<T>(run: () => T): T | [ number, NotificationErrorBody ] {
     if (!sqlInit.isDbInitialized()) {
         return refuse("not-initialized");
     }
@@ -139,15 +145,34 @@ function answer<T>(run: () => T): T | [ number, NotificationErrorBody ] {
     try {
         return run();
     } catch (e) {
-        if (e instanceof NotificationError && e.code !== "internal") {
-            return refuse(e.code);
-        }
-        getLog().error(`A notification route failed: internal.${getStackFrames(e)}`);
-        throw new Error("internal");
+        return toRefusal(e);
     }
 }
 
-function refuse(code: NotificationErrorCode): [ number, NotificationErrorBody ] {
+/** `answer()` of an async route, which opens its own transactions. */
+export async function answerAsync<T>(
+    run: () => Promise<T>
+): Promise<T | [ number, NotificationErrorBody ]> {
+    if (!sqlInit.isDbInitialized()) {
+        return refuse("not-initialized");
+    }
+
+    try {
+        return await run();
+    } catch (e) {
+        return toRefusal(e);
+    }
+}
+
+function toRefusal(e: unknown): [ number, NotificationErrorBody ] {
+    if (e instanceof NotificationError && e.code !== "internal") {
+        return refuse(e.code);
+    }
+    getLog().error(`A notification route failed: internal.${getStackFrames(e)}`);
+    throw new Error("internal");
+}
+
+export function refuse(code: NotificationErrorCode): [ number, NotificationErrorBody ] {
     return [ STATUS_OF_CODE[code] ?? 400, { code } ];
 }
 

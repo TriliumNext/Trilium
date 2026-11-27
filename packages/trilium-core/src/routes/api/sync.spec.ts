@@ -427,7 +427,7 @@ describe("Sync API (core)", () => {
                 body: { entities: [], instanceId: "x" }
             });
             expect(res.status).toBe(204);
-            expect(update).toHaveBeenCalledWith([], "x");
+            expect(update).toHaveBeenCalledWith([], "x", expect.any(Number));
         });
 
         it("refuses a push that names no instance ID", async () => {
@@ -471,7 +471,7 @@ describe("Sync API (core)", () => {
                 body: payload.slice(mid)
             });
             expect(last.status).toBe(204);
-            expect(update).toHaveBeenCalledWith([{ a: 1 }], "y");
+            expect(update).toHaveBeenCalledWith([{ a: 1 }], "y", expect.any(Number));
         });
 
         it("keeps a push that is still receiving pages after 20 minutes", async () => {
@@ -493,7 +493,7 @@ describe("Sync API (core)", () => {
                 cleanUpPartialRequests();
             }
 
-            expect(update).toHaveBeenCalledWith([ { a: 1 } ], "slow");
+            expect(update).toHaveBeenCalledWith([ { a: 1 } ], "slow", expect.any(Number));
         });
 
         it("drops a push that received no page for 20 minutes", async () => {

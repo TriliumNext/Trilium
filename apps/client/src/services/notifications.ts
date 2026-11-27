@@ -39,6 +39,7 @@ export const SILENT_REFUSALS = {
 };
 
 type TransientNotificationsMessage = Extract<WebSocketMessage, { type: "transient-notifications" }>;
+type ForwardMessage = Extract<WebSocketMessage, { type: "notification-forward" }>;
 
 /** A refusal of a notification route, by its code. */
 export class NotificationRequestError extends Error {
@@ -100,6 +101,8 @@ export class NotificationStore implements NotificationApi {
         subscribeToMessages((message) => {
             if (message.type === "notification-alert") {
                 this.onAlert(message.notificationId);
+            } else if (message.type === "notification-forward") {
+                runForwardedDelivery(message);
             } else if (message.type === "transient-notifications") {
                 this.onTransientMessage(message);
             } else if (message.type === "notifications-due"
@@ -889,6 +892,13 @@ export function getErrorCode(error: unknown): NotificationErrorCode {
 /** Logs a failure by a fixed text and its code: nothing of a row reaches the log. */
 function reportFailure(task: string, error: unknown) {
     logError(`A notification request failed: ${task}, ${getErrorCode(error)}.`);
+}
+
+/** Loads the runner of frontend channels on first use, and runs it for an announced delivery. */
+function runForwardedDelivery(message: ForwardMessage) {
+    import("./notification_channels.js")
+        .then((channels) => channels.runForwardedDelivery(message))
+        .catch((e: unknown) => reportFailure("forward", e));
 }
 
 const notificationStore = new NotificationStore();

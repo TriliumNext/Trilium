@@ -14,6 +14,7 @@ import {
     getLog,
     getSql,
     leaveSetupMode,
+    notifications,
     sql_init as sqlInit,
     utils as coreUtils
 } from "@triliumnext/core";
@@ -24,6 +25,7 @@ import type ServerBackupService from "../backup_provider.js";
 import config from "./config.js";
 import dataDir from "./data_dir.js";
 import { validateDatabaseFile } from "./database_validation.js";
+import { setSecretsAside } from "./notifications/notification_secrets.js";
 
 /**
  * Puts a backup in place of this instance's database.
@@ -292,6 +294,10 @@ export async function restoreDatabase(request: RestoreRequest): Promise<void> {
                 + `, ${validation.needsMigration ? "needs migrating" : "already current"}`);
 
             report("swapping");
+            // The webhook secrets file is set aside with the database that the restore replaces,
+            // and the delivery record keeps forwarding paused until the user has looked.
+            await setSecretsAside();
+            await notifications.getNotificationForwarder().pauseFor("restore");
             swapInDatabase(candidate);
 
             report("migrating");

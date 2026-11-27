@@ -14,7 +14,7 @@ const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 declare const __TRILIUM_FORCE_B64_FALLBACK__: boolean;
 const FORCE_B64_FALLBACK = typeof __TRILIUM_FORCE_B64_FALLBACK__ !== "undefined" && __TRILIUM_FORCE_B64_FALLBACK__;
 
-const HASHES = { md5, sha1, sha512 };
+const HASHES = { md5, sha1, sha256, sha512 };
 
 /**
  * Crypto provider for browser environments, on the synchronous pure-JS hashes and ciphers of
@@ -23,7 +23,7 @@ const HASHES = { md5, sha1, sha512 };
  */
 export default class BrowserCryptoProvider implements CryptoProvider {
 
-    createHash(algorithm: "md5" | "sha1" | "sha512", content: string | Uint8Array): Uint8Array {
+    createHash(algorithm: "md5" | "sha1" | "sha256" | "sha512", content: string | Uint8Array): Uint8Array {
         // Binary content is hashed as is: a UTF-8 decode (`unwrapStringOrBuffer`) replaces invalid
         // sequences with U+FFFD, and the digests of protected binary notes then differ from the
         // Node.js provider's.

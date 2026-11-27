@@ -1,0 +1,66 @@
+:where(:root) {
+    --webhook-entry-state-color: var(--muted-text-color);
+    --webhook-template-missing-color: var(--admonition-warning-accent-color, #e2aa03);
+}
+
+.modal.webhook-dialog {
+    .tn-card,
+    .modal-body > .admonition {
+        margin-bottom: 1rem;
+    }
+
+    .webhook-template-text {
+        font-family: var(--monospace-font-family);
+    }
+
+    .webhook-template-starters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5em;
+        margin-top: .5em;
+    }
+
+    .webhook-template-missing {
+        margin: .5em 0 0;
+        color: var(--webhook-template-missing-color);
+    }
+
+    .webhook-secret-entry-list,
+    .webhook-network {
+        display: flex;
+        flex-direction: column;
+        gap: .5em;
+    }
+
+    .webhook-secret-entry {
+        display: flex;
+        align-items: center;
+        gap: .5em;
+
+        code {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .webhook-secret-entry-state {
+        flex: 1 1 auto;
+        color: var(--webhook-entry-state-color);
+        font-size: .9em;
+    }
+
+    .webhook-secret-entry-new {
+        display: flex;
+        gap: .5em;
+
+        > .form-control {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        > .btn {
+            flex-shrink: 0;
+        }
+    }
+}

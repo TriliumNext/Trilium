@@ -17,6 +17,7 @@ import {
     describeRow,
     formatTimeKey,
     formatUtcDateTime,
+    getActivationRecordId,
     getDefaultRaisedAtMs,
     getKeyRange,
     getLastCountedKey,
@@ -26,7 +27,9 @@ import {
     getNotificationId,
     getOwnerNotificationId,
     getReferencedNoteId,
+    getRevocationRecordId,
     getRewriteDateMs,
+    getStatusRecordId,
     getTimeOfNotificationId,
     type HistoryEntry,
     isDatedAhead,
@@ -34,12 +37,15 @@ import {
     isNotificationId,
     makeTextPrivate,
     NotificationError,
+    parseChannelRecord,
     parseContent,
     parsePrivateContent,
     parseUtcDateTime,
     pickTrimmed,
     PRIVATE_CONTENT_MAX_BYTES,
+    resolveSettings,
     resolveView,
+    type SettingsRecord,
     type ViewRow
 } from "./model.js";
 
@@ -419,8 +425,10 @@ describe("the checks of marks, private texts and channel records", () => {
     const channelRecord = (overrides: Record<string, unknown> = {}) => ({
         recordId: "recordId1",
         channelId: "channel_1",
-        kind: "activation",
-        content: JSON.stringify({ activationId: "a" }),
+        kind: "settings",
+        content: JSON.stringify({
+            v: 1, activationId: "a1", settings: { graceTime: 60, protectedNotes: "none" }, reads: []
+        }),
         utcDateCreated: AT,
         utcDateModified: AT,
         ...overrides
@@ -466,6 +474,118 @@ describe("the checks of marks, private texts and channel records", () => {
         ]) {
             expect(checkChannelRecordRow(row), JSON.stringify(row)).toBe("invalid-row");
         }
+    });
+});
+
+describe("the records of channels", () => {
+    const SETTINGS = { graceTime: 300, protectedNotes: "public" };
+    const activation = (overrides: Record<string, unknown> = {}) => ({
+        v: 1, activationId: "act1", sequence: 3, revision: "rev_1", settings: SETTINGS, ...overrides
+    });
+    const row = (kind: string, content: object, recordId: string, channelId = "channel_1") => ({
+        recordId, channelId, kind, content: JSON.stringify(content),
+        utcDateCreated: AT, utcDateModified: AT
+    });
+
+    it("takes each kind under the key that it derives, and refuses another key", () => {
+        const activationId = getActivationRecordId("channel_1");
+        const revocation = { v: 1, activationId: "act1", revokedAt: AT };
+        expect([
+            checkChannelRecordRow(row("activation", activation(), activationId)),
+            checkChannelRecordRow(
+                row("status", { v: 1, status: {} }, getStatusRecordId("channel_1"))),
+            checkChannelRecordRow(row("revocation", revocation, getRevocationRecordId("act1"))),
+            checkChannelRecordRow(row("channel",
+                { v: 1, type: "webhook", title: "Pager", config: {} }, "channel_1"))
+        ]).toEqual([ null, null, null, null ]);
+        expect([
+            checkChannelRecordRow(row("activation", activation(), getActivationRecordId("other"))),
+            checkChannelRecordRow(row("status", { v: 1, status: {} }, activationId)),
+            checkChannelRecordRow(row("revocation", revocation, getRevocationRecordId("act2"))),
+            checkChannelRecordRow(row("channel",
+                { v: 1, type: "webhook", title: "Pager", config: {} }, "channel_2"))
+        ]).toEqual([ "invalid-key", "invalid-key", "invalid-key", "invalid-key" ]);
+    });
+
+    it("takes only a sequence that is a whole number from zero below 2^53", () => {
+        for (const sequence of [ 0, 1, Number.MAX_SAFE_INTEGER ]) {
+            expect(parseChannelRecord("activation", JSON.stringify(activation({ sequence }))))
+                .not.toBeNull();
+        }
+        for (const sequence of [ -1, 1.5, 2 ** 53, "3", null ]) {
+            expect(parseChannelRecord("activation", JSON.stringify(activation({ sequence }))),
+                String(sequence)).toBeNull();
+        }
+    });
+
+    it("refuses settings outside their range, and malformed contents", () => {
+        for (const content of [
+            activation({ settings: { graceTime: 12 * 3600 + 1, protectedNotes: "none" } }),
+            activation({ settings: { graceTime: 1.5, protectedNotes: "none" } }),
+            activation({ settings: { graceTime: 60, protectedNotes: "all" } }),
+            activation({ v: 2 }), activation({ activationId: "a b" }),
+            activation({ ownedAttributes: [ { type: "label", name: "x" } ] }),
+            activation({ label: { attributeId: "a", utcDateModified: "now" } })
+        ]) {
+            const text = JSON.stringify(content);
+            expect(parseChannelRecord("activation", text), text).toBeNull();
+        }
+        expect(parseChannelRecord("settings", JSON.stringify({
+            v: 1, activationId: "a1", settings: SETTINGS, reads: [ "not an id" ]
+        }))).toBeNull();
+        expect(parseChannelRecord("channel", JSON.stringify({
+            v: 1, type: "webhook", title: `Line${BELL}`, config: {}
+        }))).toBeNull();
+    });
+
+    it("reads a status that a peer wrote, field by field", () => {
+        expect(parseChannelRecord("status", JSON.stringify({ v: 1, status: {
+            counts: { sent: 2, failed: -1, skipped: "3" },
+            lastErrorCode: "boom",
+            lastInvokedAt: AT,
+            runningSince: "yesterday",
+            recordSequence: 7,
+            runsBackendScripts: "yes"
+        } }))).toEqual({ v: 1, status: {
+            counts: {
+                sent: 2, sentPublic: 0, skipped: 0, failed: 0, expired: 0, waitingForBudget: 0
+            },
+            lastInvokedAt: AT,
+            recordSequence: 7,
+            recordHoldsActivation: false,
+            runsBackendScripts: false
+        } });
+    });
+
+    it("resolves the settings that hold: the stricter values of the records that none read", () => {
+        const confirmed = {
+            activationId: "a1", settings: { graceTime: 60, protectedNotes: "none" }
+        } as const;
+        const record = (
+            recordId: string,
+            settings: SettingsRecord["settings"],
+            reads: string[] = [],
+            activationId = "a1"
+        ) => ({ recordId, content: { v: 1, activationId, settings, reads } as SettingsRecord });
+
+        expect(resolveSettings(confirmed, [])).toEqual({
+            settings: confirmed.settings, currentRecordIds: []
+        });
+        // Two devices that had not seen each other: the longer grace time, `none` before `public`.
+        expect(resolveSettings(confirmed, [
+            record("s1", { graceTime: 600, protectedNotes: "public" }),
+            record("s2", { graceTime: 120, protectedNotes: "none" }),
+            record("s3", { graceTime: 9999, protectedNotes: "public" }, [], "a0")
+        ])).toEqual({
+            settings: { graceTime: 600, protectedNotes: "none" }, currentRecordIds: [ "s1", "s2" ]
+        });
+        // A change wins over what it read, whatever its values.
+        expect(resolveSettings(confirmed, [
+            record("s1", { graceTime: 600, protectedNotes: "none" }),
+            record("s2", { graceTime: 0, protectedNotes: "public" }, [ "s1" ])
+        ])).toEqual({
+            settings: { graceTime: 0, protectedNotes: "public" }, currentRecordIds: [ "s2" ]
+        });
     });
 });
 
