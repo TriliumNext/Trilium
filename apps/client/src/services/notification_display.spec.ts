@@ -1,6 +1,5 @@
 import type {
-    NotificationActionResult, TransientNotification, TransientNotificationHandle,
-    TriliumNotification
+    NotificationActionResult, TransientNotification, TriliumNotification
 } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +15,10 @@ import {
     getNotificationIcon, getNotificationText, getReferencedNoteId, getShownActions, hasPlaceToOpen,
     markBidiControls, openNotification, runNotificationAction
 } from "./notification_display.js";
-import notificationStore, { NotificationRequestError } from "./notifications.js";
+import notificationStore, {
+    type ClientTransientHandle, NotificationRequestError
+} from "./notifications.js";
+import server from "./server.js";
 import toastService from "./toast.js";
 
 function makeNotification(
@@ -42,6 +44,7 @@ function makeNotification(
 afterEach(() => {
     session.isAvailable = false;
     notificationStore.actionHandlers.value = new Map();
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
@@ -258,7 +261,7 @@ describe("runNotificationAction", () => {
         const handle = {
             id: "own", setTitle: vi.fn(), setProgress: vi.fn(), setActions: vi.fn(),
             dismiss: vi.fn()
-        } as unknown as TransientNotificationHandle;
+        } as unknown as ClientTransientHandle;
         vi.spyOn(notificationStore, "getOwnTransient")
             .mockImplementation((id) => (id === "own" ? handle : undefined));
         registerResults([
@@ -282,6 +285,33 @@ describe("runNotificationAction", () => {
         await runNotificationAction({ ...own, id: "other" }, action);
         expect(handle.dismiss).toHaveBeenCalledOnce();
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("another client"));
+    });
+
+    it("makes a transient notification of its own client sensitive", async () => {
+        vi.useFakeTimers();
+        const put = vi.spyOn(server, "put").mockResolvedValue({});
+        vi.spyOn(server, "remove").mockResolvedValue(undefined);
+        const handle = notificationStore.createTransientNotification({ title: "Import" });
+        await vi.advanceTimersByTimeAsync(0);
+        registerResults([ { update: { sensitive: false } }, { update: { sensitive: true } } ]);
+        const own: TransientNotification = {
+            id: handle.id, type: "transient", producer: "client",
+            createdAt: "2026-11-27 10:00:00.000Z", title: "Import", handler: "spec:handler"
+        };
+
+        await runNotificationAction(own, action);
+        await vi.advanceTimersByTimeAsync(250);
+        expect(put).toHaveBeenCalledOnce();
+        await runNotificationAction(own, action);
+        await vi.advanceTimersByTimeAsync(250);
+        expect(put).toHaveBeenCalledTimes(2);
+        expect(put).toHaveBeenLastCalledWith(`notifications/transient/${handle.id}`,
+            {
+                notification: { title: "Import", sensitive: true },
+                token: expect.stringMatching(/^[A-Za-z0-9]{32}$/)
+            },
+            undefined, expect.anything());
+        handle.dismiss();
     });
 });
 

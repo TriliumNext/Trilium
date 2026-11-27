@@ -224,6 +224,8 @@ export default class NotificationForwarder {
     private readonly unrecordedEnds = new Map<string, Delivery>();
     /** The grants of claims that failed on this side, released before the next announcement. */
     private readonly failedClaims = new Map<string, string[]>();
+    /** The end of the last switching that `runSwitching()` queued. */
+    private switchings: Promise<unknown> = Promise.resolve();
     private readonly runs = new Map<string, ChannelRun>();
     private readonly rates = new Map<string, number[]>();
     private readonly waitingForBudget = new Map<string, number>();
@@ -507,16 +509,18 @@ export default class NotificationForwarder {
         writeActivation: (activationId: string, sequence: number) => void
     ) {
         this.checkRate(`enable:${channelId}`, ENABLINGS_PER_HOUR, HOUR);
-        const activationId = randomString(16);
-        const sequence = this.getNextSequence();
-        const result = await this.record.run(() => undefined,
-            [ { channelId, activationId, sequence, isRevoked: false } ]);
+        return this.runSwitching(async () => {
+            const activationId = randomString(16);
+            const sequence = this.getNextSequence();
+            const result = await this.record.run(() => undefined,
+                [ { channelId, activationId, sequence, isRevoked: false } ]);
 
-        cls.init(() => getSql().transactional(() => writeActivation(activationId, sequence)));
-        this.runTimed("notice",
-            () => this.dismissNotice(getChannelNoticeId(channelId, "disabled")));
-        this.afterSwitch(channelId);
-        return result.isWritten;
+            cls.init(() => getSql().transactional(() => writeActivation(activationId, sequence)));
+            this.runTimed("notice",
+                () => this.dismissNotice(getChannelNoticeId(channelId, "disabled")));
+            this.afterSwitch(channelId);
+            return result.isWritten;
+        });
     }
 
     /**
@@ -526,20 +530,32 @@ export default class NotificationForwarder {
      * @returns whether the record holds the switching.
      */
     async switchOff(channelId: string, writeDisabling: (sequence: number) => void) {
-        const activationId = getActivation(channelId)?.activationId ?? null;
-        const sequence = this.getNextSequence();
-        const result = await this.record.run((draft) => {
-            if (activationId !== null) {
-                takeRevocation(draft, activationId);
-            }
-        }, [ { channelId, activationId: null, sequence, isRevoked: true } ]);
+        return this.runSwitching(async () => {
+            const activationId = getActivation(channelId)?.activationId ?? null;
+            const sequence = this.getNextSequence();
+            const result = await this.record.run((draft) => {
+                if (activationId !== null) {
+                    takeRevocation(draft, activationId);
+                }
+            }, [ { channelId, activationId: null, sequence, isRevoked: true } ]);
 
-        cls.init(() => getSql().transactional(() => writeDisabling(sequence)));
-        if (activationId !== null && isForwardingInstance()) {
-            this.runTimed("notice", () => this.raiseChannelNotice(channelId, "disabled"));
-        }
-        this.afterSwitch(channelId);
-        return result.isWritten;
+            cls.init(() => getSql().transactional(() => writeDisabling(sequence)));
+            if (activationId !== null && isForwardingInstance()) {
+                this.runTimed("notice", () => this.raiseChannelNotice(channelId, "disabled"));
+            }
+            this.afterSwitch(channelId);
+            return result.isWritten;
+        });
+    }
+
+    /**
+     * Runs the switchings of this instance one at a time, from the choice of the sequence to the
+     * transaction, so that each one gets a sequence above the one before.
+     */
+    private runSwitching<T>(run: () => Promise<T>) {
+        const result = this.switchings.then(run);
+        this.switchings = result.catch(() => undefined);
+        return result;
     }
 
     /** What the record holds of an enabled channel, for its card. */
@@ -651,6 +667,7 @@ export default class NotificationForwarder {
         const answer = this.runTimed("claim",
             () => this.answerClaim(delivery, profileId, isPublic));
         if (answer && answer.granted) {
+            this.runTimed("claim", () => ledger.setNextAnnouncement(deliveryKey, null));
             return answer;
         }
         if (!answer) {
@@ -1006,6 +1023,9 @@ export default class NotificationForwarder {
         }
 
         const waiting = deliveries.filter(({ status }) => status === "waiting");
+        if (waiting.length === 0) {
+            return;
+        }
         const picked = this.pickWithinBudget(channelId, waiting, nowMs);
         if (!picked) {
             return;
@@ -1076,7 +1096,10 @@ export default class NotificationForwarder {
         return picked.delivery;
     }
 
-    /** Announces a frontend delivery to the tabs, or skips it when no client is connected. */
+    /**
+     * Announces a frontend delivery to the tabs, or skips it when no client is connected. Until a
+     * tab claims it, it is announced again after 1 and 5 minutes, then every 30 minutes.
+     */
     private announce(delivery: Delivery, nowMs: number) {
         const checked = this.checkDelivery(delivery, nowMs);
         if ("end" in checked) {
@@ -1087,7 +1110,9 @@ export default class NotificationForwarder {
             ledger.finishDelivery(delivery.deliveryKey, "skipped", "no-client", nowMs);
             return;
         }
-        ledger.markAnnounced(delivery.deliveryKey, null);
+        // `attempts` counts the announcements of a frontend delivery.
+        const delayMs = RETRY_DELAYS_MS[Math.min(delivery.attempts, RETRY_DELAYS_MS.length - 1)];
+        ledger.markAnnounced(delivery.deliveryKey, nowMs + delayMs);
         this.transport.send({
             type: "notification-forward",
             deliveryKey: delivery.deliveryKey,
@@ -1116,9 +1141,10 @@ export default class NotificationForwarder {
             this.failedClaims.delete(delivery.deliveryKey);
         }
         this.runTimed("announce", () => {
-            ledger.markAnnounced(delivery.deliveryKey, null);
+            ledger.setNextAnnouncement(delivery.deliveryKey, null);
             this.announce({ ...delivery, status: "waiting" }, Date.now());
         });
+        this.armDueTimer();
     }
 
     private scheduleAnnouncement(delivery: Delivery, claimId: string) {
@@ -1128,12 +1154,9 @@ export default class NotificationForwarder {
     }
 
     private scheduleNextAnnouncement(delivery: Delivery) {
-        const current = ledger.getDelivery(delivery.deliveryKey);
         const failures = this.failedClaims.get(delivery.deliveryKey)?.length ?? 1;
         const delayMs = RETRY_DELAYS_MS[Math.min(failures, RETRY_DELAYS_MS.length) - 1];
-        if (current?.status === "announced") {
-            ledger.markAnnounced(delivery.deliveryKey, Date.now() + delayMs);
-        }
+        ledger.setNextAnnouncement(delivery.deliveryKey, Date.now() + delayMs);
         this.armDueTimer();
     }
 
@@ -1376,12 +1399,22 @@ export default class NotificationForwarder {
         };
     }
 
-    /** The checks of a channel's revision, address, template and policy. */
+    /**
+     * The checks of a channel's revision, address, template and policy. A delivery of a backend
+     * channel runs only on the forwarding instance, and a test send (`delivery` is `null`)
+     * anywhere.
+     */
     private checkChannel(
         channel: Channel,
         activation: ActivationRecord,
         delivery: { revision: string; configurationId: string | null } | null
     ): { template: string | undefined } | { end: DeliveryEnd } {
+        const isForwardedElsewhere = delivery !== null && channel.runsOn === "backend"
+            && !isForwardingInstance();
+        if (getChannelsOff() || isForwardedElsewhere) {
+            return { end: { status: "failed", reason: "policy" } };
+        }
+
         const revision = getCurrentRevision(channel).revision;
         const expectedRevision = delivery?.revision ?? activation.revision;
         if (revision === null || revision !== expectedRevision

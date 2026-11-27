@@ -29,6 +29,7 @@ import utils, {
     numberObjectsInPlace,
     openInAppHelpFromUrl,
     openInReusableSplit,
+    randomSecret,
     randomString,
     reloadFrontendApp,
     replaceHtmlEscapedSlashes,
@@ -278,6 +279,14 @@ describe("randomString", () => {
 
     it("defaults to length 16", () => {
         expect(randomString()).toHaveLength(16);
+    });
+});
+
+describe("randomSecret", () => {
+    it("makes a secret of letters and digits from the crypto API", () => {
+        const getRandomValues = vi.spyOn(crypto, "getRandomValues");
+        expect(randomSecret(32)).toMatch(/^[A-Za-z0-9]{32}$/);
+        expect(getRandomValues).toHaveBeenCalledOnce();
     });
 });
 

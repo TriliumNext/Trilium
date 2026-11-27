@@ -16,6 +16,7 @@ import {
     clearChannelTypes, registerChannelType
 } from "../../services/notifications/channels/registry";
 import type { NotificationChannelType } from "../../services/notifications/channels/types";
+import { getNotificationForwarder } from "../../services/notifications/index";
 import { getPlatform } from "../../services/platform";
 import { getSql } from "../../services/sql/index";
 import { CoreApiTester } from "../../test/api_tester";
@@ -112,6 +113,24 @@ describe("the channel routes", () => {
             `/api/notification-channels/${note.noteId}/enable`);
         expect(disabled.body).toMatchObject({ isRecorded: true, channel: { state: "found" } });
         expect(getRecords("revocation").map(({ channelId }) => channelId)).toEqual([ note.noteId ]);
+    });
+
+    it("enables nothing that changed after the review while the record was written", async () => {
+        const note = createChannelNote();
+        const { revision } = await review(note.noteId);
+        const forwarder = getNotificationForwarder();
+        const switchOn = forwarder.switchOn.bind(forwarder);
+        vi.spyOn(forwarder, "switchOn").mockImplementationOnce((channelId, writeActivation) => {
+            getContext().init(() => becca.getNoteOrThrow(note.noteId).setContent("return 2;"));
+            return switchOn(channelId, writeActivation);
+        });
+
+        const enabled = await api.post<NotificationErrorBody>(
+            `/api/notification-channels/${note.noteId}/enable`,
+            { body: { revision, ...SETTINGS, labels: { topic: "alerts" } } });
+        expect(enabled).toMatchObject({ status: 409, body: { code: "stale-revision" } });
+        expect(getActivation(note.noteId)).toBeNull();
+        expect(becca.getNoteOrThrow(note.noteId).getOwnedLabelValue("topic")).toBeNull();
     });
 
     it("refuses the labels of a widget beyond their limits", async () => {

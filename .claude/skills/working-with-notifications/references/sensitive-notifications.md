@@ -91,14 +91,17 @@ note it shows only during a session.
 
 The same rules decide whether a transient notification is sensitive, with two differences: its
 private text stays in the backend's memory, so no session is needed to set it, and clients
-receive the private text only while a protected session is open.
+receive the private text only while a protected session is open. When its note is protected,
+here or through sync, `protectAbout()` of `transients.ts` makes it sensitive and its text private
+at once, and the next `transient-notifications` message carries the corrected view.
 
 ## Channels
 
 A channel never receives the private text. A sensitive notification is skipped with the reason
 `protected`, unless the channel's _Protected notes_ setting is `public`: then the payload carries
 the public text and no `noteId`. Once an attempt went out with the public text alone, every later
-attempt of that delivery does the same ([channel-scripts.md](channel-scripts.md)).
+attempt of that delivery does the same, and the text of a row that is not marked sensitive, as a
+restored database can bring back, is left out of it ([channel-scripts.md](channel-scripts.md)).
 
 ## Edge cases
 

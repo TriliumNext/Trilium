@@ -12,8 +12,8 @@ import type {
     NotificationInput, NotificationListResponse, NotificationMarkKind, NotificationMarkRow,
     NotificationMarkState, NotificationPatch, NotificationPrivateTextUpdate, NotificationRef,
     NotificationState, TransientNotification, TransientNotificationHandle,
-    TransientNotificationInput, TransientNotificationPutRequest, TransientNotificationPutResponse,
-    TriliumNotification, WebSocketMessage
+    TransientNotificationInput, TransientNotificationPutRequest, TriliumNotification,
+    WebSocketMessage
 } from "@triliumnext/commons";
 import {
     NOTIFICATION_ERROR_CODES, NOTIFICATION_PAGE_SIZE, TRANSIENT_NOTIFICATION_REFRESH_MS
@@ -22,7 +22,7 @@ import {
 import type { EntityChange } from "../server_types.js";
 import options from "./options.js";
 import server from "./server.js";
-import { randomString } from "./utils.js";
+import { randomSecret, randomString } from "./utils.js";
 import ws, { logError, subscribeToMessages, subscribeToReconnect } from "./ws.js";
 
 /** Seen and read marks wait this long, so that the marks of one look go in one request. */
@@ -33,6 +33,7 @@ const MAX_HELD_TRANSIENT_MESSAGES = 100;
 /** A transient notification of this client sends at most four requests a second. */
 const TRANSIENT_SEND_INTERVAL_MS = 250;
 const TRANSIENT_ID_LENGTH = 16;
+const TRANSIENT_TOKEN_LENGTH = 32;
 /** The options of a request whose refusals the caller reads as codes, without an error toast. */
 export const SILENT_REFUSALS = {
     silentBadRequest: true, silentNotFound: true, silentConflict: true
@@ -88,6 +89,8 @@ export class NotificationStore implements NotificationApi {
     /** Transient messages that wait for a list to be taken. */
     private readonly heldTransientMessages: TransientNotificationsMessage[] = [];
     private isFetchingTransients = false;
+    /** Counts the reconnects, so that the answer to a list request from before one is dropped. */
+    private transientGeneration = 0;
     /** The transient notifications that this client created, by their IDs. */
     private readonly ownTransients = new Map<string, ClientTransientHandle>();
 
@@ -113,6 +116,9 @@ export class NotificationStore implements NotificationApi {
         subscribeToReconnect(() => {
             // A backend that restarted counts its transient messages from zero again.
             this.transientSeq = null;
+            this.heldTransientMessages.length = 0;
+            this.isFetchingTransients = false;
+            this.transientGeneration++;
             void this.reload();
         });
         void this.reload();
@@ -271,7 +277,7 @@ export class NotificationStore implements NotificationApi {
     }
 
     /** The handle of a transient notification that this client created and has not dismissed. */
-    getOwnTransient(id: string): TransientNotificationHandle | undefined {
+    getOwnTransient(id: string): ClientTransientHandle | undefined {
         return this.ownTransients.get(id);
     }
 
@@ -468,13 +474,18 @@ export class NotificationStore implements NotificationApi {
         }
 
         this.isFetchingTransients = true;
+        const generation = this.transientGeneration;
         try {
             const page = await server.getWithSilentErrors<NotificationListResponse>(
                 "notifications");
-            this.isFetchingTransients = false;
-            this.takeTransients(page);
+            if (generation === this.transientGeneration) {
+                this.isFetchingTransients = false;
+                this.takeTransients(page);
+            }
         } catch (e) {
-            this.isFetchingTransients = false;
+            if (generation === this.transientGeneration) {
+                this.isFetchingTransients = false;
+            }
             reportFailure("transients", e);
         }
     }
@@ -652,13 +663,18 @@ export class NotificationView {
  * A transient notification of this client. It merges the changes of its setters and sends them in
  * order, at most four requests a second, and sends itself again every 20 seconds, since the backend
  * ends it a minute after its last change. A request that fails is logged by its code, and the next
- * change tries again.
+ * change tries again. Each request includes the handle's own owner token, so the next change also
+ * works after a creation whose answer was lost.
  */
-class ClientTransientHandle implements TransientNotificationHandle {
+export class ClientTransientHandle implements TransientNotificationHandle {
 
     readonly id = randomString(TRANSIENT_ID_LENGTH);
+    private readonly token = randomSecret(TRANSIENT_TOKEN_LENGTH);
     private input: TransientNotificationInput;
-    private token: string | undefined;
+    /** Whether a request was sent, so that a dismissal sends a `DELETE`. */
+    private isSent = false;
+    /** Whether a request succeeded, so that the refreshes keep the notification alive. */
+    private isCreated = false;
     private hasChanges = true;
     private isDismissed = false;
     private sending: Promise<void> | null = null;
@@ -701,6 +717,11 @@ class ClientTransientHandle implements TransientNotificationHandle {
 
     setActions(actions: NotificationAction[]) {
         this.change({ actions });
+    }
+
+    /** Makes the notification sensitive for good, for a handler result with `sensitive: true`. */
+    makeSensitive() {
+        this.change({ sensitive: true });
     }
 
     /** Ends the notification at once: the changes that wait are dropped. */
@@ -750,10 +771,10 @@ class ClientTransientHandle implements TransientNotificationHandle {
         }
         this.hasChanges = false;
         this.lastSendMs = Date.now();
-        const request: TransientNotificationPutRequest = { notification: this.input };
-        if (this.token !== undefined) {
-            request.token = this.token;
-        }
+        this.isSent = true;
+        const request: TransientNotificationPutRequest = {
+            notification: this.input, token: this.token
+        };
 
         this.sending = this.put(request);
         await this.sending;
@@ -763,7 +784,7 @@ class ClientTransientHandle implements TransientNotificationHandle {
         }
         if (this.hasChanges) {
             this.scheduleSend();
-        } else if (this.token !== undefined) {
+        } else if (this.isCreated) {
             this.refreshTimer = setTimeout(() => {
                 this.refreshTimer = null;
                 this.hasChanges = true;
@@ -774,10 +795,9 @@ class ClientTransientHandle implements TransientNotificationHandle {
 
     private async put(request: TransientNotificationPutRequest) {
         try {
-            const { token } = await server.put<TransientNotificationPutResponse>(
-                `notifications/transient/${encodeURIComponent(this.id)}`, request, undefined,
-                SILENT_REFUSALS);
-            this.token = token;
+            await server.put(`notifications/transient/${encodeURIComponent(this.id)}`, request,
+                undefined, SILENT_REFUSALS);
+            this.isCreated = true;
         } catch (e) {
             reportFailure("transient", e);
         }
@@ -788,7 +808,7 @@ class ClientTransientHandle implements TransientNotificationHandle {
         if (this.sending) {
             await this.sending;
         }
-        if (this.token === undefined) {
+        if (!this.isSent) {
             return;
         }
 

@@ -333,6 +333,13 @@ export function randomString(len: number = 16) {
     return text;
 }
 
+/** A random string of letters and digits for a secret, from `crypto.getRandomValues()`. */
+export function randomSecret(length: number) {
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    return Array.from(bytes, (byte) => possible[byte % possible.length]).join("");
+}
+
 export function isMobile() {
     return (
         window.glob?.device === "mobile" ||

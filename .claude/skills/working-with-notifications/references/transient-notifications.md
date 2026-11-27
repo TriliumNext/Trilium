@@ -90,9 +90,12 @@ getNotificationService().putTransient(id, { ...input, progress: 0.5 }, producer,
 getNotificationService().dismissTransient(id, token);
 ```
 
-- `putTransient()` creates without a token and replaces with one; it returns the owner token. An
-  `id` that exists, with a missing or wrong token, is `not-owner`. The `id` is a token, and only a
-  built-in producer can start it with `trilium:`.
+- `putTransient()` creates with the token given, or makes one without it, and replaces with the
+  owner token; it returns the owner token. A token is 32 letters and digits, anything else is
+  `invalid-input`. An `id` that exists, with a missing or wrong token, is `not-owner`. The `id` is
+  a token, and only a built-in producer can start it with `trilium:`.
+- A client handle makes its own owner token (`randomSecret()`) and sends it with every request, so
+  a creation whose answer was lost is repeated by the next change, and its dismissal still ends it.
 - A replacement keeps the producer and the sensitivity of the notification it replaces.
 - A built-in producer's transient notification does not expire: end it in `finally`.
 - `ScriptTransientHandle` in `services/notifications/script_api.ts` wraps these calls as a handle.
@@ -111,7 +114,9 @@ Cancel example of `Scripting/Notifications in scripts.md` does
 
 - After a reconnect, the client loads the list of transient notifications again.
 - A backend that restarted holds none of the earlier ones. A client handle sends its notification
-  again at its next change or refresh, and the backend takes it as new, with a new token.
+  again at its next change or refresh, and the backend takes it as new, with the handle's token.
+- A reconnect drops the transient messages that waited for a list, and the answer of a list asked
+  before it: their counter belongs to the backend before the restart.
 - A backend script's handle does not survive its process: after a restart, nothing ends the
   notification it made, since the notification is gone too.
 

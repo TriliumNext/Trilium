@@ -214,8 +214,8 @@ function enableChannel(req: Request<{ channelId: string }>) {
 
         const isRecorded = await getNotificationForwarder().switchOn(channelId,
             (activationId, sequence) => {
-                writeActivation(channelId, buildActivation(channelId, activationId, sequence,
-                    settings, checkedLabels));
+                writeActivation(channelId, buildActivation(channelId, revision, activationId,
+                    sequence, settings, checkedLabels));
             });
         return { channel: toView(getChannelOrThrow(channelId)), isRecorded };
     });
@@ -378,15 +378,27 @@ function toView(channel: Channel): NotificationChannelView {
     return view;
 }
 
-/** The `activation` record of an enabling, with the labels of a script's widget written. */
+/**
+ * The `activation` record of an enabling, with the labels of a script's widget written.
+ *
+ * @throws NotificationError `stale-revision` when the channel is no longer at `reviewedRevision`.
+ */
 function buildActivation(
     channelId: string,
+    reviewedRevision: string,
     activationId: string,
     sequence: number,
     settings: NonNullable<ReturnType<typeof parseSettings>>,
     labels: [ string, string ][]
 ): ActivationRecord {
     const channel = getChannelOrThrow(channelId);
+    const { revision } = getCurrentRevision(channel);
+    if (revision === null) {
+        throw new NotificationError("not-runnable");
+    }
+    if (revision !== reviewedRevision) {
+        throw new NotificationError("stale-revision");
+    }
     if (channel.script) {
         for (const [ name, value ] of labels) {
             channel.script.note.setLabel(name, value);

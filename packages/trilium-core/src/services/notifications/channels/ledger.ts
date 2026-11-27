@@ -135,6 +135,14 @@ export function markAnnounced(deliveryKey: string, nextAnnouncementAtMs: number 
     ]);
 }
 
+/** Sets when an announced delivery is announced again, `null` for never, without counting one. */
+export function setNextAnnouncement(deliveryKey: string, nextAnnouncementAtMs: number | null) {
+    getSql().execute(/*sql*/`UPDATE notification_deliveries SET nextAttemptAt = ?
+        WHERE deliveryKey = ? AND status = 'announced'`, [
+        nextAnnouncementAtMs === null ? null : formatUtcDateTime(nextAnnouncementAtMs), deliveryKey
+    ]);
+}
+
 /** Notes that a payload of the delivery went out with the public text alone. */
 export function markPublicOnly(deliveryKey: string) {
     getSql().execute("UPDATE notification_deliveries SET isPublicOnly = 1 WHERE deliveryKey = ?",

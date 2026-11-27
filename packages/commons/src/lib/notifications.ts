@@ -327,10 +327,14 @@ export interface NotificationListResponse {
 
 /**
  * `PUT /api/notifications/transient/:id`: creates, replaces or keeps alive a transient notification
- * of a client. Changing one that exists needs the token that its creation answered.
+ * of a client. Changing one that exists needs its owner token.
  */
 export interface TransientNotificationPutRequest {
     notification: TransientNotificationInput;
+    /**
+     * The owner token, 32 letters and digits. A creation stores the one given, or makes one, so
+     * that a client can repeat a creation whose answer it lost.
+     */
     token?: string;
 }
 

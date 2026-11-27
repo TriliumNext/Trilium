@@ -12,7 +12,9 @@ import type BNotification from "../../../becca/entities/bnotification.js";
 import { getCrypto } from "../../encryption/crypto.js";
 import optionService from "../../options.js";
 import { encodeUtf8 } from "../../utils/binary.js";
-import { describeRow, getReferencedNoteId, type ViewContext } from "../model.js";
+import {
+    describeRow, getReferencedNoteId, makeTextPrivate, type ViewContext
+} from "../model.js";
 import { deriveKey } from "../protected_text.js";
 
 const DELIVERY_KEY_LABEL = "trilium:delivery-key:v1";
@@ -41,16 +43,20 @@ export function buildPayload(
 ): { payload: NotificationChannelPayload; isSensitive: boolean } {
     const entry = describeRow(notification, context);
     const isSensitive = entry.isSensitive || isPublicOnly;
+    // The text of a row without the flag is not public once a delivery sent the public text alone.
+    const content = isPublicOnly && !entry.isSensitive
+        ? makeTextPrivate(entry.content).content
+        : entry.content;
     const payload: NotificationChannelPayload = {
         key: deliveryKey,
-        title: entry.content.title || getNoteTitle(notification, isSensitive)
+        title: content.title || getNoteTitle(notification, isSensitive)
             || t(`notifications.payload-title-${notification.category}`),
         category: notification.category,
         attentionLevel: notification.attentionLevel,
         raisedAt: notification.raisedAt
     };
-    if (entry.content.description) {
-        payload.description = entry.content.description;
+    if (content.description) {
+        payload.description = content.description;
     }
     if (!isSensitive && notification.noteId !== null) {
         payload.noteId = notification.noteId;

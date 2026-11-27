@@ -397,7 +397,7 @@ Trilium runs the script once for each notification it forwards, with three extra
 | `api.delivery` | This attempt: `key`, `attempt` (`1` for the first one) and `signal`, which aborts after 30 seconds. |
 | `api.channelSettings` | The labels of the channel note, as they were when the channel was enabled. For example, `api.channelSettings.topic` for `#topic=alerts`. |
 
-The notification is delivered when the script finishes without an error. If it throws, Trilium tries again after 1, 5 and 30 minutes. For asynchronous work, a backend script returns its promise, and a frontend script can use `await`.
+The notification is delivered when the script finishes without an error. If a backend script throws, Trilium tries again after 1, 5 and 30 minutes. If a frontend script throws, the notification is not sent, and Trilium doesn't try again. For asynchronous work, a backend script returns its promise, and a frontend script can use `await`.
 
 This backend channel sends to ntfy, with the topic in the `#topic` label of the channel note:
 

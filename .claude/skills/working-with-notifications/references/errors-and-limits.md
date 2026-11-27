@@ -56,7 +56,7 @@ Why an attempt failed (`NOTIFICATION_DELIVERY_ERROR_CODES`):
 | --- | --- |
 | `timeout` | the attempt's signal aborted after 30 seconds |
 | `script-error` | a channel script threw or rejected |
-| `policy` | the channel may not run here: backend scripting is off, or the type is missing or unavailable. Never retried |
+| `policy` | the channel may not run here: the channels are off, a backend channel's delivery is on an instance that does not forward, backend scripting is off, or the type is missing or unavailable. Never retried |
 | `http` | the receiver answered with an error status, shown on the card |
 | `network` | the request failed, or a built-in type threw something other than `ChannelSendError` |
 | `refused-destination` | the network policy refused the address |

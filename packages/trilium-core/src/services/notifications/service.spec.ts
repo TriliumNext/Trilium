@@ -81,6 +81,7 @@ function makeCountingService() {
 
 afterEach(() => {
     service.stop();
+    getNotificationService().stop();
     protectedSessionService.resetDataKey();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -401,6 +402,46 @@ describe("transient notifications", () => {
             .toBe("reserved-name");
         expect(codeOf(() => service.putTransient("trilium:spec", { title: "B" }, BUILT_IN)))
             .toBeNull();
+    });
+
+    it("become sensitive when their note is protected", () => {
+        protectedSessionService.setDataKey(DATA_KEY);
+        const local = getNotificationService();
+        const note = createNote("Protected here");
+        local.putTransient("spec-here", {
+            noteId: note.noteId, title: "Import", progress: 0.5, progressLabel: "Rows"
+        }, SCRIPT);
+        protect(note);
+        expect(local.getPage().transients?.[0]).toMatchObject({
+            id: "spec-here", sensitive: true, protectedTitle: "Import"
+        });
+
+        protectedSessionService.resetDataKey();
+        expect(local.getPage().transients?.[0]).toEqual({
+            id: "spec-here", type: "transient", producer: "script:spec0script", createdAt: AT,
+            noteId: note.noteId, progress: 0.5, sensitive: true
+        });
+    });
+
+    it("become sensitive when sync brings the protection of their note", () => {
+        service.start();
+        const note = createNote("Protected elsewhere");
+        service.putTransient("spec-elsewhere", { noteId: note.noteId, title: "Export" }, SCRIPT);
+        vi.advanceTimersByTime(300);
+        const noteRow = getSql().getRow<Record<string, unknown>>(
+            "SELECT * FROM notes WHERE noteId = ?", [ note.noteId ]);
+        syncIn("notes", note.noteId, {
+            ...noteRow, isProtected: 1, utcDateModified: formatUtcDateTime(NOW + SECOND)
+        });
+        vi.advanceTimersByTime(300);
+
+        const messages = sent.filter(({ type }) => type === "transient-notifications");
+        expect(messages).toHaveLength(2);
+        expect(messages[1]).toMatchObject({
+            changed: [ { id: "spec-elsewhere", sensitive: true } ]
+        });
+        expect(JSON.stringify(messages[1])).not.toContain("Export");
+        expect(service.getPage().transients?.[0]?.title).toBeUndefined();
     });
 });
 

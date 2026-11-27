@@ -20,8 +20,7 @@ interface TabBarProps {
 
 /**
  * The tabs with the history buttons before them, and the full screen button, the notification bell
- * and the right pane toggle after. The desktop layout shows it, and so does a tablet's mobile
- * layout, without the right pane toggle.
+ * and the right pane toggle after. The desktop layout and a tablet's mobile layout show it.
  */
 export default function TabBar({
     fullWidth, leftPaneToggle, rightPaneToggle = true, notificationBell = true

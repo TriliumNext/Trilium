@@ -4,6 +4,7 @@ import type {
     NotificationChannelSettings,
     WebSocketMessage
 } from "@triliumnext/commons";
+import { t } from "i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../../becca/becca.js";
@@ -11,6 +12,7 @@ import config from "../../config.js";
 import * as cls from "../../context.js";
 import noteService from "../../notes.js";
 import optionService from "../../options.js";
+import { getPlatform } from "../../platform.js";
 import { getSql } from "../../sql/index.js";
 import syncUpdateService from "../../sync_update.js";
 import { getNotificationService } from "../index.js";
@@ -20,6 +22,7 @@ import {
     type ActivationRecord
 } from "../model.js";
 import type { NotificationProducer } from "../service.js";
+import * as store from "../store.js";
 import { hashTemplate } from "./body_template.js";
 import { getBuiltInRevision, getChannel, getCurrentRevision } from "./catalog.js";
 import {
@@ -30,7 +33,7 @@ import {
     serializeState
 } from "./delivery_record.js";
 import NotificationForwarder, { type ChannelNotice, getEntityChangeMark } from "./forwarder.js";
-import { getDeliveryKey } from "./payload.js";
+import { buildPayload, getDeliveryKey } from "./payload.js";
 import {
     getActivation, getDefinition, getStatus, writeActivation, writeDefinition
 } from "./records.js";
@@ -55,11 +58,14 @@ const TABLES = [
     "notification_channel_records", "notification_deliveries"
 ];
 
-/** A port whose writes and reads can be made to fail. */
+/** A port whose writes and reads can be made to fail, and whose writes can be held. */
 class SpecPort extends MemoryRecordPort {
 
     isWriteFailing = false;
     isReadFailing = false;
+    isWriteHeld = false;
+    /** The functions that let a held write go on. */
+    readonly heldWrites: (() => void)[] = [];
 
     override async read() {
         if (this.isReadFailing) {
@@ -71,6 +77,9 @@ class SpecPort extends MemoryRecordPort {
     override async write(text: string) {
         if (this.isWriteFailing) {
             throw new Error("disk full");
+        }
+        if (this.isWriteHeld) {
+            await new Promise<void>((resolve) => this.heldWrites.push(resolve));
         }
         return super.write(text);
     }
@@ -410,6 +419,25 @@ describe("protected notes and the delivery record", () => {
         expect(reasonsByChannel()).toEqual({ specNone: "protected", specPublic: null });
     });
 
+    it("leaves out the text of a plain row once a delivery sent the public text", () => {
+        const notification = raise({ title: "Bank", description: "Balance", noteId: "root" });
+        const row = store.getNotification(notification.notificationId);
+        if (!row) {
+            throw new Error("Nothing was stored.");
+        }
+        const key = getDeliveryKey(notification.id, notification.raisedAt, CHANNEL);
+        const context = store.getViewContext(Date.now());
+        expect(buildPayload(row, key, context, false).payload)
+            .toMatchObject({ title: "Bank", description: "Balance", noteId: "root" });
+        expect(buildPayload(row, key, context, true)).toEqual({
+            payload: {
+                key, title: t("notifications.payload-title-general"), category: "general",
+                attentionLevel: "high", raisedAt: notification.raisedAt
+            },
+            isSensitive: true
+        });
+    });
+
     it("holds back a public payload whose write failed, and an unrecorded end", async () => {
         await forwarder.start();
         await enable(CHANNEL, { graceTime: 0, protectedNotes: "public" });
@@ -559,6 +587,27 @@ describe("switchings in the delivery record", () => {
         await vi.advanceTimersByTimeAsync(SECOND);
         expect(sends).toHaveLength(2);
     });
+
+    it("numbers an enabling that overlaps another after it", async () => {
+        await forwarder.start();
+        port.isWriteHeld = true;
+        const first = enable(CHANNEL, { graceTime: 0, protectedNotes: "none" });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(port.heldWrites).toHaveLength(1);
+        const second = enable(CHANNEL, { graceTime: 0, protectedNotes: "none" });
+        await vi.advanceTimersByTimeAsync(0);
+        port.isWriteHeld = false;
+        port.heldWrites[0]();
+        expect([ await first, await second ]).toEqual([ true, true ]);
+
+        const activation = getActivation(CHANNEL);
+        expect(recordState().channels.get(CHANNEL)).toEqual({
+            activationId: activation?.activationId, isLive: true, sequence: activation?.sequence
+        });
+        raise();
+        await vi.advanceTimersByTimeAsync(SECOND);
+        expect(sends).toHaveLength(1);
+    });
 });
 
 describe("budgets, frontend channels and notices", () => {
@@ -612,6 +661,38 @@ describe("budgets, frontend channels and notices", () => {
         )).toEqual({ status: "skipped", reason: "no-client" });
     });
 
+    it("announces a frontend delivery again until a window claims it", async () => {
+        await forwarder.start();
+        const noteId = createFrontendChannel();
+        await enableScript(noteId);
+        const notification = raise({ id: "unclaimed" });
+        const deliveryKey = getDeliveryKey(notification.id, notification.raisedAt, noteId);
+        const countAnnouncements = (key: string) => messages.filter((message) =>
+            message.type === "notification-forward" && message.deliveryKey === key).length;
+        await vi.advanceTimersByTimeAsync(SECOND);
+        expect(countAnnouncements(deliveryKey)).toBe(1);
+
+        // No window claimed it before the backend restarted.
+        await restart();
+        await vi.advanceTimersByTimeAsync(MINUTE);
+        expect(countAnnouncements(deliveryKey)).toBe(2);
+        await vi.advanceTimersByTimeAsync(5 * MINUTE);
+        expect(countAnnouncements(deliveryKey)).toBe(3);
+        expect((await forwarder.claim(deliveryKey, "profileA")).granted).toBe(true);
+        await vi.advanceTimersByTimeAsync(HOUR);
+        expect(countAnnouncements(deliveryKey)).toBe(3);
+
+        // An announcement with no window connected ends the delivery.
+        const unseen = raise({ id: "nobody-left" });
+        await vi.advanceTimersByTimeAsync(SECOND);
+        clients = 0;
+        await vi.advanceTimersByTimeAsync(MINUTE);
+        expect(getSql().getRow(
+            "SELECT status, reason FROM notification_deliveries WHERE deliveryKey = ?",
+            [ getDeliveryKey(unseen.id, unseen.raisedAt, noteId) ]
+        )).toEqual({ status: "skipped", reason: "no-client" });
+    });
+
     it("says once that a channel stopped, and takes it back when it runs again", async () => {
         await forwarder.start();
         await enable();
@@ -645,6 +726,39 @@ describe("budgets, frontend channels and notices", () => {
             config.Security.backendScriptingEnabled = isScriptingEnabled;
         }
     });
+
+    it("runs no delivery and no test send while the channels are off", async () => {
+        await forwarder.start();
+        await enable(CHANNEL, { graceTime: 60, protectedNotes: "none" });
+        const frontendId = createFrontendChannel();
+        await enableScript(frontendId);
+        raise({ id: "safe-mode" });
+        const platform = getPlatform();
+        const getEnv = platform.getEnv.bind(platform);
+        vi.spyOn(platform, "getEnv").mockImplementation((key) =>
+            (key === "TRILIUM_SAFE_MODE" ? "1" : getEnv(key)));
+
+        await vi.advanceTimersByTimeAsync(2 * MINUTE);
+        expect(sends).toHaveLength(0);
+        expect(messages.some(({ type }) => type === "notification-forward")).toBe(false);
+        expect(reasonsByChannel()).toEqual({ [CHANNEL]: "policy", [frontendId]: "policy" });
+        expect(await forwarder.sendTest(CHANNEL)).toEqual({ code: "policy" });
+    });
+
+    it("runs a backend channel's deliveries only where it forwards, a test send anywhere",
+        async () => {
+            await forwarder.start();
+            await enable(CHANNEL, { graceTime: 60, protectedNotes: "none" });
+            raise({ id: "before-sync" });
+            cls.init(() => optionService.setOption("syncServerHost", "https://sync.invalid"));
+
+            await vi.advanceTimersByTimeAsync(2 * MINUTE);
+            expect(sends).toHaveLength(0);
+            expect(deliveries()).toEqual([
+                { status: "failed", reason: "policy", channelId: CHANNEL }
+            ]);
+            expect(await forwarder.sendTest(CHANNEL)).toEqual({ code: "sent" });
+        });
 });
 
 /** Applies a peer's `activation` row of the channel through the delivery record and sync. */

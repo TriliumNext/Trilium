@@ -189,11 +189,25 @@ describe("transient notifications", () => {
         vi.advanceTimersByTime(24 * 60 * 60 * SECOND);
         expect(byId("spec-script")).toBeDefined();
 
-        // A token of one that ended creates a new one, which another token cannot change.
-        const renewed = registry.put("spec-client", { title: "Again" }, CLIENT_A, token);
-        expect(renewed).not.toBe(token);
-        expect(codeOf(() => registry.put("spec-client", { title: "x" }, CLIENT_A, token)))
-            .toBe("not-owner");
+        // A create with the token of one that ended keeps that token; another one is refused.
+        expect(registry.put("spec-client", { title: "Again" }, CLIENT_A, token)).toBe(token);
+        expect(codeOf(() => registry.put("spec-client", { title: "x" }, CLIENT_A,
+            "x".repeat(32)))).toBe("not-owner");
+    });
+
+    it("keep the owner token that a create brings, so that the create can be repeated", () => {
+        const token = "a1".repeat(16);
+        expect(registry.put("spec-own", { title: "Import" }, CLIENT_A, token)).toBe(token);
+        vi.advanceTimersByTime(SECOND);
+        expect(registry.put("spec-own", { title: "Import" }, CLIENT_A, token)).toBe(token);
+        expect(byId("spec-own")?.createdAt).toBe("2026-11-27 12:00:00.000Z");
+        expect(codeOf(() => registry.put("spec-own", { title: "x" }, CLIENT_B))).toBe("not-owner");
+
+        for (const malformed of [ "short", "x".repeat(33), `${"x".repeat(31)}-` ]) {
+            expect(codeOf(() => registry.put("spec-bad", { title: "T" }, CLIENT_A, malformed)),
+                malformed).toBe("invalid-input");
+        }
+        expect(byId("spec-bad")).toBeUndefined();
     });
 
     it("keep the text of a sensitive one private, and give it only in a protected session", () => {

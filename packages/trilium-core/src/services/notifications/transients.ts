@@ -29,6 +29,7 @@ import type { NotificationTransport } from "./service.js";
 /** At most one `transient-notifications` message goes out in this time. */
 const BROADCAST_INTERVAL_MS = 300;
 const TOKEN_LENGTH = 32;
+const OWNER_TOKEN = new RegExp(`^[A-Za-z0-9]{${TOKEN_LENGTH}}$`);
 
 /** Who holds a transient notification, as the service names it. */
 export interface TransientProducer {
@@ -74,15 +75,16 @@ export default class TransientNotifications {
     constructor(private readonly dependencies: TransientDependencies) {}
 
     /**
-     * Creates a transient notification, or replaces one with the token that its creation answered.
-     * A replacement keeps the producer and the sensitivity of the one that it replaces.
+     * Creates a transient notification, with the owner token that the caller chose or a new one,
+     * or replaces one with its owner token. A replacement keeps the producer and the sensitivity
+     * of the one that it replaces.
      *
      * @returns the owner token.
      * @throws NotificationError for input that fails a check, a missing or wrong token for an ID
      *         that exists, and a create beyond the limits.
      */
     put(id: unknown, input: unknown, producer: TransientProducer, token?: unknown): string {
-        if (!isToken(id) || (token !== undefined && typeof token !== "string")) {
+        if (!isToken(id) || (token !== undefined && !isOwnerToken(token))) {
             throw new NotificationError("invalid-input");
         }
         if (!producer.isBuiltIn && isReservedName(id)) {
@@ -109,7 +111,7 @@ export default class TransientNotifications {
             : { content: checked.content, text: {} };
         const entry: TransientEntry = {
             id,
-            token: existing?.token ?? randomString(TOKEN_LENGTH),
+            token: existing?.token ?? token ?? randomString(TOKEN_LENGTH),
             producer: owner,
             createdAt: existing?.createdAt ?? formatUtcDateTime(nowMs),
             noteId: checked.noteId,
@@ -143,6 +145,20 @@ export default class TransientNotifications {
         }
         this.remove(id);
         this.armExpiryTimer();
+    }
+
+    /** Makes the transient notifications about a note sensitive, with their text made private. */
+    protectAbout(noteId: string) {
+        for (const entry of [ ...this.entries.values() ]) {
+            if (entry.noteId !== noteId || entry.isSensitive) {
+                continue;
+            }
+            const made = makeTextPrivate(entry.content);
+            this.entries.set(entry.id, {
+                ...entry, content: made.content, privateText: made.text, isSensitive: true
+            });
+            this.markChanged(entry.id);
+        }
     }
 
     /** The transient notifications as the clients get them, oldest first. */
@@ -262,6 +278,10 @@ export default class TransientNotifications {
         }, Math.max(0, earliestMs - Date.now()));
     }
 
+}
+
+function isOwnerToken(value: unknown): value is string {
+    return typeof value === "string" && OWNER_TOKEN.test(value);
 }
 
 /** A transient notification as the clients get it, its private text in a protected session. */

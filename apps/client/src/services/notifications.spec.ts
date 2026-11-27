@@ -1,6 +1,6 @@
 import type {
-    NotificationCounts, NotificationListResponse, TransientNotification, TriliumNotification,
-    WebSocketMessage
+    NotificationCounts, NotificationListResponse, TransientNotification,
+    TransientNotificationPutRequest, TriliumNotification, WebSocketMessage
 } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -606,6 +606,36 @@ describe("transient notifications and handlers", () => {
         return store.transients.value.map(({ id }) => id);
     }
 
+    /**
+     * Answers `GET notifications` with `served.list`, or fails while `isDown`. While `isHeld`, an
+     * answer waits for its function in `releases`.
+     */
+    function serveTransients(list: { transients: TransientNotification[]; transientSeq: number }) {
+        const served = { list, isDown: false, isHeld: false, releases: [] as (() => void)[] };
+        const get = vi.fn(async () => {
+            if (served.isDown) {
+                throw new Error("The backend is down.");
+            }
+            const page = { notifications: [], changeId: 1, counts: countsOf([]), ...served.list };
+            if (served.isHeld) {
+                await new Promise<void>((resolve) => served.releases.push(resolve));
+            }
+            return page;
+        });
+        server.getWithSilentErrors = get as typeof server.getWithSilentErrors;
+        return { served, get };
+    }
+
+    /** Answers the requests of transient handles as the backend does, with the token sent. */
+    function serveHandles() {
+        const put = vi.fn(async (_url: string, request: TransientNotificationPutRequest) =>
+            ({ token: request.token ?? "" }));
+        const remove = vi.fn(async () => undefined);
+        server.put = put as unknown as typeof server.put;
+        server.remove = remove as typeof server.remove;
+        return { put, remove };
+    }
+
     it("take the list of the first page, then the messages in order, and the list after a gap",
         async () => {
             let list = { transients: [ transientOf("a", "A") ], transientSeq: 4 };
@@ -640,13 +670,59 @@ describe("transient notifications and handlers", () => {
             expect(idsOf(store)).toEqual([ "e" ]);
         });
 
+    it("drop the messages that they held for a backend that restarted", async () => {
+        const { served, get } = serveTransients({ transients: [], transientSeq: 4 });
+        const store = new NotificationStore();
+        store.start();
+        await vi.waitFor(() => expect(store.isLoaded.value).toBe(true));
+        const send = (sent: WebSocketMessage) => ws.messageHandlers[0](sent);
+
+        // Message 9 after 4 waits for a list, and the request for it fails: the backend is down.
+        served.isDown = true;
+        send(message(9, [ transientOf("old", "Old") ]));
+        await settle();
+
+        served.isDown = false;
+        served.isHeld = true;
+        served.list = { transients: [], transientSeq: 0 };
+        get.mockClear();
+        ws.reconnectListeners[0]();
+        await vi.waitFor(() => expect(served.releases).toHaveLength(1));
+        served.releases[0]();
+        await settle();
+        send(message(1, [ transientOf("new", "New") ]));
+        await settle();
+        expect(get).toHaveBeenCalledOnce();
+        expect(idsOf(store)).toEqual([ "new" ]);
+    });
+
+    it("drop a list that the backend gave before it restarted", async () => {
+        const { served } = serveTransients({ transients: [], transientSeq: 4 });
+        const store = new NotificationStore();
+        store.start();
+        await vi.waitFor(() => expect(store.isLoaded.value).toBe(true));
+        const send = (sent: WebSocketMessage) => ws.messageHandlers[0](sent);
+
+        // Message 9 after 4: the list of the old backend comes only after the reconnect.
+        served.isHeld = true;
+        served.list = { transients: [ transientOf("old", "Old") ], transientSeq: 8 };
+        send(message(9, [ transientOf("older", "Older") ]));
+        await vi.waitFor(() => expect(served.releases).toHaveLength(1));
+
+        served.isHeld = false;
+        served.list = { transients: [], transientSeq: 0 };
+        ws.reconnectListeners[0]();
+        await settle();
+        served.releases[0]();
+        await settle();
+        send(message(1, [ transientOf("new", "New") ]));
+        expect(idsOf(store)).toEqual([ "new" ]);
+    });
+
     it("send the changes of a handle merged, four a second at most, and keep it alive",
         async () => {
             vi.useFakeTimers();
-            const put = vi.fn(async () => ({ token: "token-1" }));
-            const remove = vi.fn(async () => undefined);
-            server.put = put as typeof server.put;
-            server.remove = remove as typeof server.remove;
+            const { put, remove } = serveHandles();
             const store = new NotificationStore();
 
             const handle = store.createTransientNotification({ title: "Import", progress: 0 });
@@ -654,8 +730,11 @@ describe("transient notifications and handlers", () => {
             expect(handle.id).toMatch(/^[A-Za-z0-9]{16}$/);
             expect(store.getOwnTransient(handle.id)).toBe(handle);
             await vi.advanceTimersByTimeAsync(0);
+            const token = put.mock.calls[0]?.[1].token;
+            expect(token).toMatch(/^[A-Za-z0-9]{32}$/);
             expect(put).toHaveBeenCalledExactlyOnceWith(path,
-                { notification: { title: "Import", progress: 0 } }, undefined, expect.anything());
+                { notification: { title: "Import", progress: 0 }, token }, undefined,
+                expect.anything());
 
             for (let step = 1; step <= 10; step++) {
                 handle.setProgress(step / 10);
@@ -663,7 +742,7 @@ describe("transient notifications and handlers", () => {
             }
             expect(put).toHaveBeenCalledTimes(3);
             expect(put).toHaveBeenLastCalledWith(path,
-                { notification: { title: "Import", progress: 1 }, token: "token-1" },
+                { notification: { title: "Import", progress: 1 }, token },
                 undefined, expect.anything());
 
             await vi.advanceTimersByTimeAsync(19_999);
@@ -677,7 +756,7 @@ describe("transient notifications and handlers", () => {
             handle.dismiss();
             await vi.advanceTimersByTimeAsync(1000);
             expect(put).toHaveBeenCalledTimes(4);
-            expect(remove).toHaveBeenCalledExactlyOnceWith(path, undefined, { token: "token-1" },
+            expect(remove).toHaveBeenCalledExactlyOnceWith(path, undefined, { token },
                 expect.anything());
             expect(store.getOwnTransient(handle.id)).toBeUndefined();
 
@@ -687,6 +766,27 @@ describe("transient notifications and handlers", () => {
             expect(put).toHaveBeenCalledTimes(4);
             expect(remove).toHaveBeenCalledOnce();
         });
+
+    it("keep their notification when the answer to its creation is lost", async () => {
+        vi.useFakeTimers();
+        const { put, remove } = serveHandles();
+        put.mockRejectedValueOnce(new Error("The connection was lost."));
+        const handle = new NotificationStore().createTransientNotification({ title: "Import" });
+        await vi.advanceTimersByTimeAsync(0);
+        const token = put.mock.calls[0]?.[1].token;
+        expect(token).toMatch(/^[A-Za-z0-9]{32}$/);
+
+        handle.setProgress(0.5);
+        await vi.advanceTimersByTimeAsync(250);
+        expect(put).toHaveBeenCalledTimes(2);
+        expect(put).toHaveBeenLastCalledWith(`notifications/transient/${handle.id}`,
+            { notification: { title: "Import", progress: 0.5 }, token }, undefined,
+            expect.anything());
+        handle.dismiss();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(remove).toHaveBeenCalledExactlyOnceWith(`notifications/transient/${handle.id}`,
+            undefined, { token }, expect.anything());
+    });
 
     it("log a refused request of a handle by its code, and try again with the next change",
         async () => {
@@ -700,7 +800,7 @@ describe("transient notifications and handlers", () => {
             expect(ws.logError).toHaveBeenCalledWith(
                 "A notification request failed: transient, transient-limit.");
 
-            // Without a token there is nothing to keep alive.
+            // A refused creation leaves nothing to keep alive.
             await vi.advanceTimersByTimeAsync(60_000);
             expect(put).toHaveBeenCalledOnce();
             handle.setTitle("Again");

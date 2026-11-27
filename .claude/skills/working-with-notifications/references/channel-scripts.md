@@ -103,10 +103,10 @@ reviewed.
   backend scripting.
 - **Safe mode, `channelsDisabled`** in the `[Notifications]` section of the configuration
   (`TRILIUM_NOTIFICATIONS_CHANNELS_DISABLED`), **and a sync server host set to `disabled`** stop
-  the writing of deliveries on the instance. The checks before an attempt (`checkDelivery()`) and
-  the test send read none of these switches, nor whether the instance forwards: a delivery that
-  waited from before the switch still runs, and so does a test pressed in a window of a desktop
-  app that syncs.
+  every channel of the instance, frontend ones too: no delivery is written, one that waited from
+  before the switch ends as failed with `policy` at its next check (`checkChannel()`), and a test
+  send answers `policy`. A backend channel's delivery that waited from before the instance took a
+  sync server ends the same way, since the server forwards it; a test send still runs there.
 - **Retries**: a failure waits 1, 5 and 30 minutes before the second, third and fourth attempt; the
   fourth failure ends the delivery as failed. `policy` never retries, and a retry that would come
   after the 23 hours ends the delivery. A retry runs every check again except the one for marks:
@@ -114,8 +114,8 @@ reviewed.
 - **Test send**: _Send test notification_ runs the channel once with a made-up payload: a `key`
   that starts with `test-`, a generic title, `category: "general"`, `attentionLevel: "high"`, no
   `description`, no `noteId`. It runs on the backend of the window where it is pressed, only while
-  the channel is enabled and unchanged, also while forwarding is paused, at most five times a
-  minute. It answers `sent` or a code, with the error message as `diagnostic` for `script-error`.
+  the channel is enabled and unchanged and the channels are on, also while forwarding is paused,
+  at most five times a minute. It answers `sent` or a code, with the error message as `diagnostic` for `script-error`.
   Handle the missing fields, since a test has neither.
 
 ## Frontend channels
@@ -127,8 +127,11 @@ reviewed.
   per profile, to at most 16 profiles, and **every granted window runs the script**. The first
   result ends the delivery; later results are ignored.
 - **One notification therefore runs a frontend channel once per browser profile on each device.**
-- **No window connected when it is due**: the delivery ends as skipped, `no-client`. Only windows
-  connected at that moment can claim it; a window opened later does not run it.
+- **No window connected when it is due**: the delivery ends as skipped, `no-client`.
+- **A delivery that no window claims is announced again** after 1 and 5 minutes, then every 30
+  minutes, until a window claims it or the 23 hours pass; the time is in the ledger, so a restart
+  keeps it. An announcement that finds no window connected ends the delivery as skipped,
+  `no-client`. A window opened in the meantime can claim it.
 - **No retries**: a failure ends the delivery as failed, and `api.delivery.attempt` is always 1.
   A window that closes during the run leaves the delivery open until the 23 hours, when it
   expires.

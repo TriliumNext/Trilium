@@ -6,7 +6,7 @@
  */
 import type {
     NotificationAction, NotificationActionHandler, NotificationActionResult, NotificationCategory,
-    NotificationPatch, TransientNotification, TransientNotificationHandle, TriliumNotification
+    NotificationPatch, TransientNotification, TriliumNotification
 } from "@triliumnext/commons";
 import {
     BUILT_IN_NOTIFICATION_PREFIX, isBuiltInNotificationProducer
@@ -15,7 +15,9 @@ import {
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
 import { parseNavigationStateFromUrl } from "./navigation_state.js";
-import notificationStore, { NotificationRequestError } from "./notifications.js";
+import notificationStore, {
+    type ClientTransientHandle, NotificationRequestError
+} from "./notifications.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import toastService from "./toast.js";
 
@@ -260,9 +262,12 @@ function applyTransientResult(
     }
 }
 
-function applyPatchToHandle(handle: TransientNotificationHandle, patch: NotificationPatch) {
+function applyPatchToHandle(handle: ClientTransientHandle, patch: NotificationPatch) {
     const { title, description, protectedTitle, protectedDescription, icon, progress } = patch;
-    const { progressLabel, actions } = patch;
+    const { progressLabel, actions, sensitive } = patch;
+    if (sensitive === true) {
+        handle.makeSensitive();
+    }
     if (title !== undefined) {
         handle.setTitle(title);
     }

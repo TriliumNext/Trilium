@@ -504,6 +504,7 @@ export default class NotificationService {
      * protected session: the title and the description move to the private text.
      */
     protectNotificationsAbout(noteId: string) {
+        this.transients.protectAbout(noteId);
         const nowMs = Date.now();
         const keys = getNotificationKeys();
         for (const notification of this.store.getNotificationsAbout(noteId)) {
@@ -638,6 +639,7 @@ export default class NotificationService {
         } else if (entityName === "notes" && (entityRow as NoteRow).isProtected) {
             const { noteId } = entityRow as NoteRow;
             this.runListener(entityName, noteId, () => {
+                this.transients.protectAbout(noteId);
                 for (const notification of this.store.getNotificationsAbout(noteId)) {
                     this.enforceSensitivity(notification, Date.now());
                 }
