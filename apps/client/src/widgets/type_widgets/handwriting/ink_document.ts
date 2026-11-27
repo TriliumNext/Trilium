@@ -344,6 +344,34 @@ export class StrokeBuilder {
     }
 }
 
+/**
+ * Returns the predicted `x, y, pressure` triples that continue the last move of the pointer, from
+ * `(fromX, fromY)` to `(toX, toY)`, cut off where they turn back or reach farther ahead than that
+ * move went. Chrome's predictions swing around at the end of a stroke and outrun a pen that slows
+ * down, and its outline would follow them.
+ */
+export function trimPrediction(
+    fromX: number, fromY: number, toX: number, toY: number, predicted: number[]
+) {
+    const moveX = toX - fromX;
+    const moveY = toY - fromY;
+    let remaining = Math.hypot(moveX, moveY);
+    const kept: number[] = [];
+    let [ lastX, lastY ] = [ toX, toY ];
+    for (let i = 0; i + 2 < predicted.length && remaining > 0; i += 3) {
+        const stepX = predicted[i] - lastX;
+        const stepY = predicted[i + 1] - lastY;
+        if (stepX * moveX + stepY * moveY <= 0) break;
+        const step = Math.hypot(stepX, stepY);
+        const scale = Math.min(1, remaining / step);
+        lastX += stepX * scale;
+        lastY += stepY * scale;
+        kept.push(lastX, lastY, predicted[i + 2]);
+        remaining -= step;
+    }
+    return kept;
+}
+
 /** Builds the stroke points of a finished stroke. */
 export function buildStrokePoints(stroke: Pick<Stroke, "size" | "simulatePressure" | "points">) {
     const builder = new StrokeBuilder(stroke);

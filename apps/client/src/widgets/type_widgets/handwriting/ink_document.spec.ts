@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import {
     AUTO_COLOR, buildStrokePoints, createStroke, getStrokeOutline, outlineStrokePoints,
-    parseInkDocument, serializeInkDocument, serializeStroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
+    parseInkDocument, serializeInkDocument, serializeStroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
+    trimPrediction
 } from "./ink_document";
 
 function distanceToPolygon(x: number, y: number, polygon: number[][]) {
@@ -201,5 +202,22 @@ describe("ink document", () => {
         expect(index.query({ minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 })).toEqual([ small ]);
         index.clear();
         expect(index.query({ minX: 0, minY: 0, maxX: 50, maxY: 50 })).toEqual([]);
+    });
+});
+
+describe("trimPrediction", () => {
+    it("keeps predicted points that continue the last move, no farther than that move went", () => {
+        // Moving right by 10: the prediction runs on in the same direction.
+        expect(trimPrediction(0, 0, 10, 0, [ 14, 0, 0.5, 18, 1, 0.6 ])).toEqual([ 14, 0, 0.5, 18, 1, 0.6 ]);
+
+        // The prediction overshoots: it stops at 10 past the pointer, along the last kept step.
+        expect(trimPrediction(0, 0, 10, 0, [ 16, 0, 0.5, 30, 0, 0.5 ])).toEqual([ 16, 0, 0.5, 20, 0, 0.5 ]);
+
+        // The prediction turns back against the move: nothing from there on is kept.
+        expect(trimPrediction(0, 0, 10, 0, [ 12, 0, 0.5, 11, 3, 0.5, 15, 0, 0.5 ])).toEqual([ 12, 0, 0.5 ]);
+        expect(trimPrediction(0, 0, 10, 0, [ 7, 0, 0.5 ])).toEqual([]);
+
+        // A pointer that has stopped predicts nothing.
+        expect(trimPrediction(10, 0, 10, 0, [ 14, 0, 0.5 ])).toEqual([]);
     });
 });

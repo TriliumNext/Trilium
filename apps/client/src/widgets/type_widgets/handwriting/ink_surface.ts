@@ -3,7 +3,8 @@ import {
     AUTO_COLOR, type Bounds, createStroke, getPageCount as countPages, getPageTop, getShortStrokeOutline,
     getStrokeOutline, getStrokePath, HIGHLIGHTER_ALPHA, type InkDocument, type InkLayout, type InkTool,
     type InkView, outlineStrokePoints, outlineToPath, PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle,
-    serializeInkDocument, serializeStroke, type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
+    serializeInkDocument, serializeStroke, type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex,
+    trimPrediction
 } from "./ink_document";
 import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
 import InkThumbnail from "./ink_thumbnail";
@@ -562,11 +563,14 @@ export default class InkSurface {
             } else if (!this.snapped) {
                 const events = e.getCoalescedEvents?.() ?? [];
                 this.addLivePoints(events.length ? events : [ e ]);
-                this.predicted = [];
+                const predicted: number[] = [];
                 for (const event of e.getPredictedEvents?.() ?? []) {
                     const { x, y } = this.toWorld(event.clientX, event.clientY);
-                    this.predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
+                    predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
                 }
+                const from = this.toWorld(this.lastX, this.lastY);
+                const to = this.toWorld(e.clientX, e.clientY);
+                this.predicted = trimPrediction(from.x, from.y, to.x, to.y, predicted);
                 this.watchHold(e);
             }
             this.scheduleLiveFrame();
