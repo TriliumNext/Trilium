@@ -83,7 +83,10 @@ const FIT_MARGIN = 32;
 const MAX_FIT_WIDTH_ZOOM = 2;
 /** The opacity of the paper's lines over the background, in the text color. */
 const PAPER_LINE_ALPHA = 0.16;
-/** The opacity of the text color over the background around the pages, and along their edges. */
+/**
+ * The opacity of the text color over the background around the pages, in a theme without a
+ * `--note-list-view-content-background`, and along their edges.
+ */
 const DESK_ALPHA = 0.06;
 const PAGE_EDGE_ALPHA = 0.18;
 
@@ -152,6 +155,8 @@ export default class InkSurface {
     private settleTimer: ReturnType<typeof setTimeout> | undefined;
     private autoColor = "#000";
     private backgroundColor = "#fff";
+    /** The theme's `--note-list-view-content-background` around the pages, if it has one. */
+    private deskColor: string | undefined;
 
     private mode: Mode = "idle";
     private activePointerId: number | undefined;
@@ -1091,6 +1096,7 @@ export default class InkSurface {
         const style = getComputedStyle(this.container);
         this.autoColor = style.color;
         this.backgroundColor = style.backgroundColor;
+        this.deskColor = style.getPropertyValue("--note-list-view-content-background").trim() || undefined;
         this.redrawRegion(0, 0, this.baseCanvas.width, this.baseCanvas.height);
     }
 
@@ -1146,8 +1152,8 @@ export default class InkSurface {
             return;
         }
 
-        ctx.fillStyle = this.autoColor;
-        ctx.globalAlpha = DESK_ALPHA;
+        ctx.fillStyle = this.deskColor ?? this.autoColor;
+        ctx.globalAlpha = this.deskColor ? 1 : DESK_ALPHA;
         ctx.fillRect(x, y, width, height);
         ctx.globalAlpha = 1;
 

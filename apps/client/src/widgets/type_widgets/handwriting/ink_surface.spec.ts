@@ -11,11 +11,13 @@ describe("ink surface input", () => {
     const onGesture = vi.fn();
     /** `[x, y, width, height, globalAlpha]` of each `fillRect()` call on any canvas. */
     const fillRects: number[][] = [];
+    /** The `fillStyle` of each `fillRect()` call, in the order of `fillRects`. */
+    const fillRectStyles: unknown[] = [];
     /** The `fillStyle` of each `fill()` call on any canvas. */
     const fills: unknown[] = [];
 
     beforeEach(() => {
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects, fills));
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => stubContext(fillRects, fillRectStyles, fills));
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
         Element.prototype.setPointerCapture ??= () => {};
@@ -212,6 +214,34 @@ describe("ink surface input", () => {
         surface.showView({ x: 397, y: 0, zoom: 0.25 });
         const sheets = fillRects.filter(([ , , width, height, alpha ]) => alpha === 1 && width === 199 && height < 300);
         expect(sheets.map(([ x, y, , height ]) => [ x, y, height ])).toEqual([ [ 101, 150, 281 ] ]);
+    });
+
+    it("puts the pages on the background of the note list, or on a tint of the text color", () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        container.style.color = "rgb(0, 0, 0)";
+        container.style.backgroundColor = "rgb(255, 255, 255)";
+        container.style.setProperty("--note-list-view-content-background", "rgba(0, 0, 0, 0.2)");
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
+        surface.load({ paper: "blank", layout: "pages", strokes: [] });
+        // The fills across the whole view, over the page's own background.
+        const desk = () => fillRects
+            .map(([ x, y, width, height, alpha ], index) => ({ x, y, width, height, alpha, style: fillRectStyles[index] }))
+            .filter(({ x, y, width, height, style }) =>
+                x === 0 && y === 0 && width === 400 && height === 300 && style !== "rgb(255, 255, 255)")
+            .map(({ style, alpha }) => [ style, alpha ]);
+
+        fillRects.length = 0;
+        fillRectStyles.length = 0;
+        surface.refreshTheme();
+        expect(desk()).toEqual([ [ "rgba(0, 0, 0, 0.2)", 1 ] ]);
+
+        // A theme without that background tints the desk with the text color.
+        container.style.removeProperty("--note-list-view-content-background");
+        fillRects.length = 0;
+        fillRectStyles.length = 0;
+        surface.refreshTheme();
+        expect(desk()).toEqual([ [ "rgb(0, 0, 0)", 0.06 ] ]);
     });
 
     it("moves between pages at the current zoom and reports the page in view", () => {
@@ -450,12 +480,14 @@ describe("ink surface input", () => {
 
 /**
  * A 2D context whose methods do nothing, as happy-dom draws no canvas, except that `fillRect()`
- * calls are recorded in `fillRects` and the `fillStyle` of `fill()` calls in `fills`.
+ * calls are recorded in `fillRects` with their `fillStyle` in `fillRectStyles`, and the `fillStyle`
+ * of `fill()` calls in `fills`.
  */
-function stubContext(fillRects: number[][], fills: unknown[]) {
+function stubContext(fillRects: number[][], fillRectStyles: unknown[], fills: unknown[]) {
     const target: Record<string | symbol, unknown> = { globalAlpha: 1 };
     target.fillRect = (x: number, y: number, width: number, height: number) => {
         fillRects.push([ x, y, width, height, target.globalAlpha as number ]);
+        fillRectStyles.push(target.fillStyle);
     };
     target.fill = () => fills.push(target.fillStyle);
     return new Proxy(target, {
