@@ -306,7 +306,7 @@ describe("importSingleFile dispatch", () => {
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("payload.unknownext");
     });
 
-    it("imports an RNote document as a handwriting note, one with only text and images as a text note", async () => {
+    it("imports an RNote document as a handwriting note with its ink, text boxes and images", async () => {
         const rnote = (strokes: object[]) => Buffer.from(gzipSync(strToU8(JSON.stringify({
             data: { engine_snapshot: { stroke_components: strokes.map((value) => ({ value })) } }
         }))));
@@ -319,10 +319,11 @@ describe("importSingleFile dispatch", () => {
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
         expect(JSON.parse(importedNote.getContent() as string)).toEqual({
             version: 1, paper: "blank", layout: "infinite",
+            texts: [ { id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" } ],
             strokes: [ { c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] } ]
         });
 
-        // One opaque white pixel, shown 20 by 10 below the text.
+        // One opaque white pixel, shown 20 by 10 around (10, 50).
         const image = {
             bitmapimage: {
                 image: { data: btoa("\xff\xff\xff\xff"), pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
@@ -330,13 +331,17 @@ describe("importSingleFile dispatch", () => {
             }
         };
         const typed = await testImport("Typed.rnote", "application/octet-stream", rnote([ image, text ]));
-        expect(typed.importedNote).toMatchObject({ type: "text", mime: "text/html", title: "Typed" });
+        expect(typed.importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Typed" });
         // The image service reads the type of the picture from its bytes once it has stored it.
         await imageService.awaitPendingImageWrites();
         const [ attachment ] = typed.importedNote.getAttachments();
-        expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image2.png" });
-        expect(typed.importedNote.getContent()).toBe(`<p>Typed</p><figure class="image image_resized" style="width:20px;">`
-            + `<img src="api/attachments/${attachment.attachmentId}/image/image2.png"></figure>`);
+        expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image1.png" });
+        expect(JSON.parse(typed.importedNote.getContent() as string)).toEqual({
+            version: 1, paper: "blank", layout: "infinite",
+            images: [ { url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 } ],
+            texts: [ { id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" } ],
+            strokes: []
+        });
 
         const empty = await testImport("Empty.rnote", "application/octet-stream", rnote([ { vectorimage: {} } ]));
         expect(empty.importedNote).toMatchObject({ type: "file", title: "Empty.rnote" });

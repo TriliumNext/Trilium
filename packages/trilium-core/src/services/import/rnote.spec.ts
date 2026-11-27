@@ -1,7 +1,7 @@
 import { gzipSync, strToU8, unzlibSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
-import { convertRnote } from "./rnote.js";
+import { convertRnote, serializeRnote } from "./rnote.js";
 
 const BLACK = { r: 0, g: 0, b: 0, a: 1 };
 const GREEN = { r: 0.148, g: 0.632, b: 0.41, a: 1 };
@@ -40,8 +40,9 @@ function rnote(strokes: (object | null)[], times?: number[], document: Record<st
 
 function convert(file: Uint8Array) {
     const converted = convertRnote(file);
-    if (converted?.type !== "handwriting") throw new Error("The file was not converted to handwriting.");
-    return { ...converted, document: JSON.parse(converted.content) };
+    if (!converted) throw new Error("The file was not converted.");
+    const urls = converted.images.map((_, index) => `api/attachments/a${index}/image/image.png`);
+    return { ...converted, document: JSON.parse(serializeRnote(converted, urls)) };
 }
 
 describe("convertRnote", () => {
@@ -144,7 +145,7 @@ describe("convertRnote", () => {
         expect(visited).toContain("60,31");
     });
 
-    it("turns a document without ink into the paragraphs and the images of a text note, from the top", () => {
+    it("keeps the text boxes and the images where they are, next to the ink", () => {
         const text = (content: string, x: number, y: number, color = BLACK, ranges: object[] = []) => ({
             textstroke: {
                 text: content,
@@ -155,66 +156,63 @@ describe("convertRnote", () => {
         const RED = { r: 1, g: 0, b: 0, a: 1 };
         // Two premultiplied pixels: opaque red, and green at half opacity.
         const pixels = btoa(String.fromCharCode(255, 0, 0, 255, 0, 64, 0, 128));
-        const image = {
+        const image = (affine: number[]) => ({
             bitmapimage: {
                 image: { data: pixels, pixel_width: 2, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
-                // 2 by 1 pixels scaled by 100 around (150, 150): 200 by 100, with its top at 100.
-                rectangle: { cuboid: { half_extents: [ 1, 0.5 ] }, transform: { affine: [ 100, 0, 0, 0, 100, 0, 150, 150, 1 ] } }
+                rectangle: { cuboid: { half_extents: [ 1, 0.5 ] }, transform: { affine } }
             }
-        };
-        const converted = convertRnote(rnote([
+        });
+        const converted = convert(rnote([
             text("Second", 0, 200),
             // The ranges count UTF-8 bytes: "Café" is five of them.
             text("Café\nau lait", 0, 300, RED, [ { range: { start: 0, end: 5 }, attribute: { text_color: BLACK } } ]),
-            image,
+            // 2 by 1 pixels scaled by 100 around (150, 150).
+            image([ 100, 0, 0, 0, 100, 0, 150, 150, 1 ]),
             text("Title & <more>", 40, 0),
             text("Title & <more>", 40, 0),
-            text("Left", 0, 0),
+            text("Hi", 0, 0),
             text("  ", 0, 400),
+            // A box with a width and a font size of 12, twice as wide and three times as tall.
+            { textstroke: { text: "Wide", transform: { affine: [ 2, 0, 0, 0, 3, 0, 500, 500, 1 ] }, text_style: { max_width: 400, font_size: 12 } } },
+            // Shown 100 by 400, which is not the shape of its pixels.
+            image([ 50, 0, 0, 0, 400, 0, 0, 0, 1 ]),
+            brush([ [ 0, 0, 1 ] ]),
             { shapestroke: { shape: { rect: { cuboid: { half_extents: [ 0, 0 ] }, transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } }, style: smooth() } }
         ]));
-        if (converted?.type !== "text") throw new Error("The file was not converted to text.");
 
         expect(converted.skipped).toEqual({ textstroke: 1, shapestroke: 1 });
-        expect(converted.blocks.map((block) => block.type === "paragraph" ? block.html : `${block.width}x${block.height}`)).toEqual([
-            "<p>Left</p>",
-            "<p>Title &amp; &lt;more&gt;</p>",
-            "200x100",
-            "<p>Second</p>",
-            "<p>Café<span style=\"color:#ff0000;--tn-color:#ff0000;\"><br>au lait</span></p>"
+        expect(converted.document.strokes).toHaveLength(1);
+        // The text starts where it did, inside the padding of the box, at the size it had. The box
+        // is as wide as the longest line at RNote's font size of 32, or as RNote wrapped it.
+        expect(converted.document.texts).toEqual([
+            { id: "rnote1", x: -8, y: 196, w: 131.2, s: 32, html: "<p>Second</p>" },
+            { id: "rnote2", x: -8, y: 296, w: 150.4, s: 32, html: "<p>Café<span style=\"color:#ff0000;--tn-color:#ff0000;\"><br>au lait</span></p>" },
+            { id: "rnote3", x: 32, y: -4, w: 284.8, s: 32, html: "<p>Title &amp; &lt;more&gt;</p>" },
+            { id: "rnote4", x: -8, y: -4, w: 80, s: 32, html: "<p>Hi</p>" },
+            { id: "rnote5", x: 492, y: 496, w: 816, s: 24, html: "<p>Wide</p>" }
         ]);
+        expect(converted.document.images).toEqual([
+            { url: "api/attachments/a0/image/image.png", x: 50, y: 100, w: 200, h: 100 },
+            { url: "api/attachments/a1/image/image.png", x: -50, y: -200, w: 100, h: 400 }
+        ]);
+        // An image that has no URL is left out.
+        expect(JSON.parse(serializeRnote(converted, [ undefined, "api/attachments/b/image/b.png" ])).images)
+            .toEqual([ { url: "api/attachments/b/image/b.png", x: -50, y: -200, w: 100, h: 400 } ]);
+        expect(JSON.parse(serializeRnote(converted))).not.toHaveProperty("images");
 
-        // The PNG holds the pixels with their alpha no longer premultiplied.
-        const png = converted.blocks[2];
-        if (png.type !== "image") throw new Error("No image.");
-        expect([ ...png.png.slice(0, 8) ]).toEqual([ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a ]);
-        const view = new DataView(png.png.buffer, png.png.byteOffset);
-        expect([ view.getUint32(16), view.getUint32(20) ]).toEqual([ 2, 1 ]);
-        const idatLength = view.getUint32(33);
-        expect(String.fromCharCode(...png.png.slice(37, 41))).toBe("IDAT");
-        expect([ ...unzlibSync(png.png.slice(41, 41 + idatLength)) ]).toEqual([ 0, 255, 0, 0, 255, 0, 128, 0, 128 ]);
-    });
+        // Each PNG holds the pixels as they are, with their alpha no longer premultiplied.
+        for (const { png } of converted.images) {
+            expect([ ...png.slice(0, 8) ]).toEqual([ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a ]);
+            const view = new DataView(png.buffer, png.byteOffset);
+            expect([ view.getUint32(16), view.getUint32(20) ]).toEqual([ 2, 1 ]);
+            const idatLength = view.getUint32(33);
+            expect(String.fromCharCode(...png.slice(37, 41))).toBe("IDAT");
+            expect([ ...unzlibSync(png.slice(41, 41 + idatLength)) ]).toEqual([ 0, 255, 0, 0, 255, 0, 128, 0, 128 ]);
+        }
 
-    it("stretches the pixels of an image to the shape RNote shows it at", () => {
-        const pixels = btoa(String.fromCharCode(255, 0, 0, 255, 0, 64, 0, 128));
-        // 2 by 1 pixels shown 100 by 200: the rows are repeated, four times as tall as wide.
-        const image = {
-            bitmapimage: {
-                image: { data: pixels, pixel_width: 2, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
-                rectangle: { cuboid: { half_extents: [ 1, 0.5 ] }, transform: { affine: [ 50, 0, 0, 0, 400, 0, 0, 0, 1 ] } }
-            }
-        };
-        const converted = convertRnote(rnote([ image ]));
-        if (converted?.type !== "text") throw new Error("The file was not converted to text.");
-        const [ block ] = converted.blocks;
-        if (block.type !== "image") throw new Error("No image.");
-        expect([ block.width, block.height ]).toEqual([ 100, 400 ]);
-
-        const view = new DataView(block.png.buffer, block.png.byteOffset);
-        expect([ view.getUint32(16), view.getUint32(20) ]).toEqual([ 2, 8 ]);
-        const row = [ 0, 255, 0, 0, 255, 0, 128, 0, 128 ];
-        const idatLength = view.getUint32(33);
-        expect([ ...unzlibSync(block.png.slice(41, 41 + idatLength)) ]).toEqual(Array.from({ length: 8 }, () => row).flat());
+        // A document of text alone is a handwriting note too.
+        const typed = convert(rnote([ text("Typed", 0, 0) ]));
+        expect(typed.document).toMatchObject({ layout: "infinite", strokes: [], texts: [ { html: "<p>Typed</p>" } ] });
     });
 
     it("returns nothing for a file that is not an RNote document or holds nothing it can convert", () => {

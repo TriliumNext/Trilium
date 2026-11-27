@@ -9,7 +9,7 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import { convertRnote } from "./rnote.js";
+import { convertRnote, serializeRnote } from "./rnote.js";
 import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
@@ -170,9 +170,9 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
 }
 
 /**
- * Imports an RNote document as a handwriting note, or as a text note when it holds only typed text
- * and images. Returns `undefined` for a file that `convertRnote()` cannot read or that holds none
- * of these, which is then imported as a file.
+ * Imports an RNote document as a handwriting note, with its images as attachments of the note.
+ * Returns `undefined` for a file that `convertRnote()` cannot read or that holds nothing a
+ * handwriting note can, which is then imported as a file.
  */
 function importRnote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const converted = typeof file.buffer === "string" ? undefined : convertRnote(file.buffer);
@@ -181,29 +181,27 @@ function importRnote(taskContext: TaskContext<"importNotes">, file: File, parent
     const { note } = noteService.createNewNote({
         parentNoteId: parentNote.noteId,
         title: getNoteTitle(file.originalname.slice(0, -RNOTE_EXTENSION.length), !!taskContext.data?.replaceUnderscoresWithSpaces),
-        content: converted.type === "handwriting" ? converted.content : "",
-        type: converted.type === "handwriting" ? "code" : "text",
-        mime: converted.type === "handwriting" ? HANDWRITING_MIME : "text/html",
+        content: serializeRnote(converted),
+        type: "code",
+        mime: HANDWRITING_MIME,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
     note.addLabel("originalFileName", file.originalname);
 
-    if (converted.type === "text") {
-        // The images are saved first, as the HTML refers to them by the IDs of their attachments.
-        const html = converted.blocks.map((block, index) => {
-            if (block.type === "paragraph") return block.html;
-            const attachment = imageService.saveImageToAttachment(
-                note.noteId, block.png, `image${index + 1}.png`, !!taskContext.data?.shrinkImages
+    if (converted.images.length) {
+        // The images are saved first, as the content refers to them by the IDs of their attachments.
+        const urls = converted.images.map(({ png }, index) => {
+            const { attachmentId, title } = imageService.saveImageToAttachment(
+                note.noteId, png, `image${index + 1}.png`, !!taskContext.data?.shrinkImages
             );
-            const src = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`;
-            return `<figure class="image image_resized" style="width:${block.width}px;"><img src="${src}"></figure>`;
+            return attachmentId && `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`;
         });
-        note.setContent(html.join(""));
+        note.setContent(serializeRnote(converted, urls));
     }
 
     const skipped = Object.entries(converted.skipped).map(([ kind, count ]) => `${count} ${kind}`);
     if (skipped.length) {
-        getLog().info(`Imported '${file.originalname}' as ${converted.type} without: ${skipped.join(", ")}`);
+        getLog().info(`Imported '${file.originalname}' without: ${skipped.join(", ")}`);
     }
 
     taskContext.increaseProgressCount();

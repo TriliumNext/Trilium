@@ -11,4 +11,4 @@ The new [Handwriting](https://docs.triliumnotes.org/user-guide/note-types/handwr
 *   Add a photo or a screenshot, such as the exercise being worked on, and write over it.
 *   Add a PDF, such as the slides of a lecture, and write over its pages.
 *   Collections and text notes show a picture of the note's first page.
-*   Documents of RNote (`.rnote`) are imported as handwriting notes, with their pen strokes, and those holding only typed text and images as text notes.
+*   Documents of RNote (`.rnote`) are imported as handwriting notes, with their pen strokes, images and typed text.

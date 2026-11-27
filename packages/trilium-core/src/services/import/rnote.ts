@@ -7,78 +7,148 @@ import { decodeBase64, decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import { escapeHtml } from "../utils/index.js";
 
 /**
- * A converted RNote document: a handwriting note when it holds ink, and a text note when it holds
- * only typed text and images. `skipped` counts the elements of each kind the note cannot hold.
+ * A converted RNote document, which `serializeRnote()` turns into the content of a handwriting
+ * note. `skipped` counts the elements of each kind the note cannot hold.
  */
-export type RnoteConversion =
-    | { type: "handwriting", content: string, skipped: Record<string, number> }
-    | { type: "text", blocks: RnoteBlock[], skipped: Record<string, number> };
+export interface RnoteConversion {
+    paper: string;
+    /** The JSON of each stroke, in drawing order. */
+    strokes: string[];
+    images: RnoteImage[];
+    texts: RnoteTextBox[];
+    skipped: Record<string, number>;
+}
 
-/** A block of a text note, in reading order: a paragraph of HTML, or a PNG shown at `width` by `height`. */
-export type RnoteBlock =
-    | { type: "paragraph", html: string }
-    | { type: "image", png: Uint8Array, width: number, height: number };
+/** A PNG and the rectangle it covers, in world units. */
+export interface RnoteImage {
+    png: Uint8Array;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** A text box as the client's `parseInkDocument()` reads it. */
+export interface RnoteTextBox {
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    /** The font size, in world units. */
+    s: number;
+    html: string;
+}
 
 /**
- * Converts an RNote document (`.rnote`, gzipped JSON). The pen strokes, the lines and the
- * rectangles become the strokes of a handwriting note; RNote measures in pixels at 96 dpi, as a
- * handwriting note does, so positions are kept. A document without them becomes the blocks of a
- * text note, from its text boxes and images. Returns `undefined` for a file that is not an RNote
- * document or that holds none of these.
+ * Converts an RNote document (`.rnote`, gzipped JSON) to the parts of a handwriting note. The pen
+ * strokes, the lines and the rectangles become strokes, the images become images and the text
+ * boxes become text boxes. RNote measures in pixels at 96 dpi, as a handwriting note does, so
+ * positions are kept. Returns `undefined` for a file that is not an RNote document or that holds
+ * none of these.
  */
 export function convertRnote(file: Uint8Array): RnoteConversion | undefined {
     const read = readSnapshot(file);
     if (!read) return undefined;
     const { snapshot, components } = read;
 
-    const elements: RnoteElement[] = [];
-    for (const [ index, component ] of components.entries()) {
-        const value = asRecord(asRecord(component)?.value);
-        if (!value) continue;
-        const [ kind ] = Object.keys(value);
-        elements.push({ index, kind, value: asRecord(value[kind]) });
-    }
-
     const chrono: unknown[] = Array.isArray(snapshot.chrono_components) ? snapshot.chrono_components : [];
-    const strokes: { order: number, json: string }[] = [];
+    const strokes: Ordered<string>[] = [];
+    const images: Ordered<RnoteImage>[] = [];
+    const texts: Ordered<Omit<RnoteTextBox, "id">>[] = [];
     const skipped: Record<string, number> = {};
-    for (const { index, kind, value } of elements) {
-        const stroke = convertStroke(kind, value);
-        if (!stroke) {
-            skipped[kind] = (skipped[kind] ?? 0) + 1;
-            continue;
-        }
-        const order = asRecord(asRecord(chrono[index])?.value)?.t;
-        strokes.push({ order: isFiniteNumber(order) ? order : index, json: JSON.stringify(stroke) });
-    }
-    if (!strokes.length) return convertToText(elements);
+    for (const [ index, component ] of components.entries()) {
+        const record = asRecord(asRecord(component)?.value);
+        if (!record) continue;
+        const [ kind ] = Object.keys(record);
+        const value = asRecord(record[kind]);
+        const time = asRecord(asRecord(chrono[index])?.value)?.t;
+        const order = isFiniteNumber(time) ? time : index;
 
-    strokes.sort((a, b) => a.order - b.order);
+        const stroke = value && convertStroke(kind, value);
+        const image = value && kind === "bitmapimage" ? convertImage(value) : undefined;
+        const text = value && kind === "textstroke" ? convertText(value) : undefined;
+        if (stroke) {
+            strokes.push({ order, item: JSON.stringify(stroke) });
+        } else if (image) {
+            images.push({ order, item: image });
+        } else if (text) {
+            texts.push({ order, item: text });
+        } else {
+            skipped[kind] = (skipped[kind] ?? 0) + 1;
+        }
+    }
+    if (!strokes.length && !images.length && !texts.length) return undefined;
+
+    // A document converted from OneNote holds its title twice, as two text boxes at one place.
+    const seen = new Set<string>();
+    const uniqueTexts = inOrder(texts).filter(({ x, y, html }) => {
+        const key = `${x},${y},${html}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
     const config = asRecord(asRecord(snapshot.document)?.config);
-    const document = [
+    return {
+        paper: convertPaper(asRecord(config?.background)?.pattern),
+        strokes: inOrder(strokes),
+        images: inOrder(images),
+        texts: uniqueTexts.map((text, index) => ({ id: `rnote${index + 1}`, ...text })),
+        skipped
+    };
+}
+
+/**
+ * Returns the content of the handwriting note of `conversion`. `imageUrls` holds the URL that
+ * serves each of its images, which must match the client's `IMAGE_URL_PATTERN`. An image without
+ * a URL is left out.
+ */
+export function serializeRnote(
+    { paper, strokes, images, texts }: RnoteConversion, imageUrls: (string | undefined)[] = []
+) {
+    const round = (value: number) => Math.round(value * POSITION_SCALE) / POSITION_SCALE;
+    const savedImages: object[] = [];
+    for (const [ index, { x, y, width, height } ] of images.entries()) {
+        const url = imageUrls[index];
+        if (url) savedImages.push({ url, x: round(x), y: round(y), w: round(width), h: round(height) });
+    }
+    const savedTexts = texts.map(({ id, x, y, w, s, html }) =>
+        ({ id, x: round(x), y: round(y), w: round(w), s: round(s), html }));
+    const parts = [
         `"version":1`,
-        `"paper":${JSON.stringify(convertPaper(asRecord(config?.background)?.pattern))}`,
-        `"layout":"infinite"`
+        `"paper":${JSON.stringify(paper)}`,
+        `"layout":"infinite"`,
+        ...(savedImages.length ? [ `"images":${JSON.stringify(savedImages)}` ] : []),
+        ...(savedTexts.length ? [ `"texts":${JSON.stringify(savedTexts)}` ] : []),
+        `"strokes":[${strokes.join(",")}]`
     ];
-    document.push(`"strokes":[${strokes.map((stroke) => stroke.json).join(",")}]`);
-    return { type: "handwriting", content: `{${document.join(",")}}`, skipped };
+    return `{${parts.join(",")}}`;
 }
 
 type JsonRecord = Record<string, unknown>;
 
-/** An element of a document: its index among the stroke slots, its kind and its fields. */
-interface RnoteElement {
-    index: number;
-    kind: string;
-    value: JsonRecord | undefined;
+/** A converted element and its place in the drawing order. */
+interface Ordered<T> {
+    order: number;
+    item: T;
+}
+
+function inOrder<T>(items: Ordered<T>[]) {
+    return items.sort((a, b) => a.order - b.order).map(({ item }) => item);
 }
 
 /** The pressure of a stroke whose width does not follow the pressure. */
 const EVEN_PRESSURE = 0.5;
 /** The only pixel format of an image that `convertImage()` reads. */
 const PREMULTIPLIED_RGBA = "R8g8b8a8Premultiplied";
-/** The longest side, in pixels, that `stretchPixels()` stretches a picture to. */
-const MAX_STRETCHED_SIDE = 8192;
+/** The font size of a text box that holds none, as in RNote. */
+const DEFAULT_FONT_SIZE = 32;
+/** The width of a character of a text box without a width, as a share of its font size. */
+const CHARACTER_WIDTH = 0.6;
+/** The narrowest text box, which must match the client's `MIN_WIDTH` in TextBoxLayer.tsx. */
+const MIN_TEXT_WIDTH = 80;
+/** The padding across and down, which must match `.handwriting-text-box` in the client's Handwriting.css. */
+const TEXT_PADDING = [ 8, 4 ];
 
 const GZIP_MAGIC = [ 0x1f, 0x8b ];
 
@@ -95,8 +165,7 @@ function readSnapshot(file: Uint8Array) {
     return snapshot && Array.isArray(components) ? { snapshot, components: components as unknown[] } : undefined;
 }
 
-function convertStroke(kind: string, stroke: JsonRecord | undefined): SerializedStroke | undefined {
-    if (!stroke) return undefined;
+function convertStroke(kind: string, stroke: JsonRecord): SerializedStroke | undefined {
     if (kind === "brushstroke") return convertBrushStroke(stroke);
     if (kind === "shapestroke") return convertShapeStroke(stroke);
     return undefined;
@@ -201,45 +270,13 @@ function buildStroke(
 }
 
 /**
- * Returns the blocks of a text note from the text boxes and the images of a document without ink,
- * from top to bottom and then from left to right. A text box repeated at the same place, as a
- * document converted from OneNote holds its title, is kept once.
+ * Returns a text box whose text starts where it does in the document, as one paragraph. Its line
+ * breaks are kept, and its color and the colors of its ranges become spans that carry the color
+ * both as `color` and as `--tn-color`, so it adapts to the theme. Black text takes the theme's
+ * text color. The box keeps the font size, and one without a width is as wide as its longest line
+ * at that size.
  */
-function convertToText(elements: RnoteElement[]): RnoteConversion | undefined {
-    const placed: { top: number, left: number, block: RnoteBlock }[] = [];
-    const skipped: Record<string, number> = {};
-    const paragraphs = new Set<string>();
-    for (const { kind, value } of elements) {
-        const converted = value && convertBlock(kind, value);
-        if (!converted) {
-            skipped[kind] = (skipped[kind] ?? 0) + 1;
-            continue;
-        }
-        if (converted.block.type === "paragraph") {
-            const key = `${converted.top},${converted.left},${converted.block.html}`;
-            if (paragraphs.has(key)) continue;
-            paragraphs.add(key);
-        }
-        placed.push(converted);
-    }
-    if (!placed.length) return undefined;
-
-    placed.sort((a, b) => a.top - b.top || a.left - b.left);
-    return { type: "text", blocks: placed.map(({ block }) => block), skipped };
-}
-
-function convertBlock(kind: string, value: JsonRecord) {
-    if (kind === "textstroke") return convertText(value);
-    if (kind === "bitmapimage") return convertImage(value);
-    return undefined;
-}
-
-/**
- * Returns a text box as a paragraph at the top left corner of the box. Its line breaks are kept,
- * and its color and the colors of its ranges become spans that carry the color both as `color` and
- * as `--tn-color`, so it adapts to the theme. Black text takes the theme's text color.
- */
-function convertText(stroke: JsonRecord) {
+function convertText(stroke: JsonRecord): Omit<RnoteTextBox, "id"> | undefined {
     const { text } = stroke;
     const affine = asRecord(stroke.transform)?.affine;
     if (typeof text !== "string" || !text.trim() || !Array.isArray(affine) || !affine.every(isFiniteNumber)) {
@@ -276,14 +313,32 @@ function convertText(stroke: JsonRecord) {
         const escaped = text.split(/\r\n|\r|\n/).map(escapeHtml).join("<br>");
         return color ? `<span style="color:${color};--tn-color:${color};">${escaped}</span>` : escaped;
     }).join("");
-    return { top: affine[7], left: affine[6], block: { type: "paragraph" as const, html: `<p>${html}</p>` } };
+
+    // RNote can stretch a box more one way than the other, which a text box cannot. The font size
+    // follows the smaller stretch, so the text takes no more lines and no taller ones than in RNote.
+    const scaleX = Math.hypot(affine[0], affine[1]);
+    const scaleY = Math.hypot(affine[3], affine[4]);
+    const fontSize = isFiniteNumber(style?.font_size) && style.font_size > 0 ? style.font_size : DEFAULT_FONT_SIZE;
+    const maxWidth = style?.max_width;
+    let longestLine = 0;
+    for (const line of text.split(/\r\n|\r|\n/)) {
+        longestLine = Math.max(longestLine, line.length);
+    }
+    const width = isFiniteNumber(maxWidth) && maxWidth > 0 ? maxWidth : longestLine * fontSize * CHARACTER_WIDTH;
+    return {
+        x: affine[6] - TEXT_PADDING[0],
+        y: affine[7] - TEXT_PADDING[1],
+        w: Math.max(MIN_TEXT_WIDTH, width * scaleX + 2 * TEXT_PADDING[0]),
+        s: fontSize * Math.min(scaleX, scaleY),
+        html: `<p>${html}</p>`
+    };
 }
 
 /**
- * Returns an image as a PNG, at the size and the top left corner its rectangle has in the
- * document. RNote stores the pixels as premultiplied RGBA.
+ * Returns an image as a PNG and the rectangle it covers in the document, which stretches the
+ * picture when it has another shape. RNote stores the pixels as premultiplied RGBA.
  */
-function convertImage(image: JsonRecord) {
+function convertImage(image: JsonRecord): RnoteImage | undefined {
     const pixels = asRecord(image.image);
     const width = pixels?.pixel_width;
     const height = pixels?.pixel_height;
@@ -308,39 +363,14 @@ function convertImage(image: JsonRecord) {
     const [ a, b, , c, d, , tx, ty ] = affine;
     const halfWidth = Math.abs(extents[0]) * Math.hypot(a, b);
     const halfHeight = Math.abs(extents[1]) * Math.hypot(c, d);
-    const stretched = stretchPixels(data, width, height, halfWidth / halfHeight);
+    if (!(halfWidth > 0) || !(halfHeight > 0)) return undefined;
     return {
-        top: ty - halfHeight,
-        left: tx - halfWidth,
-        block: {
-            type: "image" as const,
-            png: encodePng(stretched.data, stretched.width, stretched.height),
-            width: Math.round(2 * halfWidth),
-            height: Math.round(2 * halfHeight)
-        }
+        png: encodePng(data, width, height),
+        x: tx - halfWidth,
+        y: ty - halfHeight,
+        width: 2 * halfWidth,
+        height: 2 * halfHeight
     };
-}
-
-/**
- * Returns RGBA pixels stretched to the shape `ratio` (width over height) by repeating rows or
- * columns, as a text note shows a picture in its own proportions. The side that grows stays
- * within `MAX_STRETCHED_SIDE` pixels, or the side it had.
- */
-function stretchPixels(data: Uint8Array, width: number, height: number, ratio: number) {
-    if (!Number.isFinite(ratio) || ratio <= 0) return { data, width, height };
-    const targetWidth = Math.max(width, Math.min(MAX_STRETCHED_SIDE, Math.round(height * ratio)));
-    const targetHeight = Math.max(height, Math.min(MAX_STRETCHED_SIDE, Math.round(width / ratio)));
-    if (targetWidth === width && targetHeight === height) return { data, width, height };
-
-    const stretched = new Uint8Array(targetWidth * targetHeight * 4);
-    for (let y = 0; y < targetHeight; y++) {
-        const fromRow = Math.floor(y * height / targetHeight) * width;
-        for (let x = 0; x < targetWidth; x++) {
-            const from = (fromRow + Math.floor(x * width / targetWidth)) * 4;
-            stretched.set(data.subarray(from, from + 4), (y * targetWidth + x) * 4);
-        }
-    }
-    return { data: stretched, width: targetWidth, height: targetHeight };
 }
 
 /** Encodes premultiplied RGBA pixels as a PNG of straight RGBA, each row unfiltered. */
