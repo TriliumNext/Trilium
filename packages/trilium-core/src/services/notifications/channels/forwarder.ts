@@ -501,15 +501,20 @@ export default class NotificationForwarder {
     /**
      * Enables a channel at its reviewed revision: the switching reaches the record first, then the
      * transaction writes the activation, and `writeActivation` builds the rest of the row.
+     * `check` runs in the queue before the record write, so its throw refuses with nothing written.
      *
      * @returns whether the record holds the switching.
      */
     async switchOn(
         channelId: string,
-        writeActivation: (activationId: string, sequence: number) => void
+        writeActivation: (activationId: string, sequence: number) => void,
+        check?: () => void
     ) {
         this.checkRate(`enable:${channelId}`, ENABLINGS_PER_HOUR, HOUR);
         return this.runSwitching(async () => {
+            if (check) {
+                cls.init(check);
+            }
             const activationId = randomString(16);
             const sequence = this.getNextSequence();
             const result = await this.record.run(() => undefined,

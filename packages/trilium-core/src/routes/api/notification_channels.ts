@@ -203,20 +203,15 @@ function enableChannel(req: Request<{ channelId: string }>) {
         if (channel.kind === "built-in" && checkedLabels.length > 0) {
             throw new NotificationError("invalid-input");
         }
-        const current = getCurrentRevision(channel);
-        if (current.revision === null) {
-            throw new NotificationError("not-runnable");
-        }
-        if (current.revision !== revision) {
-            throw new NotificationError("stale-revision");
-        }
+        const current = checkRevision(channel, revision);
         checkActivationSize(current.collected?.ownedAttributes ?? [], checkedLabels);
 
         const isRecorded = await getNotificationForwarder().switchOn(channelId,
             (activationId, sequence) => {
                 writeActivation(channelId, buildActivation(channelId, revision, activationId,
                     sequence, settings, checkedLabels));
-            });
+            },
+            () => checkRevision(getChannelOrThrow(channelId), revision));
         return { channel: toView(getChannelOrThrow(channelId)), isRecorded };
     });
 }
@@ -392,13 +387,7 @@ function buildActivation(
     labels: [ string, string ][]
 ): ActivationRecord {
     const channel = getChannelOrThrow(channelId);
-    const { revision } = getCurrentRevision(channel);
-    if (revision === null) {
-        throw new NotificationError("not-runnable");
-    }
-    if (revision !== reviewedRevision) {
-        throw new NotificationError("stale-revision");
-    }
+    checkRevision(channel, reviewedRevision);
     if (channel.script) {
         for (const [ name, value ] of labels) {
             channel.script.note.setLabel(name, value);
@@ -465,14 +454,36 @@ function checkLabels(labels: unknown): [ string, string ][] {
 }
 
 /**
+ * The current revision of a channel.
+ *
+ * @throws NotificationError `not-runnable`, or `stale-revision` when the channel is no longer at
+ *         `reviewedRevision`.
+ */
+function checkRevision(channel: Channel, reviewedRevision: string) {
+    const current = getCurrentRevision(channel);
+    if (current.revision === null) {
+        throw new NotificationError("not-runnable");
+    }
+    if (current.revision !== reviewedRevision) {
+        throw new NotificationError("stale-revision");
+    }
+    return current;
+}
+
+/**
  * Refuses an enabling whose `activation` record would hold more than 32 KiB, before the record
- * of deliveries takes its switching.
+ * of deliveries takes its switching. The estimate counts each label as an owned attribute and
+ * 1 KiB for the other fields, so it is never below the exact size.
  */
 function checkActivationSize(
     ownedAttributes: { type: string; name: string; value: string }[],
     labels: [ string, string ][]
 ) {
-    const estimate = JSON.stringify({ ownedAttributes, labels, padding: "x".repeat(1024) });
+    const estimate = JSON.stringify({
+        ownedAttributes: [ ...ownedAttributes, ...labels.map(([ name, value ]) =>
+            ({ type: "label", name, value, isInheritable: false })) ],
+        padding: "x".repeat(1024)
+    });
     if (encodeUtf8(estimate).byteLength > CHANNEL_RECORD_MAX_BYTES) {
         throw new NotificationError("too-large");
     }

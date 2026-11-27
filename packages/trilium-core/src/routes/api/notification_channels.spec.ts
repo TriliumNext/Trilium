@@ -17,6 +17,7 @@ import {
 } from "../../services/notifications/channels/registry";
 import type { NotificationChannelType } from "../../services/notifications/channels/types";
 import { getNotificationForwarder } from "../../services/notifications/index";
+import { CHANNEL_RECORD_MAX_BYTES } from "../../services/notifications/model";
 import { getPlatform } from "../../services/platform";
 import { getSql } from "../../services/sql/index";
 import { CoreApiTester } from "../../test/api_tester";
@@ -120,10 +121,12 @@ describe("the channel routes", () => {
         const { revision } = await review(note.noteId);
         const forwarder = getNotificationForwarder();
         const switchOn = forwarder.switchOn.bind(forwarder);
-        vi.spyOn(forwarder, "switchOn").mockImplementationOnce((channelId, writeActivation) => {
-            getContext().init(() => becca.getNoteOrThrow(note.noteId).setContent("return 2;"));
-            return switchOn(channelId, writeActivation);
-        });
+        vi.spyOn(forwarder, "switchOn").mockImplementationOnce(
+            (channelId, writeActivation, check) => switchOn(channelId, writeActivation, () => {
+                check?.();
+                getContext().init(() =>
+                    becca.getNoteOrThrow(note.noteId).setContent("return 2;"));
+            }));
 
         const enabled = await api.post<NotificationErrorBody>(
             `/api/notification-channels/${note.noteId}/enable`,
@@ -131,6 +134,58 @@ describe("the channel routes", () => {
         expect(enabled).toMatchObject({ status: 409, body: { code: "stale-revision" } });
         expect(getActivation(note.noteId)).toBeNull();
         expect(becca.getNoteOrThrow(note.noteId).getOwnedLabelValue("topic")).toBeNull();
+    });
+
+    it("keeps the first of two enablings at one revision live in the record", async () => {
+        const note = createChannelNote();
+        const { revision } = await review(note.noteId);
+        const url = `/api/notification-channels/${note.noteId}/enable`;
+        const [ first, second ] = await Promise.all([
+            api.post<NotificationChannelSwitchResponse>(url,
+                { body: { revision, ...SETTINGS, labels: { topic: "alerts" } } }),
+            api.post<NotificationErrorBody>(url,
+                { body: { revision, ...SETTINGS, labels: { topic: "other" } } })
+        ]);
+
+        expect(first.status).toBe(200);
+        expect(second).toMatchObject({ status: 409, body: { code: "stale-revision" } });
+        expect(becca.getNoteOrThrow(note.noteId).getOwnedLabelValue("topic")).toBe("alerts");
+        expect((await list()).channels.find(({ channelId }) => channelId === note.noteId))
+            .toMatchObject({
+                state: "enabled", activationId: first.body.channel.activationId, recordHold: "live"
+            });
+    });
+
+    it("refuses an enabling over the size limit before the record takes it", async () => {
+        const note = createChannelNote();
+        const enable = async <T>(labels?: Record<string, string>) => api.post<T>(
+            `/api/notification-channels/${note.noteId}/enable`,
+            { body: { revision: (await review(note.noteId)).revision, ...SETTINGS, labels } });
+        const sizeOf = (value: unknown) => JSON.stringify(value).length;
+        const attributeSize = (name: string, value: string) =>
+            1 + sizeOf({ type: "label", name, value, isInheritable: false });
+        const labels = Object.fromEntries(
+            Array.from({ length: 20 }, (_, index) => [ `new${index}`, "z".repeat(1000) ]));
+        let labelsSize = 0;
+        for (const [ name, value ] of Object.entries(labels)) {
+            labelsSize += attributeSize(name, value);
+        }
+
+        await enable();
+        // The filler puts the activation of an enabling with `labels` 64 bytes over the limit.
+        const fillerLength = CHANNEL_RECORD_MAX_BYTES + 64 - sizeOf(getActivation(note.noteId))
+            - labelsSize - attributeSize("filler", "");
+        getContext().init(() =>
+            becca.getNoteOrThrow(note.noteId).setLabel("filler", "x".repeat(fillerLength)));
+        const live = await enable<NotificationChannelSwitchResponse>();
+        expect(live.status).toBe(200);
+
+        const large = await enable<NotificationErrorBody>(labels);
+        expect(large.body.code).toBe("too-large");
+        expect((await list()).channels.find(({ channelId }) => channelId === note.noteId))
+            .toMatchObject({
+                state: "enabled", activationId: live.body.channel.activationId, recordHold: "live"
+            });
     });
 
     it("refuses the labels of a widget beyond their limits", async () => {
