@@ -2,7 +2,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CustomPressureItem, InsertMenu } from "./Handwriting";
+import { CustomPressureItem, EraserRail, InsertMenu } from "./Handwriting";
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
@@ -49,5 +49,27 @@ describe("InsertMenu", () => {
         await act(async () => items[1].click());
         expect(onPdf).toHaveBeenCalledOnce();
         expect(onImage).not.toHaveBeenCalled();
+    });
+});
+
+describe("EraserRail", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    afterEach(() => act(() => render(null, host)));
+
+    it("offers the two ways to erase, marks the one in use and switches to the other", () => {
+        const onChange = vi.fn();
+        act(() => render(<EraserRail mode="stroke" onChange={onChange} />, host));
+
+        const buttons = [ ...host.querySelectorAll<HTMLButtonElement>(".handwriting-rail button") ];
+        expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual([ "handwriting.eraser_stroke", "handwriting.eraser_partial" ]);
+        expect(buttons.map((button) => button.classList.contains("active"))).toEqual([ true, false ]);
+        expect(buttons.every((button) => [ ...button.classList ].some((name) => name.startsWith("bx-")))).toBe(true);
+
+        act(() => buttons[1].click());
+        expect(onChange).toHaveBeenCalledExactlyOnceWith("partial");
+
+        act(() => render(<EraserRail mode="partial" onChange={onChange} />, host));
+        expect([ ...host.querySelectorAll(".handwriting-rail button") ].map((button) => button.classList.contains("active"))).toEqual([ false, true ]);
     });
 });

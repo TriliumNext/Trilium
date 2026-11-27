@@ -497,6 +497,16 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                     </FormListItem>
                                 ))}
                             </FormDropdownSubmenu>
+                            {state.pdfs.length > 0 && (
+                                <FormDropdownSubmenu icon="bx bx-trash" title={t("handwriting.remove_pdf")}>
+                                    {state.pdfs.map((url, index) => (
+                                        <FormListItem key={url} onClick={() => surfaceRef.current?.removePdf(url)}>
+                                            {pdfNames.get(url) ?? t("handwriting.pdf_number", { number: index + 1 })}
+                                        </FormListItem>
+                                    ))}
+                                </FormDropdownSubmenu>
+                            )}
+                            <FormDropdownDivider />
                             <FormDropdownSubmenu icon="bx bx-tachometer" title={t("handwriting.pressure_sensitivity")}>
                                 {PRESSURE_PRESETS.map(({ name, value }) => (
                                     <FormListItem
@@ -512,27 +522,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                 <FormDropdownDivider />
                                 <CustomPressureItem value={sensitivity} onChange={setSensitivity} />
                             </FormDropdownSubmenu>
-                            <FormDropdownSubmenu icon="bx bx-eraser" title={t("handwriting.eraser")}>
-                                {ERASER_MODES.map((mode) => (
-                                    <FormListItem
-                                        key={mode}
-                                        checkable
-                                        checked={eraserMode === mode}
-                                        onClick={() => setEraserMode(mode)}
-                                    >
-                                        {t(`handwriting.eraser_${mode}`)}
-                                    </FormListItem>
-                                ))}
-                            </FormDropdownSubmenu>
-                            {state.pdfs.length > 0 && (
-                                <FormDropdownSubmenu icon="bx bx-trash" title={t("handwriting.remove_pdf")}>
-                                    {state.pdfs.map((url, index) => (
-                                        <FormListItem key={url} onClick={() => surfaceRef.current?.removePdf(url)}>
-                                            {pdfNames.get(url) ?? t("handwriting.pdf_number", { number: index + 1 })}
-                                        </FormListItem>
-                                    ))}
-                                </FormDropdownSubmenu>
-                            )}
                             {HAS_TOUCH && (
                                 <FormListItem
                                     icon="bx bxs-hand-up"
@@ -557,6 +546,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             {!isReadOnly && inkTool && (
                 <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
             )}
+            {!isReadOnly && tool === "eraser" && <EraserRail mode={eraserMode} onChange={setEraserMode} />}
 
             {/* The browser's own file choosers, which the items of `InsertMenu` open. */}
             <input
@@ -690,6 +680,33 @@ export function InsertMenu({ onInsertImage, onInsertPdf }: InsertMenuProps) {
             <FormListItem icon="bx bx-image-add" onClick={onInsertImage}>{t("handwriting.insert_image")}</FormListItem>
             <FormListItem icon="bx bxs-file-pdf" onClick={onInsertPdf}>{t("handwriting.insert_pdf")}</FormListItem>
         </OverlayControlDropdown>
+    );
+}
+
+/** What erases with each way of the eraser: strokes whole, or cut where the eraser passes. */
+const ERASER_ICONS: Record<EraserMode, string> = { stroke: "bx-eraser", partial: "bx-cut" };
+
+interface EraserRailProps {
+    mode: EraserMode;
+    onChange(mode: EraserMode): void;
+}
+
+/** The ways the eraser can erase, on the rail that the pen and the highlighter keep their settings on. */
+export function EraserRail({ mode, onChange }: EraserRailProps) {
+    return (
+        <div className="handwriting-rail">
+            <OverlayControlGroup vertical titlePosition="right">
+                {ERASER_MODES.map((eraserMode) => (
+                    <OverlayControlButton
+                        key={eraserMode}
+                        title={t(`handwriting.eraser_${eraserMode}`)}
+                        icon={ERASER_ICONS[eraserMode]}
+                        active={mode === eraserMode}
+                        onClick={() => onChange(eraserMode)}
+                    />
+                ))}
+            </OverlayControlGroup>
+        </div>
     );
 }
 
