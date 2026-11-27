@@ -183,7 +183,15 @@ export function convertPageLayout(rawHtml: string): PageLayout {
         boxes.push({ x, y, width: parseFloat(style.get("width") ?? "") || width || DEFAULT_OUTLINE.width });
     }
 
-    convertContent(scope);
+    convertContent(scope, true);
+    // The preview of a text box styles a table through its figure, which the text editor adds
+    // only once the box is edited.
+    for (const table of scope.querySelectorAll("table")) {
+        const parent = table.parentNode;
+        if (parent instanceof HTMLElement && parent.tagName?.toLowerCase() === "figure") continue;
+        table.insertAdjacentHTML("beforebegin", `<figure class="table">${table.toString()}</figure>`);
+        table.remove();
+    }
 
     const texts: PageTextBox[] = [];
     for (const wrapper of scope.querySelectorAll(`[${LAYOUT_BOX_ATTRIBUTE}]`)) {
@@ -215,8 +223,12 @@ function parseFontSize(value: string | undefined) {
     return match[2] === "pt" ? size * 96 / 72 : size;
 }
 
-/** Converts the content under `scope` to the HTML of a text note, in place and before it is sanitized. */
-function convertContent(scope: HTMLElement) {
+/**
+ * Converts the content under `scope` to the HTML of a text note, in place and before it is
+ * sanitized. With `keepTableWidths`, a table with column widths is as wide as on the page,
+ * where a text note stretches it to its own width.
+ */
+function convertContent(scope: HTMLElement, keepTableWidths = false) {
     convertResourceReferences(scope);
     wrapFloatingImages(scope);
     convertTags(scope);
@@ -230,7 +242,7 @@ function convertContent(scope: HTMLElement) {
     correctTableShadingColors(scope);
     removeEmptyListItems(scope);
     removeBlockLevelBreaks(scope);
-    resizeTables(scope);
+    resizeTables(scope, keepTableWidths);
 }
 
 /**
@@ -787,7 +799,7 @@ function normalizeTableBorders(scope: HTMLElement) {
  * it in a table figure. Tables that don't width every column, or that merge cells (colspan/rowspan,
  * which this flat column model can't represent), are left untouched.
  */
-function resizeTables(scope: HTMLElement) {
+function resizeTables(scope: HTMLElement, keepTableWidths: boolean) {
     for (const table of scope.querySelectorAll("table")) {
         const cellRows = table.querySelectorAll("tr").map((row) => row.querySelectorAll("td, th"));
         const columnCount = Math.max(0, ...cellRows.map((cells) => cells.length));
@@ -826,7 +838,8 @@ function resizeTables(scope: HTMLElement) {
         const existingClass = table.getAttribute("class");
         table.setAttribute("class", existingClass ? `${existingClass} ck-table-resized` : "ck-table-resized");
         table.set_content(`${colgroup}<tbody>${table.innerHTML}</tbody>`);
-        table.insertAdjacentHTML("beforebegin", `<figure class="table" style="width:100%;">${table.toString()}</figure>`);
+        const figureWidth = keepTableWidths ? `${Math.round(widths.reduce((sum, width) => sum + width, 0))}px` : "100%";
+        table.insertAdjacentHTML("beforebegin", `<figure class="table" style="width:${figureWidth};">${table.toString()}</figure>`);
         table.remove();
     }
 }

@@ -193,6 +193,11 @@
             }
         }
 
+        :root & .ck-content figure.table:not(.layout-table, [style*="width"]) {
+            width: fit-content;
+            margin-inline: 0;
+        }
+
         .ck.ck-editor__editable_inline {
             padding: 0;
             border-width: 0;

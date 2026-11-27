@@ -965,6 +965,36 @@ describe("convertPageLayout", () => {
         }
     });
 
+    it("gives a table in a text box the markup of a text note's table, at the width it had", () => {
+        const { texts } = converter.convertPageLayout(`<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:48px;top:100px;width:720px">
+                <table style="border:1px solid;border-collapse:collapse"><tr><td style="border:1px solid">Hi there</td><td style="border:1px solid">How are you</td></tr></table>
+            </div>
+            <div style="position:absolute;left:48px;top:300px;width:720px">
+                <table><tr><td style="width:150">a</td><td style="width:50">b</td></tr></table>
+            </div>
+        </body></html>`);
+        const [ plain, resized ] = texts.map(({ html }) => parse(html));
+
+        // The preview of a box styles a table through its figure, as the text editor writes it.
+        // Without column widths the table is as wide as its content, which the stylesheet sees to.
+        const plainFigure = plain.querySelector("figure.table");
+        expect(plainFigure?.getAttribute("style")).toBeUndefined();
+        expect(plainFigure?.querySelectorAll("table td").map((cell) => cell.textContent)).toEqual([ "Hi there", "How are you" ]);
+        expect(plain.querySelectorAll("figure.table")).toHaveLength(1);
+
+        // Column widths add up to the width of the table, in pixels as on the page, where a text
+        // note stretches the table to its own width.
+        const resizedFigure = resized.querySelector("figure.table");
+        expect(resizedFigure?.getAttribute("style")).toBe("width:200px");
+        expect(resized.querySelectorAll("figure.table")).toHaveLength(1);
+        expect(resizedFigure?.querySelectorAll("col").map((col) => col.getAttribute("style"))).toEqual([ "width:75%", "width:25%" ]);
+
+        // A text note keeps its tables as they were.
+        const flat = parse(converter.convertPageHtml(`<table><tr><td style="width:150">a</td><td style="width:50">b</td></tr></table><table><tr><td>c</td></tr></table>`));
+        expect(flat.querySelectorAll("figure.table").map((figure) => figure.getAttribute("style"))).toEqual([ "width:100%" ]);
+    });
+
     it("returns a page without a font size or positions as one box", () => {
         const layout = converter.convertPageLayout(`<p>Only <b>text</b></p>`);
         expect(layout).toEqual({ texts: [ { x: 48, y: 115, width: 624, html: "<p>Only <b>text</b></p>" } ], images: [] });
