@@ -593,6 +593,8 @@ describe("ink surface input", () => {
         expect(parseFloat(live.style.left)).toBeGreaterThan(250);
         expect(parseFloat(live.style.left)).toBeLessThan(400);
         expect(live.style.width).toBe(`${live.width}px`);
+        // `left` places it in a right-to-left language too, where `right` of the stylesheet would win.
+        expect(live.style.right).toBe("auto");
         expect(live.height).toBeGreaterThan(200);
         expect(parseFloat(live.style.top)).toBe(0);
 

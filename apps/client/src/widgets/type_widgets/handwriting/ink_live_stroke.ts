@@ -299,6 +299,7 @@ export default class LiveStroke {
         this.liveCanvas.height = rect.height;
         const dpr = window.devicePixelRatio || 1;
         Object.assign(this.liveCanvas.style, {
+            right: "auto",
             left: `${rect.x / dpr}px`,
             top: `${rect.y / dpr}px`,
             width: `${rect.width / dpr}px`,
