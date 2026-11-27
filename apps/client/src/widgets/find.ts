@@ -3,7 +3,7 @@
  * https://github.com/antoniotejada/Trilium-FindWidget
  */
 
-import { isHandwritingNote } from "@triliumnext/commons/src/lib/handwriting.js";
+import { isHandwritingNote } from "@triliumnext/commons/src/lib/notes.js";
 
 import type { EventData, EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";

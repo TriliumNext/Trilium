@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
     CALENDAR_EVENT_ICON, CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE,
     getAttachedFileMime, getContentFormat, getContentRendererGroup, getDrawingPictureTitle,
-    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
+    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, HANDWRITING_MIME,
+    isFullWidthNoteType, isHandwritingNote,
     MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
     MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink,
     readDrawingFrame
 } from "./notes.js";
-import { HANDWRITING_MIME, isHandwritingNote } from "./handwriting.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {

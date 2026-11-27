@@ -1,8 +1,7 @@
 import "./NoteTypeSwitcher.css";
 
 import type { MimeType, NoteType } from "@triliumnext/commons";
-import { HANDWRITING_MIME } from "@triliumnext/commons/src/lib/handwriting.js";
-import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
+import { getCodeLanguageIcon, HANDWRITING_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import {
     type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState
 } from "preact/hooks";

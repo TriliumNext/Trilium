@@ -1,6 +1,5 @@
 import type { HighlightedTokenInfo, NoteType } from "@triliumnext/commons";
-import { isHandwritingNote } from "@triliumnext/commons/src/lib/handwriting.js";
-import { getNoteIcon, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
+import { getNoteIcon, isHandwritingNote, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";

@@ -3,7 +3,6 @@
  */
 
 import { isFontMimeType } from "./font_mimes.js";
-import { isHandwritingNote } from "./handwriting.js";
 import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
 import { isOfficeMimeType, XLSX_MIME } from "./office.js";
 import { NoteType } from "./rows.js";
@@ -344,6 +343,19 @@ export function isFullWidthNoteType(type: string, mime: string) {
     return type === "file"
         && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/")
             || mime === XLSX_MIME);
+}
+
+/**
+ * The media type of a handwriting note. A handwriting note is a `code` note of this media type, as
+ * a Markdown note is a `code` note of a Markdown one: an instance that does not know handwriting
+ * notes then shows the note as code, where its consistency check would turn a note of a type it
+ * does not know into a file.
+ */
+export const HANDWRITING_MIME = "application/vnd.triliumnotes.handwriting+json";
+
+/** Whether a note of `type` and `mime` is a handwriting note. */
+export function isHandwritingNote(type: string | null | undefined, mime: string | null | undefined) {
+    return type === "code" && mime === HANDWRITING_MIME;
 }
 
 /** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */
