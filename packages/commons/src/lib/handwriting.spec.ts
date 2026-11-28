@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { adaptInkColor, HANDWRITING_FORMAT_VERSION, reflectLightness, serializeImportedHandwriting } from "./handwriting.js";
+import {
+    adaptInkColor, decodePoints, dropRepeatedPoints, encodePoints, HANDWRITING_FORMAT_VERSION, lineToPoints, pathToPoints,
+    polygonToPoints, reflectLightness, serializeImportedHandwriting
+} from "./handwriting.js";
 
 describe("serializeImportedHandwriting", () => {
     it("lists the images, the strokes and the text boxes as objects, in the order they are drawn", () => {
@@ -54,5 +57,54 @@ describe("adaptInkColor", () => {
         for (const color of [ "#e64d4d", "#ffeb3b", "#4de64d", "red" ]) {
             expect([ adaptInkColor(color, true), adaptInkColor(color, false) ]).toEqual([ color, color ]);
         }
+    });
+});
+
+describe("stroke points", () => {
+    it("saves each point as the difference from the one before, and reads it back", () => {
+        // The pressure is saved out of 255, and a triple left incomplete is dropped.
+        const encoded = encodePoints([ 1.04, 2, 0.5, 1.5, 2, 1, 9 ]);
+        expect(encoded).toEqual([ 10, 20, 128, 5, 0, 127 ]);
+        expect(decodePoints(encoded)).toEqual([ 1, 2, 128 / 255, 1.5, 2, 1 ]);
+    });
+
+    it("reads nothing from a stroke holding a value that is not a finite number", () => {
+        expect(decodePoints([ 1, 2, "3" ])).toBeUndefined();
+        expect(decodePoints([ 1, 2, Number.NaN ])).toBeUndefined();
+        // Two finite differences whose sum is not.
+        expect(decodePoints([ Number.MAX_VALUE, 0, 0, Number.MAX_VALUE, 0, 0 ])).toBeUndefined();
+    });
+
+    it("drops a point that falls on the one before it at the saved precision", () => {
+        expect(dropRepeatedPoints([ 0, 0, 0.1, 0.04, 0.02, 0.9, 0.1, 0, 0.5 ])).toEqual([ 0, 0, 0.1, 0.1, 0, 0.5 ]);
+    });
+});
+
+describe("shape points", () => {
+    it("builds a line of three points at one pressure", () => {
+        expect(lineToPoints({ fromX: 0, fromY: 10, toX: 100, toY: 30 }, 0.4))
+            .toEqual([ 0, 10, 0.4, 50, 20, 0.4, 100, 30, 0.4 ]);
+    });
+
+    it("crowds the points of a path toward the corners between its segments", () => {
+        // The repeated vertex makes a segment of no length, which adds no points.
+        const points = pathToPoints([ [ 0, 0 ], [ 8, 0 ], [ 8, 0 ], [ 8, 8 ] ], 0.5);
+        const positions: string[] = [];
+        for (let i = 0; i < points.length; i += 3) {
+            expect(points[i + 2]).toBe(0.5);
+            positions.push(`${points[i]},${points[i + 1]}`);
+        }
+        expect(positions).toEqual([ "0,0", "4,0", "6,0", "7,0", "8,0", "8,1", "8,2", "8,4", "8,8" ]);
+    });
+
+    it("runs around a polygon from the middle of its first side", () => {
+        const points = polygonToPoints([ [ 0, 0 ], [ 8, 0 ], [ 8, 8 ], [ 0, 8 ] ], 0.5);
+        expect(points.slice(0, 3)).toEqual([ 4, 0, 0.5 ]);
+        expect(points.slice(-3)).toEqual([ 4, 0, 0.5 ]);
+        const positions = new Set<string>();
+        for (let i = 0; i < points.length; i += 3) {
+            positions.add(`${points[i]},${points[i + 1]}`);
+        }
+        expect([ "0,0", "8,0", "8,8", "0,8" ].every((corner) => positions.has(corner))).toBe(true);
     });
 });

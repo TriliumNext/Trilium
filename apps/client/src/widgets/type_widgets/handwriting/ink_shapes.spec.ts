@@ -1,4 +1,4 @@
-import { lineToPoints, polygonToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
+import { polygonToPoints } from "@triliumnext/commons/src/lib/handwriting.js";
 import { describe, expect, it } from "vitest";
 
 import { buildStrokePoints, parseInkDocument } from "./ink_document";
@@ -29,11 +29,6 @@ describe("line recognition", () => {
         expect(recognizeLine(stroke([ 0, 0 ], [ 50, 50 ], [ 0, 100 ], [ 0, 0 ]), 20)).toBeUndefined();
         expect(recognizeLine(stroke([ 5, 5 ]), 20)).toBeUndefined();
         expect(recognizeLine(stroke([ 0, 0 ], [ 5, 0 ], [ 10, 0 ]), 20)).toBeUndefined();
-    });
-
-    it("builds a line of three points at one pressure", () => {
-        expect(lineToPoints({ fromX: 0, fromY: 10, toX: 100, toY: 30 }, 0.4))
-            .toEqual([ 0, 10, 0.4, 50, 20, 0.4, 100, 30, 0.4 ]);
     });
 });
 

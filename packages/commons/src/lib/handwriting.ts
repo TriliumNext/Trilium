@@ -248,7 +248,7 @@ export function adaptInkColor(color: string, isDarkTheme: boolean) {
     if (!rgb) return color;
     const lightness = (Math.max(...rgb) + Math.min(...rgb)) / 2 / 255;
     const isHidden = isDarkTheme ? lightness < DARK_INK_MAX_LIGHTNESS : lightness >= LIGHT_INK_MIN_LIGHTNESS;
-    return isHidden ? reflectLightness(color) ?? color : color;
+    return isHidden ? reflectRgb(rgb) : color;
 }
 
 /**
@@ -258,7 +258,11 @@ export function adaptInkColor(color: string, isDarkTheme: boolean) {
  */
 export function reflectLightness(color: string) {
     const rgb = parseHexColor(color);
-    if (!rgb) return undefined;
+    return rgb && reflectRgb(rgb);
+}
+
+/** Returns the red, green and blue of `rgb` with their HSL lightness mirrored, as `#rrggbb`. */
+function reflectRgb(rgb: number[]) {
     const shift = 255 - Math.max(...rgb) - Math.min(...rgb);
     return `#${rgb.map((channel) => (channel + shift).toString(16).padStart(2, "0")).join("")}`;
 }
