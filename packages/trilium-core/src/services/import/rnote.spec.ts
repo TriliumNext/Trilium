@@ -240,6 +240,18 @@ describe("convertRnote", () => {
         // A document of text alone is a handwriting note too.
         const typed = convert(rnote([ text("Typed", 0, 0) ]));
         expect(typed.document).toMatchObject({ layout: "infinite", strokes: [], texts: [ { html: "<p>Typed</p>" } ] });
+
+        // The pixels of a screenshot, transparent, are millions of base64 characters.
+        const side = 1024;
+        const screenshot = convert(rnote([ { bitmapimage: {
+            image: {
+                data: `${"A".repeat(Math.floor(side * side * 4 / 3) * 4)}AA==`,
+                pixel_width: side, pixel_height: side, memory_format: "R8g8b8a8Premultiplied"
+            },
+            rectangle: { cuboid: { half_extents: [ 1, 1 ] }, transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } }
+        } } ]));
+        expect(screenshot.skipped).toEqual({});
+        expect(screenshot.images).toHaveLength(1);
     });
 
     it("returns nothing for a file that is not an RNote document or holds nothing it can convert", () => {
