@@ -94,6 +94,8 @@ function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme");
     const customThemes = useUserThemes();
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
+    const [ editedNotesIncludeLlmChats, setEditedNotesIncludeLlmChats ] =
+        useTriliumOptionBool("editedNotesIncludeLlmChats");
     const [ noteTitleStyle, setNoteTitleStyle ] = useTriliumOption("noteTitleStyle");
 
     const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
@@ -193,6 +195,16 @@ function UserInterface() {
                 <FormToggle
                     currentValue={editedNotesOpenInRibbon}
                     onChange={setEditedNotesOpenInRibbon}
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="edited-notes-include-llm-chats"
+                label={t("theme.edited_notes_include_llm_chats")}
+            >
+                <FormToggle
+                    currentValue={editedNotesIncludeLlmChats}
+                    onChange={setEditedNotesIncludeLlmChats}
                 />
             </OptionCardSection>
         </Card>

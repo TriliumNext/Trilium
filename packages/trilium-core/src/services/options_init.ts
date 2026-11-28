@@ -249,6 +249,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "searchResultsPageSize", value: "20", isSynced: true },
 
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
+    { name: "editedNotesIncludeLlmChats", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },
     { name: "encryptedRecoveryCodes", value: "false", isSynced: false },
 

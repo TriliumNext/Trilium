@@ -25,6 +25,7 @@ import blobService from "../../services/blob.js";
 import { replaceBlockRangeOnBase } from "../../services/block_ranges.js";
 import eraseService from "../../services/erase.js";
 import { saveLinks } from "../../services/notes.js";
+import optionService from "../../services/options.js";
 import { NotePojo } from "../../becca/becca-interface.js";
 import becca_service from "../../becca/becca_service.js";
 import * as cls from "../../services/context.js";
@@ -341,9 +342,13 @@ function getEditedNotesOnDate(req: Request) {
                 SELECT noteId FROM revisions
                 WHERE revisions.dateCreated LIKE :date
         )
+            AND (:includeLlmChats = 1 OR notes.type <> 'llmChat')
         ORDER BY isDeleted
         LIMIT 50`,
-    { date: `${req.params.date}%` }
+    {
+        date: `${req.params.date}%`,
+        includeLlmChats: optionService.getOptionBool("editedNotesIncludeLlmChats") ? 1 : 0
+    }
     );
 
     let notes = becca.getNotes(noteIds, true);
