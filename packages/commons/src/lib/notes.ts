@@ -24,7 +24,8 @@ export const NOTE_TYPE_ICONS = {
     contentWidget: "bx bxs-widget",
     mindMap: "bx bx-sitemap",
     spreadsheet: "bx bx-table",
-    llmChat: "bx bx-message-square-dots"
+    llmChat: "bx bx-message-square-dots",
+    handwriting: "bx bx-pencil"
 };
 
 /**
@@ -38,8 +39,9 @@ export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
     canvas: "canvas-export.svg",
     mermaid: "mermaid-export.svg",
     mindMap: "mindmap-export.svg",
-    spreadsheet: "spreadsheet-export.png"
-} as const satisfies Partial<Record<NoteType, string>>;
+    spreadsheet: "spreadsheet-export.png",
+    handwriting: "handwriting-export.svg"
+} as const satisfies Partial<Record<NoteType | "handwriting", string>>;
 
 /**
  * The title of the attachment holding the rendered image of the given note type, or `undefined` if
@@ -48,9 +50,14 @@ export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
  * Prefer indexing {@link NOTE_TYPE_IMAGE_ATTACHMENTS} directly when the note type is known
  * statically — it narrows to the exact title instead of `string | undefined`.
  */
-export function getImageAttachmentTitle(type: NoteType | null | undefined): string | undefined {
+export function getImageAttachmentTitle(
+    type: NoteType | null | undefined, mime?: string | null
+): string | undefined {
     if (!type) {
         return undefined;
+    }
+    if (isHandwritingNote(type, mime)) {
+        return NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting;
     }
 
     return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
@@ -266,6 +273,8 @@ export function getNoteIcon({
             return "bx bx-folder";
         }
         return "bx bx-note";
+    } else if (isHandwritingNote(type, mime)) {
+        return NOTE_TYPE_ICONS.handwriting;
     } else if (type === "code") {
         return getCodeLanguageIcon(MIME_TYPES_DICT.find(m => m.mime === mime));
     } else if (type === "file") {
@@ -336,6 +345,19 @@ export function isFullWidthNoteType(type: string, mime: string) {
             || mime === XLSX_MIME);
 }
 
+/**
+ * The media type of a handwriting note. A handwriting note is a `code` note of this media type, as
+ * a Markdown note is a `code` note of a Markdown one: an instance that does not know handwriting
+ * notes then shows the note as code, where its consistency check would turn a note of a type it
+ * does not know into a file.
+ */
+export const HANDWRITING_MIME = "application/vnd.triliumnotes.handwriting+json";
+
+/** Whether a note of `type` and `mime` is a handwriting note. */
+export function isHandwritingNote(type: string | null | undefined, mime: string | null | undefined) {
+    return type === "code" && mime === HANDWRITING_MIME;
+}
+
 /** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */
 export function isMarkdownMime(mime: string) {
     return MARKDOWN_MIME_TYPES.includes(mime);
@@ -343,18 +365,23 @@ export function isMarkdownMime(mime: string) {
 
 /**
  * The format of the content of a note of `type` and `mime`, which a save checks before it writes:
- * the type, with Markdown apart from other code. The language of other code is not part of it.
+ * the type, with Markdown and handwriting apart from other code. The language of other code is
+ * not part of it.
  */
 export function getContentFormat(type: string, mime: string) {
     if (type !== "code") {
         return type;
+    }
+    if (isHandwritingNote(type, mime)) {
+        return "handwriting";
     }
     return isMarkdownMime(mime) ? "markdown" : "code";
 }
 
 /**
  * The kind of content a note renders as, which picks its renderer: `iconPack` for an icon pack's
- * manifest, `markdown` for a Markdown code note, else what {@link getFileContentType} names.
+ * manifest, `markdown` for a Markdown code note, `handwriting` for a handwriting note, else what
+ * {@link getFileContentType} names.
  *
  * @param hasIconPackLabel whether the note carries `#iconPack`, disabled or not.
  */
@@ -364,6 +391,9 @@ export function getNoteContentType(type: string, mime: string, hasIconPackLabel:
     }
     if (type === "code" && isMarkdownMime(mime)) {
         return "markdown";
+    }
+    if (isHandwritingNote(type, mime)) {
+        return "handwriting";
     }
     return getFileContentType(type, mime);
 }

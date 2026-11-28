@@ -33,6 +33,7 @@ import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
 import ContentEmbed from "./plugins/content_embed/content_embed.js";
 import BlockReference from "./plugins/block_reference/block_reference.js";
 import InlineIcon from "./plugins/inline_icon/inline_icon.js";
+import InlineIconEditing from "./plugins/inline_icon/inline_icon_editing.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
 import InsertMediaPlugin from "./plugins/insert_media.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
@@ -279,6 +280,36 @@ export const MEMO_PLUGINS: typeof Plugin[] = [
     Strikethrough,
     StrikethroughAsDel,
     Code
+];
+
+/**
+ * `MEMO_PLUGINS` and the formatting of a page: headings, tables, to-do lists, images, icons, and
+ * the size and the colors of the text, which `AdaptiveColors` saves for the theme. For the text
+ * boxes of a handwriting note, whose text can come from an imported page. Added to an
+ * `AttributeEditor` through `extraPlugins`, as the memo's set is.
+ */
+export const TEXT_BOX_PLUGINS: typeof Plugin[] = [
+    ...MEMO_PLUGINS,
+    Underline,
+    Subscript,
+    Superscript,
+    Heading,
+    HorizontalLine,
+    Alignment,
+    Font,
+    ListProperties,
+    TodoList,
+    Table,
+    TableToolbar,
+    TableProperties,
+    TableCellProperties,
+    TableColumnResize,
+    Image,
+    ImageCaption,
+    ImageStyle,
+    ImageResize,
+    InlineIconEditing,
+    AdaptiveColors
 ];
 
 /**

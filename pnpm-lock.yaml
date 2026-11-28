@@ -313,6 +313,9 @@ importers:
       mind-elixir:
         specifier: 6.0.3
         version: 6.0.3
+      perfect-freehand:
+        specifier: 1.2.0
+        version: 1.2.0
       preact:
         specifier: 11.2.0
         version: 11.2.0(preact-render-to-string@6.8.3)
@@ -20526,7 +20529,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 24.19.2
+      '@types/node': 26.6.10
       merge-stream: 2.0.0
       supports-color: 8.1.1
     optional: true

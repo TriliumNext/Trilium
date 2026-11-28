@@ -2,13 +2,13 @@ import type { NoteType, SimilarNoteResponse } from "@triliumnext/commons";
 import { NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
 import clsx from "clsx";
 import type { ComponentChildren, RefObject } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { NOTE_TYPES } from "../../services/note_types";
+import { findNoteTypeMapping } from "../../services/note_types";
 import server from "../../services/server";
 import { formatSize, openInAppHelpFromUrl } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
@@ -36,7 +36,7 @@ export function NoteInfoContent({ note, noteType, dropdownRef, setSimilarNotesSh
 }) {
     const { metadata, ...sizeProps } = useNoteMetadata(note);
     const [ originalFileName ] = useNoteLabel(note, "originalFileName");
-    const noteTypeMapping = useMemo(() => NOTE_TYPES.find(t => t.type === noteType), [ noteType ]);
+    const noteTypeMapping = findNoteTypeMapping(noteType, note.mime);
 
     return (
         <div className="note-info-content">

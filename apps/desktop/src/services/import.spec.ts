@@ -64,7 +64,8 @@ const { setupImportHandlers } = await import("./import.js");
 
 const OPTIONS = {
     safeImport: true, shrinkImages: false, textImportedAsText: true, codeImportedAsCode: true,
-    spreadsheetImportedAsSpreadsheet: true, explodeArchives: true, replaceUnderscoresWithSpaces: true
+    spreadsheetImportedAsSpreadsheet: true, drawingImportedAsHandwriting: true, explodeArchives: true,
+    replaceUnderscoresWithSpaces: true
 };
 
 function pick() {

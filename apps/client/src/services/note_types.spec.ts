@@ -20,7 +20,8 @@ vi.mock("./experimental_features.js", () => ({
 
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
 import noteTypesService, {
-    currentNoteTypeOption, isCurrentNoteType, type NoteTypeOption, noteTypeOptionIcon,
+    currentNoteTypeOption, findNoteTypeMapping, isCurrentNoteType, type NoteTypeOption,
+    noteTypeOptionIcon,
     selectableNoteTypes
 } from "./note_types";
 
@@ -503,7 +504,8 @@ describe("new template badges", () => {
     it("groups the note types of the menu by kind, common ones first, and offers each exactly once", async () => {
         withTemplates();
         const restore = withTemplatesRoot([ fakeTemplate("tpl-ai", [ "template", "aiQuickAction" ], "AI quick action") ]);
-        const key = (i: any) => i.kind ?? (i.mime === "text/x-markdown" ? "markdown" : i.type) ?? i.title;
+        const mimeKeys: Record<string, string> = { "text/x-markdown": "markdown", "application/vnd.triliumnotes.handwriting+json": "handwriting" };
+        const key = (i: any) => i.kind ?? mimeKeys[i.mime] ?? i.type ?? i.title;
         try {
             llmFlag.mockReturnValue(true);
             const data = await noteTypesService.loadNoteTypeData();
@@ -511,7 +513,7 @@ describe("new template badges", () => {
             expect(menu.map(key)).toEqual([
                 "text", "markdown", "code", "spreadsheet", "llmChat",
                 "separator",
-                "canvas", "mermaid", "mindMap", "relationMap",
+                "canvas", "handwriting", "mermaid", "mindMap", "relationMap",
                 "separator",
                 "note_types.more"
             ]);
@@ -520,7 +522,7 @@ describe("new template badges", () => {
             const offered = [ ...menu, ...menu.at(-1).items ]
                 .filter((i) => i.command && !i.templateNoteId && !i.notePreset).map(key);
             const creatable = selectableNoteTypes(false).filter((nt) => nt.type !== "book")
-                .map((nt) => (nt.mime === "text/x-markdown" ? "markdown" : nt.type));
+                .map((nt) => mimeKeys[nt.mime ?? ""] ?? nt.type);
             expect([ ...offered ].sort()).toEqual([ ...creatable, "noteMap", "search" ].sort());
 
             // Without AI, the chat is left out of its group.
@@ -654,6 +656,18 @@ describe("isCurrentNoteType", () => {
     });
 });
 
+describe("findNoteTypeMapping", () => {
+    it("picks the code entry by the mime, and any other entry by the type", () => {
+        const title = (type: string, mime?: string | null) => findNoteTypeMapping(type, mime)?.title;
+        expect(title("code", "application/javascript")).toBe("note_types.code");
+        expect(title("code", undefined)).toBe("note_types.code");
+        expect(title("code", "text/x-gfm")).toBe("note_types.markdown");
+        expect(title("code", "application/vnd.triliumnotes.handwriting+json")).toBe("note_types.handwriting");
+        expect(title("canvas", "application/json")).toBe("note_types.canvas");
+        expect(title("nonexistent")).toBeUndefined();
+    });
+});
+
 describe("selectableNoteTypes", () => {
     // The suite's other resets live inside their own describes, so pin the flag here rather than
     // inheriting whatever the last test left behind.
@@ -665,7 +679,9 @@ describe("selectableNoteTypes", () => {
 
         // Beside the MIME list the code entries are only its heading, so one heading is left.
         expect(markdownEntry(true)).toHaveLength(0);
-        expect(selectableNoteTypes(true).filter((nt) => nt.type === "code")).toHaveLength(1);
+        // Handwriting is a code note too, but no code language, so it stays an entry of its own.
+        expect(selectableNoteTypes(true).filter((nt) => nt.type === "code").map((nt) => nt.mime))
+            .toEqual([ "application/vnd.triliumnotes.handwriting+json", "text/plain" ]);
 
         // On its own the menu is the only way to reach Markdown, so it stays.
         expect(markdownEntry(false)).toHaveLength(1);

@@ -102,7 +102,7 @@ export default function StatusBar() {
                             <VimModeBadge note={context.note} ntxId={context.noteContext.ntxId} />
                         )}
                         {vimStatus && <VimStatusLine status={vimStatus} vim={shownVim} />}
-                        {noteType === "code" && (
+                        {noteType === "code" && !context.note.isHandwriting() && (
                             <WithLazyModule load={loadCodeItems}>
                                 {({ default: CodeItems }) => <CodeItems {...context} />}
                             </WithLazyModule>

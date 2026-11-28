@@ -19,6 +19,7 @@ export interface ImportOptions {
     textImportedAsText: boolean;
     codeImportedAsCode: boolean;
     spreadsheetImportedAsSpreadsheet: boolean;
+    drawingImportedAsHandwriting: boolean;
     explodeArchives: boolean;
     replaceUnderscoresWithSpaces: boolean;
 }

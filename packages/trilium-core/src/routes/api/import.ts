@@ -26,6 +26,7 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
         textImportedAsText: req.body.textImportedAsText !== "false",
         codeImportedAsCode: req.body.codeImportedAsCode !== "false",
         spreadsheetImportedAsSpreadsheet: req.body.spreadsheetImportedAsSpreadsheet !== "false",
+        drawingImportedAsHandwriting: req.body.drawingImportedAsHandwriting !== "false",
         explodeArchives: req.body.explodeArchives !== "false",
         replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
     };

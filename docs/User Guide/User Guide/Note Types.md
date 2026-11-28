@@ -43,6 +43,7 @@ The following note types are supported by Trilium:
 | <a class="reference-link" href="Collections.md">Collections</a> | Displays the children of the note either as a grid, a list, or for a more specialized case: a calendar.              <br>  <br>Generally useful for easy reading of short notes. |
 | <a class="reference-link" href="Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> | Displays diagrams such as bar charts, flow charts, state diagrams, etc. Requires a bit of technical knowledge since the diagrams are written in a specialized format. |
 | <a class="reference-link" href="Note%20Types/Canvas.md">Canvas</a> | Allows easy drawing of sketches, diagrams, handwritten content. Uses the same technology behind [excalidraw.com](https://excalidraw.com). |
+| <a class="reference-link" href="Note%20Types/Handwriting.md">Handwriting</a> | Pages of ruled, grid or dotted paper to write on with a pen, with pressure-sensitive ink and hand-drawn shapes that turn into clean ones. |
 | <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> | Displays the content of an external web page, similar to a browser. |
 | <a class="reference-link" href="Note%20Types/Mind%20Map.md">Mind Map</a> | Easy for brainstorming ideas, by placing them in a hierarchical layout. |
 | <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a> | Displays the children of the note as a geographical map, one use-case would be to plan vacations. It even has basic support for tracks. Notes can also be created from it. |

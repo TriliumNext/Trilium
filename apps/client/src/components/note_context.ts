@@ -470,8 +470,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return true;
         }
 
-        // Auto read-only based on content size is only configurable for text/code.
-        if (this.note.type !== "text" && this.note.type !== "code") {
+        // Auto read-only based on content size is only configurable for text/code. A handwriting
+        // note grows with every stroke, and its widget honours only `#readOnly`.
+        if ((this.note.type !== "text" && this.note.type !== "code") || this.note.isHandwriting()) {
             return false;
         }
 
@@ -570,7 +571,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        if (!["book", "text", "code"].includes(note.type)) {
+        if (!["book", "text", "code"].includes(note.type) || note.isHandwriting()) {
             return false;
         }
 

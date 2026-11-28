@@ -1,0 +1,375 @@
+.handwriting-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    &.handwriting-page-fullscreen {
+        position: fixed;
+        inset: 0;
+        /* Above the panes of the app and below Bootstrap's modal backdrop (1050). */
+        z-index: 1040;
+    }
+
+    .handwriting-surface {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        color: var(--main-text-color);
+        background-color: var(--main-background-color);
+        cursor: crosshair;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+
+        /* The ring is as wide as the eraser, whose radius is `ERASER_RADIUS` in ink_surface.ts. */
+        &[data-tool="eraser"] {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%23e53935' fill-opacity='0.25' stroke='white' stroke-width='3'/%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23e53935' stroke-width='1.5'/%3E%3C/svg%3E") 10 10, cell;
+        }
+
+        &[data-tool="pan"] {
+            cursor: grab;
+        }
+
+        &[data-tool="select"] {
+            cursor: default;
+        }
+
+        &[data-tool="text"] {
+            cursor: text;
+        }
+
+        .handwriting-image-box {
+            position: absolute;
+            outline: 2px solid var(--main-link-color, #4d99e6);
+            pointer-events: none;
+
+            &[hidden] {
+                display: none;
+            }
+
+            .handwriting-box-bar {
+                left: 12px;
+                pointer-events: auto;
+            }
+        }
+
+        .handwriting-image-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            margin: -7px;
+            border: 2px solid var(--main-link-color, #4d99e6);
+            border-radius: 50%;
+            background-color: var(--main-background-color);
+            pointer-events: auto;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: -10px;
+            }
+
+            &[data-handle="nw"] {
+                top: 0;
+                left: 0;
+                cursor: nwse-resize;
+            }
+
+            &[data-handle="ne"] {
+                top: 0;
+                right: 0;
+                cursor: nesw-resize;
+            }
+
+            &[data-handle="sw"] {
+                bottom: 0;
+                left: 0;
+                cursor: nesw-resize;
+            }
+
+            &[data-handle="se"] {
+                right: 0;
+                bottom: 0;
+                cursor: nwse-resize;
+            }
+        }
+
+        /* Drawn as the eraser's cursor above, 8px being `ERASER_RADIUS` in ink_surface.ts. */
+        .handwriting-eraser-ring {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #e53935;
+            border-radius: 50%;
+            background-color: rgb(229 57 53 / 25%);
+            box-shadow: 0 0 0 1px white, inset 0 0 0 1px white;
+            pointer-events: none;
+
+            &[hidden] {
+                display: none;
+            }
+        }
+
+        .handwriting-live-layer,
+        canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    .handwriting-text-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        transform-origin: 0 0;
+        pointer-events: none;
+    }
+
+    .handwriting-text-box {
+        position: absolute;
+        box-sizing: border-box;
+        padding: 4px 8px;
+        color: var(--main-text-color);
+        pointer-events: none;
+
+        &.interactive {
+            outline: 1px dashed var(--main-border-color);
+            cursor: default;
+            pointer-events: auto;
+        }
+
+        &.selected {
+            outline: 2px solid var(--main-link-color, #4d99e6);
+        }
+
+        &.editing {
+            background-color: var(--main-background-color);
+            cursor: text;
+        }
+
+        &.sized {
+            --ck-content-font-size: 1em;
+            --ck-content-line-height: 1.25;
+
+            .ck-content,
+            .ck.ck-editor__editable_inline {
+                font-size: 1em;
+                line-height: 1.25;
+            }
+
+            :is(.ck-content, .ck.ck-editor__editable_inline) p {
+                margin-block: 0;
+            }
+
+            :root & .ck-content figure.table:not(.layout-table) {
+                margin-inline-start: calc(-0.4em - 1px);
+            }
+
+            .ck-content :is(td, th) {
+                vertical-align: top;
+            }
+
+            .handwriting-box-bar {
+                font-size: var(--bs-body-font-size, 1rem);
+            }
+        }
+
+        .handwriting-text-preview {
+            user-select: none;
+
+            &.empty {
+                opacity: 0.5;
+            }
+
+            > .ck-content > :first-child {
+                margin-top: 0;
+            }
+
+            > .ck-content > :last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        :root & .ck-content figure.table:not(.layout-table, [style*="width"]) {
+            width: fit-content;
+            margin-inline: 0;
+        }
+
+        .ck.ck-editor__editable_inline {
+            padding: 0;
+            border-width: 0;
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        .ck.ck-editor__editable_inline > :first-child,
+        :root & .ck.ck-editor__editable_inline > .ck-widget.ck-widget_with-selection-handle:first-child {
+            margin-top: 0;
+        }
+
+        .ck.ck-editor__editable_inline > :last-child {
+            margin-bottom: 0;
+        }
+
+        .handwriting-text-editor-host.pending {
+            position: absolute;
+            inset: 4px 8px auto;
+            visibility: hidden;
+        }
+
+        .handwriting-text-box-resize {
+            position: absolute;
+            top: 0;
+            right: -6px;
+            bottom: 0;
+            width: 12px;
+            cursor: ew-resize;
+            touch-action: none;
+        }
+    }
+
+    .handwriting-box-bar {
+        position: absolute;
+        bottom: 100%;
+        left: -2px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 4px 4px 0 0;
+        color: white;
+        background-color: var(--main-link-color, #4d99e6);
+        cursor: move;
+        touch-action: none;
+
+        button {
+            padding: 0;
+            border: 0;
+            color: inherit;
+            background: none;
+            cursor: pointer;
+        }
+    }
+
+    .handwriting-toolbar {
+        --handwriting-toolbar-top: 12px;
+
+        position: absolute;
+        top: var(--handwriting-toolbar-top);
+        left: 50%;
+        z-index: 1;
+        display: flex;
+        gap: 8px;
+        max-width: calc(100% - 24px);
+        transform: translateX(-50%);
+    }
+
+    .handwriting-rail {
+        position: absolute;
+        top: 50%;
+        inset-inline-start: 12px;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: calc(100% - 120px);
+        overflow-y: auto;
+        transform: translateY(-50%);
+        scrollbar-width: none;
+
+        .tn-overlay-control-group > button {
+            width: 36px;
+            min-width: 0;
+        }
+    }
+
+    .handwriting-swatch,
+    .handwriting-dot {
+        display: block;
+        margin: auto;
+        border-radius: 50%;
+    }
+
+    .handwriting-swatch {
+        width: 16px;
+        height: 16px;
+        background: var(--swatch-color);
+        box-shadow: 0 0 0 1px var(--main-border-color);
+    }
+
+    .handwriting-swatch-custom:not([style]) {
+        background: conic-gradient(#e64d4d, #e6e64d, #4de64d, #4de6e6, #4d4de6, #e64de6, #e64d4d);
+    }
+
+    .handwriting-dot {
+        width: var(--dot-size);
+        height: var(--dot-size);
+        background: currentColor;
+    }
+
+    .handwriting-custom-color {
+        position: absolute;
+        width: 0;
+        height: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .handwriting-zoom,
+    .handwriting-pages {
+        --overlay-group-inset: 12px;
+    }
+
+    .handwriting-page-counter {
+        justify-content: center;
+        min-width: 4em;
+        padding-inline: 0.5em;
+        font-size: var(--overlay-button-text-size, 14px);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &:fullscreen,
+    &.handwriting-page-fullscreen {
+        .handwriting-toolbar {
+            --handwriting-toolbar-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+        }
+
+        .handwriting-zoom,
+        .handwriting-pages {
+            --overlay-group-inset-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+        }
+    }
+}
+
+.handwriting-pressure-input.form-control {
+    flex: none;
+    width: 4.5em;
+    margin-inline-start: auto;
+    margin-inline-end: -6px;
+    padding: 0 6px;
+    font-size: inherit;
+    line-height: inherit;
+    text-align: end;
+    appearance: textfield;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+    }
+}

@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
-import { strToU8, zipSync } from "fflate";
+import { gzipSync, strToU8, zipSync } from "fflate";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { PassThrough } from "stream";
 import zip, { removeTriliumTags } from "./zip.js";
+import imageService from "../image.js";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import noteService from "../notes.js";
@@ -236,6 +237,118 @@ describe("processNoteContent", () => {
         expect(picture.attachmentId).not.toBe("mapPicture1");
         expect(content).toContain(`api/attachments/${picture.attachmentId}/image/photo.png`);
         expect(content).not.toContain("mapPicture1");
+    });
+
+    it("points the images of an imported handwriting note at the attachments as they were recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "handwritingNote1",
+                title: "Exercise",
+                type: "code",
+                mime: "application/vnd.triliumnotes.handwriting+json",
+                dataFileName: "Exercise.json",
+                attachments: [{
+                    attachmentId: "sheetPicture1",
+                    title: "exercise.png",
+                    role: "image",
+                    mime: "image/png",
+                    position: 10,
+                    dataFileName: "Exercise_exercise.png"
+                }, {
+                    attachmentId: "sheetPdf1",
+                    title: "slides.pdf",
+                    role: "file",
+                    mime: "application/pdf",
+                    position: 20,
+                    dataFileName: "Exercise_slides.pdf"
+                }]
+            }]
+        };
+        const sheet = {
+            version: 1, paper: "ruled", layout: "pages",
+            pdf: "api/attachments/sheetPdf1/open",
+            images: [{ url: "api/attachments/sheetPicture1/image/exercise.png", x: 0, y: 0, w: 240, h: 180 }],
+            strokes: []
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Exercise.json": JSON.stringify(sheet),
+            "Exercise_exercise.png": Buffer.from("fake image data"),
+            "Exercise_slides.pdf": Buffer.from("fake pdf data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ picture ] = importedNote.getAttachmentsByRole("image");
+        const content = importedNote.getContent() as string;
+
+        expect(picture.attachmentId).not.toBe("sheetPicture1");
+        expect(content).toContain(`api/attachments/${picture.attachmentId}/image/exercise.png`);
+        expect(content).not.toContain("sheetPicture1");
+        const [ pdf ] = importedNote.getAttachmentsByRole("file");
+        expect(pdf.attachmentId).not.toBe("sheetPdf1");
+        expect(JSON.parse(content).pdf).toBe(`api/attachments/${pdf.attachmentId}/open`);
+    });
+
+    it("points the links of an imported handwriting note's text boxes at the notes as they were recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "inkLinks1",
+                title: "Lecture",
+                type: "code",
+                mime: "application/vnd.triliumnotes.handwriting+json",
+                dataFileName: "Lecture.json",
+                dirFileName: "Lecture",
+                attachments: [],
+                children: [{
+                    noteId: "inkTarget1",
+                    title: "Reading",
+                    type: "text",
+                    mime: "text/html",
+                    dataFileName: "Reading.html",
+                    attachments: [{
+                        attachmentId: "inkTargetFile1",
+                        title: "report.pdf",
+                        role: "file",
+                        mime: "application/pdf",
+                        position: 10,
+                        dataFileName: "Reading_report.pdf"
+                    }]
+                }]
+            }]
+        };
+        const html = `<p><a class="reference-link" href="#root/inkLinks1/inkTarget1">Reading</a>`
+            + `<a href="#root/inkTarget1?viewMode=attachments&amp;attachmentId=inkTargetFile1">report</a>`
+            + `<a class="reference-link" href="#root/outsideNote1">Elsewhere</a></p>`;
+        const sheet = (version: number) => (version === 1
+            ? { version, paper: "blank", layout: "infinite", strokes: [], texts: [ { id: "t", x: 0, y: 0, w: 100, html } ] }
+            : { version, paper: "blank", layout: "infinite", objects: [ { id: "s1", w: 3, p: [ 0, 0, 128 ] }, { o: "text", id: "t", x: 0, y: 0, w: 100, html } ] });
+
+        for (const version of [ 2, 1 ]) {
+            const zipBuffer = await createZipBuffer({
+                "!!!meta.json": JSON.stringify(metaFile),
+                "Lecture.json": JSON.stringify(sheet(version)),
+                "Lecture/Reading.html": "<p>Read me</p>",
+                "Lecture/Reading_report.pdf": Buffer.from("%PDF-1.4")
+            });
+
+            const { importedNote } = await testImportBuffer(zipBuffer, `import-ink-links-${version}`);
+            const [ target ] = importedNote.getChildNotes();
+            const [ file ] = target.getAttachments();
+            const saved = JSON.parse(importedNote.getContent() as string);
+            const [ box ] = version === 1 ? saved.texts : saved.objects.filter(({ o }: { o?: string }) => o === "text");
+
+            expect(target.noteId).not.toBe("inkTarget1");
+            expect(box.html).toBe(`<p><a class="reference-link" href="#root/${importedNote.noteId}/${target.noteId}">Reading</a>`
+                + `<a href="#root/${target.noteId}?viewMode=attachments&amp;attachmentId=${file.attachmentId}">report</a>`
+                + `<a class="reference-link" href="#root/outsideNote1">Elsewhere</a></p>`);
+            // The note is related to the note its text box now links to.
+            expect(importedNote.getRelations("internalLink").map(({ value }) => value)).toContain(target.noteId);
+        }
     });
 
     it("points an imported embed at its attachment as it was recreated", async () => {
@@ -618,6 +731,48 @@ describe("processNoteContent", () => {
         });
 
         expect(orderedTitles).toEqual(["a.txt", "b.txt", "c.txt"]);
+    });
+
+    it("imports an RNote entry as a handwriting note with its images, or as a file when the option is off", async () => {
+        const rnote = (strokes: object[]) => Buffer.from(gzipSync(strToU8(JSON.stringify({
+            data: { engine_snapshot: { stroke_components: strokes.map((value) => ({ value })) } }
+        }))));
+        const style = { smooth: { stroke_width: 2, stroke_color: { r: 1, g: 0, b: 0, a: 1 } } };
+        const line = { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 10, 0 ] } }, style } };
+        // One opaque white pixel, shown 20 by 10 around (10, 50).
+        const image = {
+            bitmapimage: {
+                image: { data: btoa("\xff\xff\xff\xff"), pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                rectangle: { cuboid: { half_extents: [ 0.5, 0.5 ] }, transform: { affine: [ 20, 0, 0, 0, 10, 0, 10, 50, 1 ] } }
+            }
+        };
+        const zipBuffer = await createZipBuffer({
+            "Lectures/Week_1.rnote": rnote([ line, image ]),
+            "Lectures/Broken.rnote": Buffer.from("not an RNote file")
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-rnote", { drawingImportedAsHandwriting: true, replaceUnderscoresWithSpaces: true });
+        await imageService.awaitPendingImageWrites();
+        const folder = rootNote.getChildNotes().find((n) => n.title === "Lectures");
+        const drawing = folder?.getChildNotes().find((n) => n.title === "Week 1");
+        expect(drawing).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json" });
+        expect(drawing?.getOwnedLabelValue("originalFileName")).toBe("Week_1.rnote");
+        const [ attachment ] = drawing?.getAttachments() ?? [];
+        expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image1.png" });
+        expect(JSON.parse(String(drawing?.getContent()))).toEqual({
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { o: "image", id: "i1", url: `api/attachments/${attachment?.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
+                { id: "s1", c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] }
+            ]
+        });
+        // A file that is not an RNote document is kept as a file.
+        expect(folder?.getChildNotes().find((n) => n.title === "Broken.rnote")).toMatchObject({ type: "file" });
+
+        const off = await testImportBuffer(await createZipBuffer({ "Off.rnote": rnote([ line ]) }), "import-rnote-off", { drawingImportedAsHandwriting: false });
+        const file = off.rootNote.getChildNotes().find((n) => n.title === "Off.rnote");
+        expect(file).toMatchObject({ type: "file" });
+        expect(file?.getOwnedLabelValue("originalFileName")).toBe("Off.rnote");
     });
 
     it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {

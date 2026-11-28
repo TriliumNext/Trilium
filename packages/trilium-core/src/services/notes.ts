@@ -422,8 +422,9 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
         const parentNote = becca.notes[rawParams.parentNoteId];
 
         // code note type can be inherited, otherwise "text" is the default
-        rawParams.type = parentNote.type === "code" ? "code" : "text";
-        rawParams.mime = parentNote.type === "code" ? parentNote.mime : "text/html";
+        const inheritsCode = parentNote.type === "code" && !parentNote.isHandwriting();
+        rawParams.type = inheritsCode ? "code" : "text";
+        rawParams.mime = inheritsCode ? parentNote.mime : "text/html";
         // the type is not an explicit user choice, so a child:template of another type may still convert the note
         rawParams.isTypeDefaulted = true;
     }
@@ -577,15 +578,17 @@ export function checkImageAttachments(note: BNote, content: string) {
     if (!isCanvas) {
         let match;
 
-        // Spreadsheet and mind map content is JSON storing images as bare
+        // Spreadsheet, mind map and handwriting content is JSON storing images as bare
         // `api/attachments/{id}/image/...` URLs (no `src="..."` wrapper), so they scan with the same
         // loose pattern as Markdown.
-        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet" || note.type === "mindMap")
+        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet" || note.type === "mindMap" || note.isHandwriting())
             ? [
                 // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
                 { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/image/g },
                 // [...](#root/{noteId}?viewMode=attachments&attachmentId={id})
-                { pattern: /attachmentId=([a-zA-Z0-9_]+)/g }
+                { pattern: /attachmentId=([a-zA-Z0-9_]+)/g },
+                // "pdf":"api/attachments/{id}/open", the PDF that a handwriting note has as its paper
+                ...(note.isHandwriting() ? [ { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/open/g } ] : [])
             ]
             : [
                 // <img src="api/attachments/{id}/image/...">
@@ -638,6 +641,11 @@ export function checkImageAttachments(note: BNote, content: string) {
 
         // Likewise for the mind map SVG export preview, which the map JSON never references.
         if (note.type === "mindMap" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap) {
+            continue;
+        }
+
+        // Likewise for the picture of a handwriting note, which its JSON never references.
+        if (note.isHandwriting() && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting) {
             continue;
         }
 
@@ -712,6 +720,8 @@ export function checkImageAttachments(note: BNote, content: string) {
         // at the foreign attachment made them resolve to another note's picture until a later save
         // happened to fix one more, each one announcing itself with a toast.
         content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/image`, `api/attachments/${localAttachment.attachmentId}/image`);
+        // Likewise for the PDF of a handwriting note.
+        content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/open`, `api/attachments/${localAttachment.attachmentId}/open`);
         // Replace reference links, keeping the `LINK_TARGET_PARAMS` of each, such as a PDF page.
         const localHref = `#root/${localAttachment.ownerId}?viewMode=attachments`
             + `&amp;attachmentId=${localAttachment.attachmentId}`;
@@ -1123,6 +1133,28 @@ function collectMindMapLinks(value: unknown, foundLinks: FoundLink[]) {
 }
 
 /**
+ * Finds the notes that the text boxes of a handwriting note link to, from the HTML of each box.
+ * The boxes are the `objects` whose `o` is `"text"`, or the `texts` of a note saved before
+ * `objects`.
+ */
+function findHandwritingLinks(content: string, foundLinks: FoundLink[]) {
+    type SavedObject = { o?: unknown, html?: unknown } | null;
+    let saved: { objects?: unknown, texts?: unknown };
+    try {
+        saved = JSON.parse(content) ?? {};
+    } catch {
+        return;
+    }
+    const objects: SavedObject[] = Array.isArray(saved.objects) ? saved.objects : [];
+    const texts: SavedObject[] = Array.isArray(saved.texts)
+        ? saved.texts
+        : objects.filter((object) => object?.o === "text");
+    for (const text of texts) {
+        if (typeof text?.html === "string") findInternalLinks(text.html, foundLinks);
+    }
+}
+
+/**
  * Derives a plain-text attachment title from the inner HTML of an inline
  * attachment's link label: strips tags, decodes HTML entities, collapses
  * whitespace and trims.
@@ -1188,7 +1220,7 @@ function stripStaleSrcset(content: string): string {
 
 
 export function saveLinks(note: BNote, content: string | Uint8Array) {
-    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && note.type !== "mindMap" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
+    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && note.type !== "mindMap" && !note.isHandwriting() && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
             content
@@ -1227,6 +1259,12 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
         findMindMapLinks(content, foundLinks);
         // Mind map node images are stored as attachments referenced by URL from the map JSON; scan
         // for orphans (inserted-then-removed images) so they get scheduled for erasure.
+        ({ forceFrontendReload, content } = checkImageAttachments(note, content));
+    } else if (note.isHandwriting() && typeof content === "string") {
+        findHandwritingLinks(content, foundLinks);
+        // The images of a handwriting note are attachments referenced by URL from its JSON; scan for
+        // orphans (inserted-then-removed images) so they get scheduled for erasure, and for the
+        // images of the note it was duplicated from, which it takes copies of.
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "relationMap" && typeof content === "string") {
         findRelationMapLinks(content, foundLinks);
@@ -1647,8 +1685,9 @@ const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmCha
 function scanForLinks(note: BNote, content: string | Uint8Array) {
     // Scanned here as well as on save, so that a note arriving by import carries its links to the
     // notes it points at without having to be opened and edited first. A Markdown note is asked
-    // separately: it is a `code` note, whose type alone says nothing about the links it holds.
-    if (!note || !(SCANNED_ON_IMPORT.includes(note.type) || note.isMarkdown())) {
+    // separately: it is a `code` note, whose type alone says nothing about the links it holds. So
+    // is a handwriting note, which is scanned for the images it takes copies of.
+    if (!note || !(SCANNED_ON_IMPORT.includes(note.type) || note.isMarkdown() || note.isHandwriting())) {
         return;
     }
 

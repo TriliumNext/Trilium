@@ -76,7 +76,8 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
         if (nativeFile) {
             const options: NativeImportOptions = {
                 safeImport: true, shrinkImages, textImportedAsText: true, codeImportedAsCode: true,
-                spreadsheetImportedAsSpreadsheet: true, explodeArchives: true, replaceUnderscoresWithSpaces: true
+                spreadsheetImportedAsSpreadsheet: true, drawingImportedAsHandwriting: true, explodeArchives: true,
+                replaceUnderscoresWithSpaces: true
             };
             closeDialog();
             await window.electronApi?.nativeImport.importFromToken({

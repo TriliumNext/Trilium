@@ -16,6 +16,7 @@ export default function ScrollPadding() {
         && note?.isContentAvailable()
         && !note?.isTriliumSqlite()
         && !note?.isMarkdown()
+        && !note?.isHandwriting()
         && !note?.isIconPack()
         && isReadOnly === false
         && !options.is("databaseReadonly");

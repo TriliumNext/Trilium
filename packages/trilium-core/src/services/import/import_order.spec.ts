@@ -14,6 +14,7 @@ const options: ImportOptions = {
     textImportedAsText: true,
     codeImportedAsCode: true,
     spreadsheetImportedAsSpreadsheet: true,
+    drawingImportedAsHandwriting: true,
     explodeArchives: true, // required so a `.enex` routes to the ENEX importer rather than being kept as a single file
     replaceUnderscoresWithSpaces: false
 };

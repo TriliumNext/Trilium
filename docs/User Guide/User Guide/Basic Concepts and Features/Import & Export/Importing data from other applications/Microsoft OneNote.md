@@ -26,8 +26,10 @@ The following features are preserved by Trilium during the import process:
 *   Images and <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>.
     *   Screen clippings are also properly supported since v0.104.1, displaying their timestamp as a figure caption.
 *   To-do lists
-*   Hand-drawing is preserved and displayed as an SVG image inside the note
-    *   OneNote's default color (black) is special since it also renders as white for dark themes. Since v0.104.1, this is also supported by using a special SVG tweak which reacts to light/dark themes.
+*   Handwriting and drawings. A page that contains ink is imported as a <a class="reference-link" href="../../../Note%20Types/Handwriting.md">Handwriting</a> note instead of a text note (see _Pages with handwriting or drawings_ below).
+    *   The strokes keep their position, color and thickness, as well as the pressure of the pen where OneNote recorded it. Highlighter ink stays translucent.
+    *   OneNote's default ink color (black, or white on a dark canvas) becomes ink in the _Text color_, so it stays readable in both light and dark themes.
+    *   Other dark ink, such as a dark blue, is shown lighter in a dark theme, as OneNote does on its dark canvas.
 *   Links between other imported pages are converted to <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> if the text of the link matches the name of the page, or plain links otherwise. If the pages are not part of the import, the original `onenote:` link is kept.
 *   Tags (apart from to-do lists) are preserved by converting them to [inline icons](../../../Note%20Types/Text/Insert%20buttons/Icons.md), which are searchable by the icon's name and can be recolored like any other icon. Some icons are turned into emojis instead.
 
@@ -66,14 +68,23 @@ Pages imported from OneNote have a few built-in [labels](../../../Advanced%20Usa
 
 ### Regarding OneNote's freehand structure
 
-OneNote is fundamentally different to Trilium in structure because it allows freehand drawing to coexist with text, and text boxes can be placed anywhere in the document (e.g. a common use case is to have columns). Trilium has a document flow mechanism for <a class="reference-link" href="../../../Note%20Types/Text.md">Text</a> notes which means that it can't be freely positioned.
+OneNote is fundamentally different to Trilium in structure because it allows freehand drawing to coexist with text, and text boxes can be placed anywhere in the document (e.g. a common use case is to have columns). Trilium has a document flow mechanism for <a class="reference-link" href="../../../Note%20Types/Text.md">Text</a> notes which means that it can't be freely positioned.
 
-To cope with this difference, Trilium will flatten the text structure into normal paragraphs. The paragraphs will be ordered visually based on the original position of the text boxes, but their horizontal position will not be preserved. Parallel text such as columns may appear interleaved which can cause problems.
+To cope with this difference, a page without handwriting or drawings is flattened into normal paragraphs. The paragraphs will be ordered visually based on the original position of the text boxes, but their horizontal position will not be preserved. Parallel text such as columns may appear interleaved which can cause problems.
 
-In addition, drawing in OneNote can be interleaved with text boxes. Text notes in Trilium do not allow for this feature, so all drawing will appear at the end. For some use cases (diagrams, for example) this will work fine, but if you have highlights or other text-dependent drawings they will appear out of order.
+### Pages with handwriting or drawings
 
-> [!NOTE]
-> There are plans to support drawing-heavy notes that interleave with text boxes by converting them to a <a class="reference-link" href="../../../Note%20Types/Canvas.md">Canvas</a> instead.
+A page that contains ink is imported as a <a class="reference-link" href="../../../Note%20Types/Handwriting.md">Handwriting</a> note on an infinite canvas, which keeps the page as it was laid out:
+
+*   The ink stays where it was drawn, so a highlight or a frame around a paragraph still lines up with it.
+*   Each text box of the page becomes a text box at the same position and with the same width. Its content is converted as for a text note, including tables, lists, links and attachments.
+*   An image placed directly on the page stays at its position and size, under the ink. An image inside a text box stays inside the box.
+
+There are a few differences to keep in mind:
+
+*   The text uses the font of Trilium instead of the fonts of the page, so lines can break at different words and a text box can be slightly taller or shorter than in OneNote.
+*   <a class="reference-link" href="../../Navigation/Search.md">Search</a> finds the text of the text boxes, but not what is written by hand.
+*   Shapes that OneNote stores as ink are imported as ink. They cannot be moved or resized afterwards.
 
 ### Password-protected sections
 

@@ -479,7 +479,7 @@ export function writeImage(entity: WritableImage, buffer: Uint8Array, mime: stri
 
         const ownerNote = attachment.getNote();
 
-        if (ownerNote && attachment.title === getImageAttachmentTitle(ownerNote.type)) {
+        if (ownerNote && attachment.title === getImageAttachmentTitle(ownerNote.type, ownerNote.mime)) {
             return "generated";
         }
 

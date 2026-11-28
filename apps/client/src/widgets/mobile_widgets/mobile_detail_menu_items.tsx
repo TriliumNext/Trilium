@@ -77,7 +77,7 @@ export function NoteSettingsItems({ note }: { note: FNote }) {
     return (
         <>
             {note.type === "text" && <ContentLanguageSelector note={note} />}
-            {note.type === "code" && <CodeLanguageSelector note={note} />}
+            {note.type === "code" && !note.isHandwriting() && <CodeLanguageSelector note={note} />}
         </>
     );
 }

@@ -24,6 +24,7 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
     const [textImportedAsText, setTextImportedAsText] = useState(true);
     const [codeImportedAsCode, setCodeImportedAsCode] = useState(true);
     const [spreadsheetImportedAsSpreadsheet, setSpreadsheetImportedAsSpreadsheet] = useState(true);
+    const [drawingImportedAsHandwriting, setDrawingImportedAsHandwriting] = useState(true);
     const [replaceUnderscoresWithSpaces, setReplaceUnderscoresWithSpaces] = useState(true);
     const [optionsShown, setOptionsShown] = useState(false);
 
@@ -34,7 +35,7 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
         if (nativeFiles?.length) {
             const options: NativeImportOptions = {
                 safeImport, shrinkImages, textImportedAsText, codeImportedAsCode,
-                spreadsheetImportedAsSpreadsheet, explodeArchives, replaceUnderscoresWithSpaces
+                spreadsheetImportedAsSpreadsheet, drawingImportedAsHandwriting, explodeArchives, replaceUnderscoresWithSpaces
             };
             // One taskId for the whole batch so the toast tracks all files together; `last` on the final
             // file fires the success toast once, mirroring the upload route.
@@ -58,13 +59,14 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
             textImportedAsText: boolToString(textImportedAsText),
             codeImportedAsCode: boolToString(codeImportedAsCode),
             spreadsheetImportedAsSpreadsheet: boolToString(spreadsheetImportedAsSpreadsheet),
+            drawingImportedAsHandwriting: boolToString(drawingImportedAsHandwriting),
             explodeArchives: boolToString(explodeArchives),
             replaceUnderscoresWithSpaces: boolToString(replaceUnderscoresWithSpaces)
         };
 
         closeDialog();
         await importService.uploadFiles("notes", parentNoteId, files, options).catch(() => {});
-    }, [files, nativeFiles, safeImport, shrinkImages, textImportedAsText, codeImportedAsCode, spreadsheetImportedAsSpreadsheet, explodeArchives, replaceUnderscoresWithSpaces, parentNoteId, closeDialog]);
+    }, [files, nativeFiles, safeImport, shrinkImages, textImportedAsText, codeImportedAsCode, spreadsheetImportedAsSpreadsheet, drawingImportedAsHandwriting, explodeArchives, replaceUnderscoresWithSpaces, parentNoteId, closeDialog]);
 
     // Desktop only: browse via the native OS dialog. The dialog (in the main process) is the sole source of
     // the path — it returns single-use capability tokens, never paths — and the files are read in place, so
@@ -165,6 +167,10 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
                         <OptionsRowWithToggle
                             name="spreadsheet-imported-as-spreadsheet" label={t("import.spreadsheetImportedAsSpreadsheet")}
                             currentValue={spreadsheetImportedAsSpreadsheet} onChange={setSpreadsheetImportedAsSpreadsheet}
+                        />
+                        <OptionsRowWithToggle
+                            name="drawing-imported-as-handwriting" label={t("import.drawingImportedAsHandwriting")}
+                            currentValue={drawingImportedAsHandwriting} onChange={setDrawingImportedAsHandwriting}
                         />
                         <OptionsRowWithToggle
                             name="replace-underscores-with-spaces" label={t("import.replaceUnderscoresWithSpaces")}

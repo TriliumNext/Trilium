@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
     CALENDAR_EVENT_ICON, CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE,
     getAttachedFileMime, getContentFormat, getContentRendererGroup, getDrawingPictureTitle,
-    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
+    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, HANDWRITING_MIME,
+    isFullWidthNoteType, isHandwritingNote,
     MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
     MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink,
     readDrawingFrame
@@ -385,6 +386,24 @@ describe("isFullWidthNoteType", () => {
         expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
         expect(isFullWidthNoteType("file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")).toBe(false);
         expect(isFullWidthNoteType("search", "")).toBe(false);
+    });
+});
+
+describe("handwriting notes", () => {
+    it("are code notes of a media type of their own, with the icon, format and picture of handwriting", () => {
+        // The media type is in saved notes and exports, so it is spelled out.
+        expect(HANDWRITING_MIME).toBe("application/vnd.triliumnotes.handwriting+json");
+        expect(isHandwritingNote("code", HANDWRITING_MIME)).toBe(true);
+        expect(isHandwritingNote("file", HANDWRITING_MIME)).toBe(false);
+        expect(isHandwritingNote("code", "application/json")).toBe(false);
+        expect(isHandwritingNote(undefined, null)).toBe(false);
+
+        expect(getNoteIcon(buildArgs({ type: "code", mime: HANDWRITING_MIME }))).toBe(NOTE_TYPE_ICONS.handwriting);
+        expect(getContentFormat("code", HANDWRITING_MIME)).toBe("handwriting");
+        expect(getNoteContentType("code", HANDWRITING_MIME, false)).toBe("handwriting");
+        expect(getImageAttachmentTitle("code", HANDWRITING_MIME)).toBe("handwriting-export.svg");
+        expect(getImageAttachmentTitle("code", "text/plain")).toBeUndefined();
+        expect(isFullWidthNoteType("code", HANDWRITING_MIME)).toBe(true);
     });
 });
 

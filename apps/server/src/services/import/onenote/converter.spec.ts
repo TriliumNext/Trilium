@@ -3,7 +3,7 @@ import { cls, options as optionService } from "@triliumnext/core";
 import { parse } from "node-html-parser";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import converter from "./converter.js";
+import converter, { parseColor } from "./converter.js";
 
 beforeAll(() => {
     // The shared fixture DB predates `<u>` being allowlisted; align the sanitizer's allowed tags with
@@ -924,6 +924,133 @@ describe("extractPageCreatedDate", () => {
         expect(converter.extractPageCreatedDate(`<html><head><meta name="created" content="" /></head><body></body></html>`)).toBeUndefined();
         expect(converter.extractPageCreatedDate(`<html><head><meta name="created" content="not a date" /></head><body></body></html>`)).toBeUndefined();
         expect(converter.extractPageCreatedDate(`<html><head><meta name="created" /></head><body></body></html>`)).toBeUndefined();
+    });
+});
+
+describe("convertPageLayout", () => {
+    const RESOURCES = "https://graph.microsoft.com/v1.0/me/onenote/resources";
+
+    it("keeps each text box, and each image lying by itself, at its place on the page", () => {
+        const layout = converter.convertPageLayout(`<html><body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+            <div style="position:absolute;left:444px;top:235px;width:624px"><ul><li style="font-family:Aptos">List goes here</li></ul></div>
+            <!-- InkNode is not supported -->
+            <img width="480" height="270" src="${RESOURCES}/img1/$value" data-fullres-src="${RESOURCES}/full/$value" style="position:absolute;left:120px;top:835px" />
+            <div style="position:absolute;left:48px;top:163px;width:720px"><p style="margin-top:0pt;margin-bottom:0pt">Hi <span style="background-color:yellow">there</span></p><img width="20" height="10" src="${RESOURCES}/img2/$value" /></div>
+            <div style="position:absolute;left:10px;top:10px;width:100px"><br /></div>
+            <img src="${RESOURCES}/img3/$value" style="position:absolute;left:5px;top:2000px" />
+            <p>Loose text</p>
+        </body></html>`);
+
+        // 11pt is 14.67 px.
+        expect(layout.fontSize).toBeCloseTo(11 * 96 / 72);
+        expect(layout.images).toEqual([ { x: 120, y: 835, width: 480, height: 270, url: `${RESOURCES}/img1/$value` } ]);
+
+        // The boxes are in reading order. Text without a position goes where a new page starts,
+        // an image without a size stays in a box of its own, and an empty box is left out.
+        expect(layout.texts.map(({ x, y, width }) => [ x, y, width ])).toEqual([
+            [ 48, 115, 624 ], [ 48, 163, 720 ], [ 444, 235, 624 ], [ 5, 2000, 624 ]
+        ]);
+        const [ loose, formatted, list, picture ] = layout.texts.map(({ html }) => parse(html));
+        expect(loose.querySelector("p")?.textContent).toBe("Loose text");
+        expect(loose.querySelectorAll("img, li")).toHaveLength(0);
+        // The content of a box is converted as the content of a text note is.
+        expect(formatted.querySelector("span")?.getAttribute("style")).toBe("background-color:#ffff00");
+        expect(formatted.querySelector("figure.image > img")?.getAttribute("src")).toBe(`${RESOURCES}/img2/$value`);
+        expect(list.querySelectorAll("li").map((item) => item.textContent)).toEqual([ "List goes here" ]);
+        expect(picture.querySelector("img")?.getAttribute("src")).toBe(`${RESOURCES}/img3/$value`);
+        // A box holds the content of its outline, without the outline itself.
+        expect(layout.texts[2].html).toBe("<ul><li>List goes here</li></ul>");
+        for (const { html } of layout.texts) {
+            expect(html).not.toMatch(/position|data-onenote|InkNode|^<div/);
+        }
+    });
+
+    it("places a box without a position in the corner, and orders boxes at one height from the left", () => {
+        const { texts } = converter.convertPageLayout(`<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:300px;top:50px;width:100px"><p>Right</p></div>
+            <div style="position:absolute;left:20px;top:50px;width:100px"><p>Left</p></div>
+            <div style="position:absolute;width:100px"><p>Corner</p></div>
+        </body></html>`);
+        expect(texts.map(({ x, y, html }) => [ x, y, parse(html).textContent ])).toEqual([
+            [ 0, 0, "Corner" ], [ 20, 50, "Left" ], [ 300, 50, "Right" ]
+        ]);
+    });
+
+    it("gives a table in a text box the markup of a text note's table, at the width it had", () => {
+        const { texts } = converter.convertPageLayout(`<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:48px;top:100px;width:720px">
+                <table style="border:1px solid;border-collapse:collapse"><tr><td style="border:1px solid">Hi there</td><td style="border:1px solid">How are you</td></tr></table>
+            </div>
+            <div style="position:absolute;left:48px;top:300px;width:720px">
+                <table><tr><td style="width:150">a</td><td style="width:50">b</td></tr></table>
+            </div>
+        </body></html>`);
+        const [ plain, resized ] = texts.map(({ html }) => parse(html));
+
+        // The preview of a box styles a table through its figure, as the text editor writes it.
+        // Without column widths the table is as wide as its content, which the stylesheet sees to.
+        const plainFigure = plain.querySelector("figure.table");
+        expect(plainFigure?.getAttribute("style")).toBeUndefined();
+        expect(plainFigure?.querySelectorAll("table td").map((cell) => cell.textContent)).toEqual([ "Hi there", "How are you" ]);
+        expect(plain.querySelectorAll("figure.table")).toHaveLength(1);
+
+        // Column widths add up to the width of the table, in pixels as on the page, where a text
+        // note stretches the table to its own width.
+        const resizedFigure = resized.querySelector("figure.table");
+        expect(resizedFigure?.getAttribute("style")).toBe("width:200px");
+        expect(resized.querySelectorAll("figure.table")).toHaveLength(1);
+        expect(resizedFigure?.querySelectorAll("col").map((col) => col.getAttribute("style"))).toEqual([ "width:75%", "width:25%" ]);
+
+        // A text note keeps its tables as they were.
+        const flat = parse(converter.convertPageHtml(`<table><tr><td style="width:150">a</td><td style="width:50">b</td></tr></table><table><tr><td>c</td></tr></table>`));
+        expect(flat.querySelectorAll("figure.table").map((figure) => figure.getAttribute("style"))).toEqual([ "width:100%" ]);
+    });
+
+    it("keeps the empty lines of a page, which a text note drops", () => {
+        const page = `<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:48px;top:100px;width:624px">
+                <p style="margin-top:0pt;margin-bottom:0pt">Above</p>
+                <br />
+                <p style="margin-top:0pt;margin-bottom:0pt">Below<br />same paragraph</p>
+                <ul><li>item</li><br /></ul>
+                <table><tr><td><p>How are you</p><br /></td><td><br /></td></tr></table>
+            </div>
+            <div style="position:absolute;left:48px;top:900px;width:624px"><br /></div>
+        </body></html>`;
+        const { texts } = converter.convertPageLayout(page);
+        // A box of empty lines alone is still left out.
+        expect(texts).toHaveLength(1);
+        const box = parse(texts[0].html);
+        const lines = (parent: string) => box.querySelectorAll(`${parent} > p`).map((p) => p.innerHTML);
+
+        // OneNote writes an empty line as a `<br>` between blocks. The ink of the page lies next
+        // to the lines below it, so each stays, as an empty paragraph.
+        expect(box.childNodes.filter((node) => node.nodeType === 1).map((node) => node.rawTagName)).toEqual([ "p", "p", "p", "ul", "figure" ]);
+        expect(box.querySelectorAll("p").slice(0, 3).map((p) => p.innerHTML)).toEqual([ "Above", " ", "Below<br>same paragraph" ]);
+        // A list takes no paragraph between its items, and a cell keeps its lines, so its row its height.
+        expect(box.querySelector("ul")?.innerHTML).toBe("<li>item</li>");
+        expect(lines("td:first-child")).toEqual([ "How are you", " " ]);
+        expect(lines("td:last-child")).toEqual([ " " ]);
+
+        const flat = parse(converter.convertPageHtml(page));
+        expect(flat.querySelectorAll("p").map((p) => p.innerHTML)).toEqual([ "Above", "Below<br>same paragraph", "How are you" ]);
+    });
+
+    it("returns a page without a font size or positions as one box", () => {
+        const layout = converter.convertPageLayout(`<p>Only <b>text</b></p>`);
+        expect(layout).toEqual({ texts: [ { x: 48, y: 115, width: 624, html: "<p>Only <b>text</b></p>" } ], images: [] });
+        expect(converter.convertPageLayout(`<body style="font-size:16px"></body>`)).toEqual({ fontSize: 16, texts: [], images: [] });
+        expect(converter.convertPageLayout(`<body style="font-size:large"></body>`)).toEqual({ texts: [], images: [] });
+    });
+});
+
+describe("parseColor", () => {
+    it("parses the color forms OneNote emits, and nothing else", () => {
+        expect([ "#1353BA", "#333", "black", "rgb(54, 86, 35)" ].map((value) => parseColor(value)?.hex()))
+            .toEqual([ "#1353BA", "#333333", "#000000", "#365623" ]);
+        for (const value of [ "", "not-a-color", "#33", "#33g333", "url(x)" ]) {
+            expect(parseColor(value)).toBeNull();
+        }
     });
 });
 

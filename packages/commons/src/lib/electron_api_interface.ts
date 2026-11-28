@@ -688,6 +688,7 @@ export interface NativeImportOptions {
     textImportedAsText: boolean;
     codeImportedAsCode: boolean;
     spreadsheetImportedAsSpreadsheet: boolean;
+    drawingImportedAsHandwriting: boolean;
     explodeArchives: boolean;
     replaceUnderscoresWithSpaces: boolean;
 }

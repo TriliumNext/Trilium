@@ -8,7 +8,7 @@ import BlockDragHandle from "./plugins/block_drag_handle.js";
 import BlockReference from "./plugins/block_reference/block_reference.js";
 import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
 import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
-import { CHAT_INPUT_PLUGINS, CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import { CHAT_INPUT_PLUGINS, CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS, TEXT_BOX_PLUGINS } from "./plugins.js";
 import ChildNotePlugin from "./plugins/child_note.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
@@ -190,5 +190,53 @@ describe("an editor raised on MEMO_PLUGINS", () => {
         editor.setData("<p><i>slanted</i> and <s>struck</s></p>");
 
         expect(editor.getData()).toBe("<p><em>slanted</em> and <del>struck</del></p>");
+    });
+});
+
+describe("an editor raised on TEXT_BOX_PLUGINS", () => {
+    /** As a text box is built: an `AttributeEditor` with the set added to its own plugins. */
+    const textBoxEditor = () => createTestEditor([ ...CORE_PLUGINS, ...TEXT_BOX_PLUGINS ]);
+
+    it("builds on the memo's plugins and carries every button of the text box's toolbar", async () => {
+        for (const plugin of MEMO_PLUGINS) {
+            expect(TEXT_BOX_PLUGINS).toContain(plugin);
+        }
+        const editor = await textBoxEditor();
+        // The toolbar of TextBoxEditor.tsx: a name that nothing answers to is dropped with a warning.
+        for (const item of [
+            "bold", "italic", "underline", "strikethrough", "code", "fontSize", "fontColor", "fontBackgroundColor",
+            "link", "bulletedList", "numberedList", "todoList", "insertTable", "blockQuote", "codeBlock"
+        ]) {
+            expect(editor.ui.componentFactory.has(item), item).toBe(true);
+        }
+    });
+
+    it("keeps what a page imported into a text box holds", async () => {
+        const editor = await textBoxEditor();
+        const keeps = (html: string, ...kept: string[]) => {
+            editor.setData(html);
+            const data = editor.getData();
+            for (const part of kept) {
+                expect(data).toContain(part);
+            }
+        };
+
+        keeps(`<table><tbody><tr><td>Hi there</td><td style="background-color:#ffff00">How are you</td></tr></tbody></table>`,
+            "<table", "Hi there", "background-color:#ffff00");
+        keeps(`<p><span style="background-color:#ffff00">Yellow</span> <span style="color:#ff0000">red</span></p>`,
+            "background-color:#ffff00", "color:#ff0000");
+        keeps(`<h2>Heading</h2><p><u>under</u> x<sub>2</sub> y<sup>3</sup> <span class="text-small">small</span></p><hr>`,
+            "<h2>Heading</h2>", "<u>under</u>", "<sub>2</sub>", "<sup>3</sup>", "text-small", "<hr>");
+        keeps(`<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" checked="checked" disabled="disabled"><span class="todo-list__label__description">Done</span></label></li></ul>`,
+            "todo-list", "checked", "Done");
+        keeps(`<figure class="image"><img src="api/attachments/abc/image/image.png" width="20" height="10"><figcaption>Caption</figcaption></figure>`,
+            `src="api/attachments/abc/image/image.png"`, "Caption");
+        keeps(`<p>See <a class="reference-link" href="#root/abc123">Linked</a> and <a href="https://example.com">a site</a></p>`,
+            `href="#root/abc123"`, "reference-link", `href="https://example.com"`);
+        keeps(`<ol style="list-style-type:lower-latin;"><li>first</li></ol>`, "lower-latin", "first");
+        // The tags of a OneNote page, as icons.
+        keeps(`<p><span class="tn-icon bx bx-star"></span> Important</p>`, `<span class="tn-icon bx bx-star">`, "Important");
+        // A color is saved with the variable that adapts it to the theme.
+        keeps(`<p><span style="color:#ff0000;">red</span></p>`, "--tn-color:#ff0000");
     });
 });

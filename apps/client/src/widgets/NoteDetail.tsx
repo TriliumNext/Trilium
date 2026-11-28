@@ -515,6 +515,8 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = "sqlConsole";
     } else if (note.isMarkdown()) {
         resultingType = "markdown";
+    } else if (note.isHandwriting()) {
+        resultingType = "handwriting";
     } else if (note.isIconPack()) {
         resultingType = "iconPack";
     } else if (type === "code" && (await noteContext?.isReadOnly())) {
@@ -570,7 +572,8 @@ export async function getUnavailableReason(
 // "blobStub" placeholder when that content was not synced to this device.
 const BLOB_BACKED_TYPES = new Set<ExtendedNoteType>([
     "editableText", "readOnlyText", "editableCode", "readOnlyCode", "markdown",
-    "file", "image", "mermaid", "canvas", "mindMap", "render", "spreadsheet"
+    "file", "image", "mermaid", "canvas", "mindMap", "render", "spreadsheet",
+    "handwriting"
 ]);
 
 export function checkFullHeight(noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined) {

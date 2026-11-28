@@ -6,7 +6,7 @@ import {
     getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
     isMarkdownMime, type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
     normalizeMimeTypeForCKEditor, readDrawingFrame, readLinkPreviewData, readMediaEmbedBox,
-    renderLinkEmbedBoxHtml,
+    isHandwritingNote, renderLinkEmbedBoxHtml,
     renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
     SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
     shouldSyntaxHighlight, sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
@@ -571,7 +571,7 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderText(result, note, options);
     } else if (note.type === "code" && isMarkdownMime(note.mime)) {
         renderMarkdown(result, note, options);
-    } else if (note.type === "code") {
+    } else if (note.type === "code" && !isHandwritingNote(note.type, note.mime)) {
         renderCode(result, note.mime, note, options.hasCodeLineNumbers);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);

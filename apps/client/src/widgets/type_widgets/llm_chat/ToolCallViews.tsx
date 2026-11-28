@@ -7,7 +7,7 @@ import { isAutoLinkAttribute } from "../../../entities/fattribute.js";
 import { formatValue } from "../../../services/attribute_renderer.js";
 import { t } from "../../../services/i18n.js";
 import { calculateHash } from "../../../services/link.js";
-import { NOTE_TYPES } from "../../../services/note_types.js";
+import { findNoteTypeMapping } from "../../../services/note_types.js";
 import { formatSize, openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
 import { useNote } from "../../react/hooks/note.js";
@@ -448,7 +448,7 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
  * map) have no view. The SVG loads through an `<img>`, which runs none of its scripts.
  */
 function WrittenContent({ type, mime, content, appended }: { type: string; mime?: string; content: string; appended?: boolean }) {
-    const noteType = type !== "text" && findNoteType(type, mime);
+    const noteType = type !== "text" && findNoteTypeMapping(type, mime);
     return (
         <div className="llm-chat-note-card">
             {noteType && <div className="llm-chat-note-card-facts">{noteType.title}</div>}
@@ -498,10 +498,6 @@ function hasWrittenContentView(type: string, mime: string | undefined, content: 
     return [ "text", "code", "mermaid", "search" ].includes(type);
 }
 
-function findNoteType(type: string, mime?: string) {
-    return NOTE_TYPES.find((nt) => nt.type === type && nt.mime === mime) ?? NOTE_TYPES.find((nt) => nt.type === type);
-}
-
 /** A capped list in a `get_note` result: `totalCount` counts past the entries it lists. */
 interface CappedList<T> {
     totalCount: number;
@@ -525,7 +521,7 @@ interface NoteMeta {
 
 /** What a `get_note` call learned about the note its summary line links. */
 function NoteMetaCard({ type, mime, childCount, attachmentCount, attributes, contentPreview }: NoteMeta) {
-    const noteType = findNoteType(type, mime);
+    const noteType = findNoteTypeMapping(type, mime);
     const facts = [
         noteType?.title ?? type,
         childCount > 0 && t("llm_chat.child_count", { count: childCount }),

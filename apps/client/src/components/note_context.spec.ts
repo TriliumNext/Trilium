@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/navigation_state.js";
+import options from "../services/options.js";
 import utils from "../services/utils.js";
 import { buildNote } from "../test/easy-froca.js";
 import appContext from "./app_context.js";
@@ -81,6 +82,31 @@ describe("NoteContext read-only capability", () => {
         // honouring it.
         if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
         expect(await noteContext.isReadOnly()).toBe(false);
+    });
+
+    it("keeps a large handwriting note editable, which a code note of that size is not", async () => {
+        options.load({ autoReadonlySizeCode: 100 });
+        const content = JSON.stringify({ version: 1, paper: "blank", strokes: [ { w: 3, p: Array(100).fill(1) } ] });
+        const code = buildNote({ title: "Script", type: "code", mime: "application/javascript", content });
+        noteContext.noteId = code.noteId;
+        expect(await noteContext.isReadOnly()).toBe(true);
+
+        // A drawing grows with every stroke, and its widget honours #readOnly alone.
+        const drawing = buildNote({
+            title: "Drawing", type: "code", mime: "application/vnd.triliumnotes.handwriting+json", content
+        });
+        noteContext.noteId = drawing.noteId;
+        noteContext.resetViewScope();
+        expect(noteContext.isReadOnlyIfKnown()).toBe(false);
+        expect(await noteContext.isReadOnly()).toBe(false);
+
+        const locked = buildNote({
+            "title": "Locked drawing", "type": "code", "mime": "application/vnd.triliumnotes.handwriting+json",
+            "content": content, "#readOnly": ""
+        });
+        noteContext.noteId = locked.noteId;
+        noteContext.resetViewScope();
+        expect(await noteContext.isReadOnly()).toBe(true);
     });
 
     it("keeps a note whose content cannot be saved read-only, even once editing is enabled", async () => {

@@ -98,7 +98,7 @@ export function ReadOnlyCode({
                 editorRef={combinedEditorRef}
                 className="note-detail-readonly-code-content"
                 content={content}
-                mime={mime ?? "text/plain"}
+                mime={getReadOnlyMime(note, mime)}
                 readOnly
                 {...(noteTabWidth != null && { indentSize: noteTabWidth })}
                 {...(noteUseTabs != null && { useTabs: noteUseTabs })}
@@ -109,9 +109,22 @@ export function ReadOnlyCode({
     );
 }
 
-function formatViewSource(note: FNote, content: string) {
+/**
+ * The media type that highlights the content of `note` in the read-only view, given its `mime`.
+ * The source of a handwriting note is JSON, which its own media type names to no highlighter.
+ */
+export function getReadOnlyMime(note: FNote, mime: string | null | undefined) {
+    if (note.isHandwriting()) return "application/json";
+    return mime ?? "text/plain";
+}
+
+export function formatViewSource(note: FNote, content: string) {
     if (note.type === "text") {
         return utils.formatHtml(content);
+    }
+
+    if (note.isHandwriting()) {
+        return formatHandwritingSource(content);
     }
 
     if (note.type !== "code" && note.mime === "application/json" && content.length < 512_000) {
@@ -123,6 +136,34 @@ function formatViewSource(note: FNote, content: string) {
     }
 
     return content;
+}
+
+/**
+ * Formats the JSON of a handwriting note with one object per line, as the general indentation
+ * gives each coordinate of a stroke a line of its own. A note saved before `objects` lists its
+ * `strokes`. Content that is not such a document stays as it is.
+ */
+function formatHandwritingSource(content: string) {
+    let doc: unknown;
+    try {
+        doc = JSON.parse(content);
+    } catch {
+        return content;
+    }
+    const saved = (doc ?? {}) as Record<string, unknown>;
+    const listed = Array.isArray(saved.objects) ? "objects" : "strokes";
+    const objects = saved[listed];
+    if (!doc || typeof doc !== "object" || !Array.isArray(objects)) {
+        return content;
+    }
+
+    const lines = Object.entries(saved)
+        .filter(([ key ]) => key !== listed)
+        .map(([ key, value ]) => `    ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
+    const objectLines = objects.map((object) => `        ${JSON.stringify(object)}`);
+    return [ "{", ...lines, `    ${JSON.stringify(listed)}: [`, objectLines.join(",\n"), "    ]", "}" ]
+        .filter((line) => line !== "")
+        .join("\n");
 }
 
 export function EditableCode({

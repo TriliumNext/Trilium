@@ -1,3 +1,5 @@
+import { HANDWRITING_MIME } from "@triliumnext/commons";
+
 /**
  * @module
  *
@@ -9,6 +11,17 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Handwriting notes were a note type of their own in development builds; they are `code` notes
+    // of the handwriting media type, which an instance that does not know them leaves alone. No
+    // entity change is written: only those builds hold such notes, they sync with each other alone
+    // and each runs this migration, so their copies converge.
+    {
+        version: 243,
+        sql: /*sql*/`
+            UPDATE notes SET type = 'code', mime = '${HANDWRITING_MIME}' WHERE type = 'handwriting';
+            UPDATE revisions SET type = 'code', mime = '${HANDWRITING_MIME}' WHERE type = 'handwriting';
+        `
+    },
     // The in-app help (`_help` subtree) became virtual — injected into becca from the bundled
     // help meta on every load, never persisted or synced (see services/virtual_notes.ts).
     // Remove the previously persisted rows, including their entity_changes so the deletions

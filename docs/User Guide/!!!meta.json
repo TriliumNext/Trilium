@@ -7272,6 +7272,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "BJCquOdYNvni",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "KSZ04uQ2D1St",
+                                "BJCquOdYNvni"
+                            ],
+                            "title": "Handwriting",
+                            "notePosition": 180,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "handwriting",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-pencil",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Handwriting.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "1vHRoWCEjj0L",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -7279,7 +7313,7 @@
                                 "1vHRoWCEjj0L"
                             ],
                             "title": "Web View",
-                            "notePosition": 180,
+                            "notePosition": 190,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7313,7 +7347,7 @@
                                 "gBbsAeiuUxI5"
                             ],
                             "title": "Mind Map",
-                            "notePosition": 190,
+                            "notePosition": 200,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7356,7 +7390,7 @@
                                 "W8vYD3Q1zjCR"
                             ],
                             "title": "File",
-                            "notePosition": 210,
+                            "notePosition": 220,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7574,7 +7608,7 @@
                                 "GWHEkY4I4OE3"
                             ],
                             "title": "Spreadsheets",
-                            "notePosition": 220,
+                            "notePosition": 230,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7617,7 +7651,7 @@
                                 "6RM1Q7ppFVoj"
                             ],
                             "title": "Markdown",
-                            "notePosition": 230,
+                            "notePosition": 240,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7660,7 +7694,7 @@
                                 "jludwdW7N4hg"
                             ],
                             "title": "Converting between note types",
-                            "notePosition": 240,
+                            "notePosition": 250,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

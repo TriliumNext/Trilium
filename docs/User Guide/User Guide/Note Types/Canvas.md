@@ -3,6 +3,9 @@
 
 Canvas notes use the Excalidraw library to allow handwritten notes with mouse, pen or touch on an infinite canvas. It also supports basic diagramming, text and graphics input.
 
+> [!TIP]
+> For notes that are mostly handwriting, consider a <a class="reference-link" href="Handwriting.md">Handwriting</a> note, which offers pages of ruled paper and stays responsive with large amounts of ink.
+
 ## Interaction
 
 *   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.

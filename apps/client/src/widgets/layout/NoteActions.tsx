@@ -180,7 +180,8 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
             >
                 {isMobile && viewStrip}
 
-                {(note.type === "code" || note.noteId === "_backendLog") && <CodeProperties note={note} />}
+                {((note.type === "code" && !note.isHandwriting()) || note.noteId === "_backendLog")
+                    && <CodeProperties note={note} />}
 
                 {isReadOnly && !isLocked && <>
                     <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}

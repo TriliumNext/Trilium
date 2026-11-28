@@ -11,9 +11,16 @@ export interface FormFileUploadProps {
     multiple?: boolean;
     hidden?: boolean;
     inputRef?: Ref<HTMLInputElement>;
+    /** The types of file the chooser offers, as the `accept` attribute of the input names them. */
+    accept?: string;
+    /**
+     * Clears the choice once `onChange` has run, so that choosing the same file again is a change
+     * too. `onChange` must then read the files before it returns.
+     */
+    clearAfterChange?: boolean;
 }
 
-export default function FormFileUpload({ inputRef, name, onChange, multiple, hidden }: FormFileUploadProps) {
+export default function FormFileUpload({ inputRef, name, onChange, multiple, hidden, accept, clearAfterChange }: FormFileUploadProps) {
     // Prevent accidental reuse of a file selected in a previous instance of the upload form.
     useEffect(() => {
         onChange(null);
@@ -27,7 +34,12 @@ export default function FormFileUpload({ inputRef, name, onChange, multiple, hid
                 type="file"
                 class="form-control-file"
                 multiple={multiple}
-                onChange={e => onChange((e.target as HTMLInputElement).files)} />
+                accept={accept}
+                onChange={(e) => {
+                    const input = e.currentTarget;
+                    onChange(input.files);
+                    if (clearAfterChange) input.value = "";
+                }} />
         </label>
     );
 }

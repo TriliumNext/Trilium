@@ -1,4 +1,4 @@
-import { CANVAS_ATTACHMENT_MIME, type NoteType } from "@triliumnext/commons";
+import { CANVAS_ATTACHMENT_MIME, HANDWRITING_MIME, type NoteType } from "@triliumnext/commons";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
@@ -679,6 +679,94 @@ describe("notes service (real DB)", () => {
             getContext().init(() => saveLinks(map.note, buildMap("https://example.com")));
             expect(map.note.getRelations().some((r) => r.name === "internalLink" && !r.isDeleted)).toBe(false);
         });
+
+        it("relates a handwriting note to the notes its text boxes link to, and lets go of the ones dropped", () => {
+            const target = createNote("root", { title: "spec-ink-target" });
+            const sheet = (html: string) => JSON.stringify({
+                version: 2, paper: "blank", layout: "infinite",
+                objects: [
+                    { id: "s", w: 3, p: [ 0, 0, 128 ] },
+                    { o: "text", id: "a", x: 0, y: 0, w: 100, html: "<p>plain</p>" },
+                    { o: "text", id: "b", x: 0, y: 50, w: 100, html }
+                ]
+            });
+            const ink = createNote("root", { title: "spec-ink", type: "code", mime: HANDWRITING_MIME, content: sheet("") });
+            const links = () => ink.note.getRelations().filter((r) => r.name === "internalLink" && !r.isDeleted).map((r) => r.value);
+
+            const html = `<p>See <a class="reference-link" href="#root/${target.note.noteId}">spec-ink-target</a></p>`;
+            getContext().init(() => saveLinks(ink.note, sheet(html)));
+            expect(links()).toEqual([ target.note.noteId ]);
+
+            getContext().init(() => saveLinks(ink.note, sheet("<p>no link</p>")));
+            expect(links()).toEqual([]);
+            // A note saved before `objects` lists its text boxes apart.
+            const older = JSON.stringify({ version: 1, texts: [ { id: "a", x: 0, y: 0, w: 100, html } ], strokes: [] });
+            getContext().init(() => saveLinks(ink.note, older));
+            expect(links()).toEqual([ target.note.noteId ]);
+            // Content that is not a document, and text boxes without HTML, relate the note to nothing.
+            const unlinked = [ "{", "null", JSON.stringify({ objects: [ { o: "text", id: "a" } ] }), JSON.stringify({ texts: [ null ] }) ];
+            for (const content of unlinked) {
+                getContext().init(() => saveLinks(ink.note, older));
+                expect(links()).toEqual([ target.note.noteId ]);
+                getContext().init(() => saveLinks(ink.note, content));
+                expect(links()).toEqual([]);
+            }
+        });
+    });
+
+    describe("handwriting images", () => {
+        const sheet = (...urls: string[]) => JSON.stringify({
+            version: 1, paper: "ruled", layout: "pages",
+            pdf: urls.find((url) => url.endsWith("/open")),
+            images: urls.filter((url) => !url.endsWith("/open")).map((url) => ({ url, x: 0, y: 0, w: 100, h: 50 })),
+            strokes: []
+        });
+        const PDF = { role: "file", mime: "application/pdf", title: "slides.pdf", content: new Uint8Array([ 4, 5 ]) };
+        const pdfUrlOf = (attachmentId: string | undefined) => `api/attachments/${attachmentId}/open`;
+        const urlOf = (attachmentId: string | undefined) => `api/attachments/${attachmentId}/image/a.png`;
+        const isScheduled = (attachmentId: string | undefined) =>
+            !!becca.getAttachment(attachmentId ?? "")?.utcDateScheduledForErasureSince;
+
+        it("keeps the images on the sheet and the thumbnail, and schedules the others for erasure", () => {
+            const { note } = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: sheet() });
+            const [ used, removed, thumbnail ] = getContext().init(() => [
+                note.saveAttachment(PNG),
+                note.saveAttachment({ ...PNG, title: "removed.png" }),
+                note.saveAttachment({ ...PNG, mime: "image/svg+xml", title: "handwriting-export.svg" })
+            ]);
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(urlOf(used.attachmentId))));
+            expect([ used, removed, thumbnail ].map((attachment) => isScheduled(attachment.attachmentId)))
+                .toStrictEqual([ false, true, false ]);
+
+            // Undoing the removal puts the image back on the sheet, which keeps its attachment.
+            getContext().init(() => noteService.updateNoteData(note.noteId,
+                sheet(urlOf(used.attachmentId), urlOf(removed.attachmentId))));
+            expect(isScheduled(removed.attachmentId)).toBe(false);
+
+            // The PDF that is the paper of the note is kept as well, until it is taken away.
+            const pdf = getContext().init(() => note.saveAttachment(PDF));
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet(pdfUrlOf(pdf.attachmentId))));
+            expect(isScheduled(pdf.attachmentId)).toBe(false);
+            getContext().init(() => noteService.updateNoteData(note.noteId, sheet()));
+            expect(isScheduled(pdf.attachmentId)).toBe(true);
+        });
+
+        it("gives a duplicated note images of its own", async () => {
+            const { note } = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: sheet() });
+            const image = getContext().init(() => note.saveAttachment(PNG));
+            const pdf = getContext().init(() => note.saveAttachment(PDF));
+            getContext().init(() => noteService.updateNoteData(note.noteId,
+                sheet(urlOf(image.attachmentId), pdfUrlOf(pdf.attachmentId))));
+
+            const copy = getContext().init(() => noteService.duplicateSubtree(note.noteId, "root")).note;
+            await vi.waitFor(() => expect(copy.getAttachmentsByRole("file")).toHaveLength(1));
+            const [ copied ] = copy.getAttachmentsByRole("image");
+            const [ copiedPdf ] = copy.getAttachmentsByRole("file");
+            expect(copied.attachmentId).not.toBe(image.attachmentId);
+            expect(copiedPdf.attachmentId).not.toBe(pdf.attachmentId);
+            expect(copy.getContent()).toBe(sheet(urlOf(copied.attachmentId), pdfUrlOf(copiedPdf.attachmentId)));
+        });
     });
 
     describe("asyncPostProcessContent", () => {
@@ -1045,6 +1133,13 @@ describe("notes service edge cases (real DB)", () => {
                 }));
 
             expect([ note.type, note.mime ]).toStrictEqual([ "code", "text/x-python" ]);
+
+            // A handwriting note is a code note that a child does not take after.
+            const sheet = createNote("root", { type: "code", mime: HANDWRITING_MIME, content: "{}" }).note;
+            const child = getContext().init(() => noteService.createNewNoteWithTarget("into", undefined, {
+                parentNoteId: sheet.noteId, title: "spec-under-sheet", content: ""
+            })).note;
+            expect([ child.type, child.mime ]).toStrictEqual([ "text", "text/html" ]);
             expect(branch.notePosition).toBeLessThan(sibling.branch.notePosition);
             expect(() => getContext().init(() => noteService.createNewNoteWithTarget("before", undefined, {
                 parentNoteId: "root", title: "spec-no-target", content: "", type: "text"

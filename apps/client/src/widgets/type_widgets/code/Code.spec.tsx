@@ -13,7 +13,7 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { ParentComponent } from "../../react/react_utils";
-import { EditableCode, ReadOnlyCode } from "./Code";
+import { EditableCode, formatViewSource, getReadOnlyMime, ReadOnlyCode } from "./Code";
 import type { CodeMirrorProps } from "./CodeMirror";
 
 // While `deferEditor.on` is set, the editor is created one render after `CodeEditor` mounts, after
@@ -179,6 +179,45 @@ describe("EditableCode", () => {
         expect(onDataTaken).toHaveBeenCalledOnce();
         expect(onDataTaken.mock.invocationCallOrder[0])
             .toBeLessThan(put.mock.invocationCallOrder[0]);
+    });
+});
+
+describe("note source", () => {
+    it("shows a handwriting note with one stroke per line", () => {
+        const note = buildNote({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "H", content: "" });
+        const content = JSON.stringify({
+            version: 1, paper: "grid", strokes: [ { w: 3, p: [ 1, 2, 128, 3, 4, 0 ] }, { c: "#e64d4d", w: 3, p: [ 5, 6, 7 ] } ]
+        });
+        const source = formatViewSource(note, content);
+        expect(source).toBe([
+            "{",
+            "    \"version\": 1,",
+            "    \"paper\": \"grid\",",
+            "    \"strokes\": [",
+            "        {\"w\":3,\"p\":[1,2,128,3,4,0]},",
+            "        {\"c\":\"#e64d4d\",\"w\":3,\"p\":[5,6,7]}",
+            "    ]",
+            "}"
+        ].join("\n"));
+        expect(JSON.parse(source)).toEqual(JSON.parse(content));
+        expect(formatViewSource(note, "{ not json")).toBe("{ not json");
+        // The source is highlighted as JSON, which the media type of the note does not name.
+        expect(getReadOnlyMime(note, note.mime)).toBe("application/json");
+        const script = buildNote({ type: "code", mime: "application/javascript;env=frontend", title: "S", content: "" });
+        expect(getReadOnlyMime(script, script.mime)).toBe("application/javascript;env=frontend");
+        expect(getReadOnlyMime(script, undefined)).toBe("text/plain");
+
+        // A note saved since lists its objects, of which the strokes are most.
+        const objects = JSON.stringify({ version: 2, objects: [ { id: "a", w: 3, p: [ 5, 6, 7 ] }, { o: "text", id: "b", html: "" } ] });
+        expect(formatViewSource(note, objects)).toBe([
+            "{",
+            "    \"version\": 2,",
+            "    \"objects\": [",
+            "        {\"id\":\"a\",\"w\":3,\"p\":[5,6,7]},",
+            "        {\"o\":\"text\",\"id\":\"b\",\"html\":\"\"}",
+            "    ]",
+            "}"
+        ].join("\n"));
     });
 });
 

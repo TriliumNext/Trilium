@@ -1,4 +1,4 @@
-import { getAttachedFileMime, type NoteType } from "@triliumnext/commons";
+import { getAttachedFileMime, HANDWRITING_MIME, type NoteType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
 import imageService from "../../services/image.js";
@@ -9,10 +9,12 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
+import { convertRnote, isRnoteFile, RNOTE_EXTENSION, saveRnoteImages, serializeRnote } from "./rnote.js";
 import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
-import { processStringOrBuffer } from "../utils/binary.js";
+import { processStringOrBuffer, wrapStringOrBuffer } from "../utils/binary.js";
+import { getLog } from "../log.js";
 
 // MIME of an `.xlsx` upload (Office Open XML spreadsheet), as resolved by `mime-types`.
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -74,6 +76,11 @@ async function importSingleFileAs(taskContext: TaskContext<"importNotes">, file:
     // Univer workbook JSON is re-imported verbatim, unlike `.xlsx`/`.csv` which are parsed into a workbook.
     if (mime === "text/x-spreadsheet") {
         return importCustomType(taskContext, file, parentNote, "spreadsheet", mime);
+    }
+
+    if (taskContext?.data?.drawingImportedAsHandwriting && isRnoteFile(file.originalname)) {
+        const note = importRnote(taskContext, file, parentNote);
+        if (note) return note;
     }
 
     if (taskContext?.data?.codeImportedAsCode && mimeService.getType(taskContext.data, mime) === "code") {
@@ -155,6 +162,39 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
         mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
+
+    taskContext.increaseProgressCount();
+
+    return note;
+}
+
+/**
+ * Imports an RNote document as a handwriting note, with its images as attachments of the note.
+ * Returns `undefined` for a file that `convertRnote()` cannot read or that holds nothing a
+ * handwriting note can, which is then imported as a file.
+ */
+function importRnote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    const converted = convertRnote(wrapStringOrBuffer(file.buffer));
+    if (!converted) return undefined;
+
+    const { note } = noteService.createNewNote({
+        parentNoteId: parentNote.noteId,
+        title: getNoteTitle(file.originalname.slice(0, -RNOTE_EXTENSION.length), !!taskContext.data?.replaceUnderscoresWithSpaces),
+        content: serializeRnote(converted),
+        type: "code",
+        mime: HANDWRITING_MIME,
+        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+    });
+    note.addLabel("originalFileName", file.originalname);
+
+    if (converted.images.length) {
+        note.setContent(saveRnoteImages(note, converted, !!taskContext.data?.shrinkImages));
+    }
+
+    const skipped = Object.entries(converted.skipped).map(([ kind, count ]) => `${count} ${kind}`);
+    if (skipped.length) {
+        getLog().info(`Imported '${file.originalname}' without: ${skipped.join(", ")}`);
+    }
 
     taskContext.increaseProgressCount();
 

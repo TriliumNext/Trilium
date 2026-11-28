@@ -1,12 +1,14 @@
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
+import { gzipSync, strToU8 } from "fflate";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import imageService from "../image.js";
+import { getLog } from "../log.js";
 import noteService from "../notes.js";
 import protectedSessionService from "../protected_session.js";
 import TaskContext from "../task_context.js";
@@ -34,6 +36,7 @@ async function testImport(fileName: string, mimetype: string, bufferOverride?: B
         textImportedAsText: true,
         codeImportedAsCode: true,
         spreadsheetImportedAsSpreadsheet: true,
+        drawingImportedAsHandwriting: true,
         ...extraOptions
     });
 
@@ -305,6 +308,58 @@ describe("importSingleFile dispatch", () => {
         expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("payload.unknownext");
     });
 
+    it("imports an RNote document as a handwriting note with its ink, text boxes and images", async () => {
+        const rnote = (strokes: object[]) => Buffer.from(gzipSync(strToU8(JSON.stringify({
+            data: { engine_snapshot: { stroke_components: strokes.map((value) => ({ value })) } }
+        }))));
+        const style = { smooth: { stroke_width: 2, stroke_color: { r: 1, g: 0, b: 0, a: 1 } } };
+        const line = { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 10, 0 ] } }, style } };
+        const text = { textstroke: { text: "Typed", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } };
+
+        const info = vi.spyOn(getLog(), "info");
+        const { importedNote } = await testImport("Lecture_notes.RNOTE", "application/octet-stream", rnote([ line, { vectorimage: {} }, text ]));
+        expect(importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Lecture_notes" });
+        // What the note cannot hold is left out, and the log names it.
+        expect(info).toHaveBeenCalledWith("Imported 'Lecture_notes.RNOTE' without: 1 vectorimage");
+        info.mockRestore();
+        expect(importedNote.getOwnedLabelValue("originalFileName")).toBe("Lecture_notes.RNOTE");
+        expect(JSON.parse(importedNote.getContent() as string)).toEqual({
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { id: "s1", c: "#ff0000", w: 2, k: 0, p: [ 0, 0, 128, 50, 0, 0, 50, 0, 0 ] },
+                { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
+            ]
+        });
+
+        // One opaque white pixel, shown 20 by 10 around (10, 50).
+        const image = {
+            bitmapimage: {
+                image: { data: btoa("\xff\xff\xff\xff"), pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" },
+                rectangle: { cuboid: { half_extents: [ 0.5, 0.5 ] }, transform: { affine: [ 20, 0, 0, 0, 10, 0, 10, 50, 1 ] } }
+            }
+        };
+        const typed = await testImport("Typed.rnote", "application/octet-stream", rnote([ image, text ]));
+        expect(typed.importedNote).toMatchObject({ type: "code", mime: "application/vnd.triliumnotes.handwriting+json", title: "Typed" });
+        // The image service reads the type of the picture from its bytes once it has stored it.
+        await imageService.awaitPendingImageWrites();
+        const [ attachment ] = typed.importedNote.getAttachments();
+        expect(attachment).toMatchObject({ role: "image", mime: "image/png", title: "image1.png" });
+        expect(JSON.parse(typed.importedNote.getContent() as string)).toEqual({
+            version: 2, paper: "blank", layout: "infinite",
+            objects: [
+                { o: "image", id: "i1", url: `api/attachments/${attachment.attachmentId}/image/image1.png`, x: 0, y: 45, w: 20, h: 10 },
+                { o: "text", id: "rnote1", x: -8, y: -4, w: 112, s: 32, html: "<p>Typed</p>" }
+            ]
+        });
+
+        const empty = await testImport("Empty.rnote", "application/octet-stream", rnote([ { vectorimage: {} } ]));
+        expect(empty.importedNote).toMatchObject({ type: "file", title: "Empty.rnote" });
+        const broken = await testImport("Broken.rnote", "application/octet-stream", Buffer.from("not an RNote file"));
+        expect(broken.importedNote).toMatchObject({ type: "file", title: "Broken.rnote" });
+        const off = await testImport("Off.rnote", "application/octet-stream", rnote([ line ]), { drawingImportedAsHandwriting: false });
+        expect(off.importedNote).toMatchObject({ type: "file", title: "Off.rnote" });
+    });
+
     it("strips the extension and underscores from a PDF's title", async () => {
         // importFile passes `mime === "application/pdf"` as replaceUnderscoresWithSpaces, so only PDFs
         // get the underscore treatment.
@@ -420,8 +475,12 @@ describe("importing under a protected parent", () => {
             const taskContext = TaskContext.getInstance("import-protected", "importNotes", {
                 textImportedAsText: true,
                 codeImportedAsCode: true,
-                spreadsheetImportedAsSpreadsheet: true
+                spreadsheetImportedAsSpreadsheet: true,
+                drawingImportedAsHandwriting: true
             });
+            const rnote = gzipSync(strToU8(JSON.stringify({ data: { engine_snapshot: { stroke_components: [
+                { value: { textstroke: { text: "Typed", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } } }
+            ] } } })));
 
             const uploads = [
                 { originalname: "Prot.bin", mimetype: "application/x-custom", buffer: Buffer.from([1]) },
@@ -430,7 +489,8 @@ describe("importing under a protected parent", () => {
                 { originalname: "Prot.csv", mimetype: "text/csv", buffer: Buffer.from("a,b\r\n1,2") },
                 { originalname: "Prot.txt", mimetype: "text/plain", buffer: Buffer.from("plain") },
                 { originalname: "Prot.md", mimetype: "text/markdown", buffer: Buffer.from("# md") },
-                { originalname: "Prot.html", mimetype: "text/html", buffer: Buffer.from("<p>html</p>") }
+                { originalname: "Prot.html", mimetype: "text/html", buffer: Buffer.from("<p>html</p>") },
+                { originalname: "Prot.rnote", mimetype: "application/octet-stream", buffer: Buffer.from(rnote) }
             ];
 
             const imported = await getContext().init(async () => {
@@ -441,7 +501,7 @@ describe("importing under a protected parent", () => {
                 return notes;
             });
 
-            expect(imported.map((note) => note.type)).toEqual(["file", "code", "mermaid", "spreadsheet", "text", "text", "text"]);
+            expect(imported.map((note) => note.type)).toEqual(["file", "code", "mermaid", "spreadsheet", "text", "text", "text", "code"]);
             expect(imported.every((note) => note.isProtected)).toBe(true);
         } finally {
             protectedSessionService.resetDataKey();

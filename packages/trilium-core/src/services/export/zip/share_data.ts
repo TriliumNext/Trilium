@@ -146,7 +146,7 @@ function writeImage(
         return path;
     }
 
-    const title = getImageAttachmentTitle(note.type);
+    const title = getImageAttachmentTitle(note.type, note.mime);
     const attachment = title
         ? note.getAttachments().find((candidate) => candidate.title === title)
         : undefined;

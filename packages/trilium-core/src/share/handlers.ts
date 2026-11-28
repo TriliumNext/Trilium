@@ -1,4 +1,4 @@
-import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { isHandwritingNote, isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { getShareLink } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
@@ -337,6 +337,9 @@ function viewNote(req: ShareRequest): ShareReply {
 function getImage(req: ShareRequest): ShareReply {
     const image = checkNoteContentAccess(req.params.noteId ?? "", req);
 
+    if (isHandwritingNote(image.type, image.mime)) {
+        return renderImageAttachment(image, NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting);
+    }
     switch (image.type) {
         case "image":
             return serveImageBytes(image.getContent(), image.mime, noIndexHeaders(image));

@@ -1,7 +1,7 @@
 import "./NoteTypeSwitcher.css";
 
 import type { MimeType, NoteType } from "@triliumnext/commons";
-import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
+import { getCodeLanguageIcon, HANDWRITING_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import {
     type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState
 } from "preact/hooks";
@@ -201,8 +201,10 @@ export function useNoteTypeItems({ currentNoteType, currentNoteMime, note, setMo
             return;
         }
 
-        // Confirm change if the note already has a content.
-        if (type !== currentNoteType) {
+        // Confirm change if the note already has a content. A handwriting note is a code note, and
+        // its ink shows as JSON in any other one.
+        const isHandwriting = mime === HANDWRITING_MIME;
+        if (type !== currentNoteType || isHandwriting !== note.isHandwriting()) {
             const blob = await note.getBlob();
 
             if (blob?.content && blob.content.trim().length) {
@@ -216,7 +218,7 @@ export function useNoteTypeItems({ currentNoteType, currentNoteMime, note, setMo
 
     const items: MenuItem<unknown>[] = [];
     for (const { isNew, isBeta, type, mime, title } of noteTypes) {
-        if (noCodeNotes || type !== "code") {
+        if (noCodeNotes || type !== "code" || mime === HANDWRITING_MIME) {
             items.push({
                 title: escapeHtml(title),
                 checked: isCurrentNoteType({ type, mime }, note),

@@ -43,6 +43,7 @@ describe("getExtendedWidgetType blob-stub routing", () => {
             isProtected: false,
             isTriliumSqlite: () => false,
             isMarkdown: () => false,
+            isHandwriting: () => false,
             isIconPack: () => false,
             getBlob: async () => ({ isStubbed: false }),
             ...overrides
@@ -208,6 +209,7 @@ describe("useNoteInfo", () => {
             isProtected: false,
             isTriliumSqlite: () => false,
             isMarkdown: () => false,
+            isHandwriting: () => false,
             isIconPack: () => false
         } as unknown as FNote;
         const setContextData = vi.fn();

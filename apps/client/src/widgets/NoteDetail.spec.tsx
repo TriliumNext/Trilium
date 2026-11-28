@@ -87,6 +87,7 @@ describe("NoteDetail", () => {
             isProtected: false,
             isTriliumSqlite: () => false,
             isMarkdown: () => false,
+            isHandwriting: () => false,
             isIconPack: () => false,
             hasChildren: () => hasChildren,
             getLabelValue: () => null,
