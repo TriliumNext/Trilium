@@ -13,7 +13,7 @@ import { convertRnote, isRnoteFile, RNOTE_EXTENSION, saveRnoteImages, serializeR
 import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
-import { processStringOrBuffer } from "../utils/binary.js";
+import { processStringOrBuffer, wrapStringOrBuffer } from "../utils/binary.js";
 import { getLog } from "../log.js";
 
 // MIME of an `.xlsx` upload (Office Open XML spreadsheet), as resolved by `mime-types`.
@@ -174,7 +174,7 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
  * handwriting note can, which is then imported as a file.
  */
 function importRnote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
-    const converted = typeof file.buffer === "string" ? undefined : convertRnote(file.buffer);
+    const converted = convertRnote(wrapStringOrBuffer(file.buffer));
     if (!converted) return undefined;
 
     const { note } = noteService.createNewNote({

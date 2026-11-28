@@ -703,9 +703,14 @@ describe("notes service (real DB)", () => {
             const older = JSON.stringify({ version: 1, texts: [ { id: "a", x: 0, y: 0, w: 100, html } ], strokes: [] });
             getContext().init(() => saveLinks(ink.note, older));
             expect(links()).toEqual([ target.note.noteId ]);
-            // Content that is not a document relates the note to nothing.
-            getContext().init(() => saveLinks(ink.note, "{"));
-            expect(links()).toEqual([]);
+            // Content that is not a document, and text boxes without HTML, relate the note to nothing.
+            const unlinked = [ "{", "null", JSON.stringify({ objects: [ { o: "text", id: "a" } ] }), JSON.stringify({ texts: [ null ] }) ];
+            for (const content of unlinked) {
+                getContext().init(() => saveLinks(ink.note, older));
+                expect(links()).toEqual([ target.note.noteId ]);
+                getContext().init(() => saveLinks(ink.note, content));
+                expect(links()).toEqual([]);
+            }
         });
     });
 

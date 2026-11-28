@@ -254,6 +254,43 @@ describe("convertRnote", () => {
         expect(screenshot.images).toHaveLength(1);
     });
 
+    it("draws what a component leaves out as RNote does, and skips one it cannot draw", () => {
+        const path = (start: object, ...ends: object[]) => ({ start, segments: ends.map((end) => ({ lineto: { end } })) });
+        // One transparent pixel.
+        const pixel = { data: "AAAAAA==", pixel_width: 1, pixel_height: 1, memory_format: "R8g8b8a8Premultiplied" };
+        const cuboid = { half_extents: [ 1, 1 ] };
+        const { document, skipped } = convert(rnote([
+            // No width, no pressure, an end without a position, and a color without its alpha.
+            { brushstroke: {
+                path: path({ pos: [ 0, 0 ] }, {}, { pos: [ 10, 0 ] }),
+                style: { smooth: { stroke_color: { r: 0, g: 0, b: 0 } } }
+            } },
+            // A line in a style without a width or a color.
+            { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 0, 10 ] } }, style: { smooth: {} } } },
+            // A range that sets no color.
+            { textstroke: {
+                text: "Bold", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] },
+                text_style: { ranged_text_attributes: [ { range: { start: 0, end: 4 }, attribute: { font_weight: 700 } } ] }
+            } },
+            // Without a style, without a point, without a style, and with an end that is not a number.
+            { brushstroke: { path: path({ pos: [ 0, 0 ] }) } },
+            { brushstroke: { path: path({}), style: smooth() } },
+            { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ 0, 10 ] } } } },
+            { shapestroke: { shape: { line: { start: [ 0, 0 ], end: [ "10", 0 ] } }, style: smooth() } },
+            // Without a rectangle, with fewer pixels than it says, and shown at no width.
+            { bitmapimage: { image: pixel } },
+            { bitmapimage: { image: { ...pixel, pixel_width: 2 }, rectangle: { cuboid, transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } } },
+            { bitmapimage: { image: pixel, rectangle: { cuboid, transform: { affine: [ 0, 0, 0, 0, 1, 0, 0, 0, 1 ] } } } }
+        ]));
+
+        expect(skipped).toEqual({ brushstroke: 2, shapestroke: 2, bitmapimage: 3 });
+        expect(document.strokes).toEqual([
+            { w: 2, k: 0, p: [ 0, 0, 128, 100, 0, 0 ] },
+            { w: 2, k: 0, p: [ 0, 0, 128, 0, 50, 0, 0, 50, 0 ] }
+        ]);
+        expect(document.texts.map(({ html }: { html: string }) => html)).toEqual([ "<p>Bold</p>" ]);
+    });
+
     it("returns nothing for a file that is not an RNote document or holds nothing it can convert", () => {
         expect(convertRnote(strToU8("not gzipped"))).toBeUndefined();
         expect(convertRnote(gzipSync(strToU8("not JSON")))).toBeUndefined();

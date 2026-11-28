@@ -582,7 +582,7 @@ function serializeHandwritingPage({ strokes, layout }: HandwritingDraft, html: s
     const images: SerializedImage[] = [];
     for (const img of root.querySelectorAll(`img[${LAYOUT_IMAGE_ATTRIBUTE}]`)) {
         const image = layout.images[Number(img.getAttribute(LAYOUT_IMAGE_ATTRIBUTE))];
-        const url = img.getAttribute("src") ?? "";
+        const url = img.attributes.src;
         if (image && IMAGE_URL_PATTERN.test(url)) {
             images.push({ url, x: image.x, y: image.y, w: image.width, h: image.height });
         }

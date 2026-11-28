@@ -475,8 +475,12 @@ describe("importing under a protected parent", () => {
             const taskContext = TaskContext.getInstance("import-protected", "importNotes", {
                 textImportedAsText: true,
                 codeImportedAsCode: true,
-                spreadsheetImportedAsSpreadsheet: true
+                spreadsheetImportedAsSpreadsheet: true,
+                drawingImportedAsHandwriting: true
             });
+            const rnote = gzipSync(strToU8(JSON.stringify({ data: { engine_snapshot: { stroke_components: [
+                { value: { textstroke: { text: "Typed", transform: { affine: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ] } } } }
+            ] } } })));
 
             const uploads = [
                 { originalname: "Prot.bin", mimetype: "application/x-custom", buffer: Buffer.from([1]) },
@@ -485,7 +489,8 @@ describe("importing under a protected parent", () => {
                 { originalname: "Prot.csv", mimetype: "text/csv", buffer: Buffer.from("a,b\r\n1,2") },
                 { originalname: "Prot.txt", mimetype: "text/plain", buffer: Buffer.from("plain") },
                 { originalname: "Prot.md", mimetype: "text/markdown", buffer: Buffer.from("# md") },
-                { originalname: "Prot.html", mimetype: "text/html", buffer: Buffer.from("<p>html</p>") }
+                { originalname: "Prot.html", mimetype: "text/html", buffer: Buffer.from("<p>html</p>") },
+                { originalname: "Prot.rnote", mimetype: "application/octet-stream", buffer: Buffer.from(rnote) }
             ];
 
             const imported = await getContext().init(async () => {
@@ -496,7 +501,7 @@ describe("importing under a protected parent", () => {
                 return notes;
             });
 
-            expect(imported.map((note) => note.type)).toEqual(["file", "code", "mermaid", "spreadsheet", "text", "text", "text"]);
+            expect(imported.map((note) => note.type)).toEqual(["file", "code", "mermaid", "spreadsheet", "text", "text", "text", "code"]);
             expect(imported.every((note) => note.isProtected)).toBe(true);
         } finally {
             protectedSessionService.resetDataKey();

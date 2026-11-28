@@ -82,9 +82,11 @@ describe("inkmlToStrokes", () => {
 
     it("tolerates ink without prefixes, brushes or clean points, and returns nothing for no ink", () => {
         const strokes = inkmlToStrokes(`<ink>
-            <definitions><brush><brushProperty name="width" value="500"/></brush><brush xml:id="odd"><brushProperty name="width" value="wide"/><brushProperty name="color"/></brush></definitions>
+            <definitions><brush><brushProperty name="width" value="500"/></brush><brush xml:id="odd"><brushProperty name="width" value="wide"/><brushProperty name="height" value="tall"/><brushProperty name="color"/></brush>
+            <context><traceFormat><channel name="X" units="cm"/></traceFormat></context>
+            <context xml:id="bare"><traceFormat><channel name="X"/><channel name="Y"/><channel name="F"/></traceFormat></context></definitions>
             <trace brushRef="#missing">100 100, junk, 100.4 100, 100 100.2, 200 100, 300</trace>
-            <trace brushRef="odd">0 0</trace>
+            <trace brushRef="odd" contextRef="#bare">0 0</trace>
             <trace>nothing here</trace>
         </ink> trailing junk <trace>0 0, 9 9</trace>`);
         // The default brush is 70 units wide and black. Points that are not numbers and points
@@ -93,6 +95,8 @@ describe("inkmlToStrokes", () => {
             { w: 2.65, k: 0, p: [ 38, 38, 128, 38, 0, 0 ] },
             { w: 2.65, k: 0, p: [ 0, 0, 128 ] }
         ]);
+        // Without its closing tag, the ink runs to the end.
+        expect(inkmlToStrokes("<ink><trace>0 0</trace>")).toEqual([ { w: 2.65, k: 0, p: [ 0, 0, 128 ] } ]);
         expect(inkmlToStrokes("")).toEqual([]);
         expect(inkmlToStrokes("  \n ")).toEqual([]);
         expect(inkmlToStrokes("<ink><definitions/></ink>")).toEqual([]);

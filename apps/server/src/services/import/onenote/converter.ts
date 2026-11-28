@@ -888,11 +888,9 @@ function correctTableShadingColors(scope: HTMLElement) {
     for (const cell of scope.querySelectorAll("td, th")) {
         const style = parseStyle(cell.getAttribute("style"));
         const background = parseColor(style.get("background-color") ?? "");
-        if (!background || background.lightness() >= 50) {
-            continue;
-        }
-        const hex = background.hex();
-        style.set("background-color", reflectLightness(hex) ?? hex);
+        const reflected = background && background.lightness() < 50 ? reflectLightness(background.hex()) : undefined;
+        if (!reflected) continue;
+        style.set("background-color", reflected);
         cell.setAttribute("style", serializeStyle(style));
     }
 }
@@ -918,9 +916,8 @@ const LIST_CONTAINERS = new Set(["ol", "ul", "dl"]);
  */
 function removeBlockLevelBreaks(scope: HTMLElement, keepEmptyLines: boolean) {
     for (const br of scope.querySelectorAll("br")) {
-        const parent = br.parentNode;
-        const container = parent instanceof HTMLElement ? parent.tagName?.toLowerCase() ?? "" : undefined;
-        if (container === undefined || !BLOCK_CONTAINERS.has(container)) continue;
+        const container = br.parentNode.tagName?.toLowerCase() ?? "";
+        if (!BLOCK_CONTAINERS.has(container)) continue;
         if (keepEmptyLines && !LIST_CONTAINERS.has(container)) {
             br.insertAdjacentHTML("beforebegin", "<p>&nbsp;</p>");
         }

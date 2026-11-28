@@ -965,6 +965,17 @@ describe("convertPageLayout", () => {
         }
     });
 
+    it("places a box without a position in the corner, and orders boxes at one height from the left", () => {
+        const { texts } = converter.convertPageLayout(`<html><body data-absolute-enabled="true">
+            <div style="position:absolute;left:300px;top:50px;width:100px"><p>Right</p></div>
+            <div style="position:absolute;left:20px;top:50px;width:100px"><p>Left</p></div>
+            <div style="position:absolute;width:100px"><p>Corner</p></div>
+        </body></html>`);
+        expect(texts.map(({ x, y, html }) => [ x, y, parse(html).textContent ])).toEqual([
+            [ 0, 0, "Corner" ], [ 20, 50, "Left" ], [ 300, 50, "Right" ]
+        ]);
+    });
+
     it("gives a table in a text box the markup of a text note's table, at the width it had", () => {
         const { texts } = converter.convertPageLayout(`<html><body data-absolute-enabled="true">
             <div style="position:absolute;left:48px;top:100px;width:720px">

@@ -255,7 +255,6 @@ function buildStroke(
 ): SerializedStroke | undefined {
     if (!(size > 0)) return undefined;
     const kept = dropRepeatedPoints(points);
-    if (!kept.length) return undefined;
 
     return {
         ...look,
