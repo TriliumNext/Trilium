@@ -418,6 +418,17 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(String.raw`[Google](https://www.google.com "a \"quoted\" title")`);
     });
 
+    it("keeps underscores inside bare URLs unescaped", () => {
+        const html = /*html*/`<p>See https://en.wikipedia.org/wiki/Hello_World and www.example.com/snake_case_path for some_word.</p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`See https://en.wikipedia.org/wiki/Hello_World and www.example.com/snake_case_path for some\_word.`);
+        expect(markdownExportService.toMarkdown(/*html*/`<p>HTTPS://example.com/snake_case</p>`)).toBe("HTTPS://example.com/snake_case");
+    });
+
+    it("keeps escaping underscores in bare URLs that could form emphasis", () => {
+        const html = /*html*/`<p><a href="https://e.com/_x_">https://e.com/_x_</a></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`[https://e.com/\_x\_](https://e.com/_x_)`);
+    });
+
     it("exports reference links verbatim", () => {
         const html = /*html*/`<p><a class="reference-link" href="../../Canvas.html">Canvas</a></p>`;
         const expected = `<a class="reference-link" href="../../Canvas.html">Canvas</a>`;

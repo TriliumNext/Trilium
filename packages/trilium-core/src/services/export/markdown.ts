@@ -135,11 +135,21 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("blockMarker", buildBlockMarkerFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
+        const escape = instance.escape.bind(instance);
+        instance.escape = (text: string) => unescapeUnderscoresInBareUrls(escape(text));
         instances.set(headerlessTables, instance);
     }
 
     const html = isWritingBlockMarkers ? injectBlockMarkers(content) : content;
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
+}
+
+/** A bare URL in text, which GFM turns into a link of its own. Schemes match in any case. */
+const BARE_URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<]+/gi;
+
+/** GFM keeps backslashes in bare URLs; an underscore between letters or digits cannot form emphasis. */
+function unescapeUnderscoresInBareUrls(markdown: string) {
+    return markdown.replace(BARE_URL_PATTERN, (url) => url.replace(/(?<=[\p{L}\p{N}])\\_(?=[\p{L}\p{N}])/gu, "_"));
 }
 
 /** The attribute of an element that stands for a block marker while Turnish runs, with the id. */
