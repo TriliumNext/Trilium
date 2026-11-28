@@ -66,6 +66,7 @@ function putEntityChange(origEntityChange: EntityChange) {
         maxEntityChangeId = Math.max(maxEntityChangeId, ec.id);
     }
 
+    getSql().recordSavepointWrite(ec.entityName, ec.entityId);
     cls.putEntityChange(ec);
 }
 

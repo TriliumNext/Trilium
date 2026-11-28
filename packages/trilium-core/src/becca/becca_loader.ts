@@ -13,6 +13,7 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
+import type { SavepointWrite } from "../services/sql/sql.js";
 import { getContext } from "../services/context.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
@@ -274,7 +275,12 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entity
         return;
     }
 
-    if (["notes", "branches", "attributes", "etapi_tokens", "options"].includes(entityName)) {
+    applyEntityRow(entityName, entityRow);
+});
+
+/** Brings becca's copy of an entity in line with its row, creating the entity if becca lacks it. */
+function applyEntityRow(entityName: string, entityRow: any) {
+    if (CACHED_ENTITY_NAME_SET.has(entityName)) {
         const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
         const primaryKeyName = EntityClass.primaryKeyName;
 
@@ -290,7 +296,7 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entity
     }
 
     postProcessEntityUpdate(entityName, entityRow);
-});
+}
 
 eventService.subscribeBeccaLoader(eventService.ENTITY_CHANGED, ({ entityName, entity }) => {
     if (!becca.loaded) {
@@ -324,6 +330,10 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENT
         return;
     }
 
+    removeEntity(entityName, entityId);
+});
+
+function removeEntity(entityName: string, entityId: string) {
     if (entityName === "notes") {
         noteDeleted(entityId);
     } else if (entityName === "branches") {
@@ -332,8 +342,10 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENT
         attributeDeleted(entityId);
     } else if (entityName === "etapi_tokens") {
         etapiTokenDeleted(entityId);
+    } else if (entityName === "options") {
+        delete becca.options[entityId];
     }
-});
+}
 
 function noteDeleted(noteId: string) {
     delete becca.notes[noteId];
@@ -434,12 +446,12 @@ function attributeDeleted(attributeId: string) {
         }
 
         note.ownedAttributes = note.ownedAttributes.filter((attr) => attr.attributeId !== attribute.attributeId);
+    }
 
-        const targetNote = attribute.targetNote;
+    const targetNote = attribute.targetNote;
 
-        if (targetNote) {
-            targetNote.targetRelations = targetNote.targetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
-        }
+    if (targetNote) {
+        targetNote.targetRelations = targetNote.targetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
     }
 
     delete becca.attributes[attribute.attributeId];
@@ -464,23 +476,144 @@ function attributeUpdated(attributeRow: BAttribute) {
     }
 }
 
-function noteReorderingUpdated(branchIdList: number[]) {
-    const parentNoteIds = new Set();
+function noteReorderingUpdated(branchIdList: Record<string, number> | number[]) {
+    const parentNoteIds = new Set<string>();
 
     for (const branchId in branchIdList) {
         const branch = becca.branches[branchId];
 
         if (branch) {
-            branch.notePosition = branchIdList[branchId];
+            branch.notePosition = (branchIdList as Record<string, number>)[branchId];
 
             parentNoteIds.add(branch.parentNoteId);
         }
+    }
+
+    for (const parentNoteId of parentNoteIds) {
+        becca.notes[parentNoteId]?.sortChildren();
     }
 }
 
 function etapiTokenDeleted(etapiTokenId: string) {
     delete becca.etapiTokens[etapiTokenId];
 }
+
+/**
+ * Restores becca's copies of the given entities from the database, after a savepoint that wrote
+ * them rolled back while its outer transaction stayed open.
+ *
+ * SQLite has put the rows back as they were before the savepoint, but becca still holds what the
+ * savepoint wrote: a title that was never saved, or a `blobId` whose blob no longer exists. Each
+ * entity is re-read through the same connection, so it sees the outer transaction's uncommitted
+ * work — changes made before the savepoint, or by savepoints that succeeded, are kept. An entity
+ * whose row is gone (it was created inside the savepoint) or deleted is dropped from becca, and
+ * one the savepoint deleted is brought back.
+ */
+function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
+    if (!becca.loaded || writes.length === 0) {
+        return;
+    }
+
+    const sql = getSql();
+    const toRestore = new Map<string, Set<string>>();
+    const reorderedParentNoteIds = new Set<string>();
+
+    for (const { entityName, entityId } of writes) {
+        if (entityName === "note_reordering") {
+            reorderedParentNoteIds.add(entityId);
+            continue;
+        }
+
+        if (!CACHED_ENTITY_NAME_SET.has(entityName)) {
+            continue;
+        }
+
+        let ids = toRestore.get(entityName);
+        if (!ids) {
+            ids = new Set();
+            toRestore.set(entityName, ids);
+        }
+        ids.add(entityId);
+    }
+
+    const toApply: Array<{ entityName: string; row: Record<string, unknown> }> = [];
+    const toRemoveByEntity = new Map<string, string[]>();
+
+    for (const entityName of CACHED_ENTITY_NAMES) {
+        const ids = toRestore.get(entityName);
+        if (!ids || ids.size === 0) {
+            continue;
+        }
+
+        const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
+        const pk = EntityClass.primaryKeyName;
+        const idList = Array.from(ids);
+        const foundIds = new Set<string>();
+        const removeIds: string[] = [];
+
+        for (let i = 0; i < idList.length; i += 500) {
+            const chunk = idList.slice(i, i + 500);
+            const placeholders = chunk.map(() => "?").join(", ");
+            const rows = sql.getRows<Record<string, unknown>>(
+                `SELECT * FROM ${entityName} WHERE ${pk} IN (${placeholders})`,
+                chunk
+            );
+
+            for (const row of rows) {
+                const entityId = row[pk] as string;
+                foundIds.add(entityId);
+
+                if (!row.isDeleted) {
+                    toApply.push({ entityName, row });
+                } else {
+                    removeIds.push(entityId);
+                }
+            }
+        }
+
+        for (const entityId of idList) {
+            if (!foundIds.has(entityId)) {
+                removeIds.push(entityId);
+            }
+        }
+
+        if (removeIds.length > 0) {
+            toRemoveByEntity.set(entityName, removeIds);
+        }
+    }
+
+    // Apply existing rows with notes first, so a restored branch or attribute finds the note it belongs to.
+    for (const { entityName, row } of toApply) {
+        applyEntityRow(entityName, row);
+    }
+
+    // Remove rolled-back creations/deletions in reverse order (attributes and branches before notes),
+    // so link and branch cleanup runs while the owner note still exists in becca.
+    for (let i = CACHED_ENTITY_NAMES.length - 1; i >= 0; i--) {
+        const entityName = CACHED_ENTITY_NAMES[i];
+        const removeIds = toRemoveByEntity.get(entityName);
+        if (!removeIds) {
+            continue;
+        }
+
+        for (const entityId of removeIds) {
+            removeEntity(entityName, entityId);
+        }
+    }
+
+    for (const parentNoteId of reorderedParentNoteIds) {
+        const branchPositions = sql.getMap<string, number>(
+            `SELECT branchId, notePosition FROM branches WHERE isDeleted = 0 AND parentNoteId = ?`,
+            [parentNoteId]
+        );
+        noteReorderingUpdated(branchPositions);
+        becca.notes[parentNoteId]?.sortChildren();
+    }
+}
+
+/** Entity types becca keeps in memory, in the order they have to be restored. */
+const CACHED_ENTITY_NAMES = ["notes", "branches", "attributes", "etapi_tokens", "options"];
+const CACHED_ENTITY_NAME_SET = new Set(CACHED_ENTITY_NAMES);
 
 
 eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
@@ -493,10 +626,11 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
 
 eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, load);
 
-export { load, reload };
+export { load, reload, restoreAfterSavepointRollback };
 
 export default {
     load,
     reload,
+    restoreAfterSavepointRollback,
     beccaLoaded
 };
