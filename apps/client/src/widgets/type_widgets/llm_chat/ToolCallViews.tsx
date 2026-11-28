@@ -819,7 +819,8 @@ export function markdownToPlainPreview(markdown: string): string {
     return stripTags(markdown)
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-        .replace(/^\s*\|?[\s:|-]+\|?\s*$/gm, "")
+        // A table separator row: one class, with no line break in it, so each line is scanned once.
+        .replace(/^(?:[^\S\r\n\u2028\u2029]|[:|-])+$/gm, "")
         .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
         .replace(/\*\*|__|~~|`|\|/g, "")
         .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, decodeEntity)
