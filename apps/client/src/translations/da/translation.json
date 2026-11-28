@@ -2217,8 +2217,6 @@
     "save_password": "Gem kodeord",
     "password_stored": "Kodeordet til sikkerhedskopien er blevet gemt.",
     "password_not_stored": "Kodeordet til sikkerhedskopien kunne ikke gemmes.",
-    "encryption_not_disabled": "Kodeordet til sikkerhedskopien blev fjernet, men kryptering kunne ikke slås fra. Sikkerhedskopier bliver ikke krypteret, før du slår kryptering til igen.",
-    "encryption_not_enabled": "Kodeordet til sikkerhedskopien blev gemt, men kryptering kunne ikke slås til. Sikkerhedskopier bliver ikke krypteret, før du slår den til.",
     "compressed": "Komprimeret",
     "encrypted": "Krypteret"
   },

@@ -1773,8 +1773,6 @@
     "save_password": "Sábháil an focal faire",
     "password_stored": "Tá an focal faire cúltaca sábháilte.",
     "password_not_stored": "Níorbh fhéidir an focal faire cúltaca a shábháil.",
-    "encryption_not_disabled": "Baineadh an focal faire cúltaca, ach níorbh fhéidir an criptiú a mhúchadh. Ní chripteofar cúltacaí go dtí go gcuirfidh tú an criptiú air arís.",
-    "encryption_not_enabled": "Sábháladh an focal faire cúltaca, ach níorbh fhéidir an criptiú a chasadh air. Ní chripteofar cúltacaí go dtí go gcuirfidh tú air é.",
     "compressed": "Comhbhrúite",
     "encrypted": "Criptithe",
     "backups_summary_one": "Cúltaca {{count}}, an ceann is déanaí ó {{age}} ó shin",

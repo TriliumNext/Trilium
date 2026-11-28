@@ -1758,8 +1758,6 @@
     "save_password": "Guardar contraseña",
     "password_stored": "Se ha guardado la contraseña de copia de seguridad.",
     "password_not_stored": "No se pudo guardar la contraseña de copia de seguridad.",
-    "encryption_not_disabled": "Se eliminó la contraseña de copia de seguridad, pero no se pudo desactivar el cifrado. Las copias no se cifrarán hasta que vuelva a activar el cifrado.",
-    "encryption_not_enabled": "Se guardó la contraseña de copia de seguridad, pero no se pudo activar el cifrado. Las copias no se cifrarán hasta que lo active.",
     "compressed": "Comprimida",
     "encrypted": "Cifrada"
   },

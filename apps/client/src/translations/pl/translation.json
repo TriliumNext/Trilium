@@ -2223,8 +2223,6 @@
     "save_password": "Zapisz hasło",
     "password_stored": "Hasło kopii zapasowej zostało zapisane.",
     "password_not_stored": "Nie udało się zapisać hasła kopii zapasowej.",
-    "encryption_not_disabled": "Hasło kopii zapasowej zostało usunięte, ale nie udało się wyłączyć szyfrowania. Kopie zapasowe nie będą szyfrowane, dopóki ponownie nie włączysz szyfrowania.",
-    "encryption_not_enabled": "Hasło kopii zapasowej zostało zapisane, ale nie udało się włączyć szyfrowania. Kopie zapasowe nie będą szyfrowane, dopóki go nie włączysz.",
     "compressed": "Skompresowana",
     "encrypted": "Zaszyfrowana"
   },

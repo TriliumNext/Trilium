@@ -191,7 +191,7 @@
     "saturday": "Zaterdag",
     "sunday": "Zondag"
   },
-  "weekdayNumber": "Week {{weekNumber}}",
+  "weekdayNumber": "Week {weekNumber}",
   "months": {
     "january": "Januari",
     "february": "Februari",
@@ -206,7 +206,7 @@
     "november": "November",
     "december": "December"
   },
-  "quarterNumber": "Kwartaal {{quarterNumber}}",
+  "quarterNumber": "Kwartaal {quarterNumber}",
   "special_notes": {
     "search_prefix": "Zoeken:",
     "llm_chat_prefix": "Chat:"
@@ -258,7 +258,7 @@
     "code-notes-title": "Code Notities",
     "images-title": "Media",
     "spellcheck-title": "Spellingscontrole",
-    "password-title": "Wachtwoord",
+    "password-title": "Wachtwoord & Auth",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",

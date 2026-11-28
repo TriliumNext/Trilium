@@ -26,7 +26,7 @@
     "toggle-tray": "システムトレイアイコンの表示/非表示",
     "dialogs": "ダイアログ",
     "show-note-source": "「ノートのソース」ダイアログを表示",
-    "show-options": "「設定」ページを開く",
+    "show-options": "\"オプション\" ページを開く",
     "show-recent-changes": "「最近の変更」ダイアログを表示",
     "show-sql-console": "「SQLコンソール」ページを開く",
     "show-backend-log": "「バックエンドログ」ページを開く",
@@ -125,7 +125,7 @@
     "switch-to-ninth-tab": "9番目のタブに切り替え",
     "switch-to-last-tab": "最後のタブに切り替え",
     "show-note-source": "ノートのソースを表示",
-    "show-options": "設定を表示",
+    "show-options": "オプションを表示",
     "show-recent-changes": "最近の変更を表示",
     "show-sql-console": "SQLコンソールを表示",
     "show-backend-log": "バックエンドログを表示",
@@ -285,8 +285,8 @@
     "calendar-title": "カレンダー",
     "protected-session-title": "保護されたセッション",
     "sync-status-title": "同期状態",
-    "settings-title": "設定",
-    "options-title": "設定",
+    "settings-title": "オプション",
+    "options-title": "オプション",
     "multi-factor-authentication-title": "多要素認証",
     "etapi-title": "ETAPI",
     "visible-launchers-title": "可視化されたランチャー",
@@ -330,7 +330,8 @@
   "backend_log": {
     "log-does-not-exist": "バックエンドのログファイル '{{ fileName }}' は（まだ）存在しません。",
     "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。",
-    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。"
+    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。",
+    "earlier-entries-omitted": "ログが長すぎて全文を表示できないため、最初の {{size}} MiB が省略されています。ログの全文はファイル {{fileName}} に保存されています。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",

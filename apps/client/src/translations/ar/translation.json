@@ -45,15 +45,41 @@
     },
     "widget-missing-parent": "لا تحتوي الأداة المخصصة على خاصية إلزامية '{{property}}'.\n\nإذا كان من المفترض تشغيل هذا البرنامج النصي بدون عنصر واجهة مستخدم، فاستخدم '#run=frontendStartup' بدلاً من ذلك.",
     "open-script-note": "فتح ملاحظة برمجية",
-    "scripting-error": "خطأ في النص البرمجي المخصص: {{title}}"
+    "scripting-error": "خطأ في النص البرمجي المخصص: {{title}}",
+    "unhandled-error": {
+      "title": "فشلت مهمة ما من مهام الخلفية",
+      "details-button": "عرض المزيد من التفاصيل...",
+      "details-intro": "التطبيق لايزال قيد التشغيل و ملاحظاتك غير متأثّرة. إن استمر حدوث هذا، يمكنك النظر في الإبلاغ عنه على موقع GitHub عبر إدراج المعلومات أدناه."
+    }
   },
   "add_link": {
     "add_link": "أضافة رابط",
     "note": "ملاحظة",
     "search_note": "البحث عن الملاحظة بالاسم",
     "link_title": "عنوان الرابط",
-    "button_add_link": "اضافة رابط",
-    "help_on_links": "مساعدة حول الارتباطات التشعبية"
+    "button_add_link": "إدراج الرّابط",
+    "help_on_links": "مساعدة حول الارتباطات التشعبية",
+    "edit_link": "تعديل الرّابط",
+    "fix_link": "إصلاح الرّابط",
+    "button_edit_link": "إحفظ الرّابط",
+    "button_fix_link": "إصلاح الرّابط",
+    "web_link": "صفحة ويب",
+    "url": "عنوان محدد موقع الموارد الموحد",
+    "invalid_url": "هذا العنوان غير صالح.",
+    "script_link_not_allowed": "الرّوابط التي تبدأ ب {{scheme}} يمكن أن تنفّذ شيفرة برمجية، لذا هي ممنوعة.",
+    "display_as": "عرض ك",
+    "display_plain": "نص",
+    "display_inline": "أيقونة & نص",
+    "display_card": "بطاقة",
+    "page_title": "عنوان صفحة الويب",
+    "title_from_url": "مثل رابط محدد موقع الموارد الموحد تماما",
+    "title_from_note": "إذا لم يتم تعيينه، فسيعكس دائما عنوان الملاحظة",
+    "description": "الوصف",
+    "page_description": "وصف صفحة الويب",
+    "retrieving_from_page": "يتم الإستخراج من صفحة الويب...",
+    "title_from_attachment": "إذا لم يتم تعيينه، فسيعكس دائمًا عنوان المرفق",
+    "top_of_note": "الرّبط بالملاحظة (إفتراضي)",
+    "inspecting_note": "تتم معاينة هيكل الملاحظة"
   },
   "branch_prefix": {
     "edit_branch_prefix": "تعديل بادئة الفرع",
@@ -70,20 +96,26 @@
   },
   "bulk_actions": {
     "bulk_actions": "اجراءات جماعية",
-    "chosen_actions": "الأجراءات المختارة",
+    "chosen_actions": "الإجراءات المختارة",
     "execute_bulk_actions_zero": "تنفيذ الأجراءات الجماعية",
     "execute_bulk_actions_one": "",
     "execute_bulk_actions_two": "",
     "execute_bulk_actions_few": "",
     "execute_bulk_actions_many": "",
     "execute_bulk_actions_other": "",
-    "bulk_actions_executed": "تم تنفيذ الاجراءات الجماعية بنجاح،",
-    "none_yet": "لايوجد أجراء بعد... اضف اجراء بالنقر على احد الأجراءات المتاحة اعلاه.",
+    "bulk_actions_executed": "تم تنفيذ الإجراءات الجماعية بنجاح.",
+    "none_yet": "لا يوجد أيُّ إجراء بعد، إستخدم \"إضافة إجراءٍ\" أدناه لاختيار إجراء واحد.",
     "relations": "العلاقات",
     "notes": "الملاحظات",
     "other": "أخرى",
     "labels": "التسميات",
-    "include_descendants": "تضمين الملاحظات الفرعية للملاحظات المحددة"
+    "include_descendants": "تضمين الملاحظات الفرعية للملاحظات المحددة",
+    "selected_notes": "الملاحظات المحدّدة",
+    "remove_from_selection": "الإزالة من التحديد",
+    "add_action": "أضف إجراءً",
+    "remove_action": "إزالة هذا الإجراء",
+    "no_actions_to_execute": "أضف إجراءً أولا.",
+    "no_notes_to_execute_on": "لم تعد أيٌ من الملاحظات المحدّدة موجودة."
   },
   "upload_attachments": {
     "options": "خيارات",
@@ -526,7 +558,8 @@
     "ok": "نعم",
     "also_delete_note": "كذلك احذف الملاحظة",
     "are_you_sure_remove_note": "هل أنت متأكد من أنك تريد إزالة الملاحظة \"{{title}}\" من خريطة العلاقات؟ ",
-    "if_you_dont_check": "إذا لم تقم بتفعيل هذا الخيار، فسيتم فقط إزالة الملاحظة من خريطة العلاقات."
+    "if_you_dont_check": "إذا لم تقم بتفعيل هذا الخيار، فسيتم فقط إزالة الملاحظة من خريطة العلاقات.",
+    "delete_note_deletes_clones": "الملاحظة ستُحذَف من كل {{places}} الأماكن التي تظهر فيها. هذا الإجراء يمكن التراجع عنه في التغييرات الحديثة."
   },
   "delete_notes": {
     "close": "غلق",
@@ -546,7 +579,7 @@
     "delete": "حذف",
     "delete_clones_description_zero": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
     "delete_clones_description_one": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
-    "delete_clones_description_two": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_two": "وأيضًا حذف {{count}} نسختين مستنسختين أُخراوتين. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
     "delete_clones_description_few": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
     "delete_clones_description_many": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
     "delete_clones_description_other": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\"."
@@ -1011,7 +1044,7 @@
   "clone_to": {
     "prefix_optional": "بادئة (اختياري)",
     "clone_notes_to": "استنسخ الملاحظات الى...",
-    "help_on_links": "مساعدة حول الارتباطات التشعبية",
+    "help_on_links": "مساعدة حول الرّوابط",
     "notes_to_clone": "ملاحظات للنسخ",
     "target_parent_note": "الملاحظة الاصلية الهدف",
     "clone_to_selected_note": "استنساخ الى الملاحظة المحددة",
@@ -2436,5 +2469,8 @@
   },
   "collections": {
     "rendering_error": "تعذّر عرض المحتوى بسبب خطأ."
+  },
+  "note_chips": {
+    "more": "+{{count}} المزيد"
   }
 }

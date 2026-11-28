@@ -2214,8 +2214,6 @@
     "save_password": "Parolayı kaydet",
     "password_stored": "Yedekleme parolası kaydedildi.",
     "password_not_stored": "Yedekleme parolası kaydedilemedi.",
-    "encryption_not_disabled": "Yedekleme parolası kaldırıldı, ancak şifreleme kapatılamadı. Şifrelemeyi tekrar açana kadar yedeklemeler şifrelenmeyecektir.",
-    "encryption_not_enabled": "Yedekleme parolası kaydedildi, ancak şifreleme açılamadı. Açana kadar yedeklemeler şifrelenmeyecektir.",
     "compressed": "Sıkıştırıldı",
     "encrypted": "Şifrelendi"
   },
