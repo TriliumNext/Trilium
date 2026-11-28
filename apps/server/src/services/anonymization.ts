@@ -1,11 +1,40 @@
 import { AnonymizedDbResponse, BUILTIN_ATTRIBUTES, DatabaseAnonymizeResponse } from "@triliumnext/commons";
 import { date_utils as dateUtils } from "@triliumnext/core";
 import Database from "better-sqlite3";
+import { randomBytes } from "crypto";
 import fs from "fs";
 import path from "path";
 
 import dataDir from "./data_dir.js";
 import sql from "./sql.js";
+
+/** A copy is written under this name and renamed once it is scrubbed. The listing refuses it. */
+const STAGING_NAME = /^anonymizing-[0-9a-f]{12}\.tmp$/;
+const JOURNAL_SUFFIXES = [ "-journal", "-wal", "-shm" ];
+/** How long a staging file must stay unchanged before a sweep deletes it. */
+const STAGING_MAX_AGE_MS = 60 * 60 * 1000;
+
+/** The staging files that a copy of this process is writing. */
+const stagingInProgress = new Set<string>();
+
+/**
+ * Blanks what neither kind of copy must hold: the password, the document and sync secrets, the
+ * second factor, the enrolled OpenID account and the sessions with their tokens.
+ */
+const CREDENTIALS_SCRIPT = /*sql*/`
+UPDATE options SET value = 'anonymized' WHERE name IN
+                    ('documentId', 'documentSecret', 'encryptedDataKey',
+                    'passwordVerificationHash', 'passwordVerificationSalt',
+                    'passwordDerivedKeySalt', 'username', 'syncServerHost', 'syncProxy')
+                    AND value != '';
+UPDATE options SET value = '' WHERE name IN
+                    ('totpEncryptedSecret', 'totpEncryptionSalt', 'totpVerificationHash',
+                    'recoveryCodesEncrypted', 'recoveryCodeSecurityKey',
+                    'recoveryCodeInitialVector');
+UPDATE options SET value = 'false' WHERE name = 'encryptedRecoveryCodes';
+DELETE FROM user_data;
+DELETE FROM sessions;
+`;
 
 function getFullAnonymizationScript() {
     // we want to delete all non-builtin attributes because they can contain sensitive names and values
@@ -26,12 +55,7 @@ UPDATE attachments SET title = 'title';
 UPDATE attributes SET name = 'name', value = 'value' WHERE type = 'label' AND name NOT IN(${builtinAttrNames});
 UPDATE attributes SET name = 'name' WHERE type = 'relation' AND name NOT IN (${builtinAttrNames});
 UPDATE branches SET prefix = 'prefix' WHERE prefix IS NOT NULL AND prefix != 'recovered';
-UPDATE options SET value = 'anonymized' WHERE name IN
-                    ('documentId', 'documentSecret', 'encryptedDataKey',
-                    'passwordVerificationHash', 'passwordVerificationSalt',
-                    'passwordDerivedKeySalt', 'username', 'syncServerHost', 'syncProxy')
-                    AND value != '';
-
+${CREDENTIALS_SCRIPT}
 VACUUM;
 `;
 
@@ -39,65 +63,155 @@ VACUUM;
 }
 
 function getLightAnonymizationScript() {
+    // VACUUM drops the free pages, which hold the old text of every value replaced here and of what
+    // the live database removed before the copy.
     return /*sql*/`UPDATE blobs SET content = 'text' WHERE content IS NOT NULL AND blobId NOT IN (
                 SELECT blobId FROM notes WHERE mime IN ('application/javascript;env=backend', 'application/javascript;env=frontend')
             UNION ALL
                 SELECT blobId FROM revisions WHERE mime IN ('application/javascript;env=backend', 'application/javascript;env=frontend')
             );
-
-            UPDATE options SET value = 'anonymized' WHERE name IN
-                ('documentId', 'documentSecret', 'encryptedDataKey',
-                    'passwordVerificationHash', 'passwordVerificationSalt',
-                    'passwordDerivedKeySalt', 'username', 'syncServerHost', 'syncProxy')
-            AND value != '';`;
+${CREDENTIALS_SCRIPT}
+VACUUM;`;
 }
 
+/**
+ * Copies the database into a staging file of its own, scrubs it, and only then renames it to its
+ * final name. Both kinds of copy and the command line entry (`anonymize.ts`) go through here.
+ */
 async function createAnonymizedCopy(type: "full" | "light") {
     if (!["full", "light"].includes(type)) {
         throw new Error(`Unrecognized anonymization type '${type}'`);
     }
 
-    if (!fs.existsSync(dataDir.ANONYMIZED_DB_DIR)) {
-        fs.mkdirSync(dataDir.ANONYMIZED_DB_DIR, 0o700);
+    const directory = getDirectory();
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+    removeLeftoverStagingFiles();
+
+    const stagingFile = path.join(directory, `anonymizing-${randomSuffix()}.tmp`);
+    stagingInProgress.add(stagingFile);
+    try {
+        await sql.copyDatabase(stagingFile);
+        runScript(stagingFile, type === "light"
+            ? getLightAnonymizationScript()
+            : getFullAnonymizationScript());
+
+        // The random part gives two copies of the same second different names:
+        // `getDateTimeForFile()` has whole seconds, and the command line entry is another process.
+        const anonymizedFile = path.join(directory,
+            `anonymized-${type}-${dateUtils.getDateTimeForFile()}-${randomSuffix()}.db`);
+        fs.renameSync(stagingFile, anonymizedFile);
+
+        return {
+            success: true,
+            anonymizedFilePath: anonymizedFile
+        } satisfies DatabaseAnonymizeResponse;
+    } catch (e) {
+        removeStagingFile(stagingFile);
+        throw e;
+    } finally {
+        stagingInProgress.delete(stagingFile);
+    }
+}
+
+function runScript(databaseFile: string, script: string) {
+    const db = new Database(databaseFile);
+    try {
+        // A rollback journal leaves no `-wal` file beside the copy, so the rename moves all of it.
+        db.pragma("journal_mode = DELETE");
+        db.exec(script);
+    } finally {
+        db.close();
+    }
+}
+
+/**
+ * Deletes the staging files that no copy of this process is writing and that have not changed for
+ * an hour, with their journals. Runs at start and before every copy; a younger one can belong to a
+ * copy of another process, such as the command line entry.
+ */
+function removeLeftoverStagingFiles() {
+    const directory = getDirectory();
+    let fileNames: string[];
+    try {
+        fileNames = fs.readdirSync(directory);
+    } catch {
+        return;
     }
 
-    const anonymizedFile = `${dataDir.ANONYMIZED_DB_DIR}/anonymized-${type}-${dateUtils.getDateTimeForFile()}.db`;
+    for (const fileName of fileNames.filter((name) => STAGING_NAME.test(name))) {
+        const stagingFile = path.join(directory, fileName);
+        if (stagingInProgress.has(stagingFile)) {
+            continue;
+        }
 
-    await sql.copyDatabase(anonymizedFile);
+        // Judged by the newest of the group: a copy in WAL mode writes to its `-wal` file.
+        const modified = [ "", ...JOURNAL_SUFFIXES ].map((suffix) =>
+            fs.statSync(`${stagingFile}${suffix}`, { throwIfNoEntry: false })?.mtimeMs ?? 0);
+        if (Date.now() - Math.max(...modified) >= STAGING_MAX_AGE_MS) {
+            removeStagingFile(stagingFile);
+        }
+    }
+}
 
-    const db = new Database(anonymizedFile);
-
-    const anonymizationScript = type === "light" ? getLightAnonymizationScript() : getFullAnonymizationScript();
-
-    db.exec(anonymizationScript);
-
-    db.close();
-
-    return {
-        success: true,
-        anonymizedFilePath: anonymizedFile
-    } satisfies DatabaseAnonymizeResponse;
+function removeStagingFile(stagingFile: string) {
+    for (const suffix of [ "", ...JOURNAL_SUFFIXES ]) {
+        try {
+            fs.rmSync(`${stagingFile}${suffix}`, { force: true });
+        } catch {
+            // Open in another process; a later sweep removes it.
+        }
+    }
 }
 
 function getExistingAnonymizedDatabases() {
-    if (!fs.existsSync(dataDir.ANONYMIZED_DB_DIR)) {
+    const directory = getDirectory();
+    if (!fs.existsSync(directory)) {
         return [];
     }
 
     return fs
-        .readdirSync(dataDir.ANONYMIZED_DB_DIR)
-        // The .db check excludes intermediate SQLite files (e.g. *.db-journal) created while an anonymization is in progress.
-        .filter((fileName) => fileName.includes("anonymized") && fileName.endsWith(".db"))
-        .map((fileName) => {
-            const filePath = path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName);
-            const stat = fs.statSync(filePath);
+        .readdirSync(directory)
+        .filter(isAnonymizedDatabaseName)
+        .flatMap((fileName) => {
+            const filePath = path.join(directory, fileName);
+            const stat = fs.statSync(filePath, { throwIfNoEntry: false });
+            if (!stat?.isFile()) {
+                return [];
+            }
 
-            return { fileName, filePath, mtime: stat.mtime, fileSize: stat.size };
+            return [ { fileName, filePath, mtime: stat.mtime, fileSize: stat.size } ];
         }) satisfies AnonymizedDbResponse[];
+}
+
+/**
+ * The absolute path of a copy that {@link getExistingAnonymizedDatabases} lists by its name, or
+ * `null` for any other path. Every route that takes such a path from a client goes through here.
+ */
+function resolveAnonymizedDatabase(filePath: string): string | null {
+    const resolvedPath = path.resolve(filePath);
+    const isListed = path.dirname(resolvedPath) === getDirectory()
+        && isAnonymizedDatabaseName(path.basename(resolvedPath));
+
+    return isListed ? resolvedPath : null;
+}
+
+/** The extension check excludes the journal of a copy. */
+function isAnonymizedDatabaseName(fileName: string) {
+    return fileName.includes("anonymized") && fileName.endsWith(".db");
+}
+
+function getDirectory() {
+    return path.resolve(dataDir.ANONYMIZED_DB_DIR);
+}
+
+function randomSuffix() {
+    return randomBytes(6).toString("hex");
 }
 
 export default {
     getFullAnonymizationScript,
     createAnonymizedCopy,
-    getExistingAnonymizedDatabases
+    removeLeftoverStagingFiles,
+    getExistingAnonymizedDatabases,
+    resolveAnonymizedDatabase
 };

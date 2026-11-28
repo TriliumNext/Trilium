@@ -22,6 +22,7 @@ The runtime value lives in `apps/desktop/src/preload.ts`; this interface is the 
 | `ws` | [`WsApi`](#type-WsApi)  <br>In-process bridge that replaces the renderer↔server WebSocket. |
 | `security` | [`SecurityApi`](#type-SecurityApi)  <br>Security settings (backend scripting, SQL console) stored outside the DB. |
 | `backupPassphrase` | [`BackupPassphraseApi`](#type-BackupPassphraseApi)  <br>Write-only access to the backup passphrase, kept in the OS keyring. |
+| `backupLocation` | [`BackupLocationApi`](#type-BackupLocationApi)  <br>The backup folder, which only the main process stores. |
 | `onenote` | [`OneNoteApi`](#type-OneNoteApi)  <br>OneNote importer sign-in via a loopback OAuth redirect (desktop only). |
 | `nativeExport` | [`NativeExportApi`](#type-NativeExportApi)  <br>Desktop-native subtree export that streams a `.zip` straight to a file. |
 | `nativeImport` | [`NativeImportApi`](#type-NativeImportApi)  <br>Desktop-native large-`.zip` import that reads the user's file in place via a capability token. |
@@ -492,6 +493,29 @@ Both changes are also gated on a native OS confirmation, which a script can requ
     </tbody>
 </table>
 
+## <a id="type-BackupLocationApi"></a>`BackupLocationApi`
+
+The folder that backups are written to. The main process stores it from the folder that the user accepts in the OS dialog, and the options API does not write it, so a frontend script cannot choose where backups go or which folder the backup download reads.
+
+<table>
+    <thead>
+        <tr>
+            <th>Member</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>choose</code></td>
+            <td><pre><code class="language-application-typescript">choose(): Promise&lt;NativeDirectoryPickResult&gt;</code></pre><p>Prompts the native folder picker at the current backup folder and, once the user accepts a folder, writes later backups there.</p></td>
+        </tr>
+        <tr>
+            <td><code>reset</code></td>
+            <td><pre><code class="language-application-typescript">reset(): Promise&lt;void&gt;</code></pre><p>Writes later backups to the default folder again.</p></td>
+        </tr>
+    </tbody>
+</table>
+
 ## <a id="type-OneNoteApi"></a>`OneNoteApi`
 
 Desktop-only OneNote importer sign-in, driven from the main process via a loopback OAuth redirect.
@@ -688,6 +712,15 @@ What became of a request to change the stored backup passphrase.
 | `"cancelled"` | The user declined the OS confirmation, so nothing changed. |
 | `"unavailable"` | There is no keyring on this system to keep a passphrase in. |
 
+### <a id="type-NativeDirectoryPickResult"></a>`NativeDirectoryPickResult`
+
+Outcome of [`DialogApi.pickDirectory`](#type-DialogApi) and [`BackupLocationApi.choose`](#type-BackupLocationApi).
+
+| Property | Description |
+| --- | --- |
+| `status` | `"cancelled" \| "selected"` |
+| `path`  <br>_optional_ | `string`  <br>Absolute path of the chosen directory (when `status === "selected"`). |
+
 ### <a id="type-OneNoteLoginResult"></a>`OneNoteLoginResult`
 
 Outcome of a [`OneNoteApi.login`](#type-OneNoteApi) attempt.
@@ -741,15 +774,6 @@ Outcome of [`NativeImportApi.importFromToken`](#type-NativeImportApi).
 | `status` | `"error" \| "imported"` |
 | `importedNoteId`  <br>_optional_ | `string`  <br>Root note of the import (when `status === "imported"`). |
 | `message`  <br>_optional_ | `string`  <br>Failure detail (when `status === "error"`). |
-
-### <a id="type-NativeDirectoryPickResult"></a>`NativeDirectoryPickResult`
-
-Outcome of [`DialogApi.pickDirectory`](#type-DialogApi).
-
-| Property | Description |
-| --- | --- |
-| `status` | `"cancelled" \| "selected"` |
-| `path`  <br>_optional_ | `string`  <br>Absolute path of the chosen directory (when `status === "selected"`). |
 
 ### <a id="type-NativeBackupPickResult"></a>`NativeBackupPickResult`
 

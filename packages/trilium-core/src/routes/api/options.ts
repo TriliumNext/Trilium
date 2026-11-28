@@ -94,9 +94,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "dailyBackupEnabled",
     "weeklyBackupEnabled",
     "monthlyBackupEnabled",
-    "customDbBackupDir",
     "backupEnableCompression",
-    "backupEnableEncryption",
     "motionEnabled",
     "shadowsEnabled",
     "smoothScrollEnabled",
@@ -180,6 +178,12 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     // OCR options
     "ocrAutoProcessImages",
     "ocrMinConfidence"
+]);
+
+// Options the client reads but only the backend writes.
+const READ_ONLY_OPTIONS = new Set<OptionNames>([
+    // The desktop's main process stores it from its folder picker.
+    "customDbBackupDir"
 ]);
 
 // Options that contain secrets (API keys, tokens, etc.).
@@ -331,6 +335,7 @@ function getUserFonts() {
 /** Check if an option can be read by the client (GET responses). */
 function isReadable(name: string) {
     return (ALLOWED_OPTIONS as Set<string>).has(name)
+        || (READ_ONLY_OPTIONS as Set<string>).has(name)
         || name.startsWith("keyboardShortcuts")
         || name.endsWith("Collapsed")
         || name.startsWith("hideArchivedNotes");
@@ -343,7 +348,7 @@ function stripSyncCredentials(host: string) {
 
 /** Check if an option can be written by the client (PUT requests). */
 function isAllowed(name: string) {
-    return isReadable(name)
+    return (isReadable(name) && !(READ_ONLY_OPTIONS as Set<string>).has(name))
         || (WRITE_ONLY_OPTIONS as Set<string>).has(name);
 }
 

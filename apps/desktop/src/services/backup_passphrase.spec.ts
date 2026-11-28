@@ -151,17 +151,13 @@ describe("backup passphrase storage", () => {
         expect(h.errors.join()).toContain("keyring daemon gone");
     });
 
-    it("takes on a restored backup's password, and drops the old one when it brings none", async () => {
-        // The passphrase is not in the database, so a restore replaces every option saying how this
-        // instance backs up and leaves the password those options are carried out with. Kept, the
-        // instance encrypts with a password belonging to a database that is no longer here.
+    it("takes on a restored backup's password without asking", async () => {
         await passphrase.storeBackupPassphrase("the previous database's");
 
         await passphrase.adoptBackupPassphrase("the restored database's");
-        expect(await passphrase.getBackupPassphrase()).toBe("the restored database's");
 
-        await passphrase.adoptBackupPassphrase(null);
-        expect(await passphrase.getBackupPassphrase()).toBeNull();
+        expect(await passphrase.getBackupPassphrase()).toBe("the restored database's");
+        expect(h.showMessageBox).not.toHaveBeenCalled();
     });
 });
 

@@ -598,14 +598,14 @@ describe("the backup password after a restore", () => {
         [ "an unlocked backup", undefined, false ],
         [ "a password typed for a backup that turned out not to need one", "typed anyway", false ],
         [ "a locked backup that was somehow opened without one", undefined, true ]
-    ])("lets go of the stored password after %s", async (_label, passphrase, wasEncrypted) => {
-        // The stored one belongs to the database that was here before. Kept, this instance goes on
-        // encrypting with it and writes backups the password the user expects will not open.
+    ])("keeps the stored password after %s", async (_label, passphrase, wasEncrypted) => {
+        // Only the OS dialog clears the stored password, and while one is stored every later
+        // backup is encrypted.
         const adopted = vi.spyOn(backupService(), "adoptPassphrase").mockResolvedValue();
 
         await adoptBackupPassphrase(request(passphrase), wasEncrypted);
 
-        expect(adopted).toHaveBeenCalledWith(null);
+        expect(adopted).not.toHaveBeenCalled();
     });
 
     it("does not fail a restore that already happened over a keyring that will not answer", async () => {
@@ -660,8 +660,8 @@ describe("putting a restored database in place", () => {
         expect(db.attach).toHaveBeenCalledWith(document, expect.any(Boolean));
         expect(db.open).toHaveBeenCalledOnce();
         expect(db.announce).toHaveBeenCalledWith(events.DB_INITIALIZED);
-        // Unlocked, so the stored password of the previous database is let go.
-        expect(db.adopt).toHaveBeenCalledWith(null);
+        // Unlocked, so it brings no password, and the stored one stays.
+        expect(db.adopt).not.toHaveBeenCalled();
         expect(getRestoreProgress()).toMatchObject({ stage: "done", fileName: "backup.db" });
 
         expect(db.log()).toContain("from a backup already on this device");

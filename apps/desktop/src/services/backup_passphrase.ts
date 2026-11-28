@@ -66,24 +66,15 @@ export function clearBackupPassphrase(): void {
 }
 
 /**
- * Takes on the passphrase a restored backup was locked with, or lets the stored one go when the
- * backup brought none.
+ * Takes on the passphrase a restored backup was locked with.
  *
  * Unlike the renderer's way in, this asks nothing first. What the user typed to open the backup is
  * a password for this database, given moments ago and for this purpose; the confirmation on the
  * options screen guards against a password being changed behind someone's back, and here there is
- * nobody's back to go behind.
- *
- * Clearing is the honest answer to a backup with no passphrase to take: the stored one belongs to a
- * database that is no longer here, and going on encrypting with it produces backups the user cannot
- * open. Encrypted backups then fall back to unencrypted and local, which says so out loud.
+ * nobody's back to go behind. Only `handleClear()` clears the passphrase, after the OS dialog.
  */
-export async function adoptBackupPassphrase(passphrase: string | null): Promise<void> {
-    if (passphrase) {
-        await storeBackupPassphrase(passphrase);
-    } else {
-        clearBackupPassphrase();
-    }
+export async function adoptBackupPassphrase(passphrase: string): Promise<void> {
+    await storeBackupPassphrase(passphrase);
 }
 
 /**

@@ -155,18 +155,40 @@ describe("what becomes of the existing database", () => {
     });
 });
 
+/**
+ * Puts a stored passphrase in place, or takes the whole notion of one away. `readable: false`
+ * stands for a keyring that is locked.
+ */
+function stubStoredPassphrase(
+    hasOne: boolean | undefined,
+    { readable = hasOne }: { readable?: boolean } = {}
+) {
+    const backup = getBackup() as {
+        hasStoredPassphrase?: (() => Promise<boolean>) | undefined;
+        isPassphraseStored?: (() => boolean) | undefined;
+    };
+    const { hasStoredPassphrase, isPassphraseStored } = backup;
+    backup.hasStoredPassphrase = hasOne === undefined ? undefined : async () => !!readable;
+    backup.isPassphraseStored = hasOne === undefined ? undefined : () => hasOne;
+
+    return () => {
+        backup.hasStoredPassphrase = hasStoredPassphrase;
+        backup.isPassphraseStored = isPassphraseStored;
+    };
+}
+
+/** Makes the instance's own backup options say what the fallbacks are read out of. */
+function instanceBacksUp({ compress = false, encrypt = false }) {
+    vi.spyOn(optionService, "getOptionOrNull").mockImplementation((name) => {
+        if (name === "backupEnableCompression") return compress ? "true" : "false";
+        if (name === "backupEnableEncryption") return encrypt ? "true" : "false";
+        return null;
+    });
+}
+
 describe("what a backup asked for over a request is written as", () => {
     const now = new Date(2026, 7, 7, 10, 32, 21);
     const SUGGESTED_NAME = "Trilium data (2026-08-07 10-32-21)";
-
-    /** Makes the instance's own backup settings say what the fallbacks are read out of. */
-    function instanceBacksUp({ compress = false, encrypt = false }) {
-        vi.spyOn(optionService, "getOptionOrNull").mockImplementation((name) => {
-            if (name === "backupEnableCompression") return compress ? "true" : "false";
-            if (name === "backupEnableEncryption") return encrypt ? "true" : "false";
-            return null;
-        });
-    }
 
     it("takes the answers the screen sent", () => {
         expect(resolveBackupSettings(now, {
@@ -200,43 +222,58 @@ describe("what a backup asked for over a request is written as", () => {
 
     it("reads no answer out of anything that is not one", () => {
         instanceBacksUp({});
+        const restore = stubStoredPassphrase(false);
 
-        expect(resolveBackupSettings(now, { passphrase: 42, compress: "yes", useStoredPassphrase: 1 }))
+        const notAnswers = { passphrase: 42, compress: "yes", useStoredPassphrase: 1 };
+        expect(resolveBackupSettings(now, notAnswers))
             .toMatchObject({ passphrase: "", compress: false, useStoredPassphrase: false });
+
+        restore();
     });
 
-    it("falls back on how the instance already backs up, where the caller said nothing", () => {
-        // Which is what keeps a caller that knows nothing of these questions — anything older than
-        // the screen that asks them — backing up exactly as it did before.
-        instanceBacksUp({ compress: true, encrypt: true });
+    it("falls back on how the instance backs up, where the caller said nothing", () => {
+        // A caller older than the screen's questions backs up as the instance's other backups do.
+        instanceBacksUp({ compress: true, encrypt: false });
+        const restore = stubStoredPassphrase(true);
 
         expect(resolveBackupSettings(now, {}))
             .toMatchObject({ useStoredPassphrase: true, compress: true });
+
+        restore();
+    });
+
+    it("asks for no stored passphrase where none is stored, whatever the option says", () => {
+        instanceBacksUp({ encrypt: true });
+        const restore = stubStoredPassphrase(false);
+
+        expect(resolveBackupSettings(now, {})).toMatchObject({ useStoredPassphrase: false });
+
+        restore();
+    });
+
+    it("asks for the stored passphrase where it is stored but cannot be read", () => {
+        // The backup then stays plain in the default folder, with a toast (`resolveFormat()`).
+        const restore = stubStoredPassphrase(true, { readable: false });
+
+        expect(resolveBackupSettings(now, {})).toMatchObject({ useStoredPassphrase: true });
+
+        restore();
     });
 
     it("lets the screen turn off what the instance turns on", () => {
-        instanceBacksUp({ compress: true, encrypt: true });
+        instanceBacksUp({ compress: true });
+        const restore = stubStoredPassphrase(true);
 
         expect(resolveBackupSettings(now, { useStoredPassphrase: false, compress: false }))
             .toMatchObject({ useStoredPassphrase: false, compress: false });
+
+        restore();
     });
 });
 
 describe("what the screen is offered as its answers", () => {
-    /** Puts a stored passphrase in place, or takes the whole notion of one away. */
-    function stubStoredPassphrase(hasOne: boolean | undefined) {
-        const backup = getBackup() as { hasStoredPassphrase?: (() => Promise<boolean>) | undefined };
-        const previous = backup.hasStoredPassphrase;
-        backup.hasStoredPassphrase = hasOne === undefined ? undefined : async () => hasOne;
-
-        return () => {
-            backup.hasStoredPassphrase = previous;
-        };
-    }
-
-    it("reports how the instance backs up, and whether there is a passphrase rather than what it is", async () => {
-        vi.spyOn(optionService, "getOptionOrNull").mockImplementation((name) =>
-            name === "backupEnableEncryption" ? "true" : "false");
+    it("offers encryption exactly when a passphrase is stored, whatever the option", async () => {
+        instanceBacksUp({ encrypt: false });
         const restore = stubStoredPassphrase(true);
 
         await expect(getExistingBackupDefaults()).resolves.toEqual({
@@ -244,6 +281,21 @@ describe("what the screen is offered as its answers", () => {
             encrypt: true,
             compress: false
         });
+
+        vi.restoreAllMocks();
+        instanceBacksUp({ encrypt: true });
+        stubStoredPassphrase(false);
+        await expect(getExistingBackupDefaults())
+            .resolves.toMatchObject({ storedPassphrase: false, encrypt: false });
+
+        restore();
+    });
+
+    it("offers encryption, but no stored passphrase, where that cannot be read", async () => {
+        const restore = stubStoredPassphrase(true, { readable: false });
+
+        await expect(getExistingBackupDefaults())
+            .resolves.toMatchObject({ storedPassphrase: false, encrypt: true });
 
         restore();
     });

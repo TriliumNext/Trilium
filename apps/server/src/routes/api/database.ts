@@ -84,13 +84,13 @@ async function anonymize(req: Request) {
 /**
  * Removes one anonymized copy, named by the path the listing gave out.
  *
- * Confined to the directory those copies are written to, exactly as the download of one is: the path
- * arrives from the client, and what follows it is an unguarded file deletion. A file already gone is
- * not an error — the listing is a moment old by the time it is acted on, and the caller asked for it
- * to be absent, which it is.
+ * Confined to the names the listing gives, as the download is: the path arrives from the client,
+ * and what follows it is a file deletion. A file already gone is not an error: the listing can be
+ * outdated by the time it is acted on, and the file is absent either way.
  */
 function deleteAnonymizedDatabase(req: Request) {
-    const filePath = resolveInsideDirectory(String(req.query.filePath ?? ""), dataDir.ANONYMIZED_DB_DIR);
+    const requestedPath = String(req.query.filePath ?? "");
+    const filePath = anonymizationService.resolveAnonymizedDatabase(requestedPath);
 
     if (!filePath) {
         throw new ValidationError("Not an anonymized database.");
@@ -99,12 +99,31 @@ function deleteAnonymizedDatabase(req: Request) {
     fs.rmSync(filePath, { force: true });
 }
 
-function downloadBackup(req: Request, res: Response) {
-    downloadDatabaseFile(req, res, dataDir.BACKUP_DIR, "Backup file not found");
-}
-
 function downloadAnonymizedDatabase(req: Request, res: Response) {
-    downloadDatabaseFile(req, res, dataDir.ANONYMIZED_DB_DIR, "Anonymized database file not found");
+    const filePath = req.query.filePath as string;
+    if (!filePath) {
+        res.status(400).send("Missing filePath");
+        return;
+    }
+
+    const resolvedPath = anonymizationService.resolveAnonymizedDatabase(filePath);
+    if (!resolvedPath) {
+        res.status(403).send("Access denied");
+        return;
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+        res.status(404).send("Anonymized database file not found");
+        return;
+    }
+
+    const mtime = fs.statSync(resolvedPath).mtime;
+    const dateStr = mtime.toISOString().slice(0, 19)
+        .replaceAll(":", "-")
+        .replace("T", "_");
+    const ext = path.extname(resolvedPath);
+    const baseName = path.basename(resolvedPath, ext);
+    res.download(resolvedPath, `${baseName}_${dateStr}${ext}`);
 }
 
 export default {
@@ -118,44 +137,5 @@ export default {
     anonymize,
     deleteAnonymizedDatabase,
     checkIntegrity,
-    downloadBackup,
     downloadAnonymizedDatabase
 };
-
-/**
- * The path resolved, or null where it does not land inside the directory it has to be in. Every
- * route acting on a file the client named goes through here: the paths come from a listing this
- * server gave out, but nothing about the request says so.
- */
-function resolveInsideDirectory(filePath: string, allowedDir: string): string | null {
-    const resolvedPath = path.resolve(filePath);
-
-    return resolvedPath.startsWith(path.resolve(allowedDir) + path.sep) ? resolvedPath : null;
-}
-
-function downloadDatabaseFile(req: Request, res: Response, allowedDir: string, notFoundMessage: string) {
-    const filePath = req.query.filePath as string;
-    if (!filePath) {
-        res.status(400).send("Missing filePath");
-        return;
-    }
-
-    const resolvedPath = resolveInsideDirectory(filePath, allowedDir);
-    if (!resolvedPath) {
-        res.status(403).send("Access denied");
-        return;
-    }
-
-    if (!fs.existsSync(resolvedPath)) {
-        res.status(404).send(notFoundMessage);
-        return;
-    }
-
-    const mtime = fs.statSync(resolvedPath).mtime;
-    const dateStr = mtime.toISOString().slice(0, 19)
-        .replaceAll(":", "-")
-        .replace("T", "_");
-    const ext = path.extname(resolvedPath);
-    const baseName = path.basename(resolvedPath, ext);
-    res.download(resolvedPath, `${baseName}_${dateStr}${ext}`);
-}

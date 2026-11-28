@@ -598,3 +598,80 @@ describe("script bundles with child modules", () => {
         });
     });
 });
+
+describe("script bundles of titles and IDs with quotes, backslashes and line breaks", () => {
+    const BACKEND = "application/javascript;env=backend";
+    /** A title that sets a global if the generated code runs it. */
+    const INJECTING_TITLE = `a" + (globalThis.injectedByTitle = 1) + "`;
+    const injected = () => (globalThis as { injectedByTitle?: number }).injectedByTitle;
+    const originalScriptingEnabled = config.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        config.Security.backendScriptingEnabled = true;
+    });
+
+    afterAll(() => {
+        config.Security.backendScriptingEnabled = originalScriptingEnabled;
+    });
+
+    beforeEach(() => {
+        becca.reset();
+        delete (globalThis as { injectedByTitle?: number }).injectedByTitle;
+    });
+
+    it("runs the script with each note as a module, and nothing of a title", () => {
+        const children = [
+            { id: "quote'\"id", title: INJECTING_TITLE },
+            { id: "back\\slash\\", title: "ends with \\" },
+            { id: "line\nbreak", title: "line\nbreak" }
+        ];
+        const requires = children.map(({ title }) => `require(${JSON.stringify(title)}).value`);
+        const parent = buildNote({
+            id: "parent\"'\\\n",
+            type: "code",
+            mime: BACKEND,
+            content: `return ${requires.join(" + ")};`,
+            children: children.map(({ id, title }, index) => ({
+                id,
+                title,
+                type: "code",
+                mime: BACKEND,
+                content: `module.exports = { value: ${index + 1} };`
+            }))
+        });
+
+        getContext().init(() => {
+            expect(scriptService.executeNote(parent, {})).toBe(6);
+        });
+        expect(injected()).toBeUndefined();
+    });
+
+    it.each([
+        [ INJECTING_TITLE, "failing" ],
+        [ "ends with \\", "back\\slash" ],
+        [ "line\nbreak", "quote'\"id\n" ]
+    ])("names a failing note %j verbatim in the error", (title, id) => {
+        const parent = buildNote({
+            type: "code",
+            mime: BACKEND,
+            content: `return require(${JSON.stringify(title)});`,
+            children: [
+                { id, title, type: "code", mime: BACKEND, content: "throw new Error('boom');" }
+            ]
+        });
+
+        let failure: unknown;
+        getContext().init(() => {
+            try {
+                scriptService.executeNote(parent, {});
+            } catch (e) {
+                failure = e;
+            }
+        });
+
+        expect(describeScriptFailure(failure)).toEqual({ message: "boom", noteId: id });
+        expect((failure as Error).message)
+            .toBe(`Load of script note "${title}" (${id}) failed with: boom`);
+        expect(injected()).toBeUndefined();
+    });
+});

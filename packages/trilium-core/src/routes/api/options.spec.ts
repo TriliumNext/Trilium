@@ -5,6 +5,7 @@ import becca from "../../becca/becca";
 import * as i18n from "../../services/i18n";
 import optionService from "../../services/options";
 import { getConfig, initConfig } from "../../services/config";
+import { getContext } from "../../services/context";
 import { getSql } from "../../services/sql/index";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -239,6 +240,32 @@ describe("Options API (core)", () => {
         const res = await api.get<Record<string, string>>("/api/options");
         expect(res.body.backendScriptingEnabled).toBe("false");
         expect(res.body.sqlConsoleEnabled).toBe("false");
+    });
+
+    it("refuses to write the desktop's backup folder, and still hands it to the page", async () => {
+        // Only the desktop's main process writes it, from the folder picker: the folder decides
+        // where backups go and which files the backup download serves.
+        getContext().init(() => optionService.setOption("customDbBackupDir", "/home/user/backups"));
+
+        expect((await api.put("/api/options/customDbBackupDir/%2F")).status).toBe(400);
+        const batch = await api.put("/api/options", { body: { customDbBackupDir: "/" } });
+        expect(batch.status).toBe(500);
+        expect(getOptionValue("customDbBackupDir")).toBe("/home/user/backups");
+
+        const res = await api.get<Record<string, string>>("/api/options");
+        expect(res.body.customDbBackupDir).toBe("/home/user/backups");
+    });
+
+    it("refuses to write backupEnableEncryption, which decides nothing", async () => {
+        // A stored passphrase decides whether backups are encrypted; only the OS dialog clears it.
+        const before = getOptionValue("backupEnableEncryption");
+
+        expect((await api.put("/api/options/backupEnableEncryption/false")).status).toBe(400);
+        const batch = await api.put("/api/options", { body: { backupEnableEncryption: "false" } });
+        expect(batch.status).toBe(500);
+        expect(getOptionValue("backupEnableEncryption")).toBe(before);
+        const res = await api.get<Record<string, string>>("/api/options");
+        expect(res.body.backupEnableEncryption).toBeUndefined();
     });
 
     it("runs changeLanguage when updating the locale option", async () => {

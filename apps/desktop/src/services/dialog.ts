@@ -9,26 +9,8 @@ import { t } from "i18next";
  * only comes back once the user has accepted it, so a note script can at most pop the dialog.
  */
 export function setupDialogHandlers() {
-    electron.ipcMain.handle("dialog-pick-directory", async (_e, opts?: { defaultPath?: string }): Promise<NativeDirectoryPickResult> => {
-        const focusedWindow = electron.BrowserWindow.getFocusedWindow();
-        if (!focusedWindow) {
-            return { status: "cancelled" };
-        }
-
-        // Async dialog: showOpenDialogSync blocks the main process event loop (freezing the UI, WebSockets
-        // and background tasks) for as long as the picker is open.
-        const { canceled, filePaths } = await electron.dialog.showOpenDialog(focusedWindow, {
-            title: t("dialog.select_directory"),
-            defaultPath: opts?.defaultPath,
-            properties: ["openDirectory", "createDirectory"]
-        });
-
-        if (canceled || filePaths.length === 0) {
-            return { status: "cancelled" };
-        }
-
-        return { status: "selected", path: filePaths[0] };
-    });
+    electron.ipcMain.handle("dialog-pick-directory", (_e, opts?: { defaultPath?: string }) =>
+        showDirectoryPicker(opts?.defaultPath));
 
     electron.ipcMain.handle("dialog-confirm-start-over", async (): Promise<boolean> => {
         // Cancel is both the default and what Escape picks: the other button leads to a screen from
@@ -45,4 +27,28 @@ export function setupDialogHandlers() {
 
         return response === 1;
     });
+}
+
+/** Shows the native folder picker over the focused window, starting at `defaultPath`. */
+export async function showDirectoryPicker(
+    defaultPath?: string
+): Promise<NativeDirectoryPickResult> {
+    const focusedWindow = electron.BrowserWindow.getFocusedWindow();
+    if (!focusedWindow) {
+        return { status: "cancelled" };
+    }
+
+    // Async dialog: showOpenDialogSync blocks the main process event loop (freezing the UI,
+    // WebSockets and background tasks) for as long as the picker is open.
+    const { canceled, filePaths } = await electron.dialog.showOpenDialog(focusedWindow, {
+        title: t("dialog.select_directory"),
+        defaultPath,
+        properties: [ "openDirectory", "createDirectory" ]
+    });
+
+    if (canceled || filePaths.length === 0) {
+        return { status: "cancelled" };
+    }
+
+    return { status: "selected", path: filePaths[0] };
 }
