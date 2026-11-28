@@ -587,6 +587,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processAttachmentImageUrls(content);
         }
 
+        if (isHandwritingNote(type, mime) && typeof content === "string") {
+            content = processHandwritingLinks(content);
+        }
+
         if (type === "relationMap" && noteMeta && typeof content === "string") {
             const relationMapLinks = (noteMeta.attributes || []).filter((attr) => attr.type === "relation" && attr.name === "relationMapLink");
 
@@ -611,6 +615,18 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     function processAttachmentImageUrls(content: string) {
         return content.replace(/api\/attachments\/([a-zA-Z0-9_]+)\/(image|open)/g,
             (_match, attachmentId: string, route: string) => `api/attachments/${getNewAttachmentId(attachmentId)}/${route}`);
+    }
+
+    /**
+     * Points the links in the text boxes of a handwriting note at the notes and the attachments of
+     * the archive as they were recreated. The JSON escapes the quotes around each `href`.
+     */
+    function processHandwritingLinks(content: string) {
+        return content.replace(/href=\\"(#[^"\\]*)\\"/g, (_match, url: string) => {
+            const mapped = mapNotePath(url).replace(/\battachmentId=([a-zA-Z0-9_]+)/,
+                (_attachment, attachmentId: string) => `attachmentId=${mapArchiveAttachmentId(attachmentId)}`);
+            return `href=\\"${mapped}\\"`;
+        });
     }
 
     /**

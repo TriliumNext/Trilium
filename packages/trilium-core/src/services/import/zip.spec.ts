@@ -292,6 +292,65 @@ describe("processNoteContent", () => {
         expect(JSON.parse(content).pdf).toBe(`api/attachments/${pdf.attachmentId}/open`);
     });
 
+    it("points the links of an imported handwriting note's text boxes at the notes as they were recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "inkLinks1",
+                title: "Lecture",
+                type: "code",
+                mime: "application/vnd.triliumnotes.handwriting+json",
+                dataFileName: "Lecture.json",
+                dirFileName: "Lecture",
+                attachments: [],
+                children: [{
+                    noteId: "inkTarget1",
+                    title: "Reading",
+                    type: "text",
+                    mime: "text/html",
+                    dataFileName: "Reading.html",
+                    attachments: [{
+                        attachmentId: "inkTargetFile1",
+                        title: "report.pdf",
+                        role: "file",
+                        mime: "application/pdf",
+                        position: 10,
+                        dataFileName: "Reading_report.pdf"
+                    }]
+                }]
+            }]
+        };
+        const html = `<p><a class="reference-link" href="#root/inkLinks1/inkTarget1">Reading</a>`
+            + `<a href="#root/inkTarget1?viewMode=attachments&amp;attachmentId=inkTargetFile1">report</a>`
+            + `<a class="reference-link" href="#root/outsideNote1">Elsewhere</a></p>`;
+        const sheet = (version: number) => (version === 1
+            ? { version, paper: "blank", layout: "infinite", strokes: [], texts: [ { id: "t", x: 0, y: 0, w: 100, html } ] }
+            : { version, paper: "blank", layout: "infinite", objects: [ { id: "s1", w: 3, p: [ 0, 0, 128 ] }, { o: "text", id: "t", x: 0, y: 0, w: 100, html } ] });
+
+        for (const version of [ 2, 1 ]) {
+            const zipBuffer = await createZipBuffer({
+                "!!!meta.json": JSON.stringify(metaFile),
+                "Lecture.json": JSON.stringify(sheet(version)),
+                "Lecture/Reading.html": "<p>Read me</p>",
+                "Lecture/Reading_report.pdf": Buffer.from("%PDF-1.4")
+            });
+
+            const { importedNote } = await testImportBuffer(zipBuffer, `import-ink-links-${version}`);
+            const [ target ] = importedNote.getChildNotes();
+            const [ file ] = target.getAttachments();
+            const saved = JSON.parse(importedNote.getContent() as string);
+            const [ box ] = version === 1 ? saved.texts : saved.objects.filter(({ o }: { o?: string }) => o === "text");
+
+            expect(target.noteId).not.toBe("inkTarget1");
+            expect(box.html).toBe(`<p><a class="reference-link" href="#root/${importedNote.noteId}/${target.noteId}">Reading</a>`
+                + `<a href="#root/${target.noteId}?viewMode=attachments&amp;attachmentId=${file.attachmentId}">report</a>`
+                + `<a class="reference-link" href="#root/outsideNote1">Elsewhere</a></p>`);
+            // The note is related to the note its text box now links to.
+            expect(importedNote.getRelations("internalLink").map(({ value }) => value)).toContain(target.noteId);
+        }
+    });
+
     it("points an imported embed at its attachment as it was recreated", async () => {
         const metaFile = {
             formatVersion: 2,
