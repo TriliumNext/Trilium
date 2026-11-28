@@ -72,6 +72,16 @@ const fencedCodeBlockFilter: Rule = {
     }
 };
 
+/**
+ * Text that Turnish leaves unescaped but a Markdown reader still parses: an entity reference
+ * (`&copy;` would be imported back as "©") and an ordered list marker closed by a parenthesis
+ * (`1) first` would be imported back as a list). Turnish only escapes the `1. ` form.
+ */
+const EXTRA_TEXT_ESCAPES: [ RegExp, string ][] = [
+    [ /&(?=#\d+;|#x[\da-f]+;|[a-z][a-z\d]*;)/gi, "\\&" ],
+    [ /^(\d+)\) /g, "$1\\) " ]
+];
+
 function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     currentTaskStates = getTaskStates();
     isWritingBlockMarkers = options.blockIds === "markers";
@@ -135,6 +145,9 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("blockMarker", buildBlockMarkerFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
+        const escapeText = instance.escape.bind(instance);
+        instance.escape = (text: string) => EXTRA_TEXT_ESCAPES.reduce(
+            (escaped, [ pattern, replacement ]) => escaped.replace(pattern, replacement), escapeText(text));
         instances.set(headerlessTables, instance);
     }
 

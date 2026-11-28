@@ -57,6 +57,13 @@ describe("markdown", () => {
         expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
     });
 
+    it("keeps entity references and list markers with a parenthesis as text through a round trip", () => {
+        for (const html of [ "<p>&amp;copy; and &amp;#169;, but A &amp; B</p>", "<p>1) first</p>", "<p>2024) was a year</p>" ]) {
+            const exported = markdownExportService.toMarkdown(html);
+            expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+        }
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage

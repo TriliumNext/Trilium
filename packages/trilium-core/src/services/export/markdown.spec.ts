@@ -62,6 +62,13 @@ describe("Markdown export", () => {
             .toBe("```\na ``` b\n```");
     });
 
+    it("escapes entity references and list markers with a parenthesis in text", () => {
+        expect(markdownExportService.toMarkdown("<p>&amp;copy; &amp;#169; &amp;#xA9; but A &amp; B</p>"))
+            .toBe("\\&copy; \\&#169; \\&#xA9; but A & B");
+        expect(markdownExportService.toMarkdown("<p>1) first</p><p>a<br>2) second</p><p>Call me at 3) maybe</p>"))
+            .toBe("1\\) first\n\na  \n2\\) second\n\nCall me at 3) maybe");
+    });
+
     it("names an unknown language after the last part of its tag", () => {
         expect(markdownExportService.toMarkdown(`<pre><code class="language-text-x-madeup">x</code></pre>`))
             .toBe("```madeup\nx\n```");
