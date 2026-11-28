@@ -123,6 +123,7 @@
 /src/services/custom_fonts.ts
 /src/services/date_notes.ts
 /src/services/debounce.ts
+/src/services/device.ts
 /src/services/experimental_features.ts
 /src/services/file_watcher.ts
 /src/services/focus.ts
