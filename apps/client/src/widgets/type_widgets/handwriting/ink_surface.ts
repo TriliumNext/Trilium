@@ -402,7 +402,8 @@ export default class InkSurface {
     /**
      * Adds a sheet for each page of the PDF at `url`, of the size of the page, after the last
      * sheet in use, and shows the first of them. The note is then laid out in pages. Returns
-     * `false` for a PDF that cannot be read, which adds nothing.
+     * `false`, adding nothing, for a PDF that cannot be read or whose first page would lie past
+     * `MAX_SHEETS`.
      */
     async addPdf(url: string) {
         const { generation } = this;
@@ -415,6 +416,10 @@ export default class InkSurface {
 
         const sheets = [ ...this.pages.sizes ];
         const first = Math.max(sheets.length, this.pages.getPageCount(this.getItems()) - 1);
+        if (first >= MAX_SHEETS) {
+            this.pdf.close(url);
+            return false;
+        }
         while (sheets.length < first) {
             sheets.push({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
         }

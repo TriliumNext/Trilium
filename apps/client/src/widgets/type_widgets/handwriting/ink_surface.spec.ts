@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTO_COLOR, createStroke, parseInkDocument } from "./ink_document";
+import { AUTO_COLOR, createStroke, MAX_SHEETS, PAGE_GAP, PAGE_HEIGHT, parseInkDocument } from "./ink_document";
 import { darkenPicture } from "./ink_images";
 import type { PdfPages } from "./ink_pdf";
 import InkSurface, { isDarkColor } from "./ink_surface";
@@ -978,6 +978,16 @@ describe("ink surface input", () => {
         expect(JSON.parse(surface.serialize())).toMatchObject({ pdfs: [ PDF ], sheets: [ [ 1280, 720, 0, 0 ], [ 1280, 720, 0, 1 ] ] });
         expect(JSON.parse(surface.serialize())).not.toHaveProperty("pdf");
         expect(onChange).toHaveBeenCalledOnce();
+
+        // A PDF whose first page would lie past the last sheet a note can hold adds nothing.
+        const far = { ...pages, destroy: vi.fn() };
+        openPdf.mockResolvedValueOnce(far);
+        const deepInk = { id: "s1", w: 3, p: [ 0, (MAX_SHEETS + 1) * (PAGE_HEIGHT + PAGE_GAP) * 10, 128 ] };
+        surface.load(parseInkDocument(JSON.stringify({ version: 2, paper: "blank", layout: "infinite", objects: [ deepInk ] })));
+        expect(await surface.addPdf("api/attachments/far/open")).toBe(false);
+        expect(far.destroy).toHaveBeenCalledOnce();
+        expect(JSON.parse(surface.serialize())).toMatchObject({ layout: "infinite" });
+        expect(JSON.parse(surface.serialize())).not.toHaveProperty("sheets");
     });
 
     it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
