@@ -57,6 +57,16 @@ describe("markdown", () => {
         expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
     });
 
+    it("keeps a hash at the end of a heading through a round trip", () => {
+        for (const html of [ "<h2>Issue #</h2>", "<h3>#</h3>", "<h2>C#</h2>" ]) {
+            const exported = markdownExportService.toMarkdown(html);
+            expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+        }
+        // H1 is demoted to H2 on import; the escaped hash must not appear as a backslash.
+        const h1exported = markdownExportService.toMarkdown("<h1>Issue #</h1>");
+        expect(markdownService.renderToHtml(h1exported, "Title")).toBe("<h2>Issue #</h2>");
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage
