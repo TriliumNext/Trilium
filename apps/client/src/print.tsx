@@ -1,3 +1,4 @@
+import type { LOCALE_IDS } from "@triliumnext/commons";
 import { render } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
@@ -6,9 +7,12 @@ import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
 import { createFontStylesheet } from "./services/font";
 import froca from "./services/froca";
+import { initLocale, t } from "./services/i18n";
 import { waitForPendingRenders } from "./services/pending_renders";
+import protected_session_holder from "./services/protected_session_holder";
 import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
+import Button from "./widgets/react/Button";
 import { ParentComponent } from "./widgets/react/react_utils";
 
 interface RendererProps {
@@ -47,6 +51,13 @@ export async function main() {
     // The font options declare `--detail-font-family`, which the printed content is drawn in.
     document.head.appendChild(createFontStylesheet(window.glob.fontCss ?? ""));
 
+    // Only the page opened in place of the app shows text of its own, in its toolbar.
+    const autoPrint = isAutoPrintPage();
+    if (autoPrint) {
+        takeOpenedByAppMarker();
+        await initLocale((window.glob?.currentLocale?.id ?? "en") as LOCALE_IDS);
+    }
+
     const note = await froca.getNote(noteId);
     console.debug("[print] Note loaded:", noteId, note?.type);
 
@@ -60,12 +71,25 @@ export async function main() {
     }
 
     const bodyWrapper = document.createElement("div");
-    render(<App note={note} noteId={noteId} />, bodyWrapper);
+    render(
+        <App note={note} noteId={noteId} notePath={notePath} autoPrint={autoPrint} />,
+        bodyWrapper
+    );
     document.body.appendChild(bodyWrapper);
 }
 
-export function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {
+/**
+ * The print page. With `autoPrint`, it stands in place of the app, as it does on iPhone and iPad:
+ * it shows a toolbar and opens the print sheet once the note has rendered.
+ */
+export function App({ note, noteId, notePath, autoPrint }: {
+    note: FNote | null | undefined;
+    noteId: string;
+    notePath?: string;
+    autoPrint?: boolean;
+}) {
     const sentReadyEvent = useRef(false);
+    const [ report, setReport ] = useState<PrintReport>();
     const onProgressChanged = useCallback((progress: number) => {
         if (window.electronApi) {
             window.electronApi.printing.sendPrintProgress(progress);
@@ -80,7 +104,14 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
         }));
         window._noteReady = printReport;
         sentReadyEvent.current = true;
-    }, []);
+
+        if (autoPrint) {
+            setReport(printReport);
+            if (printReport.type !== "error") {
+                printOncePerVisit();
+            }
+        }
+    }, [ autoPrint ]);
     const props: RendererProps | undefined | null = note && { note, onReady, onProgressChanged };
 
     // Keep this hook above the early return so hook order stays stable across renders.
@@ -90,15 +121,44 @@ export function App({ note, noteId }: { note: FNote | null | undefined, noteId: 
         }
     }, [ note ]);
 
-    if (!note || !props) return <Error404 noteId={noteId} />;
+    const toolbar = autoPrint && notePath
+        && <PrintPageToolbar notePath={notePath} report={report} />;
+
+    if (!note || !props) return <>{toolbar}<Error404 noteId={noteId} /></>;
 
     return (
         <>
+            {toolbar}
             {note.type === "book" || note.type === "search"
                 ? <CollectionRenderer {...props} />
                 : <SingleNoteRenderer {...props} />
             }
         </>
+    );
+}
+
+/**
+ * Back to the note, Print to open the print sheet again, and what the render reported, such as a
+ * failure or the notes a collection left out; hidden on paper.
+ */
+export function PrintPageToolbar({ notePath, report }: { notePath: string; report?: PrintReport }) {
+    const message = getReportMessage(report);
+    return (
+        <div className="print-page-toolbar">
+            <Button
+                text={t("note_detail.print_page_back")}
+                icon="bx bx-arrow-back"
+                onClick={() => leavePrintPage(notePath)}
+            />
+            <Button
+                text={t("note_detail.print_page_print")}
+                icon="bx bx-printer"
+                kind="primary"
+                disabled={!report || report.type === "error"}
+                onClick={() => window.print()}
+            />
+            {message && <p className="print-page-report">{message}</p>}
+        </div>
     );
 }
 
@@ -110,6 +170,11 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             const container = containerRef.current;
             /* v8 ignore next -- @preserve: ref is always attached by the time this layout effect runs */
             if (!container) return;
+
+            // Without its protected session, the renderer would print the password notice instead.
+            if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
+                throw new Error(t("note_detail.print_protected_locked"));
+            }
 
             if (note.type === "spreadsheet") {
                 // Render spreadsheet as HTML tables instead of an image.
@@ -304,4 +369,75 @@ function reportPrintError(error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
     window.dispatchEvent(new CustomEvent("note-ready", { detail: { type: "error", message, stack } }));
+}
+
+/** What the page opened in place of the app keeps in its history entry. */
+interface PrintPageState {
+    /** The print sheet has opened for this entry. */
+    printed?: boolean;
+    /** `printInThisTab()` opened this entry, so the entry before it is the app. */
+    openedByApp?: boolean;
+}
+
+/** The parameter `printInThisTab()` adds to the address of the print page it opens. */
+const OPENED_BY_APP_PARAM = "fromApp";
+
+/** Whether this page stands in place of the app (`?print&autoprint`) rather than in a frame. */
+function isAutoPrintPage() {
+    return window.top === window
+        && !isElectron()
+        && new URLSearchParams(window.location.search).has("autoprint");
+}
+
+/**
+ * Moves the `fromApp` parameter into the history entry, where Back reads it, so a bookmarked or
+ * copied address of the page leaves it out.
+ */
+function takeOpenedByAppMarker() {
+    if (!new URLSearchParams(window.location.search).has(OPENED_BY_APP_PARAM)) return;
+    const search = removeQueryParams(window.location.search, [ OPENED_BY_APP_PARAM ]);
+    const state = window.history.state as PrintPageState | null;
+    window.history.replaceState(
+        { ...state, openedByApp: true }, "", `?${search}${window.location.hash}`
+    );
+}
+
+/** Opens the print sheet, unless it already opened for this history entry. */
+function printOncePerVisit() {
+    const state = window.history.state as PrintPageState | null;
+    if (state?.printed) return;
+    window.history.replaceState({ ...state, printed: true }, "");
+    window.print();
+}
+
+function getReportMessage(report: PrintReport | undefined) {
+    if (report?.type === "error") {
+        return `${t("note_detail.print_report_error_title")}: ${report.message}`;
+    }
+    if (report?.type === "collection" && report.ignoredNoteIds.length > 0) {
+        const count = report.ignoredNoteIds.length;
+        return t("note_detail.print_report_collection_content", { count });
+    }
+    return undefined;
+}
+
+/**
+ * Returns to the app through the history when the app opened this page. Otherwise, the entry before
+ * it can be another site, so this opens the note with the app's own parameters, such as `safeMode`.
+ */
+function leavePrintPage(notePath: string) {
+    if ((window.history.state as PrintPageState | null)?.openedByApp) {
+        window.history.back();
+        return;
+    }
+    const search = removeQueryParams(window.location.search, [ "print", "autoprint" ]);
+    window.location.assign(`./${search ? `?${search}` : ""}#${notePath}`);
+}
+
+/** `search` without its `?` and the parameters in `names`, with the others kept as written. */
+function removeQueryParams(search: string, names: readonly string[]) {
+    return search.replace(/^\?/, "")
+        .split("&")
+        .filter((param) => param && !names.includes(param.split("=")[0]))
+        .join("&");
 }
