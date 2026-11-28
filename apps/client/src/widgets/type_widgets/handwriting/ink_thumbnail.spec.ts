@@ -23,6 +23,7 @@ describe("ink thumbnail", () => {
     let background: { picture: HTMLCanvasElement, rect: { x: number, y: number, width: number, height: number } } | undefined;
     let index: StrokeIndex;
     let thumbnail: InkThumbnail;
+    let imagesLoaded: Promise<void>;
 
     beforeEach(() => {
         fills = [];
@@ -47,13 +48,14 @@ describe("ink thumbnail", () => {
         vi.stubGlobal("Path2D", class { moveTo() {} quadraticCurveTo() {} closePath() {} });
         strokes = new Set();
         index = new StrokeIndex();
+        imagesLoaded = Promise.resolve();
         thumbnail = new InkThumbnail({
             getAll: () => strokes,
             query: (bounds) => index.query(bounds),
             getFirstSheet: () => firstSheet,
             getImages: () => images,
             getPicture: (image) => (image.url.includes("loaded") ? picture : undefined),
-            whenImagesLoaded: async () => {},
+            whenImagesLoaded: () => imagesLoaded,
             getBackground: () => background,
             getTexts: (within) => {
                 askedWithin = within;
@@ -102,6 +104,40 @@ describe("ink thumbnail", () => {
         thumbnail.markSaved(first?.version ?? -1);
         expect(await thumbnail.export()).toBeUndefined();
         expect(fills).toHaveLength(2);
+    });
+
+    it("gives no picture for a document loaded while the picture was being drawn", async () => {
+        let finishLoading = () => {};
+        imagesLoaded = new Promise((resolve) => {
+            finishLoading = resolve;
+        });
+        draw(100, 100, "#ff0000");
+        const pending = thumbnail.export();
+
+        // The surface loads another note while the images of the first one load.
+        strokes.clear();
+        index = new StrokeIndex();
+        thumbnail.reset("pages");
+        draw(100, 100, "#00ff00");
+        finishLoading();
+        expect(await pending).toBeUndefined();
+        expect(fills).toEqual([]);
+
+        // The next export draws the note that is shown now.
+        expect(await thumbnail.export()).toBeDefined();
+        expect(fills).toEqual([ "#00ff00" ]);
+
+        // Or while the picture was being encoded.
+        let encode = () => {};
+        vi.mocked(HTMLCanvasElement.prototype.toBlob).mockImplementationOnce((callback) => {
+            encode = () => callback(new Blob([ "png" ], { type: "image/png" }));
+        });
+        thumbnail.invalidate();
+        const encoding = thumbnail.export();
+        await vi.waitFor(() => expect(fills).toHaveLength(2));
+        thumbnail.reset("pages");
+        encode();
+        expect(await encoding).toBeUndefined();
     });
 
     it("draws the text of the text boxes over the ink of the first page", async () => {

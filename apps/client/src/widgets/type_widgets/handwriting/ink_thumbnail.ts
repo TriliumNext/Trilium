@@ -68,6 +68,8 @@ export default class InkThumbnail {
     /** Counts the changes to the picture; it is saved while `savedVersion` matches. */
     private version = 0;
     private savedVersion = 0;
+    /** Counts the documents loaded, so that an export can tell it outlived its own. */
+    private loads = 0;
     /** Whether the canvas holds the picture of an image, and not only ink. */
     private hasPictures = false;
 
@@ -78,6 +80,7 @@ export default class InkThumbnail {
         this.layout = layout;
         this.isStale = true;
         this.savedVersion = this.version;
+        this.loads++;
     }
 
     /** Whether the picture differs from the saved one. */
@@ -119,12 +122,16 @@ export default class InkThumbnail {
         if (this.shows(item.bounds)) this.invalidate();
     }
 
-    /** Returns the picture as an SVG document, or `undefined` while the saved one is current. */
+    /**
+     * Returns the picture as an SVG document, or `undefined` while the saved one is current or
+     * once another document is loaded before the picture is ready.
+     */
     async export(): Promise<ThumbnailExport | undefined> {
         if (!this.isChanged) return undefined;
-        const version = this.version;
+        const { version, loads } = this;
         if (this.isStale) {
             await this.content.whenImagesLoaded();
+            if (loads !== this.loads) return undefined;
             this.redraw();
         }
         const { canvas, area } = this;
@@ -133,6 +140,7 @@ export default class InkThumbnail {
         }
 
         const png = await toDataUrl(canvas, this.hasPictures ? PICTURE_TYPE : "image/png");
+        if (loads !== this.loads) return undefined;
         const { width, height } = canvas;
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
             + `<style>@media (prefers-color-scheme: dark) { svg { filter: ${DARK_FILTER}; } }</style>`
