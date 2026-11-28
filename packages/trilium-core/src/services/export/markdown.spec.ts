@@ -992,6 +992,14 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("renders emphasis inside a word with asterisks", () => {
+        expect(markdownExportService.toMarkdown(/*html*/`<p>un<em>believ</em>able</p>`)).toBe("un*believ*able");
+        expect(markdownExportService.toMarkdown(/*html*/`<p><i>Java</i>Script, 3<em>rd</em> and snake_<em>case</em></p>`))
+            .toBe("*Java*Script, 3*rd* and snake\\_*case*");
+        expect(markdownExportService.toMarkdown(/*html*/`<p>(<em>aside</em>) and <em>word</em>.</p>`))
+            .toBe("(_aside_) and _word_.");
+    });
+
     describe("highlights and coloured text", () => {
         it("renders a default-yellow highlight and a bare <mark> as ==text==", () => {
             expect(markdownExportService.toMarkdown(
